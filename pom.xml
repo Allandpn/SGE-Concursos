@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>br.com.estudos</groupId>
+    <artifactId>gestao-estudos</artifactId>
+    <version>1.0.0</version>
+    <name>gestao-estudos</name>
+    <description>Sistema de Gestão de Estudos para Concursos</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- Web: necessário para /actuator/health e, a partir da Sprint 2,
+             para os controllers REST (ADR-025). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- JPA: na Sprint 1 não há entidade nenhuma. Está aqui porque
+             ddl-auto=validate e o DataSource vêm dele, e porque o
+             application.yml de 03A_CONFIGURATION.md §7 já o pressupõe. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Actuator: /actuator/health é o critério de "pronto" da Sprint 1
+             e o healthcheck do docker-compose. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Flyway: todo schema nasce de migração versionada (ADR-017).
+             No Spring Boot 4.1 a autoconfiguração do Flyway saiu do core e
+             virou módulo próprio — sem este starter, FlywayAutoConfiguration
+             nunca entra no classpath de autoconfiguração e nenhuma migração
+             roda, mesmo com flyway-core presente.
+             flyway-database-postgresql é obrigatório desde o Flyway 10. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ===================== teste ===================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers: os testes de integração rodam contra um
+             PostgreSQL de verdade, com AS MESMAS migrações de produção
+             (10_TESTS.md §1). Não existe schema de teste. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- ./mvnw test -Dgroups=unitario  roda só os rápidos,
+                         sem exigir Docker (10_TESTS.md §7). -->
+                    <excludedGroups>${excluir.grupos}</excludedGroups>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>padrao</id>
+            <activation><activeByDefault>true</activeByDefault></activation>
+            <properties><excluir.grupos></excluir.grupos></properties>
+        </profile>
+        <!-- ./mvnw test -Psem-docker  pula tudo que precisa de contêiner. -->
+        <profile>
+            <id>sem-docker</id>
+            <properties><excluir.grupos>integracao</excluir.grupos></properties>
+        </profile>
+    </profiles>
+</project>
