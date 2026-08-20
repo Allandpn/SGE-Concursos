@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.0 |
+| Versão | 1.2.1 |
 | Data | 2026-08-19 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -125,9 +125,9 @@ dados em planilha.
 
 ```csv
 disciplina,assunto,peso,ordem
-Banco de Dados,Modelagem Conceitual de Dados (MER e DER),ALTA,1
-Banco de Dados,Modelagem Lógica e Física de Dados,ALTA,2
-Banco de Dados,Normalização e Dependências Funcionais,ALTA,4
+Banco de Dados,Modelagem Conceitual de Dados (MER e DER),ALTO,1
+Banco de Dados,Modelagem Lógica e Física de Dados,ALTO,2
+Banco de Dados,Normalização e Dependências Funcionais,ALTO,4
 ```
 
 | Coluna | Obrigatória | Regra |
@@ -135,7 +135,7 @@ Banco de Dados,Normalização e Dependências Funcionais,ALTA,4
 | `id` | não | **Vazio → cria. Preenchido → atualiza aquele registro** |
 | `disciplina` | sim | Criada se não existir |
 | `assunto` | sim | Único dentro da disciplina, comparado sem acento e sem caixa |
-| `peso` | não | `ALTA` · `MEDIA` · `BAIXA`. Ausente → `MEDIA` |
+| `peso` | não | `ALTO` · `MEDIO` · `BAIXO`. Ausente → `MEDIO` |
 | `ordem` | não | Inteiro. Ausente → ordem de aparição no arquivo |
 
 #### Por que existe a coluna `id`
@@ -476,6 +476,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.1 | 2026-08-19 | Correção: o enum de peso do CSV estava no feminino (`ALTA`/`MEDIA`/`BAIXA`), divergindo de `01_DOMINIO` D-23. *Peso* é masculino — `ALTO`/`MEDIO`/`BAIXO`. Divergência encontrada ao derivar o schema da Sprint 1 |
 | 1.2.0 | 2026-08-19 | Segunda revisão. **Coluna `id` no CSV** e ciclo exportar–editar–importar: sem isso, corrigir um typo de disciplina duplicava a base inteira. Renomear passa a ser exigência de interface. J-3: **ordem das métricas invertida** — M-1 é lenta demais para liderar tela semanal; M-2 e M-3 assumem, e semanal × trimestral viram telas distintas. Nova §4.3, lugar do **puxar mais**, no fim da lista e nunca no topo. Nova §5.1: orçamento é tempo do usuário, transição otimista, falha não destrutiva, fila offline deliberadamente fora |
 | 1.1.0 | 2026-08-19 | Revisão do usuário. §2.1: o turno vira **lista clicável**, não sequência — a ordem é apresentação, nunca imposição. J-1: cadastro em massa vira **importação CSV** com layout definido, validação tudo-ou-nada e reimportação idempotente. J-4 ganha **o outro lado** — puxar mais num dia de folga, com as três modalidades e o preço de cada uma. §4.1: botões passam a usar as âncoras de estrutura × detalhe. Nova §4.2: **registrar erro é ação global**, nunca etapa de fluxo |
 | 1.0.0 | 2026-08-19 | Criado. Contexto físico (tablet estuda, computador registra) e por que a separação de aparelhos protege a regra da produção obrigatória. Quatro jornadas, com **J-4, o retorno depois de sumir**, tratada como a que decide a sobrevivência do sistema. Sete telas, cada uma justificada por jornada. Orçamentos de tempo como requisito. Web de computador primeiro, celular depois |

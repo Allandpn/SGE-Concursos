@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.0.0** |
+| Versão do documento | **2.1.0** |
 | Status | **Congelado** |
-| Data | 2026-08-15 |
-| Total | 30 ADRs — 19 vigentes, 10 substituídas, 1 revogada |
+| Data | 2026-08-20 |
+| Total | 31 ADRs — 20 vigentes, 10 substituídas, 1 revogada |
 
 ---
 
@@ -61,6 +61,7 @@ que custa e o que foi descartado.
 | [ADR-028](#adr-028--maven-no-backend-zero-build-no-frontend) | Maven no backend, zero build no frontend | v2 |
 | [ADR-029](#adr-029--sem-cache-de-aplicação) | Sem cache de aplicação | v2 |
 | [ADR-030](#adr-030--spa-estática-servida-pelo-spring) | SPA estática servida pelo Spring | v2 |
+| [ADR-031](#adr-031--unicidade-por-tentativa-e-por-revisão-pendente) | Unicidade por tentativa e por revisão pendente | Sprint 1 |
 
 ### 1.2 Históricas
 
@@ -804,36 +805,97 @@ A v1 servia a SPA por `doGet`, montando o HTML com `include()` porque o
 
 ---
 
+## ADR-031 — Unicidade por tentativa e por revisão pendente
+
+**Status:** Aceita · 2026-08-20
+
+### Contexto
+
+Duas invariantes de `01_DOMINIO.md` §10 exigem unicidade sobre um **subconjunto**
+de linhas, não sobre a tabela inteira:
+
+- **D-05** — no máximo uma revisão *pendente* por assunto. Revisões concluídas e
+  canceladas do mesmo assunto são normais e numerosas; uma unicidade sobre a
+  tabela inteira as impediria de existir.
+- **D-45** — a mesma tentativa de registro não pode gravar duas vezes. A chave é
+  do **identificador da tentativa**, gerado pelo cliente ao abrir a tela — nunca
+  do conteúdo, porque recuperar o mesmo assunto duas vezes no mesmo dia é uso
+  legítimo, e uma restrição sobre `assunto + data + resultado` produziria falso
+  positivo.
+
+`03_INVARIANTES.md` §4.1 aponta D-05 como **a crítica**: é a única com
+concorrência real — uma revisão sendo cumprida enquanto outra é agendada para o
+mesmo assunto. Verificar-antes-de-escrever no serviço deixa uma janela: entre o
+`SELECT` que confirma "não há pendente" e o `INSERT`, cabe outra transação
+inserindo a sua. Sob carga baixa (o uso real deste sistema, de um usuário só) a
+falha é rara — e é exatamente por isso que testes sem concorrência simulada
+nunca a pegam, e ela sobrevive até aparecer em produção como duas escadas
+paralelas, silenciosamente.
+
+### Decisão
+
+Ambas por **unicidade na persistência**, restrita ao subconjunto. Nunca por
+verificação prévia no serviço.
+
+| Regra | Mecanismo | Nome da restrição |
+|---|---|---|
+| D-05 | Índice único **parcial** em `revisao(assunto_id) WHERE situacao = 'PENDENTE'` | `ux_revisao_d05_pendente_por_assunto` |
+| D-45 | Índice único em `sessao(tentativa_id)` | `ux_sessao_d45_tentativa_unica` |
+
+Dois detalhes do `tentativa_id` que decidem se a proteção de D-45 funciona de
+verdade, e não só no caso feliz:
+
+- **Gerado ao abrir a tela, nunca ao enviar.** Gerado no envio, um duplo clique
+  dispara duas submissões com dois identificadores diferentes, e a unicidade não
+  pega nada.
+- **O reenvio devolve sucesso com o resultado original, nunca erro.** O dado já
+  foi gravado na primeira tentativa; devolver erro faria a tela mostrar falha
+  para algo que teve sucesso, e o usuário não tem como saber que houve reenvio.
+
+### Consequências
+
+- D-05 e D-45 viram garantia do Postgres, não um `if` no Service que uma
+  transação concorrente poderia escapar.
+- O Service precisa capturar a exceção de violação de unicidade do driver e
+  traduzi-la — mas para **destinos diferentes** por regra: D-05 vira erro de
+  domínio (a tentativa de agendar uma segunda revisão pendente é inválida);
+  D-45 vira sucesso silencioso (o reenvio não é erro, é o mesmo evento). O ponto
+  de tradução (`@RestControllerAdvice`, ADR-026) precisa distinguir as duas pelo
+  **nome da restrição**, não só pelo código SQLSTATE — as duas colidem na mesma
+  classe de exceção do driver.
+- Abrir a tela duas vezes de propósito gera dois `tentativa_id` e duas sessões —
+  corretamente: são duas tentativas de verdade, não uma reenviada.
+- D-45 sozinha **não cobre** duas abas ou dois aparelhos editando a mesma revisão
+  pendente ao mesmo tempo — isso são tentativas *diferentes* colidindo, não a
+  mesma tentativa reenviada. Essa lacuna é coberta por ADR-032 (versionamento da
+  `revisao`). Implementar só D-45 e considerar a concorrência resolvida é o erro
+  provável.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Verificar no serviço antes de inserir (`existe pendente? se não, grava`) | Race condition clássica de check-then-act: cabe outra transação entre a leitura e a escrita. Passa em qualquer teste sem concorrência simulada e falha em produção sob uso real |
+| Restrição sobre `assunto + data + resultado` para D-45 | Falso positivo: recuperar o mesmo assunto duas vezes no mesmo dia é legítimo. A persistência não distingue clique repetido de segunda tentativa real pelo **conteúdo** — só um identificador próprio da tentativa resolve |
+| `tentativa_id` gerado no momento do envio | O duplo clique produziria dois identificadores diferentes, e a unicidade nunca colidiria — a proteção depende do id nascer com a tela, não com o clique |
+| Reenvio duplicado devolver erro HTTP ao cliente | O dado já foi persistido na primeira gravação; erro faria a tela reportar falha para uma operação que, do ponto de vista do usuário, teve sucesso |
+
+---
+
 ## Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.1.0 | 2026-08-20 | **ADR-031 escrita e aceita** (Sprint 1, item 1.1) — sai de "Pendentes de redação" para vigente. Total passa a 31 ADRs, 20 vigentes |
 | 2.0.0 | 2026-08-15 | Migração para PostgreSQL + Spring Boot. 16 ADRs novas (015–030); 10 substituídas; ADR-002 revogada; ADR-007, 011 e 014 mantidas |
 | 1.0.0 | 2026-08-15 | Versão inicial. 14 ADRs |
 
 
 ## Pendentes de redação
 
-Três decisões já **tomadas** na especificação conceitual, ainda **sem ADR
+Duas decisões já **tomadas** na especificação conceitual, ainda **sem ADR
 escrita**. Cada uma deve ser redigida quando a sprint que a implementa começar —
 não antes.
-
-### ADR-031 — Unicidade por tentativa e por revisão pendente
-
-**Contexto.** Duas invariantes exigem unicidade sobre um subconjunto, não sobre
-a tabela inteira:
-
-- **D-05** — no máximo uma revisão *pendente* por assunto. Revisões concluídas
-  e canceladas do mesmo assunto são normais e numerosas.
-- **D-45** — a mesma tentativa de registro não pode gravar duas vezes. A chave é
-  do **identificador da tentativa**, gerado pelo cliente ao abrir a tela, nunca
-  do conteúdo — recuperar o mesmo assunto duas vezes no mesmo dia é legítimo.
-
-**Decisão.** Ambas por unicidade na persistência, restrita ao subconjunto.
-**Nunca** por verificação prévia no serviço: entre verificar e escrever cabe
-outra transação.
-
-**Escrever quando:** a sprint que cria a tabela `revisao` começar.
 
 ### ADR-032 — Controle de versão na escrita
 

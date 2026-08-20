@@ -34,6 +34,16 @@ a próxima revisão.
 
 ---
 
+## Onde o projeto está
+
+**Leia `PROGRESSO.md` primeiro, sempre.** Ele tem o mapa das 8 sprints, a sprint
+corrente detalhada item a item, e a *Definition of Done* dela.
+
+Se você não sabe qual é o próximo passo, a resposta está lá — não a invente.
+E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
+
+---
+
 ## Os documentos
 
 ### Conceituais — completos, precedência nesta ordem
@@ -47,7 +57,11 @@ a próxima revisão.
 
 ### Técnicos — escritos sprint a sprint
 
-Ficam em `docs/`. Herdados da v2 e ainda válidos:
+O documento técnico de uma sprint nasce **quando ela começa**, contra a
+especificação conceitual vigente naquele momento. O da Sprint 1 é
+`docs/SPRINT-1-BANCO.md`.
+
+Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
@@ -134,17 +148,17 @@ precisar desacelerar.
 
 ---
 
-## Estado atual
+## Como o projeto chegou aqui
 
-**Especificação conceitual completa. Nenhum código escrito.**
+A especificação anterior partia de um modelo **sem resultado de recuperação**, e
+nove dos vinte documentos técnicos dela não sobreviveram. O código foi
+descartado — nada estava em produção, então recriar o schema já correto saiu
+mais limpo que corrigi-lo por migração.
 
-O projeto foi reiniciado: a especificação anterior partia de um modelo sem
-resultado de recuperação, e nove dos vinte documentos técnicos dela não
-sobreviveram. O código da tentativa anterior foi descartado — **nada estava em
-produção**, então recriar o schema já correto é mais limpo que corrigi-lo por
-migração.
+Isso explica por que a especificação conceitual é densa e a técnica é magra: a
+primeira foi revisada oito vezes; a segunda nasce por sprint, de propósito.
 
-**Próximo:** Sprint 1 — ambiente e schema, contra o modelo novo.
+**Em que ponto estamos: `PROGRESSO.md`.**
 
 ---
 
@@ -167,4 +181,5 @@ Herdadas da tentativa anterior, e continuam valendo:
 - [ ] a regra implementada está **citada** no código pelo identificador;
 - [ ] teste correspondente escrito e passando;
 - [ ] nada de sprint futura implementado;
+- [ ] item marcado no `PROGRESSO.md`, se concluiu algum;
 - [ ] documentação atualizada **se** algo divergiu — documento primeiro.

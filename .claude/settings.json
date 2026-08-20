@@ -31,14 +31,15 @@
       "Bash(git push *)",
       "Bash(docker compose down *)",
       "Edit(especificacao/**)",
-      "Edit(CLAUDE.md)"
+      "Edit(CLAUDE.md)",
+      "Edit(src/main/resources/db/migration/**)",
+      "Write(src/main/resources/db/migration/**)"
     ],
 
     "deny": [
       "Read(.env)",
       "Read(.env.*)",
       "Edit(.env)",
-      "Edit(src/main/resources/db/migration/**)",
       "Bash(rm -rf *)",
       "Bash(git push --force *)",
       "Bash(tailscale funnel *)"
