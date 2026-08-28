@@ -1,0 +1,38 @@
+# =============================================================================
+# Fonte: docker-compose.yml (variáveis DB_URL, DB_USER, DB_PASSWORD,
+# BIND_ADDRESS, LOG_LEVEL) e docs/03E_DEPLOYMENT.md §4.2.
+#
+# 03A_CONFIGURATION.md, citado no pom.xml como origem deste arquivo, é um dos
+# nove documentos técnicos que não sobreviveram ao reset da especificação
+# (ver CLAUDE.md). Este application.yml nasce direto das variáveis já fixadas
+# no compose e do ADR-017 — não há doc técnico de configuração vigente ainda.
+# =============================================================================
+
+server:
+  port: 8080
+  # BIND_ADDRESS=0.0.0.0 dentro do container é obrigatório para o Docker
+  # mapear a porta; o confinamento real vem do "127.0.0.1:" do host no
+  # docker-compose.yml. Não "corrigir" para um valor fixo.
+  address: ${BIND_ADDRESS:127.0.0.1}
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      # ADR-017: nunca update, nunca create-drop. O schema nasce só de
+      # migração Flyway; validate transforma divergência entidade↔schema em
+      # erro na subida.
+      ddl-auto: validate
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}

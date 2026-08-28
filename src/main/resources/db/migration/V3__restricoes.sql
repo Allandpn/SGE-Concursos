@@ -37,14 +37,9 @@ ALTER TABLE sessao
 ALTER TABLE sessao
     ADD CONSTRAINT ck_sessao_d04a_previsao_por_tipo
         CHECK (
-            (tipo = 'ESTUDO'
-                AND previsao_percentual IS NULL AND previsao_reconstrucao IS NULL)
-                OR (tipo IN ('QUESTOES','FLASHCARDS')
-                AND previsao_reconstrucao IS NULL
-                AND (resultado IS NULL OR previsao_percentual IS NOT NULL))
-                OR (tipo = 'RECUPERACAO'
-                AND previsao_percentual IS NULL
-                AND (resultado IS NULL OR previsao_reconstrucao IS NOT NULL))
+                (tipo = 'ESTUDO'AND previsao_percentual IS NULL AND previsao_reconstrucao IS NULL)
+                OR (tipo IN ('QUESTOES','FLASHCARDS') AND previsao_reconstrucao IS NULL AND (resultado IS NULL OR previsao_percentual IS NOT NULL))
+                OR (tipo = 'RECUPERACAO' AND previsao_percentual IS NULL AND (resultado IS NULL OR previsao_reconstrucao IS NOT NULL))
             );
 
 ALTER TABLE revisao
