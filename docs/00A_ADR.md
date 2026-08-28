@@ -4,9 +4,9 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.1.0** |
+| Versão do documento | **2.1.1** |
 | Status | **Congelado** |
-| Data | 2026-08-20 |
+| Data | 2026-08-28 |
 | Total | 31 ADRs — 20 vigentes, 10 substituídas, 1 revogada |
 
 ---
@@ -137,7 +137,7 @@ Nenhuma linha é removida em operação normal.
 | Entidade | Mecanismo |
 |---|---|
 | Disciplina | `ativo = false` |
-| Assunto | `status = 'ARQUIVADO'` |
+| Assunto | `ativo = false` |
 | Sessão | `ativo = false` |
 | Revisão | `situacao = 'CANCELADA'` |
 | Erro | sem exclusão; `resolvido = true` não é exclusão |
@@ -886,6 +886,7 @@ verdade, e não só no caso feliz:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.1.1 | 2026-08-28 | Correção administrativa: mecanismo de exclusão lógica do Assunto na ADR-011 dizia `status = 'ARQUIVADO'`, resíduo da v1 que sobrou do reset. O schema real (`V1__tabelas.sql`) e `docs/SPRINT-2-CADASTRO.md` §1.2 usam `ativo BOOLEAN`, igual Disciplina — corrigido para bater com o que existe. Achado durante a revisão do documento técnico da Sprint 2 (item 2.0 do `PROGRESSO.md`) |
 | 2.1.0 | 2026-08-20 | **ADR-031 escrita e aceita** (Sprint 1, item 1.1) — sai de "Pendentes de redação" para vigente. Total passa a 31 ADRs, 20 vigentes |
 | 2.0.0 | 2026-08-15 | Migração para PostgreSQL + Spring Boot. 16 ADRs novas (015–030); 10 substituídas; ADR-002 revogada; ADR-007, 011 e 014 mantidas |
 | 1.0.0 | 2026-08-15 | Versão inicial. 14 ADRs |
