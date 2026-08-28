@@ -5,9 +5,9 @@ Curto de propósito: uma convenção que ninguém lembra não é convenção.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.0.0** |
+| Versão do documento | **2.1.0** |
 | Status | **Congelado** |
-| Data | 2026-08-15 |
+| Data | 2026-08-28 |
 | Java | 21 LTS · Spring Boot 4.1 |
 
 ---
@@ -112,7 +112,8 @@ switch (tipo) { case TEORIA -> …; }        // switch de expressão, exaustivo
 ```java
 import java.util.*;                        // ✘ wildcard
 @Autowired private Repo repo;              // ✘ injeção em campo
-@Data @Entity class Sessao { }             // ✘ Lombok (D-008)
+@Data @Entity class Sessao { }             // ✘ Lombok além do permitido em §3.2.1
+@Setter private Long id;                   // ✘ setter de id — identidade não se reatribui
 public Sessao buscar(...) { return null; } // ✘ retorno null
 catch (Exception e) { }                    // ✘ engolir
 e.printStackTrace();                       // ✘ use o logger
@@ -126,6 +127,39 @@ switch (tipo) { … default -> {} }          // ✘ default silencioso em enum d
 O último merece explicação: `default` num `switch` sobre enum de domínio faz o
 compilador parar de avisar quando um valor novo é acrescentado
 (`02A_ENUMS.md` §0). O valor novo passa despercebido até produção.
+
+### 3.2.1 Lombok em entidade JPA — permitido com escopo
+
+`@Data` numa `@Entity` gera `equals`/`hashCode`/`toString` sobre **todas** as
+associações. Numa `@ManyToOne LAZY` isso aciona o proxy do Hibernate fora de
+sessão (`LazyInitializationException`) ou N+1 sem ninguém pedir; em relação
+bidirecional, `toString` de um lado chama `toString` do outro e recursiona até
+`StackOverflowError`. E `equals`/`hashCode` por todos os campos muda o hash da
+entidade entre antes e depois do `persist`, quebrando o contrato em
+`HashSet`/`HashMap`.
+
+Por isso `@Data` continua proibido em entidade — mas o problema é o escopo
+descontrolado, não a ferramenta. **Permitido**, com este escopo exato:
+
+```java
+@Getter @Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)   // JPA exige; não público
+@Entity
+public class Sessao {
+
+    @EqualsAndHashCode.Include
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // demais campos: getter/setter gerados, fora do equals/hashCode
+}
+```
+
+`@Setter` nunca no `id` — identidade não se reatribui por fora do JPA.
+`@ToString` fica de fora da lista de permitidos por padrão: se usar, exclua
+toda associação (`@ToString.Exclude`) para não reabrir o problema de
+recursão — decisão a tomar caso a caso, não antecipada aqui.
 
 ### 3.3 Guard clauses
 
@@ -282,5 +316,5 @@ Antes de considerar qualquer arquivo pronto:
 
 | Versão | Data | Mudança |
 |---|---|---|
-| 2.0.0 | 2026-08-15 | Reescrito para Java 21 + Spring Boot. Domínio integralmente em português (ADR-027); proibições de Lombok, injeção em campo, `LocalDate.now()` solto e `default` em `switch` de domínio |
+| 2.1.0 | 2026-08-28 | §3.2: removida a citação `(D-008)` do exemplo de Lombok proibido — órfã, não existe regra `D-008` em nenhuma especificação atual (regras `D-xx` vão de D-01 a D-45, todas de domínio, nenhuma de estilo). Achado durante mentoria do item 2.1 (Sprint 2). Nova §3.2.1: Lombok deixa de ser proibição total em entidade JPA e passa a permitido com escopo (`@Getter`/`@Setter` exceto no `id`, `@EqualsAndHashCode(onlyExplicitlyIncluded = true)` só no `id`, `@NoArgsConstructor(access = PROTECTED)`); `@Data` e `@Setter` no `id` continuam proibidos, com o motivo técnico explicado (recursão de `toString` em associação bidirecional, N+1 via proxy LAZY, hash instável antes/depois do `persist`) | Reescrito para Java 21 + Spring Boot. Domínio integralmente em português (ADR-027); proibições de Lombok, injeção em campo, `LocalDate.now()` solto e `default` em `switch` de domínio |
 | 1.0.0 | 2026-08-15 | Versão inicial (JavaScript / Apps Script) |

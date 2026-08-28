@@ -66,6 +66,16 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Lombok: permitido em entidade JPA com escopo restrito desde
+             09_CODE_STYLE.md v2.1.0 §3.2.1 (@Getter/@Setter exceto id,
+             @EqualsAndHashCode só no id). Versão vem do BOM do
+             spring-boot-starter-parent. -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- ===================== teste ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
