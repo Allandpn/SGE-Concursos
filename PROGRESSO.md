@@ -69,7 +69,48 @@ O último item é o mais fácil de violar sem perceber.
 
 ---
 
-## 3. Como este arquivo se mantém honesto
+## 3. Sprint 2 · Cadastro e importação
+
+**Documento técnico:** `docs/SPRINT-2-CADASTRO.md` v1.0.0 — rascunho, escrito
+por Claude após três decisões de escopo discutidas com o usuário (só API
+nesta sprint; importação em dois passos sem estado de servidor; arquivar
+existe com D-17 documentada como pendência da Sprint 4). Aguardando revisão.
+
+**Proposta de itens** (ainda não confirmada — ordem de dependência, não de
+prioridade):
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 2.0 | Documento técnico, revisado | — | rascunho, aguardando revisão |
+| 2.1 | Entidades JPA `Disciplina`/`Assunto` | **você** | não começou |
+| 2.2 | Repositórios Spring Data | **você** | não começou |
+| 2.3 | `DisciplinaService`/`AssuntoService` — CRUD, arquivar, tradução de exceção por nome de restrição (§3.1) | Claude faz o molde de um erro, **você** replica para os outros dois da tabela | não começou |
+| 2.4 | Controllers — endpoints de disciplina/assunto (§4, sem importação) | **você** | não começou |
+| 2.5 | Importação CSV — `validar` | Claude, **você revisa** (parse + resolução de disciplina/assunto é a parte mais densa da sprint) | não começou |
+| 2.6 | Importação CSV — `confirmar`, com a revalidação de §5.2 | **você**, seguindo o molde de 2.5 | não começou |
+| 2.7 | Exportação CSV | **você** | não começou |
+| 2.8 | Testes — erros de domínio (status + `codigo`), tudo-ou-nada da importação, exportação exclui arquivado | **você** | não começou |
+| 2.9 | Teste estrutural D-16, caminho de código (§8, molde `EstruturaSchemaTest`) | Claude, **você revisa** | não começou |
+
+### Definition of Done
+
+- [ ] `docs/SPRINT-2-CADASTRO.md` revisado e aceito
+- [ ] CRUD de disciplina e assunto funcionando, com arquivar
+- [ ] Importação CSV: tudo-ou-nada, resumo antes de gravar, nunca apaga
+      (`02_JORNADAS` §J-1, regras 1–3)
+- [ ] `validar` nunca grava; `confirmar` revalida antes de gravar (§5.2)
+- [ ] Exportação no mesmo formato de entrada, com `id`, sem assunto arquivado
+- [ ] Cada erro de domínio da tabela de §3.1 tem teste que confere status
+      HTTP **e** `codigo`
+- [ ] D-16 tem teste também no caminho de código (nenhum atributo mapeado
+      fora da lista fechada de `Assunto`)
+- [ ] D-17 continua **não** implementada, e isso está registrado em
+      `docs/SPRINT-2-CADASTRO.md` §7, não escondido
+- [ ] Nenhuma entidade/service/endpoint de `Sessão`, `Revisão` ou `Erro` existe
+
+---
+
+## 4. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -78,15 +119,16 @@ O último item é o mais fácil de violar sem perceber.
 3. **Sprint futura não ganha detalhe** antes de começar. O documento técnico
    dela nasce contra a especificação vigente **naquele momento**, não contra a
    de hoje.
-4. Ao concluir qualquer item, **atualize a tabela da §2 na mesma sessão**.
-   Progresso lembrado é progresso perdido.
+4. Ao concluir qualquer item, **atualize a tabela da sprint corrente (§2 ou
+   §3) na mesma sessão**. Progresso lembrado é progresso perdido.
 
 ---
 
-## 4. Changelog
+## 5. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.8.0 | 2026-08-27 | Sprint 2 aberta. `docs/SPRINT-2-CADASTRO.md` v1.0.0 escrito por Claude, depois de três decisões de escopo discutidas com o usuário: só API nesta sprint (a tela "Assuntos" também serve J-3, que depende da Sprint 5); importação em dois passos (`validar`/`confirmar`) sem estado de servidor, com `confirmar` revalidando do zero em vez de confiar no resumo de `validar` (mesma família de risco que D-05, sem restrição de banco que cubra); arquivar existe já nesta sprint, D-17 (cancelar revisões pendentes dependentes) fica pendência documentada até a Sprint 4 ter `RevisaoService`. `PROGRESSO.md` §3 criado com proposta de 10 itens (2.0–2.9) e Definition of Done — ainda não confirmada com o usuário |
 | 1.7.0 | 2026-08-27 | Item 1.6 **concluído** — `EstruturaSchemaTest` escrito por Claude (docs/SPRINT-1-BANCO.md §5; `03_INVARIANTES` §4.2). Só o caminho de banco é verificável nesta sprint (sem entidade JPA ainda); o de código fica para a sprint que criar as entidades. Decisão de design: lista branca fechada, não lista negra de nomes proibidos — SPRINT-1-BANCO.md §2.2 registra que um teste por nome não distingue o `ativo` legítimo de um `status` ilegítimo, então o teste fixa o conjunto exato de colunas de `assunto` (D-16) e de tabelas do schema (D-28) via `information_schema`; qualquer adição, bem ou mal nomeada, quebra o teste e exige edição consciente. 2/2 verdes contra Postgres real (Testcontainers). Com isso, a Sprint 1 bate todos os itens da Definition of Done — falta só o commit e a confirmação final do usuário |
 | 1.6.3 | 2026-08-27 | Item 1.5 **concluído**. Usuário corrigiu os dois pontos bloqueantes apontados na revisão: `j01_` passou a usar o par que difere só em acento/caixa (`"Raciocínio Lógico"` / `"RACIOCINIO LOGICO"`), provando de fato a normalização de `unaccent_imutavel(lower(nome))`; e a inserção de setup em `d45_`/`j01_` saiu de dentro do `catch`. Decisão consciente do usuário: `d04a_` cobre só o ramo ESTUDO+`previsao_percentual` (não os três ramos do CHECK) — aceito como está, DoD só exige um teste por restrição. Suíte inteira rodada pelo usuário: 9/9 verdes |
 | 1.6.2 | 2026-08-27 | Item 1.5 revisado (mentor): os 9 métodos existem e compilam, mas o item **não fecha** ainda. Achados: o teste de J-1 insere o mesmo nome duas vezes em vez do par que difere só em acento/caixa — não prova a regra nem cobre `unaccent_imutavel`; `d45_` e `j01_` têm a inserção de setup dentro do `catch`, mascarando a origem real de uma falha; `d04a_` cobre só 1 dos 3 ramos do CHECK; nenhuma evidência em disco de que a suíte inteira rodou verde. Corrigido aqui apenas o administrativo: citação `v1.1.1` → `v1.1.0` (o arquivo real é v1.1.0) e esta linha, que estava desatualizada dizendo "7 de 9 métodos faltam". O código do teste fica para o usuário corrigir |
