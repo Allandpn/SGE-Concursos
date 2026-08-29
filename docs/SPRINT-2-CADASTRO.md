@@ -8,8 +8,8 @@ sprint futura.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
-| Data | 2026-08-27 |
+| Versão | 1.1.0 |
+| Data | 2026-08-28 |
 | Status | Vigente |
 | Subordinado a | `especificacao/01_DOMINIO.md`, `especificacao/02_JORNADAS.md`, `especificacao/03_INVARIANTES.md`, `docs/00A_ADR.md`, `docs/09_CODE_STYLE.md`, `docs/SPRINT-1-BANCO.md` (schema já existe, não muda) |
 
@@ -52,7 +52,7 @@ nesta sprint.
 | `nome` | `String` | `NOT NULL` |
 | `peso` | `Peso` (enum: `ALTO`, `MEDIO`, `BAIXO`) | `@Enumerated(EnumType.STRING)` — o `CHECK` do banco já é a rede de segurança; o enum evita que o service componha uma string errada |
 | `ativo` | `boolean` | `01_DOMINIO` §8 — único estado guardado |
-| `criadoEm`, `atualizadoEm` | `Instant` | preenchidos pelo banco (`DEFAULT now()`); a entidade só lê |
+| `criadoEm`, `atualizadoEm` | `Instant` | gerados pelo Hibernate (`@CreationTimestamp`/`@UpdateTimestamp`) — `DEFAULT now()` na coluna é rede de segurança para escrita direta em SQL, não o mecanismo principal; robustez de trigger de banco (contra escritor concorrente) não se paga aqui porque ADR-016 garante um único processo escrevendo (monolito) |
 
 ### 1.2 `Assunto`
 
@@ -62,7 +62,7 @@ nesta sprint.
 | `disciplina` | `Disciplina` | `@ManyToOne(fetch = LAZY)` — ADR padrão do projeto; toda consulta que precisa do nome da disciplina busca explícito (`join fetch`), nunca por navegação implícita |
 | `nome` | `String` | `NOT NULL`; unicidade por disciplina, sem acento/caixa, é **do banco** (J-1, `ux_assunto_j1_nome_por_disciplina`) — o service não faz pré-checagem, pelo mesmo motivo de D-05 (`CLAUDE.md`) |
 | `peso` | `Peso` | mesmo enum de `Disciplina` |
-| `dificuldadePercebida` | `int` | `1..5`, `CHECK` no banco |
+| `dificuldadePercebida` | `Short` | `1..5`, `CHECK` no banco; `Short` (não `Integer`/`int`) para casar com `SMALLINT` da coluna — divergência de tipo JDBC falha `ddl-auto=validate` |
 | `ordem` | `Integer` | `NOT NULL` por `CHECK` (D-41), não por coluna `NOT NULL` nativa — a entidade reflete isso: o campo é `Integer` (não `int`), porque a validação de obrigatoriedade é regra de domínio testada por nome (`ck_assunto_d41_ordem_obrigatoria`), não ausência de valor por acidente |
 | `ativo` | `boolean` | idem Disciplina |
 | `criadoEm`, `atualizadoEm` | `Instant` | idem |
@@ -250,4 +250,5 @@ Cobertura mínima:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-08-28 | §1.1/§1.2 corrigidas, achado durante mentoria do item 2.1: `criadoEm`/`atualizadoEm` descritos como "preenchidos pelo banco (`DEFAULT now()`); a entidade só lê" — falso, `V1__tabelas.sql` não tem trigger de `atualizado_em`, então nada no banco atualiza essa coluna num `UPDATE`. Reavaliado por boas práticas: `@CreationTimestamp`/`@UpdateTimestamp` (Hibernate) é o mecanismo correto aqui, não trigger de banco — ADR-016 garante um único processo escrevendo, então a robustez extra de um trigger (contra escritor concorrente) não se paga. `dificuldadePercebida` corrigido de `int` para `Short`: a coluna é `SMALLINT`, e `Integer`/`int` diverge de tipo JDBC, o que falha `ddl-auto=validate` |
 | 1.0.0 | 2026-08-27 | Criado. Escopo definido em conversa com o usuário: só API nesta sprint (tela fica para quando a frente×backlog existir), importação em dois passos sem estado de servidor, arquivar existe com D-17 documentada como pendência da Sprint 4 |
