@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /** "Sétimo conceito" de 01_DOMINIO §3: configuração, não domínio — mesmo assim mapeada, para o serviço ler o valor em vez de embutir constante. */
@@ -25,6 +26,7 @@ public class Parametro {
     @Column(length = 100)
     private String chave;
 
+    @Setter
     @Column(nullable = false)
     private String valor;
 

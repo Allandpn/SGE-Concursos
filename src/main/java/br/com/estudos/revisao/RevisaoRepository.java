@@ -21,6 +21,17 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
     // Represamento (docs/SPRINT-5-FRENTE.md §2.2): pendentes cuja data já passou.
     long countBySituacaoAndDataPrevistaBefore(SituacaoRevisao situacao, LocalDate data);
 
+    // Fila de recuperação do turno (docs/SPRINT-6-TURNO.md §2): mais atrasada
+    // primeiro. join fetch: o plano mostra o nome do assunto sem N+1.
+    @Query("""
+        select r from Revisao r
+        join fetch r.assunto a
+        where r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.PENDENTE
+          and r.dataPrevista <= :hoje
+        order by r.dataPrevista asc
+        """)
+    List<Revisao> listarVencidasPorAtraso(@Param("hoje") LocalDate hoje);
+
     // "Os dois últimos resultados [no nível-alvo]" (01_DOMINIO §6.4/D-10) —
     // filtra por nível: "escada concluída" é precondição, e as duas tentativas
     // contadas para consolidar têm que ser NO nível-alvo, não em qualquer

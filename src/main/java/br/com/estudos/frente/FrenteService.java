@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.assunto.Assunto;
 import br.com.estudos.assunto.AssuntoRepository;
+import br.com.estudos.disciplina.DisciplinaRepository;
 import br.com.estudos.revisao.RevisaoRepository;
 import br.com.estudos.revisao.RevisaoService;
 import br.com.estudos.sessao.SessaoRepository;
@@ -26,6 +27,7 @@ import br.com.estudos.shared.parametro.ParametroRepository;
 public class FrenteService {
 
     private final AssuntoRepository assuntoRepository;
+    private final DisciplinaRepository disciplinaRepository;
     private final SessaoRepository sessaoRepository;
     private final RevisaoRepository revisaoRepository;
     private final RevisaoService revisaoService;
@@ -34,12 +36,14 @@ public class FrenteService {
 
     public FrenteService(
             AssuntoRepository assuntoRepository,
+            DisciplinaRepository disciplinaRepository,
             SessaoRepository sessaoRepository,
             RevisaoRepository revisaoRepository,
             RevisaoService revisaoService,
             ParametroRepository parametroRepository,
             Clock clock) {
         this.assuntoRepository = assuntoRepository;
+        this.disciplinaRepository = disciplinaRepository;
         this.sessaoRepository = sessaoRepository;
         this.revisaoRepository = revisaoRepository;
         this.revisaoService = revisaoService;
@@ -102,6 +106,25 @@ public class FrenteService {
         return assuntosDaDisciplina.stream()
             .filter(a -> faseDe(a) == FaseAssunto.BACKLOG)
             .min(Comparator.comparing(Assunto::getOrdem));
+    }
+
+    /**
+     * Primeira disciplina ativa, em ordem estável, que ainda tem vaga e
+     * backlog — reaproveita {@link #proximaVaga} (docs/SPRINT-6-TURNO.md §1).
+     * Frente já no teto global: vazio, sem nem percorrer disciplina nenhuma
+     * (01_DOMINIO §6.7 regra 4 — frente cheia não sugere assunto novo).
+     */
+    @Transactional(readOnly = true)
+    public Optional<Assunto> proximaSugestaoDeConteudo() {
+        var resumo = resumo();
+        if (resumo.frenteAtual() >= resumo.tetoGlobalFrente()) {
+            return Optional.empty();
+        }
+        for (var disciplina : disciplinaRepository.findByAtivoTrue()) {
+            var sugestao = proximaVaga(disciplina.getId());
+            if (sugestao.isPresent()) return sugestao;
+        }
+        return Optional.empty();
     }
 
     private FaseAssunto faseDe(Assunto assunto) {
