@@ -21,10 +21,13 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | **feito** |
 | 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | documento técnico feito, código escrito, sem execução verificada |
 | 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: doc técnico feito, código escrito, sem execução verificada. Backup: scripts escritos, não testados no Pi real. Polimento: não começou |
+| 9 | Frontend — Hoje e Recuperar | SPA estática (Alpine.js/Tailwind, ADR-028/030), as duas primeiras telas | documento técnico feito, código não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
-> funciona — nenhuma delas é pré-requisito para começar a usar.
+> funciona — nenhuma delas é pré-requisito para começar a usar. A Sprint 9
+> abre a frente de frontend — o mapa original tinha 8, mas "o mapa pode
+> mudar" (linha abaixo) sempre incluiu crescer.
 
 O mapa **pode mudar**. Mudar uma linha aqui é grátis; é justamente por isso que
 ele existe em vez do plano detalhado das oito.
@@ -369,7 +372,60 @@ Pi antes de marcar os itens como **feito**.
 
 ---
 
-## 10. Como este arquivo se mantém honesto
+## 10. Sprint 9 · Frontend — Hoje e Recuperar
+
+**Primeira sprint de frontend.** Fora do mapa conceitual original de 8
+sprints — aberta a pedido do usuário enquanto ele aguardava Docker em casa
+para fechar as Sprints 7/8 de backend. Nada de código ainda: só documento e
+planejamento, mesma ordem de sempre (documento antes de código, regra
+central do `CLAUDE.md`).
+
+**Documento técnico:** `docs/04_FRONTEND.md` v1.0.0 — escrito por Claude
+após quatro decisões de escopo discutidas com o usuário:
+
+| Ponto | Decisão | Por quê |
+|---|---|---|
+| Stack | Mantém Alpine.js + Tailwind, zero build (ADR-028/030) | A exigência de UI otimista de `02_JORNADAS §5.1` é do tipo simples (estado local + reenvio manual na falha); fila offline com reconciliação — o caso que pediria mais — já está fora de escopo por decisão própria da jornada |
+| Documentação | `docs/04_FRONTEND.md` primeiro; design visual (cor/tipografia/componente) depois | As primeiras telas servem de referência real quando existirem |
+| Primeiras telas | Hoje + Recuperar | Porta de entrada (J-2/J-4) e a tela mais usada, única com sequência vinculante — provam o padrão otimista no caminho mais crítico |
+| Rastreamento | No mesmo mapa de `PROGRESSO.md`, como Sprint 9+ | Mesmo padrão de Definition of Done já validado em 8 rodadas |
+
+No caminho: a reconsideração de ADR-028/030 que a nota final de
+`docs/00A_ADR.md` pedia ("decida conscientemente antes de escrever a
+primeira tela") foi feita — mantidas, nota registrada na própria ADR-028
+(`docs/00A_ADR.md` v2.2.0). Os "quatro estados de tela" que
+`09_CODE_STYLE §9` citava sem nunca ter definido ficam fechados em
+`04_FRONTEND.md §8`.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 9.0 | Documento técnico, revisado | — | **feito** |
+| 9.1 | Estrutura de arquivos estáticos + `index.html` base (§1/§2 do doc técnico) | — | não começou |
+| 9.2 | Tela Hoje — consome `GET /api/turno/plano` (§6 do doc técnico) | — | não começou |
+| 9.3 | Tela Recuperar — as duas etapas do wireframe de `02_JORNADAS §4.1`, consome `POST /api/sessoes` (§7 do doc técnico) | — | não começou |
+| 9.4 | Verificação manual no navegador (Output Style deste projeto exige testar UI de verdade) | — | não começou |
+
+### Definition of Done
+
+- [x] `docs/04_FRONTEND.md` revisado e aceito
+- [x] ADR-028/030 reexaminadas conscientemente e nota registrada
+- [ ] Tela Hoje carrega em < 2 s, mostra fila de recuperação e bloco de
+      conteúdo sem clique extra (`02_JORNADAS §5`)
+- [ ] Tela Recuperar: resultado ausente do DOM na etapa 1 (não escondido);
+      previsão não editável na etapa 2; sem botão "pular"; registro em ≤ 15 s
+- [ ] Falha de rede em qualquer registro é não destrutiva: dado digitado
+      permanece, reenvio é um clique (`02_JORNADAS §5.1`)
+- [ ] Os quatro estados de tela (carregando/vazio/erro/preenchido) tratados
+      nas duas telas
+- [ ] Nenhuma mudança em `Dockerfile`/`docker-compose.yml` — os estáticos
+      entram no JAR como `docs/03E_DEPLOYMENT.md` já documentava
+
+Itens 9.1–9.4 ainda não começaram — quem escreve cada um não foi definido
+ainda, fica para quando a implementação começar de fato.
+
+---
+
+## 11. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -383,10 +439,11 @@ Pi antes de marcar os itens como **feito**.
 
 ---
 
-## 11. Changelog
+## 12. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.20.0 | 2026-08-31 | **Sprint 9 aberta (Frontend — Hoje e Recuperar)**, primeira fora do mapa conceitual original de 8. `docs/04_FRONTEND.md` v1.0.0 criado após quatro decisões de escopo (stack, documentação, primeiras telas, rastreamento — ver §10). ADR-028/030 reexaminadas conscientemente contra a exigência de UI otimista de `02_JORNADAS §5.1` e mantidas — nota registrada em `docs/00A_ADR.md` (v2.2.0), fechando a pendência que a seção final desse documento pedia. `PROGRESSO.md` §1 e §10 criados; seções seguintes renumeradas |
 | 1.19.0 | 2026-08-31 | `/code-review high` sobre o diff das Sprints 7-8 (`08c4f6f..HEAD`) achou 5 pontos; 4 corrigidos: (1) M-2 ordenava só por `data`, "primeira exposição" indefinida com duas sessões do mesmo tipo no mesmo dia — desempate por `id`. (2) `GET /api/simulados` fazia N+1 (uma consulta de resultados por simulado) — corrigido pra duas consultas totais, e de quebra ganhou `ORDER BY data DESC` (histórico, mesma família do problema de ordenação do item 1). (3) `ErroService.registrar` e (4) `SimuladoService.registrar` deixavam campo obrigatório ausente (`descricao`/`causa`/`confianca`; `data`/`duracaoMinutos`/campos de cada resultado) virar 500 não traduzido — 8 `codigo` novos de validação eager ao todo, mesmo padrão de `SessaoService.exigirContagemDeQuestoes`. O 5º ponto (tradução de exceção duplicada entre `AssuntoService`/`SessaoService`/`ErroService`/`SimuladoService`) fica registrado como sugestão, não aplicado — mexeria em serviços de sprints anteriores fora do que foi pedido. `docs/SPRINT-7-METRICAS.md` v1.3.0, `docs/SPRINT-8-SIMULADO.md` v1.1.0, testes novos para os 8 `codigo`. Ainda sem execução de testes (mesma ressalva) |
 | 1.18.0 | 2026-08-31 | Item 8.8: `scripts/backup.sh`, `restaurar.sh`, `testar-restauracao.sh` escritos, transcrevendo `docs/03E_DEPLOYMENT.md` §6 (doc já congelado, nenhuma decisão nova). `.gitattributes` criado (`*.sh text eol=lf`) — sem isso o `autocrlf` do Windows converteria os scripts pra CRLF no checkout e quebraria o shebang/`set -euo pipefail` no Pi (Linux). Bit executável (`100755`) setado no índice do git. Não testados em Pi real — este ambiente não tem um |
 | 1.17.0 | 2026-08-31 | **Sprint 8 aberta (Simulado), exceção consciente à regra de não adiantar sprint futura** — a Sprint 7 ainda não tinha testes executados quando o usuário pediu para seguir adiante. `docs/SPRINT-8-SIMULADO.md` v1.0.0 escrito após quatro decisões de escopo (formato por resultado; simulado soma no mesmo agregado de M-1; só Simulado nesta rodada, backup/polimento ficam de fora; duração registrada). Migração `V8` (tabelas `simulado`/`resultado_simulado`), entidades, repositórios, `SimuladoService`/`Controller`, `MetricaService.m1` estendido, testes — itens 8.1–8.7 código e testes escritos, a pedido do usuário (pressa), ainda sem execução verificada (sem Docker neste ambiente, mesma ressalva da Sprint 7). `EstruturaSchemaTest` atualizado: `d28_semTabelaDeTurno` inclui as duas tabelas novas; novo `d13_resultadoSimuladoSemColunaDeAssunto` prova D-13 pela ausência estrutural da coluna. Nenhuma regra `D-xx` nova — D-13 já cobria a integridade que faltava |

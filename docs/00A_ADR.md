@@ -4,9 +4,9 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.1.1** |
+| Versão do documento | **2.2.0** |
 | Status | **Congelado** |
-| Data | 2026-08-28 |
+| Data | 2026-08-31 |
 | Total | 31 ADRs — 20 vigentes, 10 substituídas, 1 revogada |
 
 ---
@@ -735,6 +735,22 @@ exige compilação — mas o frontend, não.
 | Tailwind compilado com npm | Reduziria 400 KB para ~10 KB, ao custo de Node no pipeline e de um passo que, esquecido, produz estilo faltando em produção — falha silenciosa |
 | Vite + React/Vue | Reescreveria `04_FRONTEND.md` e boa parte do `07_UI.md` para ganhar capacidade que este sistema não usa |
 
+### Revisão — 2026-08-31, antes da primeira tela
+
+`02_JORNADAS` §5.1 exige **registro otimista com falha não destrutiva**: a
+tela muda de estado em milissegundos, a persistência acontece atrás, e se
+falhar o dado digitado permanece na tela com reenvio a um clique. Avaliada
+conscientemente contra a decisão de zero build (era a pendência registrada
+na seção final deste documento, agora resolvida).
+
+**Mantida.** A exigência é do tipo simples — estado local reativo (`x-data`
+do Alpine já cobre) mais um `try/catch` em volta do `fetch` que não limpa o
+formulário no erro. Não pede biblioteca de gerência de estado nem etapa de
+build. O caso que pediria mais — fila offline com reconciliação automática
+— está fora de escopo por decisão própria de `02_JORNADAS §5.1` ("é
+maquinaria real... se o uso mostrar que a conexão cai com frequência, vira
+decisão própria, justificada"). Mecânica concreta em `docs/04_FRONTEND.md`.
+
 ---
 
 ## ADR-029 — Sem cache de aplicação
@@ -999,20 +1015,12 @@ compensa mover pro SQL.
 
 ---
 
-## Uma vigente que merece reexame
+## Reexames concluídos
 
 ### ADR-028 e ADR-030 — Alpine.js, zero build no frontend
 
-**Não estão revogadas, e provavelmente não devem ser.** Mas `02_JORNADAS` §5.1
-passou a exigir **registro otimista com falha não destrutiva**: a tela transita
-em milissegundos, a persistência acontece atrás, e se falhar o dado permanece
-digitado com reenvio a um clique.
-
-É factível em Alpine. É a primeira exigência que pressiona a escolha de não ter
-etapa de build.
-
-**Decida conscientemente antes de escrever a primeira tela**, não depois. Se
-mantiver Alpine, vale uma nota na ADR-028 dizendo que a exigência foi
-considerada. Se trocar, é ADR nova substituindo as duas — e o custo real não é a
-biblioteca, é perder o "abre no navegador sem compilar nada", que era a razão
-original.
+~~Não estão revogadas, e provavelmente não devem ser. Mas `02_JORNADAS` §5.1
+passou a exigir registro otimista com falha não destrutiva... decida
+conscientemente antes de escrever a primeira tela.~~ **Reexaminada e
+mantida em 2026-08-31**, antes de `docs/04_FRONTEND.md` e da primeira tela
+— ver "Revisão" ao final da ADR-028.
