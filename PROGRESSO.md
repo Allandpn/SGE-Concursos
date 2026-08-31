@@ -15,7 +15,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 |---|---|---|---|
 | 1 | **Ambiente e schema** | Docker, Postgres, migração, as 9 restrições, testes de invariante | **feito** |
 | 2 | Cadastro e importação | Disciplina, assunto, importação e exportação CSV (J-1) | **feito** |
-| 3 | Registrar sessão | O evento central: os 4 tipos, resultado, previsão, idempotência | não começou |
+| 3 | Registrar sessão | O evento central: os 4 tipos, resultado, previsão, idempotência | **feito** |
 | 4 | Escada e revisão | Agendamento, cumprimento, roteamento por resultado, janela | não começou |
 | 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | não começou |
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | não começou |
@@ -114,7 +114,46 @@ final do usuário — mesma ressalva que fechou a Sprint 1 (item 1.7, changelog
 
 ---
 
-## 4. Como este arquivo se mantém honesto
+## 4. Sprint 3 · Registrar sessão
+
+**Documento técnico:** `docs/SPRINT-3-SESSAO.md` v1.0.0 — escrito por Claude
+após uma decisão de escopo discutida com o usuário: sessão registrada nesta
+sprint não toca em `Revisao` (pendência documentada até a Sprint 4, mesmo
+tratamento que D-17 recebeu na Sprint 2); lote mínimo (§4.3 de `01_DOMINIO`)
+também sem efeito até a escada existir.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 3.0 | Documento técnico | — | **feito** |
+| 3.1 | Migração `V4` — chaves de `parametro` desta sprint (§2 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 3.2 | Entidade JPA `Sessao` + enums `TipoSessao`/`ResultadoSessao`/`FormatoBanca` | Claude, a pedido do usuário (pressa) | **feito** |
+| 3.3 | Repositórios (`SessaoRepository`, `ParametroRepository`) | Claude, a pedido do usuário (pressa) | **feito** |
+| 3.4 | `SessaoService.registrar` — cálculo de resultado, tradução de exceção, D-45 como sucesso silencioso (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 3.5 | Controller — endpoints de §4 do doc técnico | Claude, a pedido do usuário (pressa) | **feito** |
+| 3.6 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+
+### Definition of Done
+
+- [x] `docs/SPRINT-3-SESSAO.md` revisado e aceito
+- [x] `POST /api/sessoes` grava `Sessao` para os 4 tipos, cada um com as
+      colunas certas preenchidas/nulas (D-02, D-04a, D-36)
+- [x] `QUESTOES`/`FLASHCARDS`: resultado calculado pelo serviço a partir de
+      `parametro`, ignorando o que o cliente mandar nesse campo
+- [x] `RECUPERACAO`: resultado é o que o cliente declarou
+- [x] D-45: reenviar o mesmo `tentativaId` devolve sucesso com o mesmo `id`,
+      nunca erro, e grava só uma vez
+- [x] Cada erro de domínio da tabela de §3.1 do doc técnico tem teste que
+      confere status HTTP **e** `codigo`
+- [x] Nenhuma linha em `revisao` é criada ou atualizada por esta sprint
+- [x] Nenhuma entidade/service/endpoint de `Erro`, `Simulado` ou da escada
+      (roteamento por resultado, agendamento) existe
+
+Todos os itens da Definition of Done batem. Falta só a revisão e o commit
+final do usuário — mesma ressalva das Sprints 1 e 2.
+
+---
+
+## 5. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -123,15 +162,17 @@ final do usuário — mesma ressalva que fechou a Sprint 1 (item 1.7, changelog
 3. **Sprint futura não ganha detalhe** antes de começar. O documento técnico
    dela nasce contra a especificação vigente **naquele momento**, não contra a
    de hoje.
-4. Ao concluir qualquer item, **atualize a tabela da sprint corrente (§2 ou
-   §3) na mesma sessão**. Progresso lembrado é progresso perdido.
+4. Ao concluir qualquer item, **atualize a tabela da sprint corrente na mesma
+   sessão**. Progresso lembrado é progresso perdido.
 
 ---
 
-## 5. Changelog
+## 6. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.11.0 | 2026-08-30 | **Sprint 3 completa** — itens 3.1–3.6 feitos, 32/32 testes verdes (22 herdados + 10 novos: 6 de erro de domínio, 3 de cálculo de resultado + FLASHCARDS/RECUPERACAO, 1 de D-45). Migração `V4__parametros_sessao.sql` com os 6 limiares de §4.2.1 (`lote_minimo_questoes` deliberadamente fora — sem efeito até a escada existir). Verificado manualmente contra Postgres real, mesmo esquema de container descartável das sprints anteriores: os 4 tipos de sessão, cálculo de resultado nos dois formatos de banca e em FLASHCARDS, D-45 (reenvio devolve os mesmos dados, `tempoMinutos` diferente do reenvio é ignorado — prova que voltou o registro original, não gravou de novo), e os 6 erros de domínio. Dois defeitos reais encontrados e corrigidos no caminho: (1) D-45 devolvia **500**, não sucesso — depois que `save()` falha por violação de restrição, a sessão do Hibernate fica inutilizável para qualquer operação seguinte (`AssertionFailure: has a null identifier`); tentar `findByTentativaId` na mesma transação quebrava. Corrigido separando `gravar`/`buscarPorTentativa` em métodos `@Transactional` distintos, chamados via `self` (injeção `@Lazy` do próprio bean) — sem isso `this.gravar(...)` pula o proxy do Spring e os dois `@Transactional` não valem nada (autoinvocação, um dos "suspeitos de sempre" da mentoria, `.claude/agents/mentor.md`). (2) `ESTUDO` com `resultado` no corpo era silenciosamente ignorado em vez de recusado — `ESTUDO_SEM_RESULTADO` documentado em `docs/SPRINT-3-SESSAO.md` §3.1 nunca disparava. Corrigido com validação eager antes de tentar gravar. Achado durante a implementação: duas validações (`QUESTOES_OBRIGATORIAS`, `RESULTADO_OBRIGATORIO`) não têm restrição de banco correspondente — `ck_sessao_questoes_por_tipo` só exige os campos **nulos** fora de QUESTOES/FLASHCARDS, nunca exige presença dentro; registradas no doc técnico como validação eager, não tradução de exceção |
+| 1.10.0 | 2026-08-30 | Sprint 3 aberta. `docs/SPRINT-3-SESSAO.md` v1.0.0 escrito por Claude, depois de uma decisão de escopo discutida com o usuário: sessão registrada nesta sprint não toca em `Revisao` (pendência documentada até a Sprint 4, mesmo tratamento que D-17 recebeu na Sprint 2) — a alternativa (antecipar o vínculo básico com uma revisão pendente) foi recusada para não antecipar fatia da Sprint 4. `PROGRESSO.md` §4 criado com 6 itens (3.0–3.6) e Definition of Done |
 | 1.9.8 | 2026-08-30 | Itens 2.8–2.9 (testes automatizados) escritos, todos verdes: 19/19 testes (9 herdados da Sprint 1 + 10 novos). `AssuntoEstruturaTest` (D-16, caminho de código — item 2.9): reflexão pura sobre `Assunto.class.getDeclaredFields()` contra lista branca fechada, sem banco. `IntegracaoTestBase` nova (`shared`), generaliza `RestricaoTestBase` da Sprint 1 para `@SpringBootTest` + `@AutoConfigureMockMvc` real (docs/SPRINT-2-CADASTRO.md §8): `AssuntoErroDominioTest` (um teste por erro de §3.1, confere status HTTP e `codigo`), `ImportacaoAssuntoTest` (validar não grava, confirmar com linha recusada não grava nada do arquivo, confirmar sem erro grava de verdade), `ExportacaoAssuntoTest` (arquivado não aparece). Duas descobertas de infraestrutura no caminho, nenhuma delas escondida: (1) Spring Boot 4.1 tirou `@AutoConfigureMockMvc` de `spring-boot-test-autoconfigure` (que ficou só com jdbc/json) — precisa do novo `spring-boot-starter-webmvc-test`, pacote da anotação também mudou para `org.springframework.boot.webmvc.test.autoconfigure`; (2) `@Container` do Testcontainers reinicia o contêiner a cada classe de teste — quebrava o padrão de contêiner único entre classes que `RestricaoTestBase` já usava (sem `@Container`, só `.start()` manual, Ryuk limpa no fim da JVM); `IntegracaoTestBase` corrigido para o mesmo padrão. Também tirado `@Transactional` da base: um teste que precisa provar commit/rollback real (a suíte de importação) não consegue enxergar isso rodando dentro da própria transação do teste — cada subclasse decide se quer o `@Transactional` de limpeza automática (`AssuntoErroDominioTest`, que só confere HTTP/JSON) ou não (`ImportacaoAssuntoTest`/`ExportacaoAssuntoTest`, que precisam do commit de verdade; usam nome de fixture único por teste em vez disso). **Definition of Done da Sprint 2 completa** — falta só revisão e commit final do usuário (mesma ressalva do fechamento da Sprint 1, changelog 1.7.0) |
 | 1.9.7 | 2026-08-30 | Itens 2.5–2.7 (importação/exportação CSV) **código escrito e verificado manualmente**, ainda sem teste automatizado (2.8). Adicionada dependência `commons-csv` (1.12.0) ao `pom.xml` — decisão confirmada com o usuário antes de mexer no build. `ImportacaoAssuntoService.validar`/`confirmar` reaproveitam `DisciplinaService`/`AssuntoService` em vez de duplicar criação/tradução de erro; `validar` sempre força rollback (`TransactionAspectSupport...setRollbackOnly()`), `confirmar` só grava se `recusadas` vier vazio — mesmo se o motivo não for "id inexistente" (regra 1, tudo ou nada, `SPRINT-2-CADASTRO.md` §5.1). Duas lacunas reais entre `02_JORNADAS.md` (CSV é por linha de assunto) e o schema (`Disciplina.peso` e `Assunto.dificuldadePercebida` são `NOT NULL`) corrigidas na especificação primeiro (`02_JORNADAS.md` v1.2.2, defaults `MEDIO`/`3`) — decisão confirmada com o usuário, não inventada em silêncio. Testado manualmente contra Postgres real (container descartável, mesmo esquema das rodadas anteriores): `validar` resolve e não grava; `confirmar` grava; atualização por `id` conhecido; arquivo com `peso` inválido recusa **tudo**, nada persiste; arquivo com `id` inexistente aborta na hora com uma só linha recusada; duas linhas duplicadas (só caixa difere) no mesmo arquivo — a primeira "grava" dentro da transação, a segunda bate na constraint, e o rollback desfaz as duas; assunto arquivado sai da exportação. `mvn compile` limpo. Faltam: 2.8 (testes automatizados), 2.9 (D-16 caminho de código) |
 | 1.9.6 | 2026-08-30 | CRUD de disciplina/assunto (2.3+2.4) **verificado manualmente** contra Postgres real (container `postgres:17-alpine` descartável, só para este teste, não o `docker-compose.yml` de produção — esse não muda, tem restrição de portas de propósito). `curl` cobriu: criar disciplina (201 + `Location` + `X-Request-Id`), criar assunto (201, `disciplinaId` correto via proxy LAZY sem query extra), os três erros de domínio de §3.1 com status e `codigo` certos (`NOME_DUPLICADO` 409 inclusive testando só acento/caixa diferente — confirma `unaccent_imutavel` funcionando pelo caminho JPA, não só pelo `INSERT` cru da Sprint 1; `DISCIPLINA_INEXISTENTE` 404; `ORDEM_OBRIGATORIA` 422 com `campo`), `PATCH` parcial, `arquivar` (sem `save()` explícito — dirty checking do Hibernate flushou sozinho no commit da transação) e o efeito dele na listagem (assunto arquivado some de `GET /api/assuntos?disciplinaId=`), `arquivar` de disciplina inexistente devolvendo 404. Todos os `ProblemDetail` bateram o formato de ADR-026, com `requestId` igual entre header e corpo. Ambiente de teste desmontado ao final (container e processo `mvn spring-boot:run` derrubados). Isto satisfaz o critério "CRUD de disciplina e assunto funcionando, com arquivar" da Definition of Done — marcado abaixo. Os itens 2.3/2.4 continuam "em andamento", não "feito": este arquivo (§4.1) só promove um item quando ele tem teste automatizado, e isso é o item 2.8 |
