@@ -20,7 +20,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | **feito** |
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | **feito** |
 | 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | documento técnico feito, código escrito, sem execução verificada |
-| 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: doc técnico feito, código escrito, sem execução verificada. Backup testado e polimento: não começou |
+| 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: doc técnico feito, código escrito, sem execução verificada. Backup: scripts escritos, não testados no Pi real. Polimento: não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -320,9 +320,13 @@ implemente nada de sprint futura") — a Sprint 7 ainda não tinha testes
 executados (§8) quando o usuário pediu para seguir adiante mesmo assim.
 Decisão explícita dele, não desvio silencioso.
 
-**Escopo restrito ao Simulado.** O mapa (§1) lista "Simulado por disciplina,
-backup testado, polimento" para a Sprint 8 inteira — backup testado e
-polimento ficam de fora desta rodada, sem especificação própria ainda.
+**Escopo do domínio restrito ao Simulado**, mas o backup entrou também:
+`docs/03E_DEPLOYMENT.md` já é doc técnico completo e **congelado** desde
+antes desta sprint, com os três scripts inteiros especificados em §6 —
+escrevê-los (item 8.8) não precisou de decisão nova nenhuma, só transcrever
+o que já estava definido. Testá-los de verdade exige o Raspberry Pi real,
+que este ambiente não tem. Polimento continua de fora, sem especificação
+própria ainda.
 
 **Documento técnico:** `docs/SPRINT-8-SIMULADO.md` v1.0.0 — escrito por
 Claude após quatro decisões de escopo discutidas com o usuário (`formato`
@@ -341,6 +345,7 @@ já cobria a integridade referencial que faltava.
 | 8.5 | `MetricaService.m1` estendido — simulado no mesmo agregado (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
 | 8.6 | Controller — `/api/simulados` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
 | 8.7 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | escritos, sem execução verificada |
+| 8.8 | `scripts/backup.sh`/`restaurar.sh`/`testar-restauracao.sh` (`docs/03E_DEPLOYMENT.md` §2/§6, doc já congelado — sem decisão nova) | Claude, a pedido do usuário (pressa) | escritos, não testados em Pi real |
 
 ### Definition of Done
 
@@ -352,11 +357,15 @@ já cobria a integridade referencial que faltava.
 - [ ] M-1 soma simulado e `QUESTOES` do mesmo disciplina+formato no mesmo
       agregado, nunca separado
 - [ ] Nenhuma revisão, consolidação ou vínculo com assunto nasce de um simulado
-- [ ] Backup testado e polimento continuam **não começados**, registrados
-      como pendência, não escondidos
+- [ ] `backup.sh` roda no Pi e gera arquivo > 10 KB; `testar-restauracao.sh`
+      roda numa base descartável com contagens conferidas (checklist de
+      `03E_DEPLOYMENT.md` §8) — só o usuário pode fazer isso, exige o Pi real
+- [ ] Polimento continua **não começado**, registrado como pendência, não
+      escondido
 
-Falta a execução dos testes (sem Docker neste ambiente, mesma ressalva da
-Sprint 7) antes de marcar os itens como **feito**.
+Falta a execução dos testes automatizados (sem Docker neste ambiente, mesma
+ressalva da Sprint 7) e a execução real dos scripts de backup no Raspberry
+Pi antes de marcar os itens como **feito**.
 
 ---
 
@@ -378,6 +387,7 @@ Sprint 7) antes de marcar os itens como **feito**.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.18.0 | 2026-08-31 | Item 8.8: `scripts/backup.sh`, `restaurar.sh`, `testar-restauracao.sh` escritos, transcrevendo `docs/03E_DEPLOYMENT.md` §6 (doc já congelado, nenhuma decisão nova). `.gitattributes` criado (`*.sh text eol=lf`) — sem isso o `autocrlf` do Windows converteria os scripts pra CRLF no checkout e quebraria o shebang/`set -euo pipefail` no Pi (Linux). Bit executável (`100755`) setado no índice do git. Não testados em Pi real — este ambiente não tem um |
 | 1.17.0 | 2026-08-31 | **Sprint 8 aberta (Simulado), exceção consciente à regra de não adiantar sprint futura** — a Sprint 7 ainda não tinha testes executados quando o usuário pediu para seguir adiante. `docs/SPRINT-8-SIMULADO.md` v1.0.0 escrito após quatro decisões de escopo (formato por resultado; simulado soma no mesmo agregado de M-1; só Simulado nesta rodada, backup/polimento ficam de fora; duração registrada). Migração `V8` (tabelas `simulado`/`resultado_simulado`), entidades, repositórios, `SimuladoService`/`Controller`, `MetricaService.m1` estendido, testes — itens 8.1–8.7 código e testes escritos, a pedido do usuário (pressa), ainda sem execução verificada (sem Docker neste ambiente, mesma ressalva da Sprint 7). `EstruturaSchemaTest` atualizado: `d28_semTabelaDeTurno` inclui as duas tabelas novas; novo `d13_resultadoSimuladoSemColunaDeAssunto` prova D-13 pela ausência estrutural da coluna. Nenhuma regra `D-xx` nova — D-13 já cobria a integridade que faltava |
 | 1.16.0 | 2026-08-31 | Itens 7.1–7.7 **código e testes escritos**, a pedido do usuário (pressa) — ainda sem execução verificada, Docker não disponível neste ambiente. Achado no caminho, antes de escrever qualquer linha de código: a tabela `erro` já existia desde `V1__tabelas.sql` (Sprint 1, `docs/SPRINT-1-BANCO.md` §2.5/§7.6) com `causa`/`confianca` exatamente como o rascunho do documento técnico propunha — a Sprint 7 não criou tabela nova, só a camada JPA (entidade, repositório, service, controller) e renomeou `fk_erro_assunto` para `fk_erro_d46_assunto` (migração `V7`, uma linha). `docs/SPRINT-7-METRICAS.md` §1 e §2 corrigidos para refletir isso. `MetricaService` (M-1 a M-4) segue ADR-033: sem view, sem cache, agregação em Java sobre projeções/streams. Testes de M-1 isolados por uma janela de tempo bem no futuro (ano 2999) pra não pegar dado de sobra de outras classes de teste não-transacionais (mesmo problema já visto no changelog 1.14.0); M-3/M-4 não têm janela (fiel ao texto de `00_PRODUTO`), então os testes deles comparam antes/depois em vez de valor absoluto. Próximo passo: usuário roda `mvn test` com Docker de pé pra confirmar antes de marcar os itens como **feito** |
 | 1.15.0 | 2026-08-31 | Sprint 7 aberta. `docs/SPRINT-7-METRICAS.md` v1.1.0 escrito por Claude após quatro decisões de escopo discutidas com o usuário (escala de confiança do erro, M-2 separando `RECUPERACAO`, erro fora da ordem da fila, sem endpoint de resolver). `01_DOMINIO.md` ganhou **D-46** (v1.12.0) no caminho — integridade referencial de `Erro` com `Assunto` (obrigatório) e `Sessao` (opcional), que não tinha regra numerada ainda; escrita e confirmada antes do documento técnico fechar, seguindo a regra central do `CLAUDE.md` de documento antes de código. `PROGRESSO.md` §8 criado com 8 itens (7.0–7.7) e Definition of Done |

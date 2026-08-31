@@ -1,0 +1,4 @@
+# Scripts rodam no Raspberry Pi (Linux) — CRLF quebra o shebang e o
+# `set -euo pipefail`. Força LF no repositório independente do autocrlf
+# do cliente Windows usado para editar (docs/03E_DEPLOYMENT.md §2).
+*.sh text eol=lf
