@@ -5,15 +5,18 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.estudos.revisao.RevisaoService;
 import br.com.estudos.shared.exception.NotFoundException;
 
 @Service
 public class DisciplinaService {
 
     private final DisciplinaRepository disciplinaRepository;
+    private final RevisaoService revisaoService;
 
-    public DisciplinaService(DisciplinaRepository disciplinaRepository) {
+    public DisciplinaService(DisciplinaRepository disciplinaRepository, RevisaoService revisaoService) {
         this.disciplinaRepository = disciplinaRepository;
+        this.revisaoService = revisaoService;
     }
 
     /**
@@ -53,12 +56,14 @@ public class DisciplinaService {
     }
 
     /**
-     * Arquiva uma disciplina — exclusão lógica (D-18). Não cancela revisões
-     * pendentes dos assuntos dela: D-17 é pendência documentada até a
-     * Sprint 4 (docs/SPRINT-2-CADASTRO.md §7).
+     * Arquiva uma disciplina — exclusão lógica (D-18) — e cancela as revisões
+     * pendentes de todos os assuntos dela (D-17, fechada na Sprint 4,
+     * docs/SPRINT-4-ESCADA.md §3.4).
      */
     @Transactional
     public void arquivar(Long id) {
-        buscar(id).setAtivo(false);
+        var disciplina = buscar(id);
+        disciplina.setAtivo(false);
+        revisaoService.cancelarPendentesPorDisciplina(disciplina.getId());
     }
 }

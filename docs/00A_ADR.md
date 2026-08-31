@@ -62,6 +62,7 @@ que custa e o que foi descartado.
 | [ADR-029](#adr-029--sem-cache-de-aplicação) | Sem cache de aplicação | v2 |
 | [ADR-030](#adr-030--spa-estática-servida-pelo-spring) | SPA estática servida pelo Spring | v2 |
 | [ADR-031](#adr-031--unicidade-por-tentativa-e-por-revisão-pendente) | Unicidade por tentativa e por revisão pendente | Sprint 1 |
+| [ADR-032](#adr-032--controle-de-versão-na-escrita) | Controle de versão na escrita | Sprint 4 |
 
 ### 1.2 Históricas
 
@@ -882,10 +883,67 @@ verdade, e não só no caso feliz:
 
 ---
 
+## ADR-032 — Controle de versão na escrita
+
+**Status:** Aceita · 2026-08-30 · Sprint 4
+
+### Contexto
+
+D-07, D-10 e D-11 (`01_DOMINIO.md` §5) leem a série histórica da revisão antes
+de decidir o próximo nível — sobem, repetem ou regridem a escada. Duas
+transações simultâneas escrevendo a mesma revisão pendente (duas abas, dois
+aparelhos, o mesmo assunto sendo recuperado "ao mesmo tempo") leem o mesmo
+estado e gravam por cima, sobrepondo um degrau da escada sem que nenhuma das
+duas perceba.
+
+### Decisão
+
+Versionar a **revisão** — e só ela.
+
+> **`revisao` ganha uma coluna de versão (`@Version`). A segunda gravação
+> concorrente sobre a mesma linha é recusada.**
+
+Como D-05 (ADR-031) já garante no máximo uma revisão *pendente* por assunto,
+existe uma única revisão em disputa por vez — versionar o `Assunto` também
+seria mais caro e não cobriria nada a mais.
+
+**Não confundir com ADR-031.** São proteções complementares, contra ameaças
+diferentes:
+
+| Proteção | Contra o quê |
+|---|---|
+| Identificador de tentativa (D-45, ADR-031) | **A mesma** tentativa reenviada — rede ruim, botão clicado duas vezes |
+| Versão na escrita (esta ADR) | **Tentativas diferentes** colidindo — duas abas, dois aparelhos, mesma revisão |
+
+Implementar só uma das duas e considerar a concorrência resolvida é o erro
+provável (já registrado como risco em ADR-031).
+
+### Consequências
+
+- Colisão vira `OptimisticLockingFailureException` do Spring Data — traduzida
+  pelo `RevisaoService` para `ConflictException` (`codigo` `REVISAO_CONCORRENTE`,
+  409), mesmo gesto de tradução de exceção das sprints anteriores.
+- O cliente que perder a corrida recebe 409 e pode tentar de novo — a revisão
+  não fica num estado inconsistente, só a escrita perdedora não vale.
+- `Sessao` continua sem versão: ela é o registro do evento, imutável depois de
+  criada (sem `PATCH`, `docs/SPRINT-3-SESSAO.md` §4) — não há "segunda
+  gravação concorrente" para proteger ali.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Versionar `Assunto` também | Mais caro (toda escrita de assunto participaria do controle) sem cobrir cenário a mais — só existe uma revisão em disputa por vez, D-05 garante isso |
+| Lock pessimista (`SELECT ... FOR UPDATE`) | Seguraria conexões em espera num sistema de um usuário só, onde a colisão real é rara — custo permanente por um risco ocasional |
+| Confiar só em D-45 (identificador de tentativa) | Protege reenvio da mesma tentativa, não duas tentativas genuinamente diferentes colidindo — é exatamente a lacuna que esta ADR fecha |
+
+---
+
 ## Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.2.0 | 2026-08-30 | **ADR-032 escrita e aceita** (Sprint 4) — sai de "Pendentes de redação" para vigente, exatamente no momento previsto ("quando a sprint que implementa o roteamento da escada começar"). Total passa a 32 ADRs, 21 vigentes |
 | 2.1.1 | 2026-08-28 | Correção administrativa: mecanismo de exclusão lógica do Assunto na ADR-011 dizia `status = 'ARQUIVADO'`, resíduo da v1 que sobrou do reset. O schema real (`V1__tabelas.sql`) e `docs/SPRINT-2-CADASTRO.md` §1.2 usam `ativo BOOLEAN`, igual Disciplina — corrigido para bater com o que existe. Achado durante a revisão do documento técnico da Sprint 2 (item 2.0 do `PROGRESSO.md`) |
 | 2.1.0 | 2026-08-20 | **ADR-031 escrita e aceita** (Sprint 1, item 1.1) — sai de "Pendentes de redação" para vigente. Total passa a 31 ADRs, 20 vigentes |
 | 2.0.0 | 2026-08-15 | Migração para PostgreSQL + Spring Boot. 16 ADRs novas (015–030); 10 substituídas; ADR-002 revogada; ADR-007, 011 e 014 mantidas |
@@ -894,26 +952,10 @@ verdade, e não só no caso feliz:
 
 ## Pendentes de redação
 
-Duas decisões já **tomadas** na especificação conceitual, ainda **sem ADR
-escrita**. Cada uma deve ser redigida quando a sprint que a implementa começar —
-não antes.
-
-### ADR-032 — Controle de versão na escrita
-
-**Contexto.** D-07, D-10 e D-11 leem a série histórica antes de decidir. Duas
-transações simultâneas leem o mesmo estado e gravam por cima, sobrepondo degraus
-da escada.
-
-**Decisão.** Versionar a **revisão** — e só ela. Como D-05 garante no máximo uma
-pendente por assunto, existe uma única revisão em disputa por vez; versionar o
-assunto seria mais caro sem cobrir nada a mais.
-
-**Não confundir com ADR-031.** São proteções complementares: o identificador de
-tentativa protege contra *a mesma* tentativa reenviada; a versão protege contra
-*tentativas diferentes* colidindo. Implementar só uma e achar-se coberto é o
-erro provável.
-
-**Escrever quando:** a sprint que implementa o roteamento da escada começar.
+Uma decisão já **tomada** na especificação conceitual, ainda **sem ADR
+escrita**. Deve ser redigida quando a sprint que a implementa começar — não
+antes. (ADR-032, a outra pendente desta lista, foi escrita na Sprint 4 — ver
+seção própria acima.)
 
 ### ADR-033 — Derivação por visão simples, nunca materializada
 

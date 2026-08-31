@@ -16,7 +16,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 1 | **Ambiente e schema** | Docker, Postgres, migração, as 9 restrições, testes de invariante | **feito** |
 | 2 | Cadastro e importação | Disciplina, assunto, importação e exportação CSV (J-1) | **feito** |
 | 3 | Registrar sessão | O evento central: os 4 tipos, resultado, previsão, idempotência | **feito** |
-| 4 | Escada e revisão | Agendamento, cumprimento, roteamento por resultado, janela | não começou |
+| 4 | Escada e revisão | Agendamento, cumprimento, roteamento por resultado, janela | **feito** |
 | 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | não começou |
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | não começou |
 | 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | não começou |
@@ -153,7 +153,48 @@ final do usuário — mesma ressalva das Sprints 1 e 2.
 
 ---
 
-## 5. Como este arquivo se mantém honesto
+## 5. Sprint 4 · Escada e revisão
+
+**Documento técnico:** `docs/SPRINT-4-ESCADA.md` v1.0.0 — escrito por Claude
+após duas decisões de escopo discutidas com o usuário antes de implementar: a
+progressão de intervalos da escada (`01_DOMINIO` não lista os 6 valores
+numericamente, só ancora nível 1=1 e nível 6=90) e o desenho completo do
+roteamento (D-07/D-10/D-11/D-17).
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 4.0 | Documento técnico | — | **feito** |
+| 4.1 | Migração `V5` — coluna `versao` em `revisao` (ADR-032) + parâmetros da escada (§1 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 4.2 | `ADR-032` escrita (estava "pendente de redação" desde a Sprint 1) | Claude, a pedido do usuário (pressa) | **feito** |
+| 4.3 | Entidade JPA `Revisao` + enum `SituacaoRevisao` | Claude, a pedido do usuário (pressa) | **feito** |
+| 4.4 | `RevisaoService` — agendamento, cumprimento, roteamento D-07/D-10/D-11, janela de tolerância (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 4.5 | D-17 — `AssuntoService`/`DisciplinaService.arquivar` cancelam revisão pendente (§3.4 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 4.6 | Controller (só leitura) + testes (§4/§5 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+
+### Definition of Done
+
+- [x] `docs/SPRINT-4-ESCADA.md` revisado e aceito
+- [x] `ADR-032` escrita e vigente
+- [x] `ESTUDO` agenda a primeira pendente (nível 1); `ESTUDO` de novo com
+      pendente aberta não duplica
+- [x] `SUCESSO` sobe nível e agenda a próxima com o intervalo certo; `PARCIAL`
+      repete; `FALHA` regride (piso 1) — D-07
+- [x] Recuperação espontânea (sem pendente) roteia a partir do nível 1
+      implícito, sem `sessaoCumpriu`
+- [x] Fora da janela de tolerância: sessão grava, revisão pendente não muda
+- [x] Consolidação (D-10): nível-alvo + dois `SUCESSO` seguidos **no
+      nível-alvo** agenda no intervalo de manutenção
+- [x] `FALHA` consolidado (D-11) volta ao nível-alvo, não abaixo
+- [x] D-17: arquivar assunto/disciplina cancela a(s) revisão(ões) pendente(s)
+- [x] Nenhuma entidade/service/endpoint de `Erro`, `Simulado` ou frente de
+      estudo (Sprint 5) existe
+
+Todos os itens da Definition of Done batem. Falta só a revisão e o commit
+final do usuário — mesma ressalva das sprints anteriores.
+
+---
+
+## 6. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -167,10 +208,11 @@ final do usuário — mesma ressalva das Sprints 1 e 2.
 
 ---
 
-## 6. Changelog
+## 7. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.12.0 | 2026-08-30 | **Sprint 4 completa** — itens 4.1–4.6 feitos, 42/42 testes verdes (32 herdados + 10 novos de `RevisaoEscadaTest`). `ADR-032` escrita (saiu de "pendente de redação"). Migração `V5` com a coluna `versao` de `revisao` e os 8 parâmetros da escada (6 intervalos de nível + manutenção + janela de tolerância). Verificado manualmente contra Postgres real, escada inteira de ponta a ponta: `ESTUDO` agenda, `SUCESSO`/`PARCIAL`/`FALHA` roteiam certo, primeira chegada no nível-alvo não consolida sozinha, dois `SUCESSO` seguidos *no nível-alvo* consolidam (intervalo de manutenção, +150 dias), D-11 (falha consolidado volta ao nível-alvo, não abaixo), janela de tolerância (1 dia fora recusa, dentro cumpre), D-17 (arquivar assunto/disciplina cancela pendente). Achado antes de rodar qualquer código, só de traçar a mão o cenário de consolidação: a checagem de "dois últimos sucesso" não filtrava por nível — comparar contra o resultado do degrau anterior, não contra outra tentativa no próprio nível-alvo, teria consolidado um nível cedo demais. Três defeitos reais encontrados rodando contra Postgres, todos na mesma família do bug de D-45 da Sprint 3 (sessão do Hibernate inutilizável depois de um flush que falha) e do bug do item 2.3 (`save()` não força escrita em entidade gerenciada): (1) `agendarPrimeira` capturava a violação de D-05 e continuava na mesma transação que também grava a `Sessao` — diferente do D-45, aqui não dá pra isolar numa transação nova (a `Revisao` referencia a `Sessao` ainda não commitada), corrigido com checagem prévia só neste ponto, exceção documentada no doc técnico §3.1; (2) `processarRecuperacao` usava `save()` em vez de `saveAndFlush()` pra marcar a pendente `CUMPRIDA`, então o `INSERT` da próxima pendente rodava antes do `UPDATE` ir pro banco e colidia com a própria linha que estava sendo liberada; (3) os `@Modifying` de cancelamento (D-17) não tinham `clearAutomatically`/`flushAutomatically` — um teste automatizado (não o manual, que usa uma transação por requisição HTTP) pegou isso: `findById` depois de arquivar devolvia a `Revisao` ainda `PENDENTE`, cache de primeiro nível do Hibernate não invalidado por um update em massa; faltar `flushAutomatically` também teria descartado o `setAtivo(false)` pendente do próprio `arquivar` |
 | 1.11.0 | 2026-08-30 | **Sprint 3 completa** — itens 3.1–3.6 feitos, 32/32 testes verdes (22 herdados + 10 novos: 6 de erro de domínio, 3 de cálculo de resultado + FLASHCARDS/RECUPERACAO, 1 de D-45). Migração `V4__parametros_sessao.sql` com os 6 limiares de §4.2.1 (`lote_minimo_questoes` deliberadamente fora — sem efeito até a escada existir). Verificado manualmente contra Postgres real, mesmo esquema de container descartável das sprints anteriores: os 4 tipos de sessão, cálculo de resultado nos dois formatos de banca e em FLASHCARDS, D-45 (reenvio devolve os mesmos dados, `tempoMinutos` diferente do reenvio é ignorado — prova que voltou o registro original, não gravou de novo), e os 6 erros de domínio. Dois defeitos reais encontrados e corrigidos no caminho: (1) D-45 devolvia **500**, não sucesso — depois que `save()` falha por violação de restrição, a sessão do Hibernate fica inutilizável para qualquer operação seguinte (`AssertionFailure: has a null identifier`); tentar `findByTentativaId` na mesma transação quebrava. Corrigido separando `gravar`/`buscarPorTentativa` em métodos `@Transactional` distintos, chamados via `self` (injeção `@Lazy` do próprio bean) — sem isso `this.gravar(...)` pula o proxy do Spring e os dois `@Transactional` não valem nada (autoinvocação, um dos "suspeitos de sempre" da mentoria, `.claude/agents/mentor.md`). (2) `ESTUDO` com `resultado` no corpo era silenciosamente ignorado em vez de recusado — `ESTUDO_SEM_RESULTADO` documentado em `docs/SPRINT-3-SESSAO.md` §3.1 nunca disparava. Corrigido com validação eager antes de tentar gravar. Achado durante a implementação: duas validações (`QUESTOES_OBRIGATORIAS`, `RESULTADO_OBRIGATORIO`) não têm restrição de banco correspondente — `ck_sessao_questoes_por_tipo` só exige os campos **nulos** fora de QUESTOES/FLASHCARDS, nunca exige presença dentro; registradas no doc técnico como validação eager, não tradução de exceção |
 | 1.10.0 | 2026-08-30 | Sprint 3 aberta. `docs/SPRINT-3-SESSAO.md` v1.0.0 escrito por Claude, depois de uma decisão de escopo discutida com o usuário: sessão registrada nesta sprint não toca em `Revisao` (pendência documentada até a Sprint 4, mesmo tratamento que D-17 recebeu na Sprint 2) — a alternativa (antecipar o vínculo básico com uma revisão pendente) foi recusada para não antecipar fatia da Sprint 4. `PROGRESSO.md` §4 criado com 6 itens (3.0–3.6) e Definition of Done |
 | 1.9.8 | 2026-08-30 | Itens 2.8–2.9 (testes automatizados) escritos, todos verdes: 19/19 testes (9 herdados da Sprint 1 + 10 novos). `AssuntoEstruturaTest` (D-16, caminho de código — item 2.9): reflexão pura sobre `Assunto.class.getDeclaredFields()` contra lista branca fechada, sem banco. `IntegracaoTestBase` nova (`shared`), generaliza `RestricaoTestBase` da Sprint 1 para `@SpringBootTest` + `@AutoConfigureMockMvc` real (docs/SPRINT-2-CADASTRO.md §8): `AssuntoErroDominioTest` (um teste por erro de §3.1, confere status HTTP e `codigo`), `ImportacaoAssuntoTest` (validar não grava, confirmar com linha recusada não grava nada do arquivo, confirmar sem erro grava de verdade), `ExportacaoAssuntoTest` (arquivado não aparece). Duas descobertas de infraestrutura no caminho, nenhuma delas escondida: (1) Spring Boot 4.1 tirou `@AutoConfigureMockMvc` de `spring-boot-test-autoconfigure` (que ficou só com jdbc/json) — precisa do novo `spring-boot-starter-webmvc-test`, pacote da anotação também mudou para `org.springframework.boot.webmvc.test.autoconfigure`; (2) `@Container` do Testcontainers reinicia o contêiner a cada classe de teste — quebrava o padrão de contêiner único entre classes que `RestricaoTestBase` já usava (sem `@Container`, só `.start()` manual, Ryuk limpa no fim da JVM); `IntegracaoTestBase` corrigido para o mesmo padrão. Também tirado `@Transactional` da base: um teste que precisa provar commit/rollback real (a suíte de importação) não consegue enxergar isso rodando dentro da própria transação do teste — cada subclasse decide se quer o `@Transactional` de limpeza automática (`AssuntoErroDominioTest`, que só confere HTTP/JSON) ou não (`ImportacaoAssuntoTest`/`ExportacaoAssuntoTest`, que precisam do commit de verdade; usam nome de fixture único por teste em vez disso). **Definition of Done da Sprint 2 completa** — falta só revisão e commit final do usuário (mesma ressalva do fechamento da Sprint 1, changelog 1.7.0) |

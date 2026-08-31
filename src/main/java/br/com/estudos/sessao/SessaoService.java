@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.assunto.AssuntoRepository;
+import br.com.estudos.revisao.RevisaoService;
 import br.com.estudos.shared.enums.FormatoBanca;
 import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.TipoSessao;
@@ -22,16 +23,19 @@ public class SessaoService {
     private final SessaoRepository sessaoRepository;
     private final AssuntoRepository assuntoRepository;
     private final ParametroRepository parametroRepository;
+    private final RevisaoService revisaoService;
     private final SessaoService self;
 
     public SessaoService(
             SessaoRepository sessaoRepository,
             AssuntoRepository assuntoRepository,
             ParametroRepository parametroRepository,
+            RevisaoService revisaoService,
             @Lazy SessaoService self) {
         this.sessaoRepository = sessaoRepository;
         this.assuntoRepository = assuntoRepository;
         this.parametroRepository = parametroRepository;
+        this.revisaoService = revisaoService;
         this.self = self;
     }
 
@@ -86,7 +90,11 @@ public class SessaoService {
         sessao.setAtivo(true);
         sessao.setResultado(calcularResultado(request));
 
-        return sessaoRepository.save(sessao);
+        var salva = sessaoRepository.save(sessao);
+        // Mesma transação: revisão é efeito de sessão, não passo separado
+        // (docs/SPRINT-4-ESCADA.md §3).
+        revisaoService.processarSessao(salva);
+        return salva;
     }
 
     @Transactional(readOnly = true)

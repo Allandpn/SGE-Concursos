@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.disciplina.DisciplinaRepository;
+import br.com.estudos.revisao.RevisaoService;
 import br.com.estudos.shared.exception.ConflictException;
 import br.com.estudos.shared.exception.NotFoundException;
 import br.com.estudos.shared.exception.ValidationException;
@@ -16,10 +17,15 @@ public class AssuntoService {
 
     private final AssuntoRepository assuntoRepository;
     private final DisciplinaRepository disciplinaRepository;
+    private final RevisaoService revisaoService;
 
-    public AssuntoService(AssuntoRepository assuntoRepository, DisciplinaRepository disciplinaRepository) {
+    public AssuntoService(
+            AssuntoRepository assuntoRepository,
+            DisciplinaRepository disciplinaRepository,
+            RevisaoService revisaoService) {
         this.assuntoRepository = assuntoRepository;
         this.disciplinaRepository = disciplinaRepository;
+        this.revisaoService = revisaoService;
     }
 
     /**
@@ -85,13 +91,15 @@ public class AssuntoService {
     }
 
     /**
-     * Arquiva um assunto — exclusão lógica (D-18). Não cancela revisões
-     * pendentes dependentes: D-17 é pendência documentada até a Sprint 4
-     * (docs/SPRINT-2-CADASTRO.md §7).
+     * Arquiva um assunto — exclusão lógica (D-18) — e cancela a revisão
+     * pendente dele (D-17, fechada na Sprint 4, docs/SPRINT-4-ESCADA.md §3.4;
+     * era pendência documentada em docs/SPRINT-2-CADASTRO.md §7).
      */
     @Transactional
     public void arquivar(Long id) {
-        buscar(id).setAtivo(false);
+        var assunto = buscar(id);
+        assunto.setAtivo(false);
+        revisaoService.cancelarPendentePorAssunto(assunto.getId());
     }
 
     /**
