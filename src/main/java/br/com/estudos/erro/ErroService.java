@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.estudos.assunto.AssuntoRepository;
 import br.com.estudos.sessao.SessaoRepository;
 import br.com.estudos.shared.exception.NotFoundException;
+import br.com.estudos.shared.exception.ValidationException;
 
 /**
  * Registrar e consultar erro (docs/SPRINT-7-METRICAS.md §3). Sem
@@ -34,10 +35,23 @@ public class ErroService {
      * Não pré-verifica assunto/sessão existentes — grava direto e traduz a
      * exceção do driver pelo nome da restrição, mesmo princípio de D-05
      * (unicidade/integridade na persistência, nunca checagem prévia no
-     * serviço).
+     * serviço). `descricao`/`causa`/`confianca` são validados eager, não
+     * traduzidos do banco — são `NOT NULL` sem `D-xx`, e um valor omitido é
+     * erro plausível do cliente, não "higiene de dado" que valha relançar
+     * cru (mesmo padrão de `SessaoService.exigirContagemDeQuestoes`).
      */
     @Transactional
     public Erro registrar(ErroRequest request) {
+        if (request.descricao() == null || request.descricao().isBlank()) {
+            throw new ValidationException("Descrição é obrigatória.", "DESCRICAO_OBRIGATORIA", "descricao");
+        }
+        if (request.causa() == null) {
+            throw new ValidationException("Causa é obrigatória.", "CAUSA_OBRIGATORIA", "causa");
+        }
+        if (request.confianca() == null) {
+            throw new ValidationException("Confiança é obrigatória.", "CONFIANCA_OBRIGATORIA", "confianca");
+        }
+
         var erro = new Erro();
         erro.setAssunto(assuntoRepository.getReferenceById(request.assuntoId()));
         if (request.sessaoId() != null) {

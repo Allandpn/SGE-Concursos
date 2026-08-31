@@ -72,6 +72,45 @@ class ErroDominioTest extends IntegracaoTestBase {
     }
 
     @Test
+    void descricaoAusente_devolve422() throws Exception {
+        var assunto = novoAssunto();
+
+        mockMvc.perform(post("/api/erros")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"assuntoId": %d, "causa": "CHUTE", "confianca": "BAIXA"}
+                    """.formatted(assunto.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("DESCRICAO_OBRIGATORIA"));
+    }
+
+    @Test
+    void causaAusente_devolve422() throws Exception {
+        var assunto = novoAssunto();
+
+        mockMvc.perform(post("/api/erros")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"assuntoId": %d, "descricao": "Não lembrei do prazo", "confianca": "BAIXA"}
+                    """.formatted(assunto.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("CAUSA_OBRIGATORIA"));
+    }
+
+    @Test
+    void confiancaAusente_devolve422() throws Exception {
+        var assunto = novoAssunto();
+
+        mockMvc.perform(post("/api/erros")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"assuntoId": %d, "descricao": "Não lembrei do prazo", "causa": "GESTAO_TEMPO"}
+                    """.formatted(assunto.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("CONFIANCA_OBRIGATORIA"));
+    }
+
+    @Test
     void registraSemSessao_devolve201() throws Exception {
         var assunto = novoAssunto();
 

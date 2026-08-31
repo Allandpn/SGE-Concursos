@@ -27,7 +27,11 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
 
     // M-2 (docs/SPRINT-7-METRICAS.md §4.2): primeira exposição = data mais
     // antiga; ordenado, o service só pega head/tail da lista, por tipo.
-    List<Sessao> findByAssuntoIdAndTipoInOrderByDataAsc(Long assuntoId, Collection<TipoSessao> tipos);
+    // Desempate por id: duas sessões do mesmo tipo no mesmo dia (ex.: duas
+    // QUESTOES no mesmo dia) deixariam a ordem por data sozinha indefinida —
+    // o Postgres não garante ordem estável entre linhas empatadas na chave
+    // de sort, e a "primeira exposição" mudaria de uma chamada pra outra.
+    List<Sessao> findByAssuntoIdAndTipoInOrderByDataAscIdAsc(Long assuntoId, Collection<TipoSessao> tipos);
 
     // M-1 (docs/SPRINT-7-METRICAS.md §4.1): projeção, não entidade — evita
     // N+1 de Assunto/Disciplina LAZY (mesmo cuidado do "suspeito de sempre").

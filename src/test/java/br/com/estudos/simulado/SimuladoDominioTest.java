@@ -1,5 +1,6 @@
 package br.com.estudos.simulado;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,6 +71,90 @@ class SimuladoDominioTest extends IntegracaoTestBase {
                     """))
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.codigo").value("RESULTADOS_OBRIGATORIOS"));
+    }
+
+    @Test
+    void dataAusente_devolve422() throws Exception {
+        var disciplina = novaDisciplina();
+
+        mockMvc.perform(post("/api/simulados")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"duracaoMinutos": 240,
+                     "resultados": [{"disciplinaId": %d, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20}]}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("DATA_OBRIGATORIA"));
+    }
+
+    @Test
+    void duracaoAusente_devolve422() throws Exception {
+        var disciplina = novaDisciplina();
+
+        mockMvc.perform(post("/api/simulados")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"data": "2026-06-01",
+                     "resultados": [{"disciplinaId": %d, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20}]}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("DURACAO_OBRIGATORIA"));
+    }
+
+    @Test
+    void formatoDoResultadoAusente_devolve422() throws Exception {
+        var disciplina = novaDisciplina();
+
+        mockMvc.perform(post("/api/simulados")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"data": "2026-06-01", "duracaoMinutos": 240,
+                     "resultados": [{"disciplinaId": %d, "questoesCorretas": 10, "questoesTotal": 20}]}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("FORMATO_OBRIGATORIO"));
+    }
+
+    @Test
+    void questoesDoResultadoAusente_devolve422() throws Exception {
+        var disciplina = novaDisciplina();
+
+        mockMvc.perform(post("/api/simulados")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"data": "2026-06-01", "duracaoMinutos": 240,
+                     "resultados": [{"disciplinaId": %d, "formato": "MULTIPLA_ESCOLHA"}]}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("QUESTOES_OBRIGATORIAS"));
+    }
+
+    @Test
+    void listar_devolveTodosOsSimuladosComSeusResultados() throws Exception {
+        var disciplinaA = novaDisciplina();
+        var disciplinaB = novaDisciplina();
+
+        mockMvc.perform(post("/api/simulados")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"data": "2026-06-01", "duracaoMinutos": 240,
+                     "resultados": [{"disciplinaId": %d, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20}]}
+                    """.formatted(disciplinaA.getId())))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/simulados")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"data": "2026-07-01", "duracaoMinutos": 180,
+                     "resultados": [{"disciplinaId": %d, "formato": "CERTO_ERRADO", "questoesCorretas": 5, "questoesTotal": 10}]}
+                    """.formatted(disciplinaB.getId())))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/simulados"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].resultados.length()").value(1))
+            .andExpect(jsonPath("$[1].resultados.length()").value(1));
     }
 
     @Test

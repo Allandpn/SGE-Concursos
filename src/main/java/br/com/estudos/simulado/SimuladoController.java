@@ -30,8 +30,8 @@ public class SimuladoController {
 
     @GetMapping
     public List<SimuladoResponse> listar() {
-        return simuladoService.listar().stream()
-            .map(simulado -> SimuladoMapper.toResponse(simulado, simuladoService.listarResultados(simulado.getId())))
+        return simuladoService.listarComResultados().stream()
+            .map(registrado -> SimuladoMapper.toResponse(registrado.simulado(), registrado.resultados()))
             .toList();
     }
 }

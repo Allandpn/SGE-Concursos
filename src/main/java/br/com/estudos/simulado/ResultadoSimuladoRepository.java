@@ -1,6 +1,7 @@
 package br.com.estudos.simulado;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,11 @@ import br.com.estudos.metrica.AcertoLinha;
 public interface ResultadoSimuladoRepository extends JpaRepository<ResultadoSimulado, Long> {
 
     List<ResultadoSimulado> findBySimuladoId(Long simuladoId);
+
+    // GET /api/simulados (docs/SPRINT-8-SIMULADO.md §5): busca os resultados
+    // de todos os simulados listados numa consulta só, em vez de uma por
+    // simulado (N+1 — mesmo "suspeito de sempre" de LAZY sem fetch em lote).
+    List<ResultadoSimulado> findBySimuladoIdIn(Collection<Long> simuladoIds);
 
     // M-1 (docs/SPRINT-8-SIMULADO.md §4): mesma projeção de SessaoRepository
     // .listarAcertoQuestoes — simulado soma no mesmo agregado (§0).

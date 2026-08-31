@@ -7,7 +7,7 @@ erros" (`PROGRESSO.md` §1).
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.0 |
+| Versão | 1.3.0 |
 | Data | 2026-08-31 |
 | Status | Vigente |
 | Subordinado a | `especificacao/00_PRODUTO.md` §7 (M-1 a M-4), §7.1 (banco de erros); `especificacao/01_DOMINIO.md` §3.5 (Erro), §10 D-12/D-36/**D-46**; `especificacao/02_JORNADAS.md` J-3, §4.2; `docs/00A_ADR.md` (ADR-033, reaproveitada — nenhuma ADR nova nesta sprint); `docs/SPRINT-1-BANCO.md` §2.5/§7.6 (tabela `erro`, `causa`, escala de `confianca` — já existiam, não mudam); `docs/SPRINT-3-SESSAO.md` (`Sessao` já existe, não muda) |
@@ -130,7 +130,17 @@ CRUD mínimo: `registrar` (grava, sem `validar`/`confirmar` — não é
 importação em lote) e `listarPorAssunto`. Sem `atualizar`/`resolver`
 (§0). Segue o padrão de tradução de exceção de `AssuntoService`/
 `SessaoService` (§3.1 dos documentos anteriores) para `ASSUNTO_INEXISTENTE`/
-`SESSAO_INEXISTENTE`.
+`SESSAO_INEXISTENTE` — e, achado na revisão de código pós-implementação,
+`descricao`/`causa`/`confianca` ausentes são validados eager (mesmo padrão
+de `SessaoService.exigirContagemDeQuestoes`), não deixados para o banco
+recusar: são `NOT NULL` sem `D-xx`, e campo obrigatório omitido é erro
+plausível do cliente, não "higiene de dado" que valha relançar cru.
+
+| Campo ausente | `codigo` | Status |
+|---|---|---|
+| `descricao` | `DESCRICAO_OBRIGATORIA` | 422 |
+| `causa` | `CAUSA_OBRIGATORIA` | 422 |
+| `confianca` | `CONFIANCA_OBRIGATORIA` | 422 |
 
 ---
 
@@ -205,6 +215,8 @@ Duas variantes, nunca somadas (já era regra fixa, `00_PRODUTO` §7 M-3):
 
 - `Erro`: erro de domínio `ASSUNTO_INEXISTENTE`/`SESSAO_INEXISTENTE`
   (status + `codigo`, mesmo padrão de §3.1 dos documentos anteriores).
+- M-2: duas sessões do mesmo tipo na mesma data não deixam a "primeira
+  exposição" indefinida — desempate por `id` (achado na revisão de código).
 - M-1: `n < 10` devolve `—`; `n ≥ 100` marca `confiavel = true`; dois
   formatos no mesmo período nunca somam.
 - M-2: primeira exposição corretamente identificada por `data` mais antiga;
@@ -219,6 +231,7 @@ Duas variantes, nunca somadas (já era regra fixa, `00_PRODUTO` §7 M-3):
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-08-31 | Revisão de código pós-implementação (`/code-review high`) encontrou dois defeitos reais: (1) M-2 (§4.2) ordenava só por `data`, deixando a "primeira exposição" indefinida quando duas sessões do mesmo tipo caem no mesmo dia — corrigido com desempate por `id`. (2) `ErroService.registrar` (§3) deixava `descricao`/`causa`/`confianca` ausentes caírem num `DataIntegrityViolationException` não traduzido (500), em vez de validação eager — três `codigo` novos (`DESCRICAO_OBRIGATORIA`/`CAUSA_OBRIGATORIA`/`CONFIANCA_OBRIGATORIA`), mesmo padrão de `SessaoService.exigirContagemDeQuestoes` |
 | 1.2.0 | 2026-08-31 | Corrigido antes de escrever qualquer código: a tabela `erro` (com `causa`, `confianca` como três níveis ordinais, `resolvido`, as duas FKs) já existe desde `V1__tabelas.sql` (`docs/SPRINT-1-BANCO.md` §2.5/§7.6) — só a redação das âncoras de confiança (§1.2) era decisão nova desta sprint. §1 e §2 reescritos: a migração `V7` vira uma linha (renomear `fk_erro_assunto` para `fk_erro_d46_assunto`), não criação de tabela. Nenhuma decisão de escopo mudou — só a premissa errada de que a Sprint 7 criava schema novo |
 | 1.1.0 | 2026-08-31 | Confirmados os quatro pontos que o rascunho 1.0.0 deixou em aberto: D-46 escrita em `01_DOMINIO.md` v1.12.0 (erro pode apontar para sessão, opcionalmente); âncoras de confiança (`ALTA`/`MEDIA`/`BAIXA`) aceitas como redigidas; fórmula de sinal de M-3 subjetiva confirmada; limiares de `n` ficam como constante, não `parametro`. Documento passa de rascunho para **Vigente** |
 | 1.0.0 | 2026-08-31 | Rascunho criado. Escopo das quatro decisões de §0 discutido e confirmado com o usuário; faltava confirmar os quatro pontos acima, entre eles a regra de domínio nova (D-46), que precisava ser escrita em `01_DOMINIO.md` antes de qualquer código — regra central do `CLAUDE.md` |

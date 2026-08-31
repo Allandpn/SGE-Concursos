@@ -92,7 +92,7 @@ public class MetricaService {
     /** docs/SPRINT-7-METRICAS.md §4.2. */
     @Transactional(readOnly = true)
     public M2Response m2(Long assuntoId) {
-        var todas = sessaoRepository.findByAssuntoIdAndTipoInOrderByDataAsc(
+        var todas = sessaoRepository.findByAssuntoIdAndTipoInOrderByDataAscIdAsc(
             assuntoId, List.of(TipoSessao.QUESTOES, TipoSessao.FLASHCARDS, TipoSessao.RECUPERACAO));
 
         var porTipo = new LinkedHashMap<TipoSessao, List<Sessao>>();

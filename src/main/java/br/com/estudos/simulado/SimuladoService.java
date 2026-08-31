@@ -2,6 +2,7 @@ package br.com.estudos.simulado;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -33,11 +34,28 @@ public class SimuladoService {
         this.disciplinaRepository = disciplinaRepository;
     }
 
+    /**
+     * `data`/`duracaoMinutos`/os campos de cada resultado são validados eager,
+     * não traduzidos do banco — são `NOT NULL`/`CHECK` sem `D-xx`, e valor
+     * omitido é erro plausível do cliente (mesmo padrão de
+     * `SessaoService.exigirContagemDeQuestoes`). Tudo validado **antes** de
+     * gravar qualquer coisa: falhar no meio do loop funcionaria igual (o
+     * `@Transactional` desfaz), mas validar primeiro evita depender disso.
+     */
     @Transactional
     public SimuladoRegistrado registrar(SimuladoRequest request) {
+        if (request.data() == null) {
+            throw new ValidationException("Data é obrigatória.", "DATA_OBRIGATORIA", "data");
+        }
+        if (request.duracaoMinutos() == null) {
+            throw new ValidationException("Duração é obrigatória.", "DURACAO_OBRIGATORIA", "duracaoMinutos");
+        }
         if (request.resultados() == null || request.resultados().isEmpty()) {
             throw new ValidationException(
                 "Pelo menos um resultado por disciplina é obrigatório.", "RESULTADOS_OBRIGATORIOS", "resultados");
+        }
+        for (var resultadoRequest : request.resultados()) {
+            validarResultado(resultadoRequest);
         }
 
         var simulado = new Simulado();
@@ -66,12 +84,38 @@ public class SimuladoService {
 
     @Transactional(readOnly = true)
     public List<Simulado> listar() {
-        return simuladoRepository.findAll();
+        return simuladoRepository.findAllByOrderByDataDesc();
     }
 
     @Transactional(readOnly = true)
     public List<ResultadoSimulado> listarResultados(Long simuladoId) {
         return resultadoSimuladoRepository.findBySimuladoId(simuladoId);
+    }
+
+    /** GET /api/simulados (§5) — duas consultas, não N+1: uma pelos simulados, uma pelos resultados de todos eles. */
+    @Transactional(readOnly = true)
+    public List<SimuladoRegistrado> listarComResultados() {
+        var simulados = simuladoRepository.findAllByOrderByDataDesc();
+        var ids = simulados.stream().map(Simulado::getId).toList();
+        var resultadosPorSimulado = resultadoSimuladoRepository.findBySimuladoIdIn(ids).stream()
+            .collect(Collectors.groupingBy(r -> r.getSimulado().getId()));
+
+        return simulados.stream()
+            .map(s -> new SimuladoRegistrado(s, resultadosPorSimulado.getOrDefault(s.getId(), List.of())))
+            .toList();
+    }
+
+    private void validarResultado(ResultadoSimuladoRequest resultadoRequest) {
+        if (resultadoRequest.disciplinaId() == null) {
+            throw new ValidationException("disciplinaId é obrigatório em cada resultado.", "DISCIPLINA_OBRIGATORIA", "disciplinaId");
+        }
+        if (resultadoRequest.formato() == null) {
+            throw new ValidationException("Formato é obrigatório em cada resultado.", "FORMATO_OBRIGATORIO", "formato");
+        }
+        if (resultadoRequest.questoesCorretas() == null || resultadoRequest.questoesTotal() == null) {
+            throw new ValidationException(
+                "questoesCorretas e questoesTotal são obrigatórios em cada resultado.", "QUESTOES_OBRIGATORIAS", "questoesTotal");
+        }
     }
 
     private RuntimeException traduzirViolacaoDeIntegridade(DataIntegrityViolationException e) {

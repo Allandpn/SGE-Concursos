@@ -12,7 +12,7 @@ decidida explicitamente pelo usuário, não um desvio silencioso.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.1.0 |
 | Data | 2026-08-31 |
 | Status | Vigente |
 | Subordinado a | `especificacao/00_PRODUTO.md` §6.7 (Simulado — a exceção honesta); `especificacao/01_DOMINIO.md` §3.6 (Simulado), §9 (Disciplina 1─N ResultadoSimulado), §10 D-13; `especificacao/03_INVARIANTES.md` (D-13: Invariante, garantida pela persistência); `docs/SPRINT-1-BANCO.md` §2.6 (desenho de duas tabelas, decidido, implementação adiada); `docs/SPRINT-7-METRICAS.md` (`MetricaService`/M-1 já existem, estendidos aqui, não recriados) |
@@ -99,6 +99,21 @@ banco que cubra lista vazia.
 | `ux_resultado_simulado_simulado_disciplina` | `DISCIPLINA_DUPLICADA_NO_SIMULADO` | 409 |
 | lista de resultados vazia (eager, sem restrição correspondente) | `RESULTADOS_OBRIGATORIOS` | 422 |
 
+Achado na revisão de código pós-implementação: `data`/`duracaoMinutos` do
+simulado e `disciplinaId`/`formato`/`questoesCorretas`/`questoesTotal` de
+cada resultado também precisam de validação eager — sem ela, um campo
+ausente caía direto num `DataIntegrityViolationException` não traduzido
+(500), porque nem toda restrição `NOT NULL`/`CHECK` tem nome mapeado no
+tradutor. Tudo validado **antes** de gravar qualquer linha.
+
+| Campo ausente | `codigo` | Status |
+|---|---|---|
+| `data` | `DATA_OBRIGATORIA` | 422 |
+| `duracaoMinutos` | `DURACAO_OBRIGATORIA` | 422 |
+| `resultados[].disciplinaId` | `DISCIPLINA_OBRIGATORIA` | 422 |
+| `resultados[].formato` | `FORMATO_OBRIGATORIO` | 422 |
+| `resultados[].questoesCorretas`/`questoesTotal` | `QUESTOES_OBRIGATORIAS` | 422 |
+
 ---
 
 ## 4. M-1 passa a somar `ResultadoSimulado`
@@ -120,13 +135,13 @@ garantem isso estruturalmente).
 | Método | Caminho | Retorno |
 |---|---|---|
 | `POST` | `/api/simulados` | `201`, `SimuladoResponse` |
-| `GET` | `/api/simulados` | `200`, lista (histórico) |
+| `GET` | `/api/simulados` | `200`, lista (histórico) — busca os resultados de todos os simulados numa consulta só, não uma por simulado (achado na revisão de código: N+1) |
 
 ---
 
 ## 6. Testes
 
-- Erro de domínio: `DISCIPLINA_INEXISTENTE` (404), `DISCIPLINA_DUPLICADA_NO_SIMULADO` (409), `RESULTADOS_OBRIGATORIOS` (422).
+- Erro de domínio: `DISCIPLINA_INEXISTENTE` (404), `DISCIPLINA_DUPLICADA_NO_SIMULADO` (409), `RESULTADOS_OBRIGATORIOS` (422), e os cinco `codigo` de campo obrigatório de §3.
 - Estrutural: `resultado_simulado` não tem coluna `assunto_id` (D-13, mesmo molde de `EstruturaSchemaTest`).
 - M-1: um simulado e uma sessão `QUESTOES` da mesma disciplina/formato somam no mesmo `acertos`/`total`.
 
@@ -136,4 +151,5 @@ garantem isso estruturalmente).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-08-31 | Revisão de código pós-implementação (`/code-review high`) encontrou dois defeitos reais: (1) `GET /api/simulados` fazia uma consulta de resultados por simulado (N+1) — corrigido para duas consultas totais, sempre. (2) `SimuladoService.registrar` (§3) deixava campos obrigatórios ausentes (`data`, `duracaoMinutos`, e os quatro campos de cada resultado) caírem num `DataIntegrityViolationException` não traduzido (500) — cinco `codigo` novos de validação eager, mesmo padrão de `SessaoService.exigirContagemDeQuestoes` |
 | 1.0.0 | 2026-08-31 | Criado. Sprint 8 aberta como exceção consciente à regra de não adiantar sprint futura (Sprint 7 ainda sem testes executados) — decisão do usuário, registrada aqui e em `PROGRESSO.md`. Escopo restrito a Simulado; backup testado e polimento ficam de fora. Quatro decisões de §0 fechadas com o usuário: `formato` por resultado, simulado soma no mesmo agregado de M-1, `duracaoMinutos` registrado |
