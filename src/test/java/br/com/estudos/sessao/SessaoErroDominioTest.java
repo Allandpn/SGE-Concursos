@@ -66,7 +66,7 @@ class SessaoErroDominioTest extends IntegracaoTestBase {
 
     @Test
     void recuperacaoComPrevisaoErrada_devolve422() throws Exception {
-        // RECUPERACAO usa previsaoReconstrucao (boolean), não previsaoPercentual — D-04a.
+        // RECUPERACAO usa previsaoReconstrucao (ResultadoSessao), não previsaoPercentual — D-04a.
         mockMvc.perform(post("/api/sessoes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -109,7 +109,7 @@ class SessaoErroDominioTest extends IntegracaoTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"assuntoId": %d, "tipo": "RECUPERACAO", "data": "2026-08-30", "tempoMinutos": 8,
-                     "previsaoReconstrucao": true, "tentativaId": "66666666-6666-6666-6666-666666666666"}
+                     "previsaoReconstrucao": "SUCESSO", "tentativaId": "66666666-6666-6666-6666-666666666666"}
                     """.formatted(assuntoId())))
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.codigo").value("RESULTADO_OBRIGATORIO"));

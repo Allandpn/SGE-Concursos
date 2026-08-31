@@ -39,9 +39,17 @@ public class ErroService {
      * traduzidos do banco — são `NOT NULL` sem `D-xx`, e um valor omitido é
      * erro plausível do cliente, não "higiene de dado" que valha relançar
      * cru (mesmo padrão de `SessaoService.exigirContagemDeQuestoes`).
+     * `assuntoId` também é validado eager, mas por motivo diferente: mesmo
+     * coberto por D-46 (`fk_erro_d46_assunto`), `null` nunca chegaria ao
+     * banco — `getReferenceById(null)` lança antes de qualquer INSERT, então
+     * não há violação de restrição pra `traduzirViolacaoDeIntegridade`
+     * traduzir.
      */
     @Transactional
     public Erro registrar(ErroRequest request) {
+        if (request.assuntoId() == null) {
+            throw new ValidationException("Assunto é obrigatório.", "ASSUNTO_OBRIGATORIO", "assuntoId");
+        }
         if (request.descricao() == null || request.descricao().isBlank()) {
             throw new ValidationException("Descrição é obrigatória.", "DESCRICAO_OBRIGATORIA", "descricao");
         }

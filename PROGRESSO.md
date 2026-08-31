@@ -288,31 +288,39 @@ a restrição), não criação de tabela.
 | | Item | Quem escreve | Estado |
 |---|---|---|---|
 | 7.0 | Documento técnico, revisado | — | **feito** |
-| 7.1 | Migração `V7` — renomeia `fk_erro_assunto` (já existia desde V1) para `fk_erro_d46_assunto` (§2 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 7.2 | Entidade JPA `Erro` + enums `CausaErro`/`NivelConfianca` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 7.3 | `ErroRepository` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 7.4 | `ErroService` — registrar, listar por assunto, tradução de exceção (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 7.5 | `MetricaService` — M-1 a M-4 (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 7.6 | Controllers — `/api/erros`, `/api/metricas/*` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 7.7 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | escritos, sem execução verificada |
+| 7.1 | Migração `V7` — renomeia `fk_erro_assunto` (já existia desde V1) para `fk_erro_d46_assunto` (§2 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 7.2 | Entidade JPA `Erro` + enums `CausaErro`/`NivelConfianca` | Claude, a pedido do usuário (pressa) | **feito** |
+| 7.3 | `ErroRepository` | Claude, a pedido do usuário (pressa) | **feito** |
+| 7.4 | `ErroService` — registrar, listar por assunto, tradução de exceção (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 7.5 | `MetricaService` — M-1 a M-4 (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 7.6 | Controllers — `/api/erros`, `/api/metricas/*` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 7.7 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** — 8/8 verdes (`ErroDominioTest`) + 8/8 (`MetricaServiceTest`) |
 
 ### Definition of Done
 
 - [x] `docs/SPRINT-7-METRICAS.md` revisado e aceito
 - [x] `D-46` escrita e vigente em `01_DOMINIO.md`
-- [ ] `POST /api/erros` grava com os 7 valores de causa e as 3 âncoras de
+- [x] `POST /api/erros` grava com os 7 valores de causa e as 3 âncoras de
       confiança; `ASSUNTO_INEXISTENTE`/`SESSAO_INEXISTENTE` com status e
       `codigo` certos
-- [ ] M-1: `n < 10` devolve `—`, nunca `0%`; `n ≥ 100` marca `confiavel`;
+- [x] M-1: `n < 10` devolve `—`, nunca `0%`; `n ≥ 100` marca `confiavel`;
       dois formatos de banca no mesmo período nunca somam (D-36)
-- [ ] M-2: primeira exposição identificada pela sessão mais antiga do
+- [x] M-2: primeira exposição identificada pela sessão mais antiga do
       assunto; `RECUPERACAO` reportada em série própria, nunca somada com
       percentual de questões
-- [ ] M-3: as duas variantes (objetiva/subjetiva) com o sinal correto,
+- [x] M-3: as duas variantes (objetiva/subjetiva) com o sinal correto,
       nunca somadas
-- [ ] M-4: janela de 3 dias, distinta da janela de tolerância de D-38
-- [ ] Nenhum endpoint de métrica grava nada
-- [ ] Nenhuma entidade/service/endpoint de `Simulado` existe
+- [x] M-4: janela de 3 dias, distinta da janela de tolerância de D-38
+- [x] Nenhum endpoint de métrica grava nada
+- [ ] ~~Nenhuma entidade/service/endpoint de `Simulado` existe~~ — linha
+      ficou obsoleta: a Sprint 8 (Simulado) abriu antes desta fechar, decisão
+      explícita do usuário registrada em §9. Não é falha desta sprint,
+      é escopo que cresceu depois dela ser escrita; mantida riscada em vez de
+      apagada, por transparência
+
+Todos os itens verificáveis por teste batem — 79→82 testes verdes depois da
+correção de 1.21.0 (ver changelog). Falta só a revisão e o commit final do
+usuário, mesma ressalva das sprints anteriores.
 
 ---
 
@@ -341,34 +349,36 @@ já cobria a integridade referencial que faltava.
 | | Item | Quem escreve | Estado |
 |---|---|---|---|
 | 8.0 | Documento técnico, revisado | — | **feito** |
-| 8.1 | Migração `V8` — tabelas `simulado`/`resultado_simulado` (§1/§2 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 8.2 | Entidades JPA `Simulado`/`ResultadoSimulado` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 8.3 | `SimuladoRepository`/`ResultadoSimuladoRepository` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 8.4 | `SimuladoService` — tudo-ou-nada, tradução de exceção (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 8.5 | `MetricaService.m1` estendido — simulado no mesmo agregado (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 8.6 | Controller — `/api/simulados` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
-| 8.7 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | escritos, sem execução verificada |
+| 8.1 | Migração `V8` — tabelas `simulado`/`resultado_simulado` (§1/§2 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 8.2 | Entidades JPA `Simulado`/`ResultadoSimulado` | Claude, a pedido do usuário (pressa) | **feito** |
+| 8.3 | `SimuladoRepository`/`ResultadoSimuladoRepository` | Claude, a pedido do usuário (pressa) | **feito** |
+| 8.4 | `SimuladoService` — tudo-ou-nada, tradução de exceção (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 8.5 | `MetricaService.m1` estendido — simulado no mesmo agregado (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 8.6 | Controller — `/api/simulados` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 8.7 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** — 9/9 verdes (`SimuladoDominioTest`) |
 | 8.8 | `scripts/backup.sh`/`restaurar.sh`/`testar-restauracao.sh` (`docs/03E_DEPLOYMENT.md` §2/§6, doc já congelado — sem decisão nova) | Claude, a pedido do usuário (pressa) | escritos, não testados em Pi real |
 
 ### Definition of Done
 
 - [x] `docs/SPRINT-8-SIMULADO.md` revisado e aceito
-- [ ] `POST /api/simulados` grava tudo-ou-nada; `DISCIPLINA_INEXISTENTE` (404),
+- [x] `POST /api/simulados` grava tudo-ou-nada; `DISCIPLINA_INEXISTENTE` (404),
       `DISCIPLINA_DUPLICADA_NO_SIMULADO` (409), `RESULTADOS_OBRIGATORIOS` (422)
       com status e `codigo` certos
-- [ ] `resultado_simulado` não tem coluna `assunto_id` (D-13, teste estrutural)
-- [ ] M-1 soma simulado e `QUESTOES` do mesmo disciplina+formato no mesmo
+- [x] `resultado_simulado` não tem coluna `assunto_id` (D-13, teste estrutural
+      `EstruturaSchemaTest.d13_resultadoSimuladoSemColunaDeAssunto`)
+- [x] M-1 soma simulado e `QUESTOES` do mesmo disciplina+formato no mesmo
       agregado, nunca separado
-- [ ] Nenhuma revisão, consolidação ou vínculo com assunto nasce de um simulado
+- [x] Nenhuma revisão, consolidação ou vínculo com assunto nasce de um simulado
 - [ ] `backup.sh` roda no Pi e gera arquivo > 10 KB; `testar-restauracao.sh`
       roda numa base descartável com contagens conferidas (checklist de
       `03E_DEPLOYMENT.md` §8) — só o usuário pode fazer isso, exige o Pi real
 - [ ] Polimento continua **não começado**, registrado como pendência, não
       escondido
 
-Falta a execução dos testes automatizados (sem Docker neste ambiente, mesma
-ressalva da Sprint 7) e a execução real dos scripts de backup no Raspberry
-Pi antes de marcar os itens como **feito**.
+Itens verificáveis por teste automatizado batem. Faltam só: a execução real
+dos scripts de backup no Raspberry Pi (exige hardware que este ambiente não
+tem) e o polimento, que não começou. Revisão e commit final ficam com o
+usuário, mesma ressalva das sprints anteriores.
 
 ---
 
@@ -443,6 +453,8 @@ ainda, fica para quando a implementação começar de fato.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.22.0 | 2026-08-31 | **Fase 2 do plano combinado com o usuário** (auditoria da API contra a especificação conceitual, `/agents/mentor.md`): achou uma contradição real de domínio entre `00_PRODUTO.md §7` (M-3 subjetiva descrita como par binário — "vai conseguir reconstruir? / conseguiu?") e `02_JORNADAS.md §4.1` (três botões desenhados de propósito, "mesma régua nos dois momentos"). O código tinha ido para binário (`previsaoReconstrucao: Boolean`), mas o `resultado` de `RECUPERACAO` já era três vias (`SUCESSO`/`PARCIAL`/`FALHA`) desde a Sprint 3 — D-07 exige isso de toda sessão que cumpre revisão. Decisão do usuário: três vias, mesmo enum dos dois lados. Documento primeiro: `00_PRODUTO.md` v1.6.0 (nota explicitando que a granularidade é decisão de tela, não da métrica), `docs/SPRINT-1-BANCO.md` v1.2.0, `docs/SPRINT-3-SESSAO.md` v1.1.0, `docs/SPRINT-7-METRICAS.md` v1.4.0 (fórmula de sinal reescrita por ordinal), `docs/DIAGRAMA-ER.md` v2.1.0. Código: `previsao_reconstrucao` vira `TEXT CHECK IN ('SUCESSO','PARCIAL','FALHA')` em `V1__tabelas.sql` (sem banco persistente ainda — confirmado com o usuário, editar migração já aplicada em lugar nenhum é seguro); `Sessao`/`SessaoRequest`/`SessaoResponse.previsaoReconstrucao` viram `ResultadoSessao`; `MetricaService.m3()` compara por ordinal do enum em vez de booleano×categórico. `M3SubjetivaResponse` não muda de forma. Suíte: 82/82 verde. A auditoria também achou outros gaps (D-09, D-31, D-35/42/43/44 sem sprint, numeração 45→46 de `01_DOMINIO`) — ainda pendentes, não tratados nesta entrada |
+| 1.21.0 | 2026-08-31 | **Primeira execução real do código das Sprints 7-8** — `mvn -o test-compile` mostrou que ele nunca tinha nem compilado (`target/classes` não tinha `erro`/`metrica`/`simulado`); depois de compilar, `mvn test` com Docker de pé rodou 79/79 verdes. Revisão de status (`/agents/mentor.md`) sobre esse resultado achou que "verde" não provava dois pontos, porque todo teste de listagem das Sprints 7/8 é `@Transactional` (sessão do teste mascara `LAZY` fora de sessão) e o projeto nunca tinha decidido `open-in-view` (default `true` do Spring, nunca citado em `application.yml` nem documento algum): (1) `ErroRepository.findByAssuntoId`/`ResultadoSimuladoRepository.findBySimuladoIdIn` sem `join fetch` — N+1 real em `GET /api/erros`/`GET /api/simulados`, mascarado pela sessão do Hibernate ficar aberta com OSIV ligado; (2) `ErroService.registrar` sem validar `assuntoId` ausente — virava `500` via `getReferenceById(null)`, não `422`. Corrigidos: **ADR-034** decide `open-in-view: false` (coerente com o padrão já usado desde a Sprint 2 — `LAZY` com fetch sempre explícito, nunca implícito, e com ADR-029); os dois repositórios ganharam `join fetch`; `ErroService.registrar` valida `assuntoId` (`ASSUNTO_OBRIGATORIO`, 422). Dois testes novos não-`@Transactional` (`ErroListagemTest`, `SimuladoListagemTest`, mesmo padrão de `ImportacaoAssuntoTest`) provam a correção pelo caminho que os testes transacionais não conseguem provar — com OSIV desligado, teriam lançado `LazyInitializationException` se o `join fetch` estivesse errado. Também corrigidos: comentário faltando em `ux_resultado_simulado_simulado_disciplina` (`V8__simulado.sql`, auditoria de `03_INVARIANTES §9`) e o javadoc de `ErroService.registrar` explicando por que `assuntoId` é eager mesmo coberto por D-46. Suíte final: **82/82 verdes**. DoD das Sprints 7 e 8 marcadas com base nesta execução — as duas ficam pendentes só de backup real no Pi (8) e polimento (8), que não dependem de código |
 | 1.20.0 | 2026-08-31 | **Sprint 9 aberta (Frontend — Hoje e Recuperar)**, primeira fora do mapa conceitual original de 8. `docs/04_FRONTEND.md` v1.0.0 criado após quatro decisões de escopo (stack, documentação, primeiras telas, rastreamento — ver §10). ADR-028/030 reexaminadas conscientemente contra a exigência de UI otimista de `02_JORNADAS §5.1` e mantidas — nota registrada em `docs/00A_ADR.md` (v2.2.0), fechando a pendência que a seção final desse documento pedia. `PROGRESSO.md` §1 e §10 criados; seções seguintes renumeradas |
 | 1.19.0 | 2026-08-31 | `/code-review high` sobre o diff das Sprints 7-8 (`08c4f6f..HEAD`) achou 5 pontos; 4 corrigidos: (1) M-2 ordenava só por `data`, "primeira exposição" indefinida com duas sessões do mesmo tipo no mesmo dia — desempate por `id`. (2) `GET /api/simulados` fazia N+1 (uma consulta de resultados por simulado) — corrigido pra duas consultas totais, e de quebra ganhou `ORDER BY data DESC` (histórico, mesma família do problema de ordenação do item 1). (3) `ErroService.registrar` e (4) `SimuladoService.registrar` deixavam campo obrigatório ausente (`descricao`/`causa`/`confianca`; `data`/`duracaoMinutos`/campos de cada resultado) virar 500 não traduzido — 8 `codigo` novos de validação eager ao todo, mesmo padrão de `SessaoService.exigirContagemDeQuestoes`. O 5º ponto (tradução de exceção duplicada entre `AssuntoService`/`SessaoService`/`ErroService`/`SimuladoService`) fica registrado como sugestão, não aplicado — mexeria em serviços de sprints anteriores fora do que foi pedido. `docs/SPRINT-7-METRICAS.md` v1.3.0, `docs/SPRINT-8-SIMULADO.md` v1.1.0, testes novos para os 8 `codigo`. Ainda sem execução de testes (mesma ressalva) |
 | 1.18.0 | 2026-08-31 | Item 8.8: `scripts/backup.sh`, `restaurar.sh`, `testar-restauracao.sh` escritos, transcrevendo `docs/03E_DEPLOYMENT.md` §6 (doc já congelado, nenhuma decisão nova). `.gitattributes` criado (`*.sh text eol=lf`) — sem isso o `autocrlf` do Windows converteria os scripts pra CRLF no checkout e quebraria o shebang/`set -euo pipefail` no Pi (Linux). Bit executável (`100755`) setado no índice do git. Não testados em Pi real — este ambiente não tem um |

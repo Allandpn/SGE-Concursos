@@ -30,6 +30,10 @@ CREATE TABLE resultado_simulado (
     CONSTRAINT ck_resultado_simulado_questoes_total CHECK (questoes_total > 0),
     -- Higiene de dado, sem regra numerada (mesma família de ck_sessao_questoes_corretas_limite).
     CONSTRAINT ck_resultado_simulado_corretas_limite CHECK (questoes_corretas <= questoes_total),
+    -- Cada disciplina aparece no máximo uma vez por simulado. Sem regra D-xx
+    -- numerada (nenhuma foi criada nesta sprint — D-13 já cobria a
+    -- integridade que faltava, ver changelog); traduzida pelo nome em
+    -- SimuladoService (DISCIPLINA_DUPLICADA_NO_SIMULADO).
     CONSTRAINT ux_resultado_simulado_simulado_disciplina UNIQUE (simulado_id, disciplina_id)
 );
 

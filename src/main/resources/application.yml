@@ -21,6 +21,10 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
   jpa:
+    # ADR-034: sessão do Hibernate fecha ao sair do Service, não fica aberta
+    # até a serialização da view. Associação LAZY sem "join fetch" na consulta
+    # que o DTO usa quebra aqui, não em produção sob carga.
+    open-in-view: false
     hibernate:
       # ADR-017: nunca update, nunca create-drop. O schema nasce só de
       # migração Flyway; validate transforma divergência entidade↔schema em

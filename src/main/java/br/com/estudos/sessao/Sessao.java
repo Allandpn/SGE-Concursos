@@ -77,7 +77,8 @@ public class Sessao {
     private Short previsaoPercentual;
 
     @Setter
-    private Boolean previsaoReconstrucao;
+    @Enumerated(EnumType.STRING)
+    private ResultadoSessao previsaoReconstrucao;
 
     @Setter
     @Column(nullable = false)

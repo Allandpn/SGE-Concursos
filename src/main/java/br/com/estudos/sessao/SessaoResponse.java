@@ -19,7 +19,7 @@ public record SessaoResponse(
     Integer questoesTotal,
     FormatoBanca formato,
     Short previsaoPercentual,
-    Boolean previsaoReconstrucao,
+    ResultadoSessao previsaoReconstrucao,
     UUID tentativaId,
     LocalDate proximaSessaoData,
     String proximaSessaoDescricao,

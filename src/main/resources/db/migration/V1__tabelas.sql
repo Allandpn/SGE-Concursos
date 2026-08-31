@@ -48,7 +48,7 @@ CREATE TABLE sessao (
     questoes_total            INTEGER,
     formato                   TEXT,
     previsao_percentual       SMALLINT,
-    previsao_reconstrucao     BOOLEAN,
+    previsao_reconstrucao     TEXT,
     tentativa_id              UUID NOT NULL,
     proxima_sessao_data       DATE,
     proxima_sessao_descricao  TEXT,
@@ -60,6 +60,9 @@ CREATE TABLE sessao (
     CONSTRAINT ck_sessao_tipo CHECK (tipo IN ('ESTUDO', 'QUESTOES', 'FLASHCARDS', 'RECUPERACAO')),
     CONSTRAINT ck_sessao_tempo_minutos CHECK (tempo_minutos > 0),
     CONSTRAINT ck_sessao_resultado CHECK (resultado IN ('SUCESSO', 'PARCIAL', 'FALHA')),
+    -- Mesma escala de três vias do resultado (00_PRODUTO §7 M-3, nota v1.6.0):
+    -- decisão de tela em 02_JORNADAS §4.1, não sim/não.
+    CONSTRAINT ck_sessao_previsao_reconstrucao CHECK (previsao_reconstrucao IN ('SUCESSO', 'PARCIAL', 'FALHA')),
     CONSTRAINT ck_sessao_questoes_corretas CHECK (questoes_corretas >= 0),
     CONSTRAINT ck_sessao_questoes_total CHECK (questoes_total > 0),
     CONSTRAINT ck_sessao_formato CHECK (formato IN ('MULTIPLA_ESCOLHA', 'CERTO_ERRADO')),

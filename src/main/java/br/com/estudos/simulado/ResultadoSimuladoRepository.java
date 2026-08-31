@@ -17,7 +17,15 @@ public interface ResultadoSimuladoRepository extends JpaRepository<ResultadoSimu
     // GET /api/simulados (docs/SPRINT-8-SIMULADO.md §5): busca os resultados
     // de todos os simulados listados numa consulta só, em vez de uma por
     // simulado (N+1 — mesmo "suspeito de sempre" de LAZY sem fetch em lote).
-    List<ResultadoSimulado> findBySimuladoIdIn(Collection<Long> simuladoIds);
+    // join fetch em disciplina (ADR-034): SimuladoMapper lê disciplina.id;
+    // sem isto seria N+1 de novo, um SELECT por disciplina distinta.
+    @Query("""
+        select rs from ResultadoSimulado rs
+        join fetch rs.simulado sim
+        join fetch rs.disciplina d
+        where rs.simulado.id in :simuladoIds
+        """)
+    List<ResultadoSimulado> findBySimuladoIdIn(@Param("simuladoIds") Collection<Long> simuladoIds);
 
     // M-1 (docs/SPRINT-8-SIMULADO.md §4): mesma projeção de SessaoRepository
     // .listarAcertoQuestoes — simulado soma no mesmo agregado (§0).

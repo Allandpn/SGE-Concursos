@@ -153,10 +153,12 @@ public class MetricaService {
         var subestimou = 0;
         var acertouPrevisao = 0;
         for (var sessao : subjetivas) {
-            var previu = sessao.getPrevisaoReconstrucao();
-            var conseguiu = sessao.getResultado() != ResultadoSessao.FALHA;
-            if (previu && !conseguiu) superestimou++;
-            else if (!previu && conseguiu) subestimou++;
+            // Mesma escala nos dois lados desde docs/SPRINT-1-BANCO.md v1.2.0
+            // (00_PRODUTO §7 v1.6.0) — ordinal menor é "melhor" (SUCESSO=0),
+            // mesma ordem que a escada usa.
+            var comparacao = sessao.getPrevisaoReconstrucao().ordinal() - sessao.getResultado().ordinal();
+            if (comparacao < 0) superestimou++;
+            else if (comparacao > 0) subestimou++;
             else acertouPrevisao++;
         }
         var subjetiva = new M3SubjetivaResponse(superestimou, subestimou, acertouPrevisao, subjetivas.size());

@@ -77,7 +77,7 @@ class SessaoResultadoTest extends IntegracaoTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"assuntoId": %d, "tipo": "RECUPERACAO", "data": "2026-08-30", "tempoMinutos": 8,
-                     "previsaoReconstrucao": true, "resultado": "PARCIAL",
+                     "previsaoReconstrucao": "SUCESSO", "resultado": "PARCIAL",
                      "tentativaId": "%s"}
                     """.formatted(assuntoId(), java.util.UUID.randomUUID())))
             .andExpect(status().isCreated())

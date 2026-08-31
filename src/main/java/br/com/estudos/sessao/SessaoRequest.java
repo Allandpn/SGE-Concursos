@@ -21,7 +21,7 @@ public record SessaoRequest(
     Integer questoesTotal,
     FormatoBanca formato,
     Short previsaoPercentual,
-    Boolean previsaoReconstrucao,
+    ResultadoSessao previsaoReconstrucao,
     ResultadoSessao resultado,
     UUID tentativaId,
     LocalDate proximaSessaoData,

@@ -7,8 +7,8 @@ endpoint REST. Nasce agora porque a Sprint 3 é "registrar sessão" (`PROGRESSO.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
-| Data | 2026-08-30 |
+| Versão | 1.1.0 |
+| Data | 2026-08-31 |
 | Status | Vigente |
 | Subordinado a | `especificacao/01_DOMINIO.md` §2, §3.3, §3.3.1, §4; `especificacao/03_INVARIANTES.md` §11.1 (D-45); `docs/00A_ADR.md` (ADR-031); `docs/09_CODE_STYLE.md`; `docs/SPRINT-1-BANCO.md` (schema já existe, não muda) |
 
@@ -55,7 +55,7 @@ para popular `parametro` (§2).
 | `questoesCorretas`, `questoesTotal` | `Integer` | só `QUESTOES`/`FLASHCARDS` |
 | `formato` | `FormatoBanca` (enum: `MULTIPLA_ESCOLHA`, `CERTO_ERRADO`) | só `QUESTOES` (D-36) — `FLASHCARDS` não tem banca |
 | `previsaoPercentual` | `Short` | só `QUESTOES`/`FLASHCARDS`, 0..100 |
-| `previsaoReconstrucao` | `Boolean` | só `RECUPERACAO` |
+| `previsaoReconstrucao` | `ResultadoSessao` | só `RECUPERACAO`; mesma escala de `resultado` (`00_PRODUTO` §7 v1.6.0) |
 | `tentativaId` | `UUID` | `NOT NULL`, identifica a tentativa de registro (D-45) — **nunca gerado pelo servidor** |
 | `proximaSessaoData`, `proximaSessaoDescricao` | `LocalDate`, `String` | opcionais, ambos ou nenhum não é regra do banco — sem `CHECK` correspondente |
 | `ativo` | `boolean` | D-18, igual `Assunto`/`Disciplina` |
@@ -215,4 +215,5 @@ Cobertura mínima:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-08-31 | `previsaoReconstrucao`: `Boolean` → `ResultadoSessao` (`docs/SPRINT-1-BANCO.md` v1.2.0, `00_PRODUTO` v1.6.0) — mesma escala de três vias do `resultado`, fecha contradição achada em auditoria entre `00_PRODUTO §7` e `02_JORNADAS §4.1` |
 | 1.0.0 | 2026-08-30 | Criado. Escopo definido em conversa com o usuário: sessão nasce sem tocar em `Revisao` (pendência até a Sprint 4, mesmo tratamento de D-17), lote mínimo sem efeito nesta sprint, só API |

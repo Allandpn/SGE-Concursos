@@ -59,6 +59,17 @@ class ErroDominioTest extends IntegracaoTestBase {
     }
 
     @Test
+    void assuntoIdAusente_devolve422() throws Exception {
+        mockMvc.perform(post("/api/erros")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"descricao": "Sem assunto no corpo", "causa": "DESATENCAO", "confianca": "BAIXA"}
+                    """))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("ASSUNTO_OBRIGATORIO"));
+    }
+
+    @Test
     void sessaoInexistente_devolve404() throws Exception {
         var assunto = novoAssunto();
 

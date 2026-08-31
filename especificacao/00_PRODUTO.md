@@ -5,8 +5,8 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.5.0 |
-| Data | 2026-08-19 |
+| Versão | 1.6.0 |
+| Data | 2026-08-31 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
 
@@ -482,6 +482,12 @@ A variante subjetiva parece circular e não é. O primeiro julgamento é feito
 tentativa** e lê o resultado dela. A distância entre os dois **é** a ilusão de
 fluência, medida diretamente — e é a medida mais barata dela que existe.
 
+Quantos níveis cada julgamento admite é decisão de tela, não desta métrica —
+este documento fixa o quê (previsto × real, com sinal), não o quanto.
+`02_JORNADAS §4.1` usa três (a mesma régua nos dois momentos, e a mesma que já
+vale para o resultado de qualquer sessão que cumpre revisão, `01_DOMINIO`
+§3.3) — o par vira SUCESSO/PARCIAL/FALHA de ambos os lados, não sim/não.
+
 São reportadas **separadas**. Misturar as duas numa média é fingir precisão que
 a segunda não tem.
 
@@ -697,6 +703,8 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.6.0 | 2026-08-31 | §7 M-3: nota explícita de que a granularidade do par previsto×real da variante subjetiva é decisão de tela (`02_JORNADAS §4.1`), não deste documento — fecha uma contradição achada em auditoria (`/agents/mentor.md`): a frase solta "vai conseguir reconstruir? / conseguiu?" tinha sido lida como binária no código (`previsaoReconstrucao: Boolean`), enquanto `02_JORNADAS` já desenhava três botões e o próprio `resultado` de `RECUPERACAO` já é `SUCESSO`/`PARCIAL`/`FALHA` desde a Sprint 3 (D-07 exige isso de qualquer sessão que cumpre revisão). Não é mudança da métrica — é a mesma métrica, granularidade explicitada. Código corrigido na mesma sessão: `previsaoReconstrucao` passa a `ResultadoSessao` |
+| ~~1.3.0–1.5.0~~ | — | Bump de versão sem changelog correspondente, achado nesta revisão — não reconstruído aqui (fora do escopo do que foi pedido); registrado para não se perder |
 | 1.2.0 | 2026-08-19 | Segunda revisão do usuário. **Regra da produção obrigatória** (§5.2.1): recuperação livre exige produzir antes de julgar — o sistema nunca pergunta se você acha que lembra. **Resultado unificado** `SUCESSO`/`PARCIAL`/`FALHA` (§6.3): o tipo muda a apuração, não o significado; consolidação passa a depender do resultado e não do limiar. **Definição de sessão** (§6.2): 1:1 com assunto, uma estratégia por sessão, turno fora do modelo, registro em lote é interface. **Simulado** (§6.6): evento por disciplina, alimenta só M-1, implementação adiada. M-3 ganha duas variantes reportadas separadamente |
 | 1.1.0 | 2026-08-19 | Revisão do usuário. Interleaving como 4º pilar, com a correção de que domínios distintos não o produzem. Feedback vira princípio (§3.5) e gera "desempenho muda o caminho". Calibração passa a registrar sinal. Granularidade de assunto vira regra. Consolidado e manutenção definidos. Banco de erros promovido a camada explicativa, com confiança no erro. Adotado o princípio da economia cognitiva. **Recusadas:** confiança 1–5 por lote (redundante com M-3) e campo estruturado de elaboração (já é o banco de erros). **Correção principal:** a aritmética de 50 questões/semana × 200 assuntos derruba "toda revisão é lote de questões" — recuperação livre passa a ser o caminho principal, e M-1 tem seus níveis de prova corrigidos |
 | 1.0.0 | 2026-08-18 | Criado. Primeiro documento da especificação reordenada |

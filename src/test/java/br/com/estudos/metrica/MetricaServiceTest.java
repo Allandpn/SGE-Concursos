@@ -88,7 +88,7 @@ class MetricaServiceTest extends IntegracaoTestBase {
             UUID.randomUUID(), null, null));
     }
 
-    private void registrarRecuperacao(Long assuntoId, LocalDate data, Boolean previsaoReconstrucao, ResultadoSessao resultado) {
+    private void registrarRecuperacao(Long assuntoId, LocalDate data, ResultadoSessao previsaoReconstrucao, ResultadoSessao resultado) {
         sessaoService.registrar(new SessaoRequest(
             assuntoId, TipoSessao.RECUPERACAO, data, 8, null, null, null, null, previsaoReconstrucao, resultado,
             UUID.randomUUID(), null, null));
@@ -172,8 +172,8 @@ class MetricaServiceTest extends IntegracaoTestBase {
     void m2_serieDeRecuperacaoNuncaSomaComQuestoes() {
         var disciplina = novaDisciplina();
         var assunto = novoAssunto(disciplina.getId());
-        registrarRecuperacao(assunto.getId(), HOJE, true, ResultadoSessao.FALHA); // primeira: 0% (não conseguiu)
-        registrarRecuperacao(assunto.getId(), HOJE.plusDays(10), true, ResultadoSessao.SUCESSO); // 100%
+        registrarRecuperacao(assunto.getId(), HOJE, ResultadoSessao.SUCESSO, ResultadoSessao.FALHA); // primeira: 0% (não conseguiu)
+        registrarRecuperacao(assunto.getId(), HOJE.plusDays(10), ResultadoSessao.SUCESSO, ResultadoSessao.SUCESSO); // 100%
 
         var resposta = metricaService.m2(assunto.getId());
 
@@ -205,9 +205,9 @@ class MetricaServiceTest extends IntegracaoTestBase {
         var subestimou = novoAssunto(disciplina.getId());
         var acertou = novoAssunto(disciplina.getId());
 
-        registrarRecuperacao(superestimou.getId(), HOJE, true, ResultadoSessao.FALHA); // previu que ia, não foi
-        registrarRecuperacao(subestimou.getId(), HOJE, false, ResultadoSessao.SUCESSO); // previu que não ia, foi
-        registrarRecuperacao(acertou.getId(), HOJE, true, ResultadoSessao.SUCESSO); // previu certo
+        registrarRecuperacao(superestimou.getId(), HOJE, ResultadoSessao.SUCESSO, ResultadoSessao.FALHA); // previu que ia, não foi
+        registrarRecuperacao(subestimou.getId(), HOJE, ResultadoSessao.FALHA, ResultadoSessao.SUCESSO); // previu que não ia, foi
+        registrarRecuperacao(acertou.getId(), HOJE, ResultadoSessao.SUCESSO, ResultadoSessao.SUCESSO); // previu certo
 
         var depois = metricaService.m3().subjetiva();
 
@@ -227,13 +227,13 @@ class MetricaServiceTest extends IntegracaoTestBase {
         sessaoService.registrar(new SessaoRequest(
             dentroDoPrazo.getId(), TipoSessao.ESTUDO, HOJE, 20, null, null, null, null, null, null,
             UUID.randomUUID(), null, null));
-        registrarRecuperacao(dentroDoPrazo.getId(), HOJE.plusDays(1), true, ResultadoSessao.SUCESSO); // diff = 0
+        registrarRecuperacao(dentroDoPrazo.getId(), HOJE.plusDays(1), ResultadoSessao.SUCESSO, ResultadoSessao.SUCESSO); // diff = 0
 
         var foraDoPrazo = novoAssunto(disciplina.getId());
         sessaoService.registrar(new SessaoRequest(
             foraDoPrazo.getId(), TipoSessao.ESTUDO, HOJE, 20, null, null, null, null, null, null,
             UUID.randomUUID(), null, null));
-        registrarRecuperacao(foraDoPrazo.getId(), HOJE.plusDays(5), true, ResultadoSessao.SUCESSO); // diff = 4
+        registrarRecuperacao(foraDoPrazo.getId(), HOJE.plusDays(5), ResultadoSessao.SUCESSO, ResultadoSessao.SUCESSO); // diff = 4
 
         var depois = metricaService.m4();
 

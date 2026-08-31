@@ -1015,6 +1015,70 @@ compensa mover pro SQL.
 
 ---
 
+## ADR-034 — `open-in-view: false`
+
+**Status:** Aceita · 2026-08-31 · Sprint 7/8
+
+### Contexto
+
+`spring.jpa.open-in-view` nunca foi decidido neste projeto — nem citado em
+`application.yml`, nem em documento algum. O default do Spring Boot é
+`true`: a sessão do Hibernate fica aberta até a view (aqui, a serialização
+JSON do Controller) terminar, então qualquer acesso `LAZY` esquecido no
+mapper "funciona" mesmo sem `join fetch`, silenciosamente, com uma consulta
+extra por associação.
+
+Isso escondeu dois casos reais: `ErroMapper.toResponse` e
+`SimuladoMapper.toResultadoResponse` leem `.getAssunto().getId()` /
+`.getDisciplina().getId()` de associações `@ManyToOne(LAZY)` sem
+`join fetch` na consulta (`ErroRepository.findByAssuntoId`,
+`ResultadoSimuladoRepository.findBySimuladoIdIn`) — N+1 real em
+`GET /api/erros` e `GET /api/simulados`, só visível com dado suficiente pra
+notar a diferença.
+
+Achado durante a revisão de status das Sprints 7/8 (`/agents/mentor.md`):
+com OSIV ligado, **nenhum teste consegue provar a ausência desse bug** — os
+testes de listagem são todos `@Transactional`, então a sessão já fica aberta
+pelo teste, com ou sem OSIV. A suíte inteira passa hoje (79/79) sem que isso
+prove nada sobre o caminho real de produção.
+
+### Decisão
+
+**`open-in-view: false`.** A sessão do Hibernate fecha quando o Service
+termina; qualquer `LAZY` sem `join fetch` explícito na consulta vira
+`LazyInitializationException` **na hora de escrever o repositório**, não uma
+consulta extra silenciosa em produção. Coerente com o padrão que o projeto
+já segue desde a Sprint 2 (`AssuntoRepository.listarParaExportacao`,
+`listarAtivosDeDisciplinasAtivas`: `LAZY` com `join fetch` sempre explícito,
+nunca navegação implícita) e com ADR-029 (sem cache — a resposta a "isso
+ficou lento" é consulta melhor, não mecanismo automático).
+
+`ErroRepository.findByAssuntoId` e
+`ResultadoSimuladoRepository.findBySimuladoIdIn` corrigidos com
+`join fetch` (o segundo, com `left join fetch` onde a associação é opcional)
+na mesma mudança que desliga o OSIV — sem isso a aplicação nem sobe para os
+dois endpoints afetados.
+
+### Consequências
+
+- Qualquer DTO que precisar de um campo de associação `LAZY` daqui pra
+  frente exige `join fetch` na consulta do repositório, igual já valia para
+  `Assunto.disciplina`. Isso já era o padrão; agora é **também** o que
+  impede a aplicação de subir se for esquecido, não só o checklist de
+  `09_CODE_STYLE.md` §9.
+- Testes que precisam provar o caminho real de produção (não só HTTP/JSON)
+  não podem ser `@Transactional` — mesma disciplina que
+  `IntegracaoTestBase` já documenta para provar commit.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Deixar `true` (default) | É exatamente a escolha de tutorial que o projeto evita em outro lugar (Lombok, `ddl-auto: update`, DTO de erro próprio) — aqui teria entrado por omissão, não por decisão |
+| `@EntityGraph` nos repositórios em vez de `join fetch` | Mesmo efeito, mas o projeto já tem o padrão de `@Query` com `join fetch` comentado (`AssuntoRepository`, `RevisaoRepository`) — duas formas de resolver o mesmo problema não vale a pena introduzir agora |
+
+---
+
 ## Reexames concluídos
 
 ### ADR-028 e ADR-030 — Alpine.js, zero build no frontend

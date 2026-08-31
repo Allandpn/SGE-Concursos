@@ -7,8 +7,8 @@ para nascer. Nasce agora porque a Sprint 1 é "ambiente e schema"
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.1.0 |
-| Data | 2026-08-19 |
+| Versão | 1.2.0 |
+| Data | 2026-08-31 |
 | Status | Vigente |
 | Subordinado a | `especificacao/01_DOMINIO.md`, `especificacao/02_JORNADAS.md`, `especificacao/03_INVARIANTES.md`, `docs/00A_ADR.md`, `docs/09_CODE_STYLE.md` |
 
@@ -120,7 +120,7 @@ edita depois de aceito.
 | `questoes_total` | `INTEGER CHECK (> 0)` | NULL | só `QUESTOES`/`FLASHCARDS` — §3.3; percentual apurado é derivado destas duas, nunca gravado (ADR-007); `questoes_corretas ≤ questoes_total` também é `CHECK`, ver §3 |
 | `formato` | `TEXT CHECK IN ('MULTIPLA_ESCOLHA','CERTO_ERRADO')` | NULL | **D-36** — só `QUESTOES` |
 | `previsao_percentual` | `SMALLINT CHECK (BETWEEN 0 AND 100)` | NULL | M-3 variante objetiva (`00_PRODUTO` §7) — só `QUESTOES`/`FLASHCARDS`, amarrado por **D-04a** (ver §3); representação em duas colunas é decisão minha, ver §7.4 |
-| `previsao_reconstrucao` | `BOOLEAN` | NULL | M-3 variante subjetiva — só `RECUPERACAO`, amarrado por **D-04a** (ver §3); ver §7.4 |
+| `previsao_reconstrucao` | `TEXT CHECK IN ('SUCESSO','PARCIAL','FALHA')` | NULL | M-3 variante subjetiva — só `RECUPERACAO`, amarrado por **D-04a** (ver §3); mesma escala de três vias que `resultado` (`00_PRODUTO` §7, nota v1.6.0 — decisão de tela em `02_JORNADAS §4.1`, não booleano); ver §7.4 |
 | `tentativa_id` | `UUID` | NOT NULL | **D-45** — identificador gerado pelo cliente ao abrir a tela; tipo é decisão minha, ver §7.5 |
 | `proxima_sessao_data` | `DATE` | NULL | §3.3 — intenção opcional, "quando" |
 | `proxima_sessao_descricao` | `TEXT` | NULL | §3.3 — intenção opcional, "o quê" |
@@ -508,5 +508,6 @@ uma nova substituindo a tabela de ADR-011 para `Assunto`.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.0 | 2026-08-31 | `previsao_reconstrucao`: `BOOLEAN` → `TEXT CHECK IN ('SUCESSO','PARCIAL','FALHA')`, mesma escala de `resultado`. Fecha contradição achada em auditoria entre `00_PRODUTO §7` (fraseado solto, lido como binário) e `02_JORNADAS §4.1` (três botões, desenhados de propósito) — `00_PRODUTO` v1.6.0 explicita que a granularidade é decisão de tela, não da métrica. D-04a (§3.1) não muda: a `CHECK` já era só de nulidade por tipo, indiferente ao tipo de dado da coluna |
 | 1.1.0 | 2026-08-19 | Revisão do usuário, 7 correções. **Parâmetros entram no schema**: nova tabela `parametro` (§6), corrigindo a conclusão da v1.0.0 à luz do próprio teste de D-29 ("sem reinício"). Nova `CHECK` de higiene `questoes_corretas ≤ questoes_total`. `revisao.sessao_origem_id` passa a `NULL` (assunto de divisão, retomada após falha em manutenção). **D-04a** reescrita para amarrar cada previsão ao tipo que a comporta, no padrão de D-36. `assunto.status` renomeado para `assunto.ativo BOOLEAN` (colisão de nome com o que D-16 proíbe; diverge da tabela de ADR-011, registrado em §7.11). Contagem de questões amarrada ao tipo, decidido em §7.9. Nova restrição **J-1** (`02_JORNADAS`, agora fonte do documento): nome de assunto único por disciplina, sem acento/caixa, via `unaccent_imutavel`. Encontrada e registrada (não resolvida) inconsistência de enum de peso entre `01_DOMINIO` e `02_JORNADAS` J-1 |
 | 1.0.0 | 2026-08-19 | Criado. Cinco tabelas (`disciplina`, `assunto`, `sessao`, `revisao`, `erro`); 9 das 10 invariantes de persistência como restrições nomeadas; Simulado e D-13 adiados por decisão confirmada com o usuário; índices justificados por padrão de consulta já nomeado na especificação; nenhum parâmetro de negócio entra no schema desta sprint |

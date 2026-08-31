@@ -7,7 +7,7 @@ erros" (`PROGRESSO.md` §1).
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.3.0 |
+| Versão | 1.4.0 |
 | Data | 2026-08-31 |
 | Status | Vigente |
 | Subordinado a | `especificacao/00_PRODUTO.md` §7 (M-1 a M-4), §7.1 (banco de erros); `especificacao/01_DOMINIO.md` §3.5 (Erro), §10 D-12/D-36/**D-46**; `especificacao/02_JORNADAS.md` J-3, §4.2; `docs/00A_ADR.md` (ADR-033, reaproveitada — nenhuma ADR nova nesta sprint); `docs/SPRINT-1-BANCO.md` §2.5/§7.6 (tabela `erro`, `causa`, escala de `confianca` — já existiam, não mudam); `docs/SPRINT-3-SESSAO.md` (`Sessao` já existe, não muda) |
@@ -181,14 +181,22 @@ comparação, sem inventar equivalência numérica com o percentual de questões
 Duas variantes, nunca somadas (já era regra fixa, `00_PRODUTO` §7 M-3):
 
 - **Objetiva** (`QUESTOES`/`FLASHCARDS`): `previsaoPercentual − percentualReal`, com sinal.
-- **Subjetiva** (`RECUPERACAO`): `previsaoReconstrucao` (booleano, "vai
-  reconstruir?") comparado a `resultado != FALHA` ("reconstruiu"). Sinal:
-  previu `true` e saiu `FALHA` → superestimou; previu `false` e saiu
-  `SUCESSO`/`PARCIAL` → subestimou; acertou a previsão → sem viés. Nenhum
-  documento define essa fórmula — é a extração mais direta do par
-  booleano×categórico que já existe no schema desde a Sprint 3, confirmada
-  com o usuário, registrada aqui por transparência (mesmo tratamento que
-  `ASSUNTO_INEXISTENTE` recebeu na Sprint 2).
+- **Subjetiva** (`RECUPERACAO`): `previsaoReconstrucao` comparado a
+  `resultado`, mesma escala `SUCESSO`/`PARCIAL`/`FALHA` dos dois lados desde
+  `docs/SPRINT-1-BANCO.md` v1.2.0 (`00_PRODUTO` §7 v1.6.0 — decisão de tela
+  de `02_JORNADAS §4.1`, não booleana). Comparação por ordinal do enum
+  (`SUCESSO`=0, `PARCIAL`=1, `FALHA`=2 — ordem já existe, é a mesma que a
+  escada usa para "melhor resultado"): previsto com ordinal **menor** que o
+  real → previu melhor do que saiu → superestimou; ordinal **maior** →
+  subestimou; **igual** → acertou a previsão, qualquer que seja o nível.
+  Nenhum documento define essa fórmula — é a extração mais direta do par
+  categórico×categórico que existe no schema, confirmada com o usuário,
+  registrada aqui por transparência (mesmo tratamento que
+  `ASSUNTO_INEXISTENTE` recebeu na Sprint 2). Fica **fora de escopo** desta
+  correção transformar a contagem numa média com sinal como a objetiva —
+  os dois lados agora têm a mesma escala pra isso, mas ninguém pediu essa
+  mudança de forma, só a correção da granularidade; registrado como
+  possível refinamento futuro, não decidido.
 
 ### 4.4 M-4 — aderência
 
@@ -231,6 +239,7 @@ Duas variantes, nunca somadas (já era regra fixa, `00_PRODUTO` §7 M-3):
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.4.0 | 2026-08-31 | §4.3: fórmula de sinal de M-3 subjetiva reescrita — `previsaoReconstrucao` deixou de ser booleano (`docs/SPRINT-1-BANCO.md` v1.2.0), comparação agora é por ordinal entre os dois lados `SUCESSO`/`PARCIAL`/`FALHA`. Fecha contradição achada em auditoria entre `00_PRODUTO §7` e `02_JORNADAS §4.1`. `M3SubjetivaResponse` não muda de forma — mesmas três contagens, só a comparação interna corrigida |
 | 1.3.0 | 2026-08-31 | Revisão de código pós-implementação (`/code-review high`) encontrou dois defeitos reais: (1) M-2 (§4.2) ordenava só por `data`, deixando a "primeira exposição" indefinida quando duas sessões do mesmo tipo caem no mesmo dia — corrigido com desempate por `id`. (2) `ErroService.registrar` (§3) deixava `descricao`/`causa`/`confianca` ausentes caírem num `DataIntegrityViolationException` não traduzido (500), em vez de validação eager — três `codigo` novos (`DESCRICAO_OBRIGATORIA`/`CAUSA_OBRIGATORIA`/`CONFIANCA_OBRIGATORIA`), mesmo padrão de `SessaoService.exigirContagemDeQuestoes` |
 | 1.2.0 | 2026-08-31 | Corrigido antes de escrever qualquer código: a tabela `erro` (com `causa`, `confianca` como três níveis ordinais, `resolvido`, as duas FKs) já existe desde `V1__tabelas.sql` (`docs/SPRINT-1-BANCO.md` §2.5/§7.6) — só a redação das âncoras de confiança (§1.2) era decisão nova desta sprint. §1 e §2 reescritos: a migração `V7` vira uma linha (renomear `fk_erro_assunto` para `fk_erro_d46_assunto`), não criação de tabela. Nenhuma decisão de escopo mudou — só a premissa errada de que a Sprint 7 criava schema novo |
 | 1.1.0 | 2026-08-31 | Confirmados os quatro pontos que o rascunho 1.0.0 deixou em aberto: D-46 escrita em `01_DOMINIO.md` v1.12.0 (erro pode apontar para sessão, opcionalmente); âncoras de confiança (`ALTA`/`MEDIA`/`BAIXA`) aceitas como redigidas; fórmula de sinal de M-3 subjetiva confirmada; limiares de `n` ficam como constante, não `parametro`. Documento passa de rascunho para **Vigente** |
