@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.1 |
-| Data | 2026-08-19 |
+| Versão | 1.2.2 |
+| Data | 2026-08-30 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -133,10 +133,11 @@ Banco de Dados,Normalização e Dependências Funcionais,ALTO,4
 | Coluna | Obrigatória | Regra |
 |---|---|---|
 | `id` | não | **Vazio → cria. Preenchido → atualiza aquele registro** |
-| `disciplina` | sim | Criada se não existir |
+| `disciplina` | sim | Criada se não existir, com `peso` `MEDIO` — o CSV é por assunto, não tem coluna de peso de disciplina; ajustável depois pela interface |
 | `assunto` | sim | Único dentro da disciplina, comparado sem acento e sem caixa |
 | `peso` | não | `ALTO` · `MEDIO` · `BAIXO`. Ausente → `MEDIO` |
 | `ordem` | não | Inteiro. Ausente → ordem de aparição no arquivo |
+| `dificuldadePercebida` | não | Inteiro 1..5. Ausente → `3` (meio da escala). Ajustável depois pela interface |
 
 #### Por que existe a coluna `id`
 
@@ -154,7 +155,7 @@ qualquer alteração, **inclusive renomear**.
 | Situação | Comportamento |
 |---|---|
 | Linha sem `id` | Cria. Se já existir assunto com o mesmo nome na disciplina, recusa a linha |
-| Linha com `id` conhecido | Atualiza nome, peso e ordem daquele registro |
+| Linha com `id` conhecido | Atualiza nome, peso, ordem e dificuldadePercebida daquele registro |
 | Linha com `id` inexistente | **Recusa o arquivo inteiro** — sinal de arquivo corrompido ou de outra base |
 
 E, independentemente disso: **renomear assunto e disciplina tem que existir na
@@ -476,6 +477,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.2 | 2026-08-30 | Duas lacunas encontradas implementando a importação (Sprint 2, item 2.5), mesma causa raiz: o CSV é definido por linha de **assunto**, então nenhum atributo que só existe em **disciplina** tem coluna. (1) Tabela de colunas não tinha `dificuldadePercebida`, mas `Assunto.dificuldadePercebida` é `NOT NULL` no banco (`docs/SPRINT-2-CADASTRO.md` §1.2) — assunto novo criado via importação não tinha valor para essa coluna. (2) Disciplina criada pela importação (linha nova referenciando disciplina inexistente) também não tinha de onde tirar `peso`, que também é `NOT NULL`. Corrigidas as duas com o mesmo padrão já usado para o `peso` do assunto: default fixo (`3` para dificuldade, `MEDIO` para peso de disciplina), ajustável depois pela interface. A tabela "Situação" (linha com `id` conhecido) também estava desatualizada — dizia que só nome/peso/ordem eram atualizados; `dificuldadePercebida` entra na mesma lista, mesmo tratamento dos outros três campos opcionais |
 | 1.2.1 | 2026-08-19 | Correção: o enum de peso do CSV estava no feminino (`ALTA`/`MEDIA`/`BAIXA`), divergindo de `01_DOMINIO` D-23. *Peso* é masculino — `ALTO`/`MEDIO`/`BAIXO`. Divergência encontrada ao derivar o schema da Sprint 1 |
 | 1.2.0 | 2026-08-19 | Segunda revisão. **Coluna `id` no CSV** e ciclo exportar–editar–importar: sem isso, corrigir um typo de disciplina duplicava a base inteira. Renomear passa a ser exigência de interface. J-3: **ordem das métricas invertida** — M-1 é lenta demais para liderar tela semanal; M-2 e M-3 assumem, e semanal × trimestral viram telas distintas. Nova §4.3, lugar do **puxar mais**, no fim da lista e nunca no topo. Nova §5.1: orçamento é tempo do usuário, transição otimista, falha não destrutiva, fila offline deliberadamente fora |
 | 1.1.0 | 2026-08-19 | Revisão do usuário. §2.1: o turno vira **lista clicável**, não sequência — a ordem é apresentação, nunca imposição. J-1: cadastro em massa vira **importação CSV** com layout definido, validação tudo-ou-nada e reimportação idempotente. J-4 ganha **o outro lado** — puxar mais num dia de folga, com as três modalidades e o preço de cada uma. §4.1: botões passam a usar as âncoras de estrutura × detalhe. Nova §4.2: **registrar erro é ação global**, nunca etapa de fluxo |

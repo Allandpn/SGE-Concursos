@@ -66,6 +66,15 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Parser de CSV para importação/exportação de assuntos (J-1,
+             docs/SPRINT-2-CADASTRO.md §5/§6). Lida com aspas/vírgula em campo
+             corretamente, ao contrário de split manual. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.12.0</version>
+        </dependency>
+
         <!-- Lombok: permitido em entidade JPA com escopo restrito desde
              09_CODE_STYLE.md v2.1.0 §3.2.1 (@Getter/@Setter exceto id,
              @EqualsAndHashCode só no id). Versão vem do BOM do
@@ -80,6 +89,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- No Spring Boot 4.1, @AutoConfigureMockMvc saiu de
+             spring-boot-test-autoconfigure (que ficou só com jdbc/json) e
+             virou módulo próprio, assim como aconteceu com o Flyway. Sem
+             este starter, MockMvc não é injetável em teste algum. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
 

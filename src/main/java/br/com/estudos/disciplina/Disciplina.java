@@ -1,9 +1,6 @@
 package br.com.estudos.disciplina;
 
-
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,7 +9,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -22,7 +18,6 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import br.com.estudos.assunto.Assunto;
 import br.com.estudos.shared.enums.TipoPeso;
 
 @Entity
@@ -56,8 +51,5 @@ public class Disciplina {
 
     @UpdateTimestamp
     private Instant atualizadoEm;
-
-    @OneToMany(mappedBy = "disciplina")
-    private Set<Assunto> assuntos = new HashSet<>();
 
 }

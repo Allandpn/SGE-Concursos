@@ -62,6 +62,7 @@ public class Assunto {
     @UpdateTimestamp
     private Instant atualizadoEm;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "disciplina_id")
     private Disciplina disciplina;
