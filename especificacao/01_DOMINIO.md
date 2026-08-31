@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.11.2 |
-| Data | 2026-08-30 |
+| Versão | 1.12.0 |
+| Data | 2026-08-31 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -268,7 +268,8 @@ paralelas no mesmo assunto não significam nada e produzem revisão duplicada.
 
 ### 3.5 Erro
 
-Um engano registrado. Pertence a um assunto; opcionalmente a uma sessão.
+Um engano registrado. Pertence a um assunto; opcionalmente a uma sessão
+(D-46).
 
 | Tem | Papel |
 |---|---|
@@ -1030,6 +1031,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-43 | Os assuntos nascidos de uma divisão começam **no nível do original**; o usuário pode baixar cada um | §3.2.2 |
 | D-44 | Divisão é operação de tela, transacional. Importação por arquivo não divide | §3.2.2 |
 | D-45 | Registrar a mesma sessão duas vezes conta **uma**. Repetir o envio nunca move a escada duas vezes | §3.3.1 |
+| D-46 | Todo erro aponta para um assunto existente; se apontar para uma sessão, ela também precisa existir | §3.5 |
 
 ---
 
@@ -1096,6 +1098,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.12.0 | 2026-08-31 | **D-46**, nova: erro aponta para um assunto existente e, opcionalmente, para uma sessão existente — mesma integridade referencial que D-01 já dá a `sessao.assunto_id`, faltando para `Erro` desde que §3.5 foi escrita. Fechada com o usuário na abertura da Sprint 7, antes de `docs/SPRINT-7-METRICAS.md` poder citar a regra na restrição da migração |
 | 1.11.2 | 2026-08-30 | §12: fechadas três das sete questões em aberto. (1) Intervalos da escada — Sprint 4 decidiu `1, 3, 7, 15, 30, 90` (não os `1, 7, 15, 30, 60, 90` citados ali como pergunta, nunca fixados como decisão em nenhum outro trecho); achado só depois de já ter perguntado ao usuário na Sprint 4 sem ter visto esta linha — a pesquisa da época não cobriu §12. (2) Teto diário de recuperações — Sprint 5 decidiu **8**. (3) Limiar de represamento — Sprint 5 decidiu `represado > teto diário`. Usuário confirmou os três valores |
 | 1.11.1 | 2026-08-19 | §3.3.1: explicitado que a identificação é da **tentativa**, não do conteúdo — recuperar o mesmo assunto duas vezes no mesmo dia continua legítimo |
 | 1.11.0 | 2026-08-19 | Nova §3.3.1 e **D-45**: registrar a mesma sessão duas vezes conta uma. Sem isso, um reenvio por falha de rede sobe a escada dois degraus e inventa um evento de retenção |

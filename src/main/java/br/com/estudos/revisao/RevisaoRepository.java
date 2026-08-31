@@ -59,4 +59,13 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
     @Query("update Revisao r set r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.CANCELADA "
         + "where r.assunto.disciplina.id = :disciplinaId and r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.PENDENTE")
     void cancelarPendentesPorDisciplina(@Param("disciplinaId") Long disciplinaId);
+
+    // M-4 (docs/SPRINT-7-METRICAS.md §4.4): join fetch em sessaoCumpriu — é
+    // dela que vem a data real de conclusão, pra comparar com dataPrevista.
+    @Query("""
+        select r from Revisao r
+        join fetch r.sessaoCumpriu s
+        where r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.CUMPRIDA
+        """)
+    List<Revisao> listarCumpridasComSessao();
 }

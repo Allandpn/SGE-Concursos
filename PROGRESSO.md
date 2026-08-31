@@ -19,7 +19,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 4 | Escada e revisão | Agendamento, cumprimento, roteamento por resultado, janela | **feito** |
 | 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | **feito** |
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | **feito** |
-| 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | não começou |
+| 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | documento técnico feito, código não começou |
 | 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
@@ -267,7 +267,53 @@ final do usuário — mesma ressalva das sprints anteriores.
 
 ---
 
-## 8. Como este arquivo se mantém honesto
+## 8. Sprint 7 · Métricas e erros
+
+**Documento técnico:** `docs/SPRINT-7-METRICAS.md` v1.2.0 — escrito por
+Claude após quatro decisões de escopo discutidas com o usuário (escala de
+confiança do erro em três âncoras qualitativas; M-2 reporta `RECUPERACAO`
+separada de `QUESTOES`/`FLASHCARDS`, nunca somada; erro não influencia a
+ordem da fila nesta sprint — `01_DOMINIO §12` continua em aberto; sem
+endpoint de resolver erro). No caminho, uma regra de domínio nova apareceu —
+`Erro` não tinha integridade referencial numerada — e foi escrita em
+`01_DOMINIO.md` como **D-46** (v1.12.0) antes do documento técnico fechar,
+seguindo a regra central do `CLAUDE.md`. Também no caminho: a tabela `erro`
+já existia desde a Sprint 1 (`docs/SPRINT-1-BANCO.md` §2.5/§7.6) — a v1.2.0
+do documento técnico corrige isso, a migração `V7` vira uma linha (renomear
+a restrição), não criação de tabela.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 7.0 | Documento técnico, revisado | — | **feito** |
+| 7.1 | Migração `V7` — renomeia `fk_erro_assunto` (já existia desde V1) para `fk_erro_d46_assunto` (§2 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 7.2 | Entidade JPA `Erro` + enums `CausaErro`/`NivelConfianca` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 7.3 | `ErroRepository` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 7.4 | `ErroService` — registrar, listar por assunto, tradução de exceção (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 7.5 | `MetricaService` — M-1 a M-4 (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 7.6 | Controllers — `/api/erros`, `/api/metricas/*` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 7.7 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | escritos, sem execução verificada |
+
+### Definition of Done
+
+- [x] `docs/SPRINT-7-METRICAS.md` revisado e aceito
+- [x] `D-46` escrita e vigente em `01_DOMINIO.md`
+- [ ] `POST /api/erros` grava com os 7 valores de causa e as 3 âncoras de
+      confiança; `ASSUNTO_INEXISTENTE`/`SESSAO_INEXISTENTE` com status e
+      `codigo` certos
+- [ ] M-1: `n < 10` devolve `—`, nunca `0%`; `n ≥ 100` marca `confiavel`;
+      dois formatos de banca no mesmo período nunca somam (D-36)
+- [ ] M-2: primeira exposição identificada pela sessão mais antiga do
+      assunto; `RECUPERACAO` reportada em série própria, nunca somada com
+      percentual de questões
+- [ ] M-3: as duas variantes (objetiva/subjetiva) com o sinal correto,
+      nunca somadas
+- [ ] M-4: janela de 3 dias, distinta da janela de tolerância de D-38
+- [ ] Nenhum endpoint de métrica grava nada
+- [ ] Nenhuma entidade/service/endpoint de `Simulado` existe
+
+---
+
+## 9. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -281,10 +327,12 @@ final do usuário — mesma ressalva das sprints anteriores.
 
 ---
 
-## 9. Changelog
+## 10. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.16.0 | 2026-08-31 | Itens 7.1–7.7 **código e testes escritos**, a pedido do usuário (pressa) — ainda sem execução verificada, Docker não disponível neste ambiente. Achado no caminho, antes de escrever qualquer linha de código: a tabela `erro` já existia desde `V1__tabelas.sql` (Sprint 1, `docs/SPRINT-1-BANCO.md` §2.5/§7.6) com `causa`/`confianca` exatamente como o rascunho do documento técnico propunha — a Sprint 7 não criou tabela nova, só a camada JPA (entidade, repositório, service, controller) e renomeou `fk_erro_assunto` para `fk_erro_d46_assunto` (migração `V7`, uma linha). `docs/SPRINT-7-METRICAS.md` §1 e §2 corrigidos para refletir isso. `MetricaService` (M-1 a M-4) segue ADR-033: sem view, sem cache, agregação em Java sobre projeções/streams. Testes de M-1 isolados por uma janela de tempo bem no futuro (ano 2999) pra não pegar dado de sobra de outras classes de teste não-transacionais (mesmo problema já visto no changelog 1.14.0); M-3/M-4 não têm janela (fiel ao texto de `00_PRODUTO`), então os testes deles comparam antes/depois em vez de valor absoluto. Próximo passo: usuário roda `mvn test` com Docker de pé pra confirmar antes de marcar os itens como **feito** |
+| 1.15.0 | 2026-08-31 | Sprint 7 aberta. `docs/SPRINT-7-METRICAS.md` v1.1.0 escrito por Claude após quatro decisões de escopo discutidas com o usuário (escala de confiança do erro, M-2 separando `RECUPERACAO`, erro fora da ordem da fila, sem endpoint de resolver). `01_DOMINIO.md` ganhou **D-46** (v1.12.0) no caminho — integridade referencial de `Erro` com `Assunto` (obrigatório) e `Sessao` (opcional), que não tinha regra numerada ainda; escrita e confirmada antes do documento técnico fechar, seguindo a regra central do `CLAUDE.md` de documento antes de código. `PROGRESSO.md` §8 criado com 8 itens (7.0–7.7) e Definition of Done |
 | 1.14.0 | 2026-08-30 | **Sprint 6 completa** — itens 6.1–6.4 feitos, 54/54 testes verdes (50 herdados + 4 novos de `TurnoServiceTest`). `Parametro` ganhou `@Setter` em `valor` (só nesse campo) — precisava pra um teste baixar o teto global sem criar 100 assuntos de verdade. Verificado manualmente contra Postgres real: plano vazio sem nada cadastrado, fila com item vencido, bloco de conteúdo sugerido, e o "puxar mais" emergente confirmado na prática — registrar a sessão do assunto sugerido e pedir o plano de novo já tira ele da sugestão, sem endpoint nenhum dedicado a isso. Nenhum bug de código nesta sprint. Um teste inicialmente frágil: `blocoDeConteudoSugeridoQuandoHaVaga` assumia que o assunto do próprio teste seria o único candidato de `FrenteService.proximaSugestaoDeConteudo()`, e quebrava rodando a suíte inteira — outros testes não-transacionais (`ImportacaoAssuntoTest`, por gravarem de propósito para provar commit real) deixam disciplina/assunto de verdade no banco pelo resto da execução, e um deles virou candidato antes do meu. Corrigido comparando contra o resultado ao vivo de `FrenteService.proximaSugestaoDeConteudo()` em vez de um id fixo — o que importa testar ali é a fiação `TurnoService` → `FrenteService`, não qual candidato específico vence (isso já é determinístico em `FrenteServiceTest`) |
 | 1.13.0 | 2026-08-30 | **Sprint 5 completa** — itens 5.1–5.5 feitos, 50/50 testes verdes (42 herdados + 8 novos de `FrenteServiceTest`). `ADR-033` escrita. Migração `V6` com os 3 parâmetros de teto. Primeiro `Clock` bean do sistema — represamento é o primeiro cálculo que depende de "hoje"; teste usa `Clock` fixo (`03_INVARIANTES` §10, data congelada). Verificado manualmente contra Postgres real: fase de assunto (backlog/frente/consolidado), D-24 (disciplina inativa vira backlog mesmo com histórico), resumo da frente, próxima vaga por ordem. Nenhum bug de código encontrado nesta sprint — só um erro de configuração de teste (`BeanDefinitionOverrideException`: dois `@Bean Clock` com o mesmo nome `clock()`, mesmo um deles `@Primary`, colidem por nome antes do Spring sequer chegar a resolver por tipo; corrigido renomeando o bean de teste para `clockFixo()`). Achado no caminho, fora do escopo desta sprint: `01_DOMINIO.md` §12 já citava valores prévios para os intervalos da escada (`1,7,15,30,60,90`, Sprint 4 decidiu `1,3,7,15,30,90`) que a pesquisa da Sprint 4 não tinha visto — usuário confirmou manter o que já estava implementado; `01_DOMINIO.md` corrigido (v1.11.2) fechando as três questões em aberto (intervalos, teto diário, limiar de represamento) antes desta sprint prosseguir |
 | 1.12.0 | 2026-08-30 | **Sprint 4 completa** — itens 4.1–4.6 feitos, 42/42 testes verdes (32 herdados + 10 novos de `RevisaoEscadaTest`). `ADR-032` escrita (saiu de "pendente de redação"). Migração `V5` com a coluna `versao` de `revisao` e os 8 parâmetros da escada (6 intervalos de nível + manutenção + janela de tolerância). Verificado manualmente contra Postgres real, escada inteira de ponta a ponta: `ESTUDO` agenda, `SUCESSO`/`PARCIAL`/`FALHA` roteiam certo, primeira chegada no nível-alvo não consolida sozinha, dois `SUCESSO` seguidos *no nível-alvo* consolidam (intervalo de manutenção, +150 dias), D-11 (falha consolidado volta ao nível-alvo, não abaixo), janela de tolerância (1 dia fora recusa, dentro cumpre), D-17 (arquivar assunto/disciplina cancela pendente). Achado antes de rodar qualquer código, só de traçar a mão o cenário de consolidação: a checagem de "dois últimos sucesso" não filtrava por nível — comparar contra o resultado do degrau anterior, não contra outra tentativa no próprio nível-alvo, teria consolidado um nível cedo demais. Três defeitos reais encontrados rodando contra Postgres, todos na mesma família do bug de D-45 da Sprint 3 (sessão do Hibernate inutilizável depois de um flush que falha) e do bug do item 2.3 (`save()` não força escrita em entidade gerenciada): (1) `agendarPrimeira` capturava a violação de D-05 e continuava na mesma transação que também grava a `Sessao` — diferente do D-45, aqui não dá pra isolar numa transação nova (a `Revisao` referencia a `Sessao` ainda não commitada), corrigido com checagem prévia só neste ponto, exceção documentada no doc técnico §3.1; (2) `processarRecuperacao` usava `save()` em vez de `saveAndFlush()` pra marcar a pendente `CUMPRIDA`, então o `INSERT` da próxima pendente rodava antes do `UPDATE` ir pro banco e colidia com a própria linha que estava sendo liberada; (3) os `@Modifying` de cancelamento (D-17) não tinham `clearAutomatically`/`flushAutomatically` — um teste automatizado (não o manual, que usa uma transação por requisição HTTP) pegou isso: `findById` depois de arquivar devolvia a `Revisao` ainda `PENDENTE`, cache de primeiro nível do Hibernate não invalidado por um update em massa; faltar `flushAutomatically` também teria descartado o `setAtivo(false)` pendente do próprio `arquivar` |

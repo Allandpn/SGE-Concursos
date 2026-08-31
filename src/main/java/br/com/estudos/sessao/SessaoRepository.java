@@ -1,10 +1,17 @@
 package br.com.estudos.sessao;
 
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import br.com.estudos.metrica.AcertoLinha;
+import br.com.estudos.shared.enums.TipoSessao;
 
 public interface SessaoRepository extends JpaRepository<Sessao, Long> {
 
@@ -17,4 +24,28 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
 
     // D-24 (docs/SPRINT-5-FRENTE.md §2.1): assunto sem nenhuma sessão está no backlog.
     boolean existsByAssuntoId(Long assuntoId);
+
+    // M-2 (docs/SPRINT-7-METRICAS.md §4.2): primeira exposição = data mais
+    // antiga; ordenado, o service só pega head/tail da lista, por tipo.
+    List<Sessao> findByAssuntoIdAndTipoInOrderByDataAsc(Long assuntoId, Collection<TipoSessao> tipos);
+
+    // M-1 (docs/SPRINT-7-METRICAS.md §4.1): projeção, não entidade — evita
+    // N+1 de Assunto/Disciplina LAZY (mesmo cuidado do "suspeito de sempre").
+    @Query("""
+        select a.disciplina.id as disciplinaId, s.formato as formato,
+               s.questoesCorretas as questoesCorretas, s.questoesTotal as questoesTotal
+        from Sessao s
+        join s.assunto a
+        where s.tipo = br.com.estudos.shared.enums.TipoSessao.QUESTOES
+          and s.data between :inicio and :fim
+        """)
+    List<AcertoLinha> listarAcertoQuestoes(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    // M-3 objetiva (docs/SPRINT-7-METRICAS.md §4.3): QUESTOES e FLASHCARDS
+    // compartilham previsaoPercentual — nenhuma regra (D-12 é só sobre M-1)
+    // exclui FLASHCARDS aqui.
+    List<Sessao> findByTipoInAndPrevisaoPercentualNotNull(Collection<TipoSessao> tipos);
+
+    // M-3 subjetiva (docs/SPRINT-7-METRICAS.md §4.3).
+    List<Sessao> findByTipoAndPrevisaoReconstrucaoNotNull(TipoSessao tipo);
 }
