@@ -17,7 +17,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 2 | Cadastro e importação | Disciplina, assunto, importação e exportação CSV (J-1) | **feito** |
 | 3 | Registrar sessão | O evento central: os 4 tipos, resultado, previsão, idempotência | **feito** |
 | 4 | Escada e revisão | Agendamento, cumprimento, roteamento por resultado, janela | **feito** |
-| 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | não começou |
+| 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | **feito** |
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | não começou |
 | 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | não começou |
 | 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | não começou |
@@ -194,7 +194,46 @@ final do usuário — mesma ressalva das sprints anteriores.
 
 ---
 
-## 6. Como este arquivo se mantém honesto
+## 6. Sprint 5 · Frente de estudo
+
+**Documento técnico:** `docs/SPRINT-5-FRENTE.md` v1.0.0 — escrito por Claude
+após fechar com o usuário dois parâmetros que `01_DOMINIO.md` §12 listava
+como questão em aberto (teto diário de recuperações, limiar de
+represamento). É também a sprint que escreve `ADR-033` ("pendente de
+redação" desde a especificação original) — a decisão final ficou mais simples
+que a prevista: nem visão de banco entrou, só consulta Spring Data + Java.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 5.0 | Documento técnico | — | **feito** |
+| 5.1 | Migração `V6` — parâmetros de teto (§0 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 5.2 | `ADR-033` escrita (estava "pendente de redação" desde o início da especificação) | Claude, a pedido do usuário (pressa) | **feito** |
+| 5.3 | `Clock` bean — primeiro "hoje" do sistema (§1 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 5.4 | `FrenteService` — fase derivada, resumo, próxima vaga (§2 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 5.5 | Controller (só leitura) + testes (§3/§4 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+
+### Definition of Done
+
+- [x] `docs/SPRINT-5-FRENTE.md` revisado e aceito
+- [x] `ADR-033` escrita e vigente
+- [x] Nenhuma coluna, tabela ou entidade nova — fase/frente/backlog/consolidado
+      são 100% derivados (D-16, D-24)
+- [x] Assunto sem sessão → `BACKLOG`; com sessão e não consolidado → `FRENTE`;
+      consolidado → `CONSOLIDADO`
+- [x] Disciplina inativa → assuntos dela contam como `BACKLOG` mesmo com
+      histórico (D-24)
+- [x] Resumo da frente: contagens corretas, represamento só dispara acima do
+      teto diário
+- [x] Próxima vaga: sugere o de menor ordem do backlog da disciplina (D-41),
+      respeitando o teto por disciplina; nunca bloqueia (§6.7 regra 6)
+- [x] Nenhum endpoint desta sprint grava nada
+
+Todos os itens da Definition of Done batem. Falta só a revisão e o commit
+final do usuário — mesma ressalva das sprints anteriores.
+
+---
+
+## 7. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -208,10 +247,11 @@ final do usuário — mesma ressalva das sprints anteriores.
 
 ---
 
-## 7. Changelog
+## 8. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.13.0 | 2026-08-30 | **Sprint 5 completa** — itens 5.1–5.5 feitos, 50/50 testes verdes (42 herdados + 8 novos de `FrenteServiceTest`). `ADR-033` escrita. Migração `V6` com os 3 parâmetros de teto. Primeiro `Clock` bean do sistema — represamento é o primeiro cálculo que depende de "hoje"; teste usa `Clock` fixo (`03_INVARIANTES` §10, data congelada). Verificado manualmente contra Postgres real: fase de assunto (backlog/frente/consolidado), D-24 (disciplina inativa vira backlog mesmo com histórico), resumo da frente, próxima vaga por ordem. Nenhum bug de código encontrado nesta sprint — só um erro de configuração de teste (`BeanDefinitionOverrideException`: dois `@Bean Clock` com o mesmo nome `clock()`, mesmo um deles `@Primary`, colidem por nome antes do Spring sequer chegar a resolver por tipo; corrigido renomeando o bean de teste para `clockFixo()`). Achado no caminho, fora do escopo desta sprint: `01_DOMINIO.md` §12 já citava valores prévios para os intervalos da escada (`1,7,15,30,60,90`, Sprint 4 decidiu `1,3,7,15,30,90`) que a pesquisa da Sprint 4 não tinha visto — usuário confirmou manter o que já estava implementado; `01_DOMINIO.md` corrigido (v1.11.2) fechando as três questões em aberto (intervalos, teto diário, limiar de represamento) antes desta sprint prosseguir |
 | 1.12.0 | 2026-08-30 | **Sprint 4 completa** — itens 4.1–4.6 feitos, 42/42 testes verdes (32 herdados + 10 novos de `RevisaoEscadaTest`). `ADR-032` escrita (saiu de "pendente de redação"). Migração `V5` com a coluna `versao` de `revisao` e os 8 parâmetros da escada (6 intervalos de nível + manutenção + janela de tolerância). Verificado manualmente contra Postgres real, escada inteira de ponta a ponta: `ESTUDO` agenda, `SUCESSO`/`PARCIAL`/`FALHA` roteiam certo, primeira chegada no nível-alvo não consolida sozinha, dois `SUCESSO` seguidos *no nível-alvo* consolidam (intervalo de manutenção, +150 dias), D-11 (falha consolidado volta ao nível-alvo, não abaixo), janela de tolerância (1 dia fora recusa, dentro cumpre), D-17 (arquivar assunto/disciplina cancela pendente). Achado antes de rodar qualquer código, só de traçar a mão o cenário de consolidação: a checagem de "dois últimos sucesso" não filtrava por nível — comparar contra o resultado do degrau anterior, não contra outra tentativa no próprio nível-alvo, teria consolidado um nível cedo demais. Três defeitos reais encontrados rodando contra Postgres, todos na mesma família do bug de D-45 da Sprint 3 (sessão do Hibernate inutilizável depois de um flush que falha) e do bug do item 2.3 (`save()` não força escrita em entidade gerenciada): (1) `agendarPrimeira` capturava a violação de D-05 e continuava na mesma transação que também grava a `Sessao` — diferente do D-45, aqui não dá pra isolar numa transação nova (a `Revisao` referencia a `Sessao` ainda não commitada), corrigido com checagem prévia só neste ponto, exceção documentada no doc técnico §3.1; (2) `processarRecuperacao` usava `save()` em vez de `saveAndFlush()` pra marcar a pendente `CUMPRIDA`, então o `INSERT` da próxima pendente rodava antes do `UPDATE` ir pro banco e colidia com a própria linha que estava sendo liberada; (3) os `@Modifying` de cancelamento (D-17) não tinham `clearAutomatically`/`flushAutomatically` — um teste automatizado (não o manual, que usa uma transação por requisição HTTP) pegou isso: `findById` depois de arquivar devolvia a `Revisao` ainda `PENDENTE`, cache de primeiro nível do Hibernate não invalidado por um update em massa; faltar `flushAutomatically` também teria descartado o `setAtivo(false)` pendente do próprio `arquivar` |
 | 1.11.0 | 2026-08-30 | **Sprint 3 completa** — itens 3.1–3.6 feitos, 32/32 testes verdes (22 herdados + 10 novos: 6 de erro de domínio, 3 de cálculo de resultado + FLASHCARDS/RECUPERACAO, 1 de D-45). Migração `V4__parametros_sessao.sql` com os 6 limiares de §4.2.1 (`lote_minimo_questoes` deliberadamente fora — sem efeito até a escada existir). Verificado manualmente contra Postgres real, mesmo esquema de container descartável das sprints anteriores: os 4 tipos de sessão, cálculo de resultado nos dois formatos de banca e em FLASHCARDS, D-45 (reenvio devolve os mesmos dados, `tempoMinutos` diferente do reenvio é ignorado — prova que voltou o registro original, não gravou de novo), e os 6 erros de domínio. Dois defeitos reais encontrados e corrigidos no caminho: (1) D-45 devolvia **500**, não sucesso — depois que `save()` falha por violação de restrição, a sessão do Hibernate fica inutilizável para qualquer operação seguinte (`AssertionFailure: has a null identifier`); tentar `findByTentativaId` na mesma transação quebrava. Corrigido separando `gravar`/`buscarPorTentativa` em métodos `@Transactional` distintos, chamados via `self` (injeção `@Lazy` do próprio bean) — sem isso `this.gravar(...)` pula o proxy do Spring e os dois `@Transactional` não valem nada (autoinvocação, um dos "suspeitos de sempre" da mentoria, `.claude/agents/mentor.md`). (2) `ESTUDO` com `resultado` no corpo era silenciosamente ignorado em vez de recusado — `ESTUDO_SEM_RESULTADO` documentado em `docs/SPRINT-3-SESSAO.md` §3.1 nunca disparava. Corrigido com validação eager antes de tentar gravar. Achado durante a implementação: duas validações (`QUESTOES_OBRIGATORIAS`, `RESULTADO_OBRIGATORIO`) não têm restrição de banco correspondente — `ck_sessao_questoes_por_tipo` só exige os campos **nulos** fora de QUESTOES/FLASHCARDS, nunca exige presença dentro; registradas no doc técnico como validação eager, não tradução de exceção |
 | 1.10.0 | 2026-08-30 | Sprint 3 aberta. `docs/SPRINT-3-SESSAO.md` v1.0.0 escrito por Claude, depois de uma decisão de escopo discutida com o usuário: sessão registrada nesta sprint não toca em `Revisao` (pendência documentada até a Sprint 4, mesmo tratamento que D-17 recebeu na Sprint 2) — a alternativa (antecipar o vínculo básico com uma revisão pendente) foi recusada para não antecipar fatia da Sprint 4. `PROGRESSO.md` §4 criado com 6 itens (3.0–3.6) e Definition of Done |

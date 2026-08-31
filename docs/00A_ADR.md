@@ -63,6 +63,7 @@ que custa e o que foi descartado.
 | [ADR-030](#adr-030--spa-estática-servida-pelo-spring) | SPA estática servida pelo Spring | v2 |
 | [ADR-031](#adr-031--unicidade-por-tentativa-e-por-revisão-pendente) | Unicidade por tentativa e por revisão pendente | Sprint 1 |
 | [ADR-032](#adr-032--controle-de-versão-na-escrita) | Controle de versão na escrita | Sprint 4 |
+| [ADR-033](#adr-033--derivação-por-consulta-simples-nunca-materializada) | Derivação por consulta simples, nunca materializada | Sprint 5 |
 
 ### 1.2 Históricas
 
@@ -943,6 +944,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.3.0 | 2026-08-30 | **ADR-033 escrita e aceita** (Sprint 5) — sai de "Pendentes de redação" para vigente. A decisão final ficou mais simples que a prevista: nem visão de banco entrou, a classificação é uma consulta Spring Data + Java no `FrenteService`. Lista de "Pendentes de redação" removida — as duas que existiam (ADR-032, ADR-033) estão escritas. Total passa a 33 ADRs, 22 vigentes |
 | 2.2.0 | 2026-08-30 | **ADR-032 escrita e aceita** (Sprint 4) — sai de "Pendentes de redação" para vigente, exatamente no momento previsto ("quando a sprint que implementa o roteamento da escada começar"). Total passa a 32 ADRs, 21 vigentes |
 | 2.1.1 | 2026-08-28 | Correção administrativa: mecanismo de exclusão lógica do Assunto na ADR-011 dizia `status = 'ARQUIVADO'`, resíduo da v1 que sobrou do reset. O schema real (`V1__tabelas.sql`) e `docs/SPRINT-2-CADASTRO.md` §1.2 usam `ativo BOOLEAN`, igual Disciplina — corrigido para bater com o que existe. Achado durante a revisão do documento técnico da Sprint 2 (item 2.0 do `PROGRESSO.md`) |
 | 2.1.0 | 2026-08-20 | **ADR-031 escrita e aceita** (Sprint 1, item 1.1) — sai de "Pendentes de redação" para vigente. Total passa a 31 ADRs, 20 vigentes |
@@ -950,25 +952,50 @@ provável (já registrado como risco em ADR-031).
 | 1.0.0 | 2026-08-15 | Versão inicial. 14 ADRs |
 
 
-## Pendentes de redação
+## ADR-033 — Derivação por consulta simples, nunca materializada
 
-Uma decisão já **tomada** na especificação conceitual, ainda **sem ADR
-escrita**. Deve ser redigida quando a sprint que a implementa começar — não
-antes. (ADR-032, a outra pendente desta lista, foi escrita na Sprint 4 — ver
-seção própria acima.)
+**Status:** Aceita · 2026-08-30 · Sprint 5
 
-### ADR-033 — Derivação por visão simples, nunca materializada
+### Contexto
 
-**Contexto.** Frente de estudo e fase do assunto são derivadas cruzando assunto,
-sessão e revisão, sobre centenas de linhas. Calcular linha a linha no serviço
-produz uma consulta por assunto.
+Frente de estudo, backlog e consolidado (`01_DOMINIO.md` §6) são derivados
+cruzando `Assunto`, `Sessao` e `Revisao` — sobre algumas centenas de linhas,
+escala de um usuário só. Calcular a fase de cada assunto pede saber se ele
+tem alguma `Sessao` e, se tiver, se está consolidado (mesma regra de D-10 da
+Sprint 4).
 
-**Decisão.** Se virar visão de leitura, **visão simples**. Visão materializada é
-cache e reintroduz exatamente a divergência que D-16 existe para evitar — e
-ADR-029 já recusou cache de aplicação pelo mesmo raciocínio.
+### Decisão
 
-**Escrever quando:** a consulta da frente aparecer, e não antes de medir se o
-problema existe.
+**Nenhuma visão de banco, nem simples nem materializada.** Uma consulta
+Spring Data busca os assuntos ativos de disciplinas ativas; a classificação
+em `BACKLOG`/`FRENTE`/`CONSOLIDADO` acontece em Java, no `FrenteService`,
+reaproveitando `RevisaoService.estaConsolidado` em vez de duplicar a regra.
+
+Isso ainda é "visão simples" no espírito que a decisão original previa —
+**nada aqui é persistido nem cacheado** — só que a simplicidade não pediu
+nem uma `CREATE VIEW`: a query é uma só, e o cruzamento de "tem sessão" e
+"está consolidado" é barato o bastante em Java para ~200 linhas que não
+compensa mover pro SQL.
+
+> Visão materializada continua fora de cogitação, pelo mesmo motivo de
+> sempre: reintroduziria a divergência que D-16 existe para evitar, e
+> ADR-029 já recusou cache de aplicação pelo mesmo raciocínio.
+
+### Consequências
+
+- Nenhuma coluna, tabela ou view nova nesta sprint.
+- Se o volume real crescer a ponto da consulta em Java pesar (ordens de
+  grandeza acima do que o produto foi dimensionado para atender, `01_DOMINIO`
+  §6.6), a saída documentada é uma `CREATE VIEW` simples, não materializada —
+  não um cache de aplicação.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| `CREATE VIEW` de leitura agora | Nenhum problema de desempenho a resolver ainda — decidir a favor de SQL sem medir é o "aperfeiçoar antes de precisar" que `00_PRODUTO` §3.2 proíbe para o agendador, e o raciocínio se aplica igual aqui |
+| Coluna `fase` persistida, atualizada por trigger/serviço | É exatamente D-16: fase nunca tem coluna própria. Column persistida diverge do estado real assim que uma sessão nova é registrada sem passar pelo mesmo caminho |
+| Cache de aplicação do resumo da frente | ADR-029 já recusou cache de aplicação neste sistema — mesmo motivo aqui: fonte de verdade dupla, uma delas eventualmente errada |
 
 ---
 

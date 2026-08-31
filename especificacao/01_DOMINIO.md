@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.11.1 |
-| Data | 2026-08-19 |
+| Versão | 1.11.2 |
+| Data | 2026-08-30 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -1058,16 +1058,27 @@ Com a alternativa recusada, para não serem reabertas por engano.
 
 Para `02_JORNADAS.md` e para o documento de regras:
 
-- O valor de partida do **teto diário** de recuperações. A simulação diz que 5
-  cobre o cenário médio e sufoca o fraco; 8 cobre o fraco e nunca aperta o bom.
-- O limiar de **represamento** que dispara o alerta de parar conteúdo novo.
+- ~~O valor de partida do **teto diário** de recuperações. A simulação diz que
+  5 cobre o cenário médio e sufoca o fraco; 8 cobre o fraco e nunca aperta o
+  bom.~~ **Fechado na Sprint 5** (`docs/SPRINT-5-FRENTE.md` §0): **8** —
+  nunca aperta quem vai bem, ainda cobre quem vai mal.
+- ~~O limiar de **represamento** que dispara o alerta de parar conteúdo
+  novo.~~ **Fechado na Sprint 5**: `represado > teto diário` — dispara quando
+  o acumulado sozinho já não cabe num único dia. Deriva do teto diário em vez
+  de introduzir um segundo parâmetro solto sem âncora nenhuma na
+  especificação.
 - Se a **manutenção** de vários assuntos irmãos deve ser agendada junta de
   propósito, para viabilizar lote misto — é o mecanismo de interleaving de
   `00_PRODUTO` §3.3, e ninguém decidiu se é acaso ou desenho.
 - Se **erro aberto** deve influenciar a ordem da fila. Hoje não influencia, e a
   §3.5 sugere que talvez devesse.
-- Quantos níveis tem a escada, e se os intervalos de partida
-  (`1, 7, 15, 30, 60, 90`) continuam adequados a um horizonte de 24 meses.
+- ~~Quantos níveis tem a escada, e se os intervalos de partida (`1, 7, 15, 30,
+  60, 90`) continuam adequados a um horizonte de 24 meses.~~ **Fechado na
+  Sprint 4** (`docs/SPRINT-4-ESCADA.md` §0.1): 6 níveis, intervalos `1, 3, 7,
+  15, 30, 90` — progressão diferente da citada aqui (que nenhum outro trecho
+  deste documento chegou a fixar como decisão, só como pergunta), escolhida
+  com o usuário por ancorar os dois pontos que o §5.4 já fixava (nível 1 = 1
+  dia, nível 6 = 90 dias) com crescimento mais suave entre eles.
 - **A distribuição de pesos dos 171 assuntos.** A §6.4 supõe 30/45/25 entre os
   níveis-alvo 6/4/3, e todo o dimensionamento da §6.6 depende disso. Precisa
   virar classificação real, disciplina por disciplina. **É a única tarefa manual
@@ -1085,6 +1096,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.11.2 | 2026-08-30 | §12: fechadas três das sete questões em aberto. (1) Intervalos da escada — Sprint 4 decidiu `1, 3, 7, 15, 30, 90` (não os `1, 7, 15, 30, 60, 90` citados ali como pergunta, nunca fixados como decisão em nenhum outro trecho); achado só depois de já ter perguntado ao usuário na Sprint 4 sem ter visto esta linha — a pesquisa da época não cobriu §12. (2) Teto diário de recuperações — Sprint 5 decidiu **8**. (3) Limiar de represamento — Sprint 5 decidiu `represado > teto diário`. Usuário confirmou os três valores |
 | 1.11.1 | 2026-08-19 | §3.3.1: explicitado que a identificação é da **tentativa**, não do conteúdo — recuperar o mesmo assunto duas vezes no mesmo dia continua legítimo |
 | 1.11.0 | 2026-08-19 | Nova §3.3.1 e **D-45**: registrar a mesma sessão duas vezes conta uma. Sem isso, um reenvio por falha de rede sobe a escada dois degraus e inventa um evento de retenção |
 | 1.10.0 | 2026-08-19 | Nova §3.2.2: **dividir assunto é migração de dados** — original arquivado, histórico permanece nele, novos nascem no nível do original porque o desempenho corrige sozinho. Nova §4.4: **mapa do modelo de aprendizagem**, apontando onde cada um dos seis conceitos vive, em vez de criar documento-ponte que duplicaria regra. D-42 a D-44 |

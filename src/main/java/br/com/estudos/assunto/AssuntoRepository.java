@@ -19,4 +19,13 @@ public interface AssuntoRepository extends JpaRepository<Assunto, Long> {
         order by d.nome, a.ordem
         """)
     List<Assunto> listarParaExportacao();
+
+    // Base da frente/backlog (docs/SPRINT-5-FRENTE.md §2) — join fetch pra
+    // FrenteService ler peso/disciplina.ativo sem N+1.
+    @Query("""
+        select a from Assunto a
+        join fetch a.disciplina d
+        where a.ativo = true and d.ativo = true
+        """)
+    List<Assunto> listarAtivosDeDisciplinasAtivas();
 }

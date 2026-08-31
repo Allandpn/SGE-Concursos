@@ -62,6 +62,16 @@ public class RevisaoService {
     }
 
     /**
+     * D-10 — mesma regra de consolidação usada no roteamento (§3.3),
+     * exposta para o FrenteService não duplicá-la (docs/SPRINT-5-FRENTE.md §2,
+     * ADR-033).
+     */
+    @Transactional(readOnly = true)
+    public boolean estaConsolidado(Long assuntoId, TipoPeso peso) {
+        return doisUltimosNoAlvoForamSucesso(assuntoId, nivelAlvo(peso));
+    }
+
+    /**
      * Checagem prévia de propósito — foge do padrão D-05/D-45 do resto do
      * sistema (nunca checar antes, deixar o banco recusar e traduzir). Aqui
      * uma falha de flush no INSERT deixaria a sessão do Hibernate inutilizável

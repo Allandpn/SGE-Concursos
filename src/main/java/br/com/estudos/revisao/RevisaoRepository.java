@@ -1,5 +1,6 @@
 package br.com.estudos.revisao;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,9 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
     Optional<Revisao> findByAssuntoIdAndSituacao(Long assuntoId, SituacaoRevisao situacao);
 
     List<Revisao> findByAssuntoId(Long assuntoId);
+
+    // Represamento (docs/SPRINT-5-FRENTE.md §2.2): pendentes cuja data já passou.
+    long countBySituacaoAndDataPrevistaBefore(SituacaoRevisao situacao, LocalDate data);
 
     // "Os dois últimos resultados [no nível-alvo]" (01_DOMINIO §6.4/D-10) —
     // filtra por nível: "escada concluída" é precondição, e as duas tentativas

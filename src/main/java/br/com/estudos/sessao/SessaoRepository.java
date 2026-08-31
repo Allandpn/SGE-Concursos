@@ -14,4 +14,7 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
     Optional<Sessao> findByTentativaId(UUID tentativaId);
 
     List<Sessao> findByAssuntoId(Long assuntoId);
+
+    // D-24 (docs/SPRINT-5-FRENTE.md §2.1): assunto sem nenhuma sessão está no backlog.
+    boolean existsByAssuntoId(Long assuntoId);
 }
