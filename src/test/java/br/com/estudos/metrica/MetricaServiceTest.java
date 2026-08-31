@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ import br.com.estudos.shared.enums.FormatoBanca;
 import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.TipoPeso;
 import br.com.estudos.shared.enums.TipoSessao;
+import br.com.estudos.simulado.ResultadoSimuladoRequest;
+import br.com.estudos.simulado.SimuladoRequest;
+import br.com.estudos.simulado.SimuladoService;
 
 /**
  * M-1 a M-4 (docs/SPRINT-7-METRICAS.md §6). Item 7.7 de PROGRESSO.md.
@@ -66,6 +70,9 @@ class MetricaServiceTest extends IntegracaoTestBase {
 
     @Autowired
     private MetricaService metricaService;
+
+    @Autowired
+    private SimuladoService simuladoService;
 
     private Disciplina novaDisciplina() {
         return disciplinaService.criar(new DisciplinaRequest("Disciplina Metrica " + UUID.randomUUID(), TipoPeso.MEDIO));
@@ -127,6 +134,22 @@ class MetricaServiceTest extends IntegracaoTestBase {
         assertEquals(1, global.linhas().size(), "mesmo formato, disciplinas diferentes: uma linha só na janela global");
         assertEquals(200, global.linhas().get(0).total());
         assertEquals(35.0, global.linhas().get(0).percentual());
+    }
+
+    @Test
+    void m1_simuladoSomaNoMesmoAgregadoDeQuestoes() {
+        var disciplina = novaDisciplina();
+        var assunto = novoAssunto(disciplina.getId());
+        registrarQuestoes(assunto.getId(), HOJE, 50, 100, FormatoBanca.MULTIPLA_ESCOLHA, (short) 50); // 50/100
+
+        simuladoService.registrar(new SimuladoRequest(HOJE, 240, List.of(
+            new ResultadoSimuladoRequest(disciplina.getId(), FormatoBanca.MULTIPLA_ESCOLHA, 30, 100)))); // 30/100
+
+        var resposta = metricaService.m1(JanelaMetrica.GLOBAL);
+        var linha = resposta.linhas().stream().filter(l -> l.formato() == FormatoBanca.MULTIPLA_ESCOLHA).findFirst().orElseThrow();
+
+        assertEquals(200, linha.total(), "100 da sessão + 100 do simulado, mesmo agregado (docs/SPRINT-8-SIMULADO.md §0/§4)");
+        assertEquals(80, linha.acertos());
     }
 
     @Test

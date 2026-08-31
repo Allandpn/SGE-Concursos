@@ -19,8 +19,8 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 4 | Escada e revisão | Agendamento, cumprimento, roteamento por resultado, janela | **feito** |
 | 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | **feito** |
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | **feito** |
-| 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | documento técnico feito, código não começou |
-| 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | não começou |
+| 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | documento técnico feito, código escrito, sem execução verificada |
+| 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: doc técnico feito, código escrito, sem execução verificada. Backup testado e polimento: não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -313,7 +313,54 @@ a restrição), não criação de tabela.
 
 ---
 
-## 9. Como este arquivo se mantém honesto
+## 9. Sprint 8 · Simulado
+
+**Aberta como exceção consciente** à regra central do `CLAUDE.md` ("não
+implemente nada de sprint futura") — a Sprint 7 ainda não tinha testes
+executados (§8) quando o usuário pediu para seguir adiante mesmo assim.
+Decisão explícita dele, não desvio silencioso.
+
+**Escopo restrito ao Simulado.** O mapa (§1) lista "Simulado por disciplina,
+backup testado, polimento" para a Sprint 8 inteira — backup testado e
+polimento ficam de fora desta rodada, sem especificação própria ainda.
+
+**Documento técnico:** `docs/SPRINT-8-SIMULADO.md` v1.0.0 — escrito por
+Claude após quatro decisões de escopo discutidas com o usuário (`formato`
+por resultado, para não violar D-36 quando o simulado entrar em M-1;
+simulado soma no mesmo agregado de M-1, não em série própria; só Simulado
+nesta rodada; `duracaoMinutos` registrado). Nenhuma regra `D-xx` nova — D-13
+já cobria a integridade referencial que faltava.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 8.0 | Documento técnico, revisado | — | **feito** |
+| 8.1 | Migração `V8` — tabelas `simulado`/`resultado_simulado` (§1/§2 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 8.2 | Entidades JPA `Simulado`/`ResultadoSimulado` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 8.3 | `SimuladoRepository`/`ResultadoSimuladoRepository` | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 8.4 | `SimuladoService` — tudo-ou-nada, tradução de exceção (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 8.5 | `MetricaService.m1` estendido — simulado no mesmo agregado (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 8.6 | Controller — `/api/simulados` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | código escrito, sem execução verificada |
+| 8.7 | Testes (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | escritos, sem execução verificada |
+
+### Definition of Done
+
+- [x] `docs/SPRINT-8-SIMULADO.md` revisado e aceito
+- [ ] `POST /api/simulados` grava tudo-ou-nada; `DISCIPLINA_INEXISTENTE` (404),
+      `DISCIPLINA_DUPLICADA_NO_SIMULADO` (409), `RESULTADOS_OBRIGATORIOS` (422)
+      com status e `codigo` certos
+- [ ] `resultado_simulado` não tem coluna `assunto_id` (D-13, teste estrutural)
+- [ ] M-1 soma simulado e `QUESTOES` do mesmo disciplina+formato no mesmo
+      agregado, nunca separado
+- [ ] Nenhuma revisão, consolidação ou vínculo com assunto nasce de um simulado
+- [ ] Backup testado e polimento continuam **não começados**, registrados
+      como pendência, não escondidos
+
+Falta a execução dos testes (sem Docker neste ambiente, mesma ressalva da
+Sprint 7) antes de marcar os itens como **feito**.
+
+---
+
+## 10. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -327,10 +374,11 @@ a restrição), não criação de tabela.
 
 ---
 
-## 10. Changelog
+## 11. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.17.0 | 2026-08-31 | **Sprint 8 aberta (Simulado), exceção consciente à regra de não adiantar sprint futura** — a Sprint 7 ainda não tinha testes executados quando o usuário pediu para seguir adiante. `docs/SPRINT-8-SIMULADO.md` v1.0.0 escrito após quatro decisões de escopo (formato por resultado; simulado soma no mesmo agregado de M-1; só Simulado nesta rodada, backup/polimento ficam de fora; duração registrada). Migração `V8` (tabelas `simulado`/`resultado_simulado`), entidades, repositórios, `SimuladoService`/`Controller`, `MetricaService.m1` estendido, testes — itens 8.1–8.7 código e testes escritos, a pedido do usuário (pressa), ainda sem execução verificada (sem Docker neste ambiente, mesma ressalva da Sprint 7). `EstruturaSchemaTest` atualizado: `d28_semTabelaDeTurno` inclui as duas tabelas novas; novo `d13_resultadoSimuladoSemColunaDeAssunto` prova D-13 pela ausência estrutural da coluna. Nenhuma regra `D-xx` nova — D-13 já cobria a integridade que faltava |
 | 1.16.0 | 2026-08-31 | Itens 7.1–7.7 **código e testes escritos**, a pedido do usuário (pressa) — ainda sem execução verificada, Docker não disponível neste ambiente. Achado no caminho, antes de escrever qualquer linha de código: a tabela `erro` já existia desde `V1__tabelas.sql` (Sprint 1, `docs/SPRINT-1-BANCO.md` §2.5/§7.6) com `causa`/`confianca` exatamente como o rascunho do documento técnico propunha — a Sprint 7 não criou tabela nova, só a camada JPA (entidade, repositório, service, controller) e renomeou `fk_erro_assunto` para `fk_erro_d46_assunto` (migração `V7`, uma linha). `docs/SPRINT-7-METRICAS.md` §1 e §2 corrigidos para refletir isso. `MetricaService` (M-1 a M-4) segue ADR-033: sem view, sem cache, agregação em Java sobre projeções/streams. Testes de M-1 isolados por uma janela de tempo bem no futuro (ano 2999) pra não pegar dado de sobra de outras classes de teste não-transacionais (mesmo problema já visto no changelog 1.14.0); M-3/M-4 não têm janela (fiel ao texto de `00_PRODUTO`), então os testes deles comparam antes/depois em vez de valor absoluto. Próximo passo: usuário roda `mvn test` com Docker de pé pra confirmar antes de marcar os itens como **feito** |
 | 1.15.0 | 2026-08-31 | Sprint 7 aberta. `docs/SPRINT-7-METRICAS.md` v1.1.0 escrito por Claude após quatro decisões de escopo discutidas com o usuário (escala de confiança do erro, M-2 separando `RECUPERACAO`, erro fora da ordem da fila, sem endpoint de resolver). `01_DOMINIO.md` ganhou **D-46** (v1.12.0) no caminho — integridade referencial de `Erro` com `Assunto` (obrigatório) e `Sessao` (opcional), que não tinha regra numerada ainda; escrita e confirmada antes do documento técnico fechar, seguindo a regra central do `CLAUDE.md` de documento antes de código. `PROGRESSO.md` §8 criado com 8 itens (7.0–7.7) e Definition of Done |
 | 1.14.0 | 2026-08-30 | **Sprint 6 completa** — itens 6.1–6.4 feitos, 54/54 testes verdes (50 herdados + 4 novos de `TurnoServiceTest`). `Parametro` ganhou `@Setter` em `valor` (só nesse campo) — precisava pra um teste baixar o teto global sem criar 100 assuntos de verdade. Verificado manualmente contra Postgres real: plano vazio sem nada cadastrado, fila com item vencido, bloco de conteúdo sugerido, e o "puxar mais" emergente confirmado na prática — registrar a sessão do assunto sugerido e pedir o plano de novo já tira ele da sugestão, sem endpoint nenhum dedicado a isso. Nenhum bug de código nesta sprint. Um teste inicialmente frágil: `blocoDeConteudoSugeridoQuandoHaVaga` assumia que o assunto do próprio teste seria o único candidato de `FrenteService.proximaSugestaoDeConteudo()`, e quebrava rodando a suíte inteira — outros testes não-transacionais (`ImportacaoAssuntoTest`, por gravarem de propósito para provar commit real) deixam disciplina/assunto de verdade no banco pelo resto da execução, e um deles virou candidato antes do meu. Corrigido comparando contra o resultado ao vivo de `FrenteService.proximaSugestaoDeConteudo()` em vez de um id fixo — o que importa testar ali é a fiação `TurnoService` → `FrenteService`, não qual candidato específico vence (isso já é determinístico em `FrenteServiceTest`) |

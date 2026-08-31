@@ -4,9 +4,9 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.estudos.revisao.RevisaoRepository;
 import br.com.estudos.sessao.Sessao;
 import br.com.estudos.sessao.SessaoRepository;
+import br.com.estudos.shared.enums.FormatoBanca;
 import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.TipoSessao;
+import br.com.estudos.simulado.ResultadoSimuladoRepository;
 
 /**
  * M-1 a M-4, consultas puras — nenhum endpoint grava nada (ADR-033: consulta
@@ -37,20 +39,32 @@ public class MetricaService {
 
     private final SessaoRepository sessaoRepository;
     private final RevisaoRepository revisaoRepository;
+    private final ResultadoSimuladoRepository resultadoSimuladoRepository;
     private final Clock clock;
 
-    public MetricaService(SessaoRepository sessaoRepository, RevisaoRepository revisaoRepository, Clock clock) {
+    public MetricaService(
+            SessaoRepository sessaoRepository,
+            RevisaoRepository revisaoRepository,
+            ResultadoSimuladoRepository resultadoSimuladoRepository,
+            Clock clock) {
         this.sessaoRepository = sessaoRepository;
         this.revisaoRepository = revisaoRepository;
+        this.resultadoSimuladoRepository = resultadoSimuladoRepository;
         this.clock = clock;
     }
 
-    /** docs/SPRINT-7-METRICAS.md §4.1. */
+    /**
+     * docs/SPRINT-7-METRICAS.md §4.1, estendida por docs/SPRINT-8-SIMULADO.md
+     * §4: simulado soma no mesmo agregado de QUESTOES do mesmo
+     * disciplina+formato — "a entrada mais pura que M-1 pode ter", não uma
+     * quarta série ao lado dela.
+     */
     @Transactional(readOnly = true)
     public M1Response m1(JanelaMetrica janela) {
         var hoje = LocalDate.now(clock);
         var inicio = janela == JanelaMetrica.GLOBAL ? hoje.minusMonths(3) : hoje.minusYears(1);
-        var linhas = sessaoRepository.listarAcertoQuestoes(inicio, hoje);
+        var linhas = new ArrayList<AcertoLinha>(sessaoRepository.listarAcertoQuestoes(inicio, hoje));
+        linhas.addAll(resultadoSimuladoRepository.listarAcerto(inicio, hoje));
 
         var agrupado = new LinkedHashMap<ChaveM1, int[]>();
         for (var linha : linhas) {
@@ -73,7 +87,7 @@ public class MetricaService {
         return new M1Response(janela, resposta);
     }
 
-    private record ChaveM1(Long disciplinaId, br.com.estudos.shared.enums.FormatoBanca formato) {}
+    private record ChaveM1(Long disciplinaId, FormatoBanca formato) {}
 
     /** docs/SPRINT-7-METRICAS.md §4.2. */
     @Transactional(readOnly = true)
@@ -131,7 +145,7 @@ public class MetricaService {
         var desvios = objetivas.stream()
             .mapToDouble(s -> s.getPrevisaoPercentual() - percentualDeQuestoes(s))
             .toArray();
-        var mediaDesvio = desvios.length == 0 ? 0.0 : java.util.Arrays.stream(desvios).average().orElseThrow();
+        var mediaDesvio = desvios.length == 0 ? 0.0 : Arrays.stream(desvios).average().orElseThrow();
         var objetiva = new M3ObjetivaResponse(mediaDesvio, desvios.length);
 
         var subjetivas = sessaoRepository.findByTipoAndPrevisaoReconstrucaoNotNull(TipoSessao.RECUPERACAO);

@@ -2,6 +2,7 @@ package br.com.estudos.schema;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashSet;
@@ -31,19 +32,35 @@ class EstruturaSchemaTest extends RestricaoTestBase {
 
     @Test
     void d28_semTabelaDeTurno() throws SQLException {
-        Set<String> esperado = Set.of("disciplina", "assunto", "sessao", "revisao", "erro", "parametro");
+        Set<String> esperado = Set.of(
+                "disciplina", "assunto", "sessao", "revisao", "erro", "parametro",
+                "simulado", "resultado_simulado");
         assertEquals(esperado, tabelasDoSchema());
     }
 
+    @Test
+    void d13_resultadoSimuladoSemColunaDeAssunto() throws SQLException {
+        Set<String> esperado = Set.of(
+                "id", "simulado_id", "disciplina_id", "formato",
+                "questoes_corretas", "questoes_total", "criado_em", "atualizado_em");
+        assertEquals(esperado, colunasDe("resultado_simulado"));
+    }
+
     private Set<String> colunasDeAssunto() throws SQLException {
+        return colunasDe("assunto");
+    }
+
+    private Set<String> colunasDe(String tabela) throws SQLException {
         Set<String> colunas = new HashSet<>();
-        try (Statement st = conexao.createStatement();
-                var rs = st.executeQuery("""
+        try (PreparedStatement st = conexao.prepareStatement("""
                         SELECT column_name FROM information_schema.columns
-                        WHERE table_schema = 'public' AND table_name = 'assunto'
+                        WHERE table_schema = 'public' AND table_name = ?
                         """)) {
-            while (rs.next()) {
-                colunas.add(rs.getString("column_name"));
+            st.setString(1, tabela);
+            try (var rs = st.executeQuery()) {
+                while (rs.next()) {
+                    colunas.add(rs.getString("column_name"));
+                }
             }
         }
         return colunas;
