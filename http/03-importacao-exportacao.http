@@ -1,0 +1,95 @@
+### validar — lê e resolve o arquivo, mas nunca grava (força rollback mesmo sem erro)
+POST {{baseUrl}}/api/assuntos/importacoes/validar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="arquivo"; filename="assuntos-importar.csv"
+Content-Type: text/csv
+
+< ./csv/assuntos-importar.csv
+--WebAppBoundary--
+
+### Confirme no request acima que disciplinasNovas=1, assuntosNovos=3, recusadas=[] —
+### e que a listagem abaixo NÃO mostra "Direito Administrativo" (validar não grava).
+GET {{baseUrl}}/api/disciplinas
+
+### confirmar — revalida do zero (não confia no resumo de validar) e grava, tudo-ou-nada
+POST {{baseUrl}}/api/assuntos/importacoes/confirmar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="arquivo"; filename="assuntos-importar.csv"
+Content-Type: text/csv
+
+< ./csv/assuntos-importar.csv
+--WebAppBoundary--
+
+> {%
+    client.log("Agora sim: disciplinasNovas/assuntosNovos > 0 e a linha foi pro banco de verdade.");
+%}
+
+### Exportação — mesmo formato de entrada, com id preenchido. Rode depois do confirmar acima.
+GET {{baseUrl}}/api/assuntos/exportacao
+Accept: text/csv
+
+### Reimportar o MESMO arquivo (sem id) recusa cada linha por NOME_DUPLICADO — regra 1,
+### tudo ou nada: o arquivo inteiro não entra de novo (recusadas não vem vazio).
+POST {{baseUrl}}/api/assuntos/importacoes/confirmar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="arquivo"; filename="assuntos-importar.csv"
+Content-Type: text/csv
+
+< ./csv/assuntos-importar.csv
+--WebAppBoundary--
+
+### Atualizar por id — pega um id real de um assunto já criado (assuntoId, de 02-assuntos.http)
+### e reimporta com o nome mudado. CSV montado inline porque o id é dinâmico por execução.
+POST {{baseUrl}}/api/assuntos/importacoes/confirmar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="arquivo"; filename="atualizar-por-id.csv"
+Content-Type: text/csv
+
+id,disciplina,assunto,peso,ordem,dificuldadePercebida
+{{assuntoId}},Banco de Dados,Normalização e Dependências Funcionais (renomeado via CSV),ALTO,1,5
+--WebAppBoundary--
+
+### Peso fora do enum -> arquivo inteiro recusado (regra 1) — mesmo a segunda linha sendo válida.
+### recusadas terá uma entrada citando a linha 2 (numeroLinha conta o cabeçalho).
+POST {{baseUrl}}/api/assuntos/importacoes/validar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="arquivo"; filename="peso-invalido.csv"
+Content-Type: text/csv
+
+< ./csv/assuntos-importar-peso-invalido.csv
+--WebAppBoundary--
+
+### id inexistente -> recusa o arquivo INTEIRO na hora, com uma única entrada em recusadas
+### (sinal de arquivo corrompido ou de outra base — nem validar nem confirmar tocam o banco)
+POST {{baseUrl}}/api/assuntos/importacoes/confirmar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="arquivo"; filename="id-inexistente.csv"
+Content-Type: text/csv
+
+< ./csv/assuntos-importar-id-inexistente.csv
+--WebAppBoundary--
+
+### disciplina em branco -> recusada (mas sem derrubar o arquivo se as outras linhas passassem —
+### aqui só tem uma linha, então recusadas tem uma entrada e nada grava)
+POST {{baseUrl}}/api/assuntos/importacoes/validar
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="arquivo"; filename="disciplina-em-branco.csv"
+Content-Type: text/csv
+
+disciplina,assunto,peso,ordem
+,Assunto Sem Disciplina,MEDIO,1
+--WebAppBoundary--

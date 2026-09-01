@@ -10,6 +10,7 @@ import br.com.estudos.sessao.Sessao;
 import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.SituacaoRevisao;
 import br.com.estudos.shared.enums.TipoPeso;
+import br.com.estudos.shared.enums.TipoSessao;
 import br.com.estudos.shared.exception.ConflictException;
 import br.com.estudos.shared.exception.NotFoundException;
 import br.com.estudos.shared.parametro.ParametroRepository;
@@ -99,6 +100,10 @@ public class RevisaoService {
     }
 
     private void processarRecuperacao(Sessao sessao) {
+        if (loteAbaixoDoMinimo(sessao)) {
+            return; // D-09 (01_DOMINIO §4.3): esforço vale, crédito não — mesma família de D-39 (§5.4).
+        }
+
         var assunto = sessao.getAssunto();
         var pendenteOpt = revisaoRepository.findByAssuntoIdAndSituacao(assunto.getId(), SituacaoRevisao.PENDENTE);
 
@@ -170,6 +175,18 @@ public class RevisaoService {
         revisaoRepository.save(proxima);
     }
 
+    /**
+     * D-09 (01_DOMINIO §4.3) — só QUESTOES/FLASHCARDS têm "lote"; RECUPERACAO
+     * é uma tentativa declarada, não uma contagem que possa ser pequena
+     * demais para classificar.
+     */
+    private boolean loteAbaixoDoMinimo(Sessao sessao) {
+        if (sessao.getTipo() != TipoSessao.QUESTOES && sessao.getTipo() != TipoSessao.FLASHCARDS) {
+            return false;
+        }
+        return sessao.getQuestoesTotal() < valorParametroLong("lote_minimo_questoes");
+    }
+
     /** docs/SPRINT-4-ESCADA.md §3.2 — janela de tolerância (01_DOMINIO §5.4). */
     private boolean dentroDaJanela(Revisao pendente, java.time.LocalDate dataSessao) {
         var intervaloDoNivel = intervaloDaPendente(pendente);
@@ -216,6 +233,7 @@ public class RevisaoService {
         };
     }
 
+    /** D-08 — o intervalo de um nível é sempre o mesmo parâmetro, nunca recalculado a partir do histórico. */
     private long intervaloNivel(int nivel) {
         return valorParametroLong("intervalo_nivel_" + nivel);
     }

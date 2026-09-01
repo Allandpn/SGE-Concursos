@@ -1,0 +1,4 @@
+### Plano do turno de hoje — fila de recuperação (vencidas, D-15/D-40) + bloco de conteúdo sugerido.
+### Derivado e efêmero (D-28) — chame de novo depois de registrar uma sessão pra ver o plano mudar
+### ("puxar mais" é emergente, não tem endpoint dedicado, docs/SPRINT-6-TURNO.md §2).
+GET {{baseUrl}}/api/turno/plano

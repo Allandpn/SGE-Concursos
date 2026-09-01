@@ -9,5 +9,6 @@ public record FrenteResumoResponse(
     long represado,
     int tetoDiario,
     boolean alertaRepresamento,
-    long estimativaDiasParaNormalizar
+    long estimativaDiasParaNormalizar,
+    boolean avisoTetoInsuficiente
 ) {}

@@ -1,0 +1,219 @@
+### ESTUDO — agenda a primeira revisão pendente (nível 1). Usa assuntoSecundarioId
+### (de 02-assuntos.http) pra não misturar com o histórico do assunto renomeado na importação.
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "ESTUDO",
+  "data": "2026-01-01",
+  "tempoMinutos": 20,
+  "tentativaId": "{{$uuid}}"
+}
+
+> {%
+    client.assert(response.status === 201, "esperado 201, veio " + response.status);
+    client.log("resultado deve ser null (ESTUDO nunca produz resultado, D-02)");
+%}
+
+### Ver a revisão pendente que o ESTUDO acabou de agendar (nível 1, +1 dia)
+GET {{baseUrl}}/api/revisoes?assuntoId={{assuntoSecundarioId}}
+
+> {%
+    client.global.set("revisaoPendenteId", response.body[0].id);
+%}
+
+### QUESTOES com 90% -> SUCESSO, cumpre a pendente e sobe pro nível 2 (D-07)
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "QUESTOES",
+  "data": "2026-01-02",
+  "tempoMinutos": 25,
+  "questoesCorretas": 9,
+  "questoesTotal": 10,
+  "formato": "MULTIPLA_ESCOLHA",
+  "previsaoPercentual": 70,
+  "tentativaId": "{{$uuid}}"
+}
+
+> {%
+    client.assert(response.body.resultado === "SUCESSO", "90% em múltipla escolha deveria ser SUCESSO (limiar 80)");
+    client.global.set("sessaoId", response.body.id);
+    client.global.set("ultimoTentativaId", response.body.tentativaId);
+%}
+
+### Confirma: a pendente antiga sumiu de PENDENTE, existe uma nova no nível 2
+GET {{baseUrl}}/api/revisoes?assuntoId={{assuntoSecundarioId}}
+
+### D-45 — reenviar a MESMA tentativaId (rede falhou, cliente reenvia): devolve sucesso com
+### o MESMO id (compare com sessaoId), tempoMinutos diferente é ignorado (prova que voltou
+### o registro original, não gravou de novo). ultimoTentativaId veio da resposta anterior.
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "QUESTOES",
+  "data": "2026-01-02",
+  "tempoMinutos": 999,
+  "questoesCorretas": 9,
+  "questoesTotal": 10,
+  "formato": "MULTIPLA_ESCOLHA",
+  "previsaoPercentual": 70,
+  "tentativaId": "{{ultimoTentativaId}}"
+}
+
+> {%
+    client.assert(response.body.id === client.global.get("sessaoId"), "D-45: mesmo id, tentativaId repetida");
+    client.assert(response.body.tempoMinutos !== 999, "D-45: tempoMinutos=999 do reenvio foi ignorado, voltou o original");
+%}
+
+### FLASHCARDS — mesma apuração de QUESTOES, mas nunca entra em M-1 (D-12)
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "FLASHCARDS",
+  "data": "2026-01-05",
+  "tempoMinutos": 10,
+  "questoesCorretas": 8,
+  "questoesTotal": 10,
+  "previsaoPercentual": 60,
+  "tentativaId": "{{$uuid}}"
+}
+
+### RECUPERACAO — resultado é o que o cliente declara, não calculado. previsaoReconstrucao
+### e resultado usam a mesma escala de 3 vias desde a correção de M-3 (00_PRODUTO v1.6.0).
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "RECUPERACAO",
+  "data": "2026-01-19",
+  "tempoMinutos": 8,
+  "previsaoReconstrucao": "SUCESSO",
+  "resultado": "PARCIAL",
+  "tentativaId": "{{$uuid}}"
+}
+
+> {%
+    client.assert(response.body.resultado === "PARCIAL", "RECUPERACAO: resultado é o declarado, não calculado");
+%}
+
+### D-09 — lote abaixo do mínimo (5): grava a sessão, mas NÃO cumpre revisão nem move a escada
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "QUESTOES",
+  "data": "2026-01-20",
+  "tempoMinutos": 5,
+  "questoesCorretas": 3,
+  "questoesTotal": 3,
+  "formato": "MULTIPLA_ESCOLHA",
+  "previsaoPercentual": 50,
+  "tentativaId": "{{$uuid}}"
+}
+
+> {%
+    client.assert(response.status === 201, "sessão grava normalmente, só a revisão não muda");
+%}
+
+### Confirme: a revisão pendente NÃO mudou de nível (lote de 3 < mínimo de 5, D-09)
+GET {{baseUrl}}/api/revisoes?assuntoId={{assuntoSecundarioId}}
+
+### Buscar sessão por id
+GET {{baseUrl}}/api/sessoes/{{sessaoId}}
+
+### Listar sessões do assunto
+GET {{baseUrl}}/api/sessoes?assuntoId={{assuntoSecundarioId}}
+
+### --- Erros de domínio ---
+
+### ESTUDO com resultado preenchido -> 422 ESTUDO_SEM_RESULTADO
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "ESTUDO",
+  "data": "2026-01-01",
+  "tempoMinutos": 10,
+  "resultado": "SUCESSO",
+  "tentativaId": "{{$uuid}}"
+}
+
+### RECUPERACAO sem resultado -> 422 RESULTADO_OBRIGATORIO
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "RECUPERACAO",
+  "data": "2026-01-01",
+  "tempoMinutos": 8,
+  "previsaoReconstrucao": "SUCESSO",
+  "tentativaId": "{{$uuid}}"
+}
+
+### QUESTOES sem contagem -> 422 QUESTOES_OBRIGATORIAS
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "QUESTOES",
+  "data": "2026-01-01",
+  "tempoMinutos": 20,
+  "formato": "MULTIPLA_ESCOLHA",
+  "tentativaId": "{{$uuid}}"
+}
+
+### QUESTOES sem formato (com contagem presente) -> 422 FORMATO_OBRIGATORIO (D-36)
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "QUESTOES",
+  "data": "2026-01-01",
+  "tempoMinutos": 20,
+  "questoesCorretas": 5,
+  "questoesTotal": 10,
+  "tentativaId": "{{$uuid}}"
+}
+
+### previsaoReconstrucao/previsaoPercentual no tipo errado -> 422 PREVISAO_INVALIDA (D-04a)
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "RECUPERACAO",
+  "data": "2026-01-01",
+  "tempoMinutos": 8,
+  "previsaoPercentual": 50,
+  "resultado": "SUCESSO",
+  "tentativaId": "{{$uuid}}"
+}
+
+### assunto inexistente -> 404 ASSUNTO_INEXISTENTE
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": 999999,
+  "tipo": "ESTUDO",
+  "data": "2026-01-01",
+  "tempoMinutos": 10,
+  "tentativaId": "{{$uuid}}"
+}
+
+### Revisão inexistente -> 404 REVISAO_INEXISTENTE
+GET {{baseUrl}}/api/revisoes/999999

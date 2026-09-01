@@ -2,6 +2,7 @@ package br.com.estudos.disciplina;
 
 import java.util.List;
 
+import br.com.estudos.shared.exception.ConflictException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,9 @@ public class DisciplinaService {
      */
     @Transactional
     public Disciplina criar(DisciplinaRequest request) {
+        if(disciplinaRepository.existsByNome(request.nome())){
+            throw new ConflictException("Já existe uma disciplina com esse nome", "NOME_DUPLICADO");
+        }
         var disciplina = new Disciplina();
         disciplina.setNome(request.nome());
         disciplina.setPeso(request.peso());

@@ -1,0 +1,68 @@
+### Listar disciplinas
+GET {{baseUrl}}/api/disciplinas
+
+### Criar disciplina — captura o id em disciplinaId (usado pelos arquivos seguintes)
+POST {{baseUrl}}/api/disciplinas
+Content-Type: application/json
+
+{
+  "nome": "Banco de Dados",
+  "peso": "ALTO"
+}
+
+> {%
+    client.assert(response.status === 201, "esperado 201, veio " + response.status);
+    client.global.set("disciplinaId", response.body.id);
+    client.log("disciplinaId = " + response.body.id);
+%}
+
+### Criar segunda disciplina — só pra ter mais de uma na listagem
+POST {{baseUrl}}/api/disciplinas
+Content-Type: application/json
+
+{
+  "nome": "Direito Constitucional",
+  "peso": "MEDIO"
+}
+
+> {%
+    client.global.set("disciplinaSecundariaId", response.body.id);
+%}
+
+### Atualizar disciplina (PATCH)
+PATCH {{baseUrl}}/api/disciplinas/{{disciplinaId}}
+Content-Type: application/json
+
+{
+  "nome": "Banco de Dados",
+  "peso": "MEDIO"
+}
+
+### Nome duplicado é permitido em Disciplina — sem restrição de unicidade (só Assunto tem J-1).
+### Isto devolve 201 de novo, não erro — é o comportamento esperado, não um bug.
+POST {{baseUrl}}/api/disciplinas
+Content-Type: application/json
+
+{
+  "nome": "Banco de Dados",
+  "peso": "ALTO"
+}
+
+### Arquivar disciplina — cria uma descartável só pra isso, não mexe em disciplinaId
+POST {{baseUrl}}/api/disciplinas
+Content-Type: application/json
+
+{
+  "nome": "Disciplina Descartável",
+  "peso": "BAIXO"
+}
+
+> {%
+    client.global.set("disciplinaDescartavelId", response.body.id);
+%}
+
+###
+POST {{baseUrl}}/api/disciplinas/{{disciplinaDescartavelId}}/arquivar
+
+### Arquivar disciplina inexistente -> 404 DISCIPLINA_INEXISTENTE
+POST {{baseUrl}}/api/disciplinas/999999/arquivar

@@ -59,7 +59,7 @@ public class FrenteService {
         return faseDe(assunto);
     }
 
-    /** docs/SPRINT-5-FRENTE.md §2.2. */
+    /** D-19 (contagens de FRENTE/BACKLOG/CONSOLIDADO, teto global) — docs/SPRINT-5-FRENTE.md §2.2. */
     @Transactional(readOnly = true)
     public FrenteResumoResponse resumo() {
         var assuntos = assuntoRepository.listarAtivosDeDisciplinasAtivas();
@@ -81,16 +81,24 @@ public class FrenteService {
         var alerta = represado > tetoDiario;
         var estimativaDias = alerta ? represado / tetoDiario : 0;
 
+        var tetoGlobalFrente = valorParametroInt("teto_global_frente");
+        var avisoTeto = tetoInsuficienteParaAFrente(tetoDiario, tetoGlobalFrente);
+
         return new FrenteResumoResponse(
-            frente, valorParametroInt("teto_global_frente"), backlog, consolidados,
-            represado, tetoDiario, alerta, estimativaDias);
+            frente, tetoGlobalFrente, backlog, consolidados,
+            represado, tetoDiario, alerta, estimativaDias, avisoTeto);
     }
 
     /**
-     * Próximo assunto do backlog de uma disciplina, por ordem (D-41) — só se
-     * ainda houver vaga no teto por disciplina (docs/SPRINT-5-FRENTE.md §2.3).
-     * Recomendação, nunca catraca (01_DOMINIO §6.7 regra 6): quem decide o
-     * que fazer com a sugestão é o chamador.
+     * D-25 — vaga aberta por consolidação é preenchida do backlog da mesma
+     * disciplina, respeitando o teto dela. Próximo assunto do backlog, por
+     * ordem (D-41) — só se ainda houver vaga no teto por disciplina
+     * (docs/SPRINT-5-FRENTE.md §2.4). Recomendação, nunca catraca
+     * (01_DOMINIO §6.7 regra 6): quem decide o que fazer com a sugestão é o
+     * chamador. D-21 (consolidar abre vaga automaticamente) é consequência
+     * de {@link #faseDe} não contar mais um assunto `CONSOLIDADO` como
+     * `FRENTE` — nenhum código dedicado, a vaga já aparece na próxima
+     * chamada.
      */
     @Transactional(readOnly = true)
     public Optional<Assunto> proximaVaga(Long disciplinaId) {
@@ -109,10 +117,14 @@ public class FrenteService {
     }
 
     /**
-     * Primeira disciplina ativa, em ordem estável, que ainda tem vaga e
-     * backlog — reaproveita {@link #proximaVaga} (docs/SPRINT-6-TURNO.md §1).
-     * Frente já no teto global: vazio, sem nem percorrer disciplina nenhuma
-     * (01_DOMINIO §6.7 regra 4 — frente cheia não sugere assunto novo).
+     * D-19 — a frente é `{em estudo} ∪ {em escada}`, derivada, com teto
+     * global e teto por disciplina (este método aplica o global; o de
+     * disciplina vive em {@link #proximaVaga}). D-20 — primeira disciplina
+     * ativa, em ordem estável, que ainda tem vaga e backlog — reaproveita
+     * {@link #proximaVaga} (docs/SPRINT-6-TURNO.md §1). Frente já no teto
+     * global: vazio, sem nem percorrer disciplina nenhuma (01_DOMINIO §6.7
+     * regra 4 — frente cheia não sugere assunto novo, mas não bloqueia
+     * abertura manual — não há endpoint de bloqueio nenhum a impedir).
      */
     @Transactional(readOnly = true)
     public Optional<Assunto> proximaSugestaoDeConteudo() {
@@ -137,6 +149,23 @@ public class FrenteService {
         return revisaoService.estaConsolidado(assunto.getId(), assunto.getPeso())
             ? FaseAssunto.CONSOLIDADO
             : FaseAssunto.FRENTE;
+    }
+
+    /**
+     * D-09... D-31 (01_DOMINIO §7.5): piso do melhor caso — mesmo com a
+     * frente inteira consolidada (nenhum assunto subindo escada, todos em
+     * manutenção, a carga mínima possível), sustentar `tetoGlobalFrente`
+     * assuntos em manutenção exige `tetoGlobalFrente` revisões a cada
+     * `intervalo_manutencao_dias` dias. Capacidade nesse período é
+     * `tetoDiario × intervalo`; abaixo de `tetoGlobalFrente`, represamento é
+     * matematicamente garantido, não estimativa — comparação por
+     * multiplicação, não divisão, pra não arredondar a garantia (docs/
+     * SPRINT-5-FRENTE.md §2.4). Não modela a fase de subida da escada
+     * (assuntos novos pesam mais que os em manutenção) — é piso, não média.
+     */
+    private boolean tetoInsuficienteParaAFrente(int tetoDiario, int tetoGlobalFrente) {
+        var intervaloManutencao = valorParametroInt("intervalo_manutencao_dias");
+        return (long) tetoDiario * intervaloManutencao < tetoGlobalFrente;
     }
 
     private int valorParametroInt(String chave) {

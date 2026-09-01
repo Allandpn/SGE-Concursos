@@ -13,8 +13,9 @@ import br.com.estudos.revisao.RevisaoRepository;
 import br.com.estudos.shared.parametro.ParametroRepository;
 
 /**
- * O plano do turno de hoje — fila de recuperação + bloco de conteúdo,
- * derivado e efêmero (01_DOMINIO §7.4). docs/SPRINT-6-TURNO.md §2.
+ * D-27 — devolve **plano de turno** (fila + bloco), nunca "próximo assunto"
+ * sozinho. O plano é derivado e efêmero (D-28, 01_DOMINIO §7.4).
+ * docs/SPRINT-6-TURNO.md §2.
  */
 @Service
 public class TurnoService {
@@ -42,6 +43,10 @@ public class TurnoService {
             .map(p -> Integer.parseInt(p.getValor()))
             .orElseThrow(() -> new IllegalStateException("Parâmetro obrigatório ausente: teto_diario_recuperacoes"));
 
+        // D-15: mais atrasada primeiro (listarVencidasPorAtraso já ordena), cortada no teto.
+        // D-40: o teto limita o que é OFERECIDO aqui, nunca o que é permitido — nenhum
+        // endpoint bloqueia registrar mais que isto; "puxar mais" é só chamar de novo
+        // depois de registrar (emergente, sem endpoint dedicado, docs/SPRINT-6-TURNO.md §2).
         var fila = revisaoRepository.listarVencidasPorAtraso(hoje).stream()
             .limit(tetoDiario)
             .map(r -> new FilaRecuperacaoItemResponse(

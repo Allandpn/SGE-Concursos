@@ -7,8 +7,8 @@ agora porque a Sprint 4 é "escada e revisão" (`PROGRESSO.md` §1).
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
-| Data | 2026-08-30 |
+| Versão | 1.1.0 |
+| Data | 2026-08-31 |
 | Status | Vigente |
 | Subordinado a | `especificacao/00_PRODUTO.md` §6.4; `especificacao/01_DOMINIO.md` §3.4, §5, §6.7; `especificacao/03_INVARIANTES.md` §11.1; `docs/00A_ADR.md` (ADR-032, escrita nesta sprint); `docs/SPRINT-3-SESSAO.md` (Sessão já existe, não muda) |
 
@@ -50,6 +50,7 @@ E os parâmetros que o serviço consome (valores de partida):
 | `intervalo_nivel_1` .. `intervalo_nivel_6` | `1, 3, 7, 15, 30, 90` | §0.1 |
 | `intervalo_manutencao_dias` | `150` | `01_DOMINIO` §5.5/§6.4 diz "120–180", meio do intervalo escolhido como valor único determinístico — mesmo raciocínio de D-08 (intervalo fixo, não sorteado) |
 | `janela_tolerancia_percentual` | `20` | `01_DOMINIO` §5.4 |
+| `lote_minimo_questoes` | `5` | `01_DOMINIO` §4.3, D-09 — deixado fora de `V4` de propósito (comentário lá: "sem efeito até a escada existir"); entra aqui, na migração que a ativa (v1.1.0, achado em auditoria — não estava implementado) |
 
 **Nível-alvo por peso (D-23) não é parâmetro de banco** — é mapeamento fixo no
 código (`TipoPeso.ALTO → 6, MEDIO → 4, BAIXO → 3`, `01_DOMINIO` §6.7): a
@@ -102,8 +103,18 @@ como rede de segurança contra corrida real (rara: sistema de um usuário só).
 
 ### 3.2 Recuperação cumpre — ou agenda espontânea (§3.3 de `01_DOMINIO`)
 
-`QUESTOES`/`FLASHCARDS`/`RECUPERACAO` busca a pendente do assunto
-(`findByAssuntoIdAndSituacao`, D-05 garante no máximo uma):
+**Antes de tudo, D-09 (§4.3): lote abaixo do mínimo.** Só `QUESTOES`/
+`FLASHCARDS` têm "lote" — `RECUPERACAO` é tentativa declarada, sem contagem.
+`questoesTotal < lote_minimo_questoes` interrompe aqui, **antes** de buscar
+qualquer pendente: a sessão já foi gravada por `SessaoService`, mas nem
+cumpre pendente existente nem cria pendente nova no caso espontâneo — as
+duas coisas seriam "mover a escada", e D-09 proíbe as duas igualmente. Achado
+em auditoria (v1.1.0): a v1.0.0 desta sprint tinha o comentário citando o
+lote mínimo como analogia (linha abaixo) sem implementá-lo — o parâmetro
+tinha ficado de fora de `V4` de propósito e ninguém voltou para ligá-lo aqui.
+
+`QUESTOES`/`FLASHCARDS`/`RECUPERACAO` com lote suficiente busca a pendente do
+assunto (`findByAssuntoIdAndSituacao`, D-05 garante no máximo uma):
 
 - **Existe pendente, dentro da janela de tolerância** (§3.4): marca
   `CUMPRIDA` + `sessaoCumpriu`, aplica o roteamento (§3.3) a partir do nível
@@ -192,4 +203,5 @@ Mesmo padrão das sprints anteriores (`IntegracaoTestBase`).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-08-31 | **D-09 (§4.3, lote mínimo) implementado** — achado sem código em auditoria (`/agents/mentor.md`): a v1.0.0 já citava o lote mínimo como analogia em §3.2, mas o parâmetro (deixado fora de propósito de `V4` na Sprint 3) nunca tinha sido ligado a nada. `lote_minimo_questoes` entra em `V5` (migração desta sprint, a que o ativa); `RevisaoService.processarRecuperacao` checa `questoesTotal < lote_minimo_questoes` antes de tocar em qualquer pendente ou criar rota espontânea, só para `QUESTOES`/`FLASHCARDS`. Dois testes novos em `RevisaoEscadaTest` |
 | 1.0.0 | 2026-08-30 | Criado. Escopo e roteamento completo (D-07/D-10/D-11/D-17) confirmados com o usuário antes da implementação — incluindo a progressão de intervalos da escada, que a especificação não lista numericamente |

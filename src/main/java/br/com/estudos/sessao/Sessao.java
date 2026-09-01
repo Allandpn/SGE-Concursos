@@ -55,6 +55,9 @@ public class Sessao {
     @Column(nullable = false)
     private LocalDate data;
 
+    // D-29: duração de bloco não é constante do domínio — o sistema mede a
+    // real, toda sessão registra tempo (01_DOMINIO §7.7). Satisfeita por
+    // ausência: não existe constante de duração em lugar nenhum do código.
     @Setter
     @Column(nullable = false)
     private Integer tempoMinutos;

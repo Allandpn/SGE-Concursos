@@ -12,4 +12,6 @@ public interface DisciplinaRepository extends JpaRepository<Disciplina,Long> {
     // ux_disciplina_nome) — usado só para resolver a importação por nome,
     // não como garantia de unicidade.
     Optional<Disciplina> findByNomeIgnoreCase(String nome);
+
+    boolean existsByNome(String nome);
 }

@@ -1,0 +1,114 @@
+### Registrar simulado com duas disciplinas — tudo-ou-nada, soma no mesmo agregado de M-1
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "duracaoMinutos": 240,
+  "resultados": [
+    { "disciplinaId": {{disciplinaId}}, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 32, "questoesTotal": 40 },
+    { "disciplinaId": {{disciplinaSecundariaId}}, "formato": "CERTO_ERRADO", "questoesCorretas": 15, "questoesTotal": 20 }
+  ]
+}
+
+> {%
+    client.assert(response.status === 201, "esperado 201, veio " + response.status);
+%}
+
+### Listar simulados com seus resultados
+GET {{baseUrl}}/api/simulados
+
+### --- Erros de domínio ---
+
+### disciplina inexistente -> 404 DISCIPLINA_INEXISTENTE
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "duracaoMinutos": 180,
+  "resultados": [
+    { "disciplinaId": 999999, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20 }
+  ]
+}
+
+### mesma disciplina duas vezes no mesmo simulado -> 409 DISCIPLINA_DUPLICADA_NO_SIMULADO
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "duracaoMinutos": 180,
+  "resultados": [
+    { "disciplinaId": {{disciplinaId}}, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20 },
+    { "disciplinaId": {{disciplinaId}}, "formato": "CERTO_ERRADO", "questoesCorretas": 5, "questoesTotal": 10 }
+  ]
+}
+
+### resultados vazio -> 422 RESULTADOS_OBRIGATORIOS
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "duracaoMinutos": 180,
+  "resultados": []
+}
+
+### data ausente -> 422 DATA_OBRIGATORIA
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "duracaoMinutos": 180,
+  "resultados": [
+    { "disciplinaId": {{disciplinaId}}, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20 }
+  ]
+}
+
+### duração ausente -> 422 DURACAO_OBRIGATORIA
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "resultados": [
+    { "disciplinaId": {{disciplinaId}}, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20 }
+  ]
+}
+
+### disciplinaId ausente num resultado -> 422 DISCIPLINA_OBRIGATORIA
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "duracaoMinutos": 180,
+  "resultados": [
+    { "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20 }
+  ]
+}
+
+### formato ausente num resultado -> 422 FORMATO_OBRIGATORIO
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "duracaoMinutos": 180,
+  "resultados": [
+    { "disciplinaId": {{disciplinaId}}, "questoesCorretas": 10, "questoesTotal": 20 }
+  ]
+}
+
+### questoesCorretas/questoesTotal ausentes num resultado -> 422 QUESTOES_OBRIGATORIAS
+POST {{baseUrl}}/api/simulados
+Content-Type: application/json
+
+{
+  "data": "2026-02-01",
+  "duracaoMinutos": 180,
+  "resultados": [
+    { "disciplinaId": {{disciplinaId}}, "formato": "MULTIPLA_ESCOLHA" }
+  ]
+}

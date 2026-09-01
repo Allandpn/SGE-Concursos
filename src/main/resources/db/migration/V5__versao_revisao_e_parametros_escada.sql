@@ -11,4 +11,8 @@ INSERT INTO parametro (chave, valor, descricao) VALUES
     ('intervalo_nivel_5', '30', 'Dias até a próxima revisão no nível 5 da escada'),
     ('intervalo_nivel_6', '90', 'Dias até a próxima revisão no nível 6 da escada'),
     ('intervalo_manutencao_dias', '150', 'Dias entre revisões de manutenção, assunto consolidado (01_DOMINIO §5.5, "120-180", valor único determinístico)'),
-    ('janela_tolerancia_percentual', '20', 'Percentual do intervalo do nível que pode ser antecipado sem perder o crédito da revisão (01_DOMINIO §5.4)');
+    ('janela_tolerancia_percentual', '20', 'Percentual do intervalo do nível que pode ser antecipado sem perder o crédito da revisão (01_DOMINIO §5.4)'),
+    -- D-09 (01_DOMINIO §4.3) — fora de V4__parametros_sessao.sql de propósito
+    -- (comentário lá: "sem efeito até a escada existir"). A escada é esta
+    -- migração; é aqui que passa a ter efeito.
+    ('lote_minimo_questoes', '5', 'Abaixo disto, QUESTOES/FLASHCARDS registra e conta tempo mas não cumpre revisão nem move a escada (01_DOMINIO §4.3, D-09)');

@@ -7,7 +7,7 @@ para nascer. Nasce agora porque a Sprint 1 é "ambiente e schema"
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.0 |
+| Versão | 1.3.0 |
 | Data | 2026-08-31 |
 | Status | Vigente |
 | Subordinado a | `especificacao/01_DOMINIO.md`, `especificacao/02_JORNADAS.md`, `especificacao/03_INVARIANTES.md`, `docs/00A_ADR.md`, `docs/09_CODE_STYLE.md` |
@@ -49,7 +49,7 @@ Herdadas, não inventadas aqui:
 - Nome de restrição: `<prefixo>_<tabela>_d<NN>[_rótulo]`, fundindo o prefixo
   de `09_CODE_STYLE` §1 (`pk_/fk_/ux_/ck_/ix_`) com a exigência de
   `03_INVARIANTES` §9 de que o identificador da regra vá no nome. Só leva
-  `d<NN>` a restrição que implementa uma das 45 regras; FK genérica e `CHECK`
+  `d<NN>` a restrição que implementa uma das 46 regras; FK genérica e `CHECK`
   de vocabulário (enum de domínio comum) levam só tabela + rótulo.
 - Vocabulário fechado (tipo de sessão, resultado, situação de revisão etc.) é
   `CHECK` direto na coluna, não tabela de *lookup* — nenhum ADR pede tabela
@@ -195,7 +195,7 @@ não uma.
 `03_INVARIANTES` §4 lista 10 regras de natureza **Invariante** garantidas
 pela persistência. Com Simulado fora de escopo (§2.6), **9 das 10** ganham
 restrição nesta sprint — D-13 fica pendente. Uma décima linha, fora da
-classificação de `03_INVARIANTES` (que só cobre as 45 regras de
+classificação de `03_INVARIANTES` (que só cobre as 46 regras de
 `01_DOMINIO`), entra por ter exatamente a mesma natureza: **J-1**, de
 `02_JORNADAS`.
 
@@ -238,7 +238,7 @@ CHECK (
 
 ### 3.2 Nota sobre J-1 (1.1.0) — fonte fora de `03_INVARIANTES`
 
-`03_INVARIANTES` classifica só as 45 regras de `01_DOMINIO` — J-1 é de
+`03_INVARIANTES` classifica só as 46 regras de `01_DOMINIO` — J-1 é de
 `02_JORNADAS` e não tem lugar formal naquela classificação. Entra nesta
 tabela porque a natureza é idêntica à de D-05/D-45: unicidade que só a
 persistência pode garantir sem risco de corrida (verificação prévia no
@@ -268,7 +268,7 @@ não invento regra que a especificação não pediu.
 
 ### 3.5 Restrições estruturais adicionais (sem regra numerada) — 1.1.0
 
-Higiene de dado, não uma das 45 regras nem J-1 — por isso sem `d<NN>` no
+Higiene de dado, não uma das 46 regras nem J-1 — por isso sem `d<NN>` no
 nome (`09_CODE_STYLE` §1: só tabela + assunto).
 
 | Restrição | Nome |
@@ -508,6 +508,7 @@ uma nova substituindo a tabela de ADR-011 para `Assunto`.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-08-31 | Quatro menções a "45 regras" corrigidas para 46 (`01_DOMINIO` ganhou D-46 na Sprint 7, este documento nunca foi atualizado) — achado em auditoria (`/agents/mentor.md`) |
 | 1.2.0 | 2026-08-31 | `previsao_reconstrucao`: `BOOLEAN` → `TEXT CHECK IN ('SUCESSO','PARCIAL','FALHA')`, mesma escala de `resultado`. Fecha contradição achada em auditoria entre `00_PRODUTO §7` (fraseado solto, lido como binário) e `02_JORNADAS §4.1` (três botões, desenhados de propósito) — `00_PRODUTO` v1.6.0 explicita que a granularidade é decisão de tela, não da métrica. D-04a (§3.1) não muda: a `CHECK` já era só de nulidade por tipo, indiferente ao tipo de dado da coluna |
 | 1.1.0 | 2026-08-19 | Revisão do usuário, 7 correções. **Parâmetros entram no schema**: nova tabela `parametro` (§6), corrigindo a conclusão da v1.0.0 à luz do próprio teste de D-29 ("sem reinício"). Nova `CHECK` de higiene `questoes_corretas ≤ questoes_total`. `revisao.sessao_origem_id` passa a `NULL` (assunto de divisão, retomada após falha em manutenção). **D-04a** reescrita para amarrar cada previsão ao tipo que a comporta, no padrão de D-36. `assunto.status` renomeado para `assunto.ativo BOOLEAN` (colisão de nome com o que D-16 proíbe; diverge da tabela de ADR-011, registrado em §7.11). Contagem de questões amarrada ao tipo, decidido em §7.9. Nova restrição **J-1** (`02_JORNADAS`, agora fonte do documento): nome de assunto único por disciplina, sem acento/caixa, via `unaccent_imutavel`. Encontrada e registrada (não resolvida) inconsistência de enum de peso entre `01_DOMINIO` e `02_JORNADAS` J-1 |
 | 1.0.0 | 2026-08-19 | Criado. Cinco tabelas (`disciplina`, `assunto`, `sessao`, `revisao`, `erro`); 9 das 10 invariantes de persistência como restrições nomeadas; Simulado e D-13 adiados por decisão confirmada com o usuário; índices justificados por padrão de consulta já nomeado na especificação; nenhum parâmetro de negócio entra no schema desta sprint |

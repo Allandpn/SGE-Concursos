@@ -29,6 +29,7 @@ import br.com.estudos.disciplina.DisciplinaService;
 import br.com.estudos.shared.IntegracaoTestBase;
 import br.com.estudos.shared.enums.FaseAssunto;
 import br.com.estudos.shared.enums.TipoPeso;
+import br.com.estudos.shared.parametro.ParametroRepository;
 
 /**
  * Frente/backlog/consolidado e represamento (docs/SPRINT-5-FRENTE.md §4).
@@ -63,6 +64,9 @@ class FrenteServiceTest extends IntegracaoTestBase {
 
     @Autowired
     private FrenteService frenteService;
+
+    @Autowired
+    private ParametroRepository parametroRepository;
 
     private Disciplina novaDisciplina(String nome) {
         return disciplinaService.criar(new DisciplinaRequest(nome, TipoPeso.MEDIO));
@@ -167,6 +171,18 @@ class FrenteServiceTest extends IntegracaoTestBase {
         var resumo = frenteService.resumo();
         assertTrue(resumo.alertaRepresamento(), "9 represadas, acima do teto de 8, dispara");
         assertEquals(1, resumo.estimativaDiasParaNormalizar(), "9 / 8 (divisão inteira) = 1");
+    }
+
+    @Test
+    void avisoTetoInsuficiente_disparaSoQuandoTetoDiarioNaoSustentaAFrenteNemNoMelhorCaso() {
+        // Padrão: 8 (teto diário) × 150 (intervalo de manutenção) = 1200 >= 100 (teto global) — sustenta.
+        assertFalse(frenteService.resumo().avisoTetoInsuficiente(), "D-31: teto padrão sustenta a frente padrão, mesmo caso pior");
+
+        var tetoGlobal = parametroRepository.findById("teto_global_frente").orElseThrow();
+        tetoGlobal.setValor("2000"); // 1200 < 2000 — represamento garantido mesmo com a frente inteira consolidada
+        parametroRepository.saveAndFlush(tetoGlobal);
+
+        assertTrue(frenteService.resumo().avisoTetoInsuficiente(), "D-31: 1200 < 2000, teto diário não sustenta nem no melhor caso");
     }
 
     @Test

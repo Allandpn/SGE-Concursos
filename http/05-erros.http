@@ -1,0 +1,114 @@
+### Registrar erro sem sessão vinculada (sessaoId é opcional, D-46)
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "descricao": "Confundi INNER JOIN com LEFT JOIN na questão",
+  "causa": "INTERPRETACAO",
+  "confianca": "MEDIA"
+}
+
+> {%
+    client.assert(response.status === 201, "esperado 201, veio " + response.status);
+    client.global.set("erroId", response.body.id);
+%}
+
+### Registrar erro vinculado a uma sessão (sessaoId, de 04-sessoes-e-revisoes.http)
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "sessaoId": {{sessaoId}},
+  "descricao": "Chutei a última questão, não sobrou tempo",
+  "causa": "GESTAO_TEMPO",
+  "confianca": "BAIXA"
+}
+
+### Listar erros do assunto
+GET {{baseUrl}}/api/erros?assuntoId={{assuntoSecundarioId}}
+
+### --- Erros de domínio ---
+
+### assuntoId ausente -> 422 ASSUNTO_OBRIGATORIO (ADR-034/PROGRESSO 1.21.0 — antes disto virava 500)
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "descricao": "Sem assunto no corpo",
+  "causa": "DESATENCAO",
+  "confianca": "BAIXA"
+}
+
+### assunto inexistente -> 404 ASSUNTO_INEXISTENTE
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "assuntoId": 999999,
+  "descricao": "Assunto que não existe",
+  "causa": "CHUTE",
+  "confianca": "BAIXA"
+}
+
+### sessão inexistente -> 404 SESSAO_INEXISTENTE
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "sessaoId": 999999,
+  "descricao": "Sessão que não existe",
+  "causa": "CHUTE",
+  "confianca": "BAIXA"
+}
+
+### descrição ausente -> 422 DESCRICAO_OBRIGATORIA
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "causa": "PEGADINHA",
+  "confianca": "ALTA"
+}
+
+### causa ausente -> 422 CAUSA_OBRIGATORIA
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "descricao": "Sem causa no corpo",
+  "confianca": "ALTA"
+}
+
+### confiança ausente -> 422 CONFIANCA_OBRIGATORIA
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "descricao": "Sem confiança no corpo",
+  "causa": "ESQUECIMENTO"
+}
+
+### As sete causas válidas, uma de cada, só pra ver o CHECK de banco aceitando todas
+###
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{ "assuntoId": {{assuntoSecundarioId}}, "descricao": "causa: FALTA_CONHECIMENTO", "causa": "FALTA_CONHECIMENTO", "confianca": "BAIXA" }
+
+###
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{ "assuntoId": {{assuntoSecundarioId}}, "descricao": "causa: ESQUECIMENTO", "causa": "ESQUECIMENTO", "confianca": "MEDIA" }
+
+###
+POST {{baseUrl}}/api/erros
+Content-Type: application/json
+
+{ "assuntoId": {{assuntoSecundarioId}}, "descricao": "causa: PEGADINHA", "causa": "PEGADINHA", "confianca": "ALTA" }

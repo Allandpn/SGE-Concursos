@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.0 |
-| Data | 2026-08-19 |
+| Versão | 1.3.0 |
+| Data | 2026-08-31 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 45 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 46 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 45 regras, classificadas
+## 3. As 46 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -157,9 +157,12 @@ conceitual — envelhecer por motivo errado.
 | D-43 | Comportamento | S | Teste: novos nascem no nível do original |
 | D-44 | Comportamento | S | Teste: importação com estrutura de divisão é recusada |
 | D-45 | **Invariante** | **P** | Reenviar a mesma tentativa → segunda escrita recusada, resposta de sucesso |
+| D-46 | Invariante | **P** | Erro apontando para assunto ou sessão inexistente é recusado pela escrita |
 
-**Contagem:** 10 invariantes · 5 derivações · 24 comportamentos · 7 políticas — 46 linhas para 45 regras.
-D-04 virou duas regras de naturezas diferentes.
+**Contagem:** 11 invariantes · 5 derivações · 24 comportamentos · 7 políticas — 47 linhas para 46 regras.
+D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
+(01_DOMINIO v1.12.0) — linha ausente aqui até esta revisão, achado em
+auditoria (`/agents/mentor.md`).
 
 ### 3.1 As três reclassificações desta versão
 
@@ -320,7 +323,7 @@ movido — e a tabela vira ficção que ninguém confere.
 | O que se pergunta | Como se responde |
 |---|---|
 | Onde D-07 é implementada? | Varredura por `D-07` no código |
-| Alguma regra ficou sem implementação? | Varredura das 45 contra o resultado |
+| Alguma regra ficou sem implementação? | Varredura das 46 contra o resultado |
 | Esta restrição corresponde a quê? | O identificador está no nome dela |
 
 ### 9.1 Citação como metadado, não como comentário
@@ -330,7 +333,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 45 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 46 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -453,6 +456,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-08-31 | **D-46 adicionada à tabela de §3** — existia em `01_DOMINIO.md` desde v1.12.0 (Sprint 7), mas esta classificação nunca ganhou a linha correspondente. Invariante, garantida por `P` (mesma família de D-01/D-13, integridade referencial). Contagem de §3 e as três menções a "45 regras" (§0, §9) corrigidas para 46. Achado em auditoria (`/agents/mentor.md`) |
 | 1.2.0 | 2026-08-19 | Quatro decisões de garantia fechadas (§11.1): **D-45** por identificador de tentativa gerado ao abrir a tela — restrição sobre conteúdo daria falso positivo em uso legítimo; **D-18** sem filtro global de leitura, porque quebraria D-42, com o acesso padrão devolvendo ativos e o irrestrito exigindo nome explícito; **controle de versão na revisão** para regras que dependem de histórico, registrado como **complementar e não redundante** com D-45; e carimbo de criação/alteração. §9.1: citação de regra como metadado da linguagem, com as duas ressalvas que impedem falha permanente do teste de cobertura |
 | 1.1.0 | 2026-08-19 | Revisão do usuário. Nova natureza **Derivação** (§1.1) com riscos próprios. "Banco" vira **Persistência** — por acoplamento de documento, não por portabilidade. A hierarquia vira *"a camada mais baixa que comporte sem distorção"*: a escada pertence ao serviço e isso está certo. **D-24 rebaixada** para comportamento; **D-04 dividida** em duas naturezas; D-16/D-19/D-28 reclassificadas como derivação; **D-45** acrescentada. Ausência passa a exigir teste estrutural **nos dois caminhos** — código e schema. Nova §9 (rastreabilidade pelo código, não por tabela), §10 (cinco princípios) e §11 (decisões pendentes, com duas viradas ADR). Recusada a troca de "revisão humana" por "governança" |
 | 1.0.0 | 2026-08-19 | Criado. Classifica as 44 regras de `01_DOMINIO` §10 em invariante, comportamento e política (12/26/6), atribui camada de garantia e teste a cada uma. Estabelece a hierarquia banco > serviço > interface e o princípio de empurrar para a camada mais baixa. Registra que **D-03 não é garantível por software nenhum** e o que se faz no lugar. Lista de conferência para as 8 políticas |

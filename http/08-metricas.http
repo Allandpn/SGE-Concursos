@@ -1,0 +1,19 @@
+### M-1 — % de acerto por formato de banca, janela global. n<10 devolve percentual null (nunca 0%).
+GET {{baseUrl}}/api/metricas/m1?janela=GLOBAL
+
+### M-1 — mesma métrica, separada por disciplina
+GET {{baseUrl}}/api/metricas/m1?janela=POR_DISCIPLINA
+
+### M-2 — primeira exposição vs. média das seguintes, por assunto. QUESTOES e RECUPERACAO
+### em séries separadas, nunca somadas.
+GET {{baseUrl}}/api/metricas/m2?assuntoId={{assuntoSecundarioId}}
+
+### M-3 — calibração: previsto × real, com sinal. Objetiva (QUESTOES/FLASHCARDS) e subjetiva
+### (RECUPERACAO) reportadas separadas, nunca somadas.
+GET {{baseUrl}}/api/metricas/m3
+
+### M-4 — aderência: % de revisões cumpridas dentro de 3 dias da data prevista
+GET {{baseUrl}}/api/metricas/m4
+
+### janela ausente/inválida em M-1 -> 400 (enum inválido, Spring recusa o bind antes do Service)
+GET {{baseUrl}}/api/metricas/m1?janela=SEMESTRAL

@@ -98,7 +98,7 @@ o item não terminou.
 Leia `CLAUDE.md` antes de começar. A especificação em `especificacao/` é a fonte
 de verdade — aprender não autoriza improvisar arquitetura.
 
-As 45 regras estão em `especificacao/01_DOMINIO.md` §10; quem garante cada uma,
+As 46 regras estão em `especificacao/01_DOMINIO.md` §10; quem garante cada uma,
 em `especificacao/03_INVARIANTES.md` §3.
 
 ## Português

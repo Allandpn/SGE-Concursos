@@ -1,0 +1,23 @@
+### Fase de um assunto — sem sessão nenhuma, deve ser BACKLOG (D-24)
+GET {{baseUrl}}/api/assuntos/{{assuntoId}}/fase
+
+### Fase de um assunto com histórico (assuntoSecundarioId estudou/registrou em 04-sessoes...) — FRENTE
+GET {{baseUrl}}/api/assuntos/{{assuntoSecundarioId}}/fase
+
+### Fase de assunto inexistente -> 404 ASSUNTO_INEXISTENTE
+GET {{baseUrl}}/api/assuntos/999999/fase
+
+### Resumo da frente — contagens de FRENTE/BACKLOG/CONSOLIDADO, represamento (D-30/D-31)
+GET {{baseUrl}}/api/frente
+
+> {%
+    client.log("alertaRepresamento (reativo): " + response.body.alertaRepresamento);
+    client.log("avisoTetoInsuficiente (estrutural, D-31): " + response.body.avisoTetoInsuficiente);
+    client.log("Com os parâmetros de partida (teto_global_frente=100, intervalo_manutencao_dias=150), avisoTetoInsuficiente deve ser false.");
+%}
+
+### Próxima vaga do backlog de uma disciplina (D-25 — menor ordem, respeitando teto por disciplina)
+GET {{baseUrl}}/api/frente/proxima-vaga?disciplinaId={{disciplinaId}}
+
+### Sem vaga (disciplina sem nenhum assunto em backlog) -> 204 No Content
+GET {{baseUrl}}/api/frente/proxima-vaga?disciplinaId={{disciplinaSecundariaId}}

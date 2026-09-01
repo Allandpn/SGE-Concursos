@@ -152,6 +152,30 @@ class RevisaoEscadaTest extends IntegracaoTestBase {
     }
 
     @Test
+    void loteAbaixoDoMinimo_naoAlteraRevisaoPendente() throws Exception {
+        var assunto = novoAssunto("Lote Pequeno");
+        registrar(estudo(assunto.getId(), LocalDate.of(2026, 1, 1)));
+        var antes = pendente(assunto.getId());
+
+        registrar(questoes(assunto.getId(), LocalDate.of(2026, 1, 2), 3, 3)); // lote de 3 < mínimo de 5 (D-09)
+
+        var depois = pendente(assunto.getId());
+        assertEquals(antes.getId(), depois.getId(), "revisão pendente continua a mesma");
+        assertEquals(1, depois.getNivel(), "lote abaixo do mínimo não move a escada");
+        assertTrue(depois.getSessaoCumpriu() == null, "lote abaixo do mínimo não cumpre revisão");
+    }
+
+    @Test
+    void loteAbaixoDoMinimo_semPendente_naoCriaRevisao() throws Exception {
+        var assunto = novoAssunto("Lote Pequeno Espontaneo");
+
+        registrar(questoes(assunto.getId(), LocalDate.of(2026, 1, 1), 3, 3)); // sem ESTUDO antes, lote pequeno
+
+        assertTrue(revisaoRepository.findByAssuntoId(assunto.getId()).isEmpty(),
+            "lote abaixo do mínimo não cria revisão nem roteada (D-09)");
+    }
+
+    @Test
     void consolidacao_doisSucessosNoAlvo_usaIntervaloDeManutencao() throws Exception {
         var assunto = novoAssunto("Consolida");
         registrar(estudo(assunto.getId(), LocalDate.of(2026, 1, 1)));

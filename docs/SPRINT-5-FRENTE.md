@@ -9,10 +9,10 @@ agora que "a consulta da frente aparece".
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
-| Data | 2026-08-30 |
+| Versão | 1.1.0 |
+| Data | 2026-08-31 |
 | Status | Vigente |
-| Subordinado a | `especificacao/00_PRODUTO.md` §6.5; `especificacao/01_DOMINIO.md` §6; `docs/00A_ADR.md` (ADR-033, escrita nesta sprint); `docs/SPRINT-4-ESCADA.md` (Revisao já existe, não muda) |
+| Subordinado a | `especificacao/00_PRODUTO.md` §6.5; `especificacao/01_DOMINIO.md` §6, §7.5 (D-31, v1.1.0); `docs/00A_ADR.md` (ADR-033, escrita nesta sprint); `docs/SPRINT-4-ESCADA.md` (Revisao já existe, não muda; `intervalo_manutencao_dias` reaproveitado por D-31) |
 
 ---
 
@@ -80,7 +80,44 @@ estimativa de dias para normalizar = `represado / teto diário` (divisão
 inteira — é a mesma conta do exemplo de `02_JORNADAS.md` J-4: 89 represado ÷
 8 = 11).
 
-### 2.3 Próximo do backlog (vaga por consolidação)
+### 2.3 Teto diário insuficiente para a frente (D-31, v1.1.0)
+
+**Achado sem implementação em auditoria** (`/agents/mentor.md`) — `01_DOMINIO`
+§7.5 já dizia "se o teto diário ficar abaixo da taxa implicada pela frente, o
+sistema avisa", mas nenhum documento tinha fixado a fórmula, e nenhum código
+lia isso.
+
+Fórmula, decidida com o usuário (não estava em nenhum documento antes):
+**piso do melhor caso**, não estimativa da taxa real. Mesmo com a frente
+inteira consolidada — nenhum assunto subindo escada, todos em manutenção, a
+carga mínima que a frente pode ter — sustentar `tetoGlobalFrente` assuntos
+em manutenção exige `tetoGlobalFrente` revisões a cada
+`intervalo_manutencao_dias` dias (mesmo parâmetro que `docs/SPRINT-4-ESCADA.md`
+já usa, sem chave nova). Capacidade do sistema nesse período é
+`tetoDiario × intervalo`; abaixo de `tetoGlobalFrente`, represamento é
+matematicamente garantido:
+
+```
+avisoTetoInsuficiente = (tetoDiario × intervaloManutencaoDias) < tetoGlobalFrente
+```
+
+Comparação por multiplicação, não divisão — divisão inteira arredondaria a
+garantia (100 ÷ 150 = 0, faria o piso desaparecer). Com os valores de
+partida (8 × 150 = 1200 ≥ 100), não dispara — os defaults já foram
+calibrados por simulação (§0) pra serem seguros.
+
+**O que esta fórmula não cobre, de propósito:** a fase de subida da escada,
+onde assuntos novos pesam mais que os em manutenção. É piso do melhor caso,
+não média real — modelar a média exigiria simular distribuição de níveis,
+fora do espírito de "consulta simples" de ADR-033. Registrado como
+refinamento possível, não decidido.
+
+`FrenteResumoResponse` ganha o campo `avisoTetoInsuficiente`, separado de
+`alertaRepresamento` — são os dois alertas de D-30/D-31, um reativo (atraso
+já acumulado) e um estrutural (os dois parâmetros se contradizem, antes de
+qualquer atraso existir).
+
+### 2.4 Próximo do backlog (vaga por consolidação)
 
 Dada uma disciplina: o assunto de menor `ordem` (D-41) entre os que estão em
 `BACKLOG` — só se a disciplina ainda não bateu o teto por disciplina (conta
@@ -120,4 +157,5 @@ Mesmo padrão das sprints anteriores.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-08-31 | **D-31 implementado** (§2.3, teto diário insuficiente) — achado sem código em auditoria (`/agents/mentor.md`); nenhum documento tinha a fórmula antes. Piso do melhor caso decidido com o usuário: `tetoDiario × intervaloManutencaoDias < tetoGlobalFrente`. `FrenteResumoResponse` ganha `avisoTetoInsuficiente`; nenhuma migração nova (reaproveita `intervalo_manutencao_dias` da Sprint 4). Teste novo em `FrenteServiceTest` |
 | 1.0.0 | 2026-08-30 | Criado. Teto diário (8) e limiar de represamento (`> teto diário`) fechados com o usuário — eram questão em aberto de `01_DOMINIO.md` §12 |

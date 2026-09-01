@@ -1,0 +1,105 @@
+### Listar assuntos de uma disciplina (precisa de disciplinaId — rode 01-disciplinas.http primeiro)
+GET {{baseUrl}}/api/assuntos?disciplinaId={{disciplinaId}}
+
+### Criar assunto — captura o id em assuntoId (usado pelos arquivos seguintes)
+POST {{baseUrl}}/api/assuntos
+Content-Type: application/json
+
+{
+  "disciplinaId": {{disciplinaId}},
+  "nome": "Normalização e Dependências Funcionais",
+  "peso": "ALTO",
+  "dificuldadePercebida": 4,
+  "ordem": 1
+}
+
+> {%
+    client.assert(response.status === 201, "esperado 201, veio " + response.status);
+    client.global.set("assuntoId", response.body.id);
+    client.log("assuntoId = " + response.body.id);
+%}
+
+### Segundo assunto — usado depois pelos testes de sessão/escada/erro
+POST {{baseUrl}}/api/assuntos
+Content-Type: application/json
+
+{
+  "disciplinaId": {{disciplinaId}},
+  "nome": "Modelagem Conceitual (MER e DER)",
+  "peso": "MEDIO",
+  "dificuldadePercebida": 3,
+  "ordem": 2
+}
+
+> {%
+    client.global.set("assuntoSecundarioId", response.body.id);
+%}
+
+### Atualizar assunto (PATCH — só os campos não nulos são aplicados)
+PATCH {{baseUrl}}/api/assuntos/{{assuntoId}}
+Content-Type: application/json
+
+{
+  "disciplinaId": {{disciplinaId}},
+  "nome": "Normalização e Dependências Funcionais",
+  "peso": "ALTO",
+  "dificuldadePercebida": 5,
+  "ordem": 1
+}
+
+### Erro de domínio — nome duplicado na mesma disciplina, variando acento/caixa -> 409 NOME_DUPLICADO
+POST {{baseUrl}}/api/assuntos
+Content-Type: application/json
+
+{
+  "disciplinaId": {{disciplinaId}},
+  "nome": "normalizacao e dependencias funcionais",
+  "peso": "ALTO",
+  "dificuldadePercebida": 3,
+  "ordem": 3
+}
+
+### Erro de domínio — disciplina inexistente -> 404 DISCIPLINA_INEXISTENTE
+POST {{baseUrl}}/api/assuntos
+Content-Type: application/json
+
+{
+  "disciplinaId": 999999,
+  "nome": "Assunto Órfão",
+  "peso": "MEDIO",
+  "dificuldadePercebida": 3,
+  "ordem": 1
+}
+
+### Erro de domínio — ordem ausente -> 422 ORDEM_OBRIGATORIA
+POST {{baseUrl}}/api/assuntos
+Content-Type: application/json
+
+{
+  "disciplinaId": {{disciplinaId}},
+  "nome": "Assunto Sem Ordem",
+  "peso": "MEDIO",
+  "dificuldadePercebida": 3
+}
+
+### Arquivar assunto — cria um descartável só pra isso
+POST {{baseUrl}}/api/assuntos
+Content-Type: application/json
+
+{
+  "disciplinaId": {{disciplinaId}},
+  "nome": "Assunto Descartável",
+  "peso": "BAIXO",
+  "dificuldadePercebida": 2,
+  "ordem": 99
+}
+
+> {%
+    client.global.set("assuntoDescartavelId", response.body.id);
+%}
+
+###
+POST {{baseUrl}}/api/assuntos/{{assuntoDescartavelId}}/arquivar
+
+### Confirma que o arquivado some da listagem
+GET {{baseUrl}}/api/assuntos?disciplinaId={{disciplinaId}}
