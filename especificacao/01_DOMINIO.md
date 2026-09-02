@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.12.0 |
-| Data | 2026-08-31 |
+| Versão | 1.15.0 |
+| Data | 2026-09-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -83,6 +83,11 @@ Agrupa assuntos. Tem nome, peso no edital e um estado ativo/arquivado.
 É o **nível em que a medição funciona** (`00_PRODUTO` §7 M-1). Essa é a razão de
 ela existir como entidade, e não apenas como rótulo do assunto.
 
+O **nome é único**, mesmo depois de arquivada — arquivar não libera o nome
+para reuso (D-47). Mesma semântica que o nome do assunto já tem dentro da
+disciplina (§3.2, D-41 trata a ordem; a unicidade de nome do assunto está em
+`ux_assunto_j1_nome_por_disciplina`).
+
 ### 3.2 Assunto
 
 A unidade. Pertence a uma disciplina. Tem nome, peso no edital, dificuldade
@@ -92,6 +97,13 @@ A **ordem** é a prioridade no backlog: quando uma vaga abre na frente, entra o
 assunto de menor ordem ainda não iniciado daquela disciplina. É o que faz
 *Modelagem Conceitual* entrar antes de *Modelagem Lógica* sem ninguém precisar
 decidir na hora.
+
+A ordem é **única entre os assuntos ativos da mesma disciplina** (D-48) — sem
+isso, "o assunto de menor ordem" deixaria de ter resposta única quando dois
+empatassem, e a vaga na frente passaria a depender de acidente de
+armazenamento, não da regra. Ao contrário do nome (D-47), arquivar **libera**
+o número: ordem não é identidade permanente do assunto, é só a disputa pela
+próxima vaga — perde sentido fora do backlog.
 
 O assunto **não guarda a própria fase**. Ver §8.
 
@@ -258,6 +270,17 @@ partir de uma data.
 | A sessão de origem | Qual estudo iniciou esta escada |
 | A sessão que a cumpriu | Preenchida ao ser cumprida; **é onde vive o resultado** |
 | A situação | Pendente, cumprida ou cancelada |
+
+**Arquivar não é definitivo (D-49).** Reativar disciplina ou assunto existe
+como operação simétrica a arquivar (D-17). Ela **nunca reescreve** a revisão
+`CANCELADA` — histórico não se apaga aqui também, mesmo princípio de D-18 —
+mas cria uma revisão `PENDENTE` **nova**, herdando o nível da última revisão
+do assunto, com a data recalculada a partir de hoje pelo mesmo intervalo que
+já regeria essa pendente (D-08, ou o intervalo de manutenção se o assunto já
+estava consolidado). Sem revisão nenhuma antes de arquivar, reativar não cria
+nada — volta exatamente como estava. Reativar uma disciplina não toca em
+nenhum assunto que já esteja arquivado por conta própria — só restaura o que
+o arquivamento *daquela* disciplina havia cancelado.
 
 **A revisão não guarda resultado.** Ela aponta para a sessão de recuperação que
 a cumpriu, e o resultado vive lá. Isso mantém um só lugar de verdade e faz uma
@@ -1032,6 +1055,9 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-44 | Divisão é operação de tela, transacional. Importação por arquivo não divide | §3.2.2 |
 | D-45 | Registrar a mesma sessão duas vezes conta **uma**. Repetir o envio nunca move a escada duas vezes | §3.3.1 |
 | D-46 | Todo erro aponta para um assunto existente; se apontar para uma sessão, ela também precisa existir | §3.5 |
+| D-47 | Nome de disciplina é único; arquivar não libera o nome para reuso | §3.1 |
+| D-48 | Ordem do assunto é única entre os ativos da mesma disciplina; arquivar libera o número | §3.2 |
+| D-49 | Reativar cria uma revisão pendente nova, no nível da última; nunca restaura a cancelada | §3.4 |
 
 ---
 
@@ -1098,6 +1124,9 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.15.0 | 2026-09-01 | **D-49**, nova: reativar disciplina/assunto é a operação simétrica de D-17, mas nunca restaura a revisão `CANCELADA` — cria uma `PENDENTE` nova, no nível da última, data recalculada a partir de hoje. Decidido para não precisar de um campo novo em `Revisao` só para registrar por que uma revisão foi cancelada (arquivamento do próprio assunto vs. da disciplina) — sem isso, reativar uma disciplina poderia ressuscitar a revisão de um assunto arquivado à parte, por outro motivo. Fechada com o usuário ao perceber que arquivar não tinha operação inversa |
+| 1.14.0 | 2026-09-01 | **D-48**, nova: ordem do assunto é única entre os ativos da mesma disciplina; arquivar libera o número (ao contrário de D-47, que é permanente). Sem isso, "o assunto de menor ordem" (D-41, §3.2) não tinha resposta única em caso de empate — achado ao revisar `FrenteService.proximaVaga`, que desempatava por ordem de retorno do banco (não determinística, sem `ORDER BY`), em auditoria (`/agents/mentor.md`) |
+| 1.13.0 | 2026-09-01 | **D-47**, nova: nome de disciplina é único, mesmo arquivada. Mesma semântica que `ux_assunto_j1_nome_por_disciplina` já dava ao assunto (D-41/§3.2), faltando para `Disciplina` desde que §3.1 foi escrita. Fechada com o usuário ao revisar `DisciplinaService.criar`, antes do índice único poder citar a regra |
 | 1.12.0 | 2026-08-31 | **D-46**, nova: erro aponta para um assunto existente e, opcionalmente, para uma sessão existente — mesma integridade referencial que D-01 já dá a `sessao.assunto_id`, faltando para `Erro` desde que §3.5 foi escrita. Fechada com o usuário na abertura da Sprint 7, antes de `docs/SPRINT-7-METRICAS.md` poder citar a regra na restrição da migração |
 | 1.11.2 | 2026-08-30 | §12: fechadas três das sete questões em aberto. (1) Intervalos da escada — Sprint 4 decidiu `1, 3, 7, 15, 30, 90` (não os `1, 7, 15, 30, 60, 90` citados ali como pergunta, nunca fixados como decisão em nenhum outro trecho); achado só depois de já ter perguntado ao usuário na Sprint 4 sem ter visto esta linha — a pesquisa da época não cobriu §12. (2) Teto diário de recuperações — Sprint 5 decidiu **8**. (3) Limiar de represamento — Sprint 5 decidiu `represado > teto diário`. Usuário confirmou os três valores |
 | 1.11.1 | 2026-08-19 | §3.3.1: explicitado que a identificação é da **tentativa**, não do conteúdo — recuperar o mesmo assunto duas vezes no mesmo dia continua legítimo |

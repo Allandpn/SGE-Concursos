@@ -15,9 +15,7 @@ não existe neste ambiente) — para rodar localmente, suba um Postgres descart�
 e aponte as variáveis de ambiente que `application.yml` exige:
 
 ```
-docker run --rm -d --name estudos-dev -p 5432:5432 \
-  -e POSTGRES_DB=estudos -e POSTGRES_USER=estudos -e POSTGRES_PASSWORD=estudos \
-  postgres:17-alpine
+docker run --rm -d --name estudos-dev -p 5432:5432 -e POSTGRES_DB=estudos -e POSTGRES_USER=estudos -e POSTGRES_PASSWORD=estudos postgres:17-alpine
 
 # num terminal com essas variáveis no ambiente:
 DB_URL=jdbc:postgresql://localhost:5432/estudos

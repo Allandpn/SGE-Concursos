@@ -18,6 +18,18 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
 
     List<Revisao> findByAssuntoId(Long assuntoId);
 
+    // D-49: a última revisão do assunto, qualquer situação — é dela que
+    // reativar lê o nível a herdar (join fetch: precisa do peso do assunto
+    // e do assunto_id da sessaoOrigem antes de decidir manutenção ou não).
+    @Query("""
+        select r from Revisao r
+        join fetch r.assunto a
+        where r.assunto.id = :assuntoId
+        order by r.id desc
+        limit 1
+        """)
+    Optional<Revisao> buscarUltimaPorAssunto(@Param("assuntoId") Long assuntoId);
+
     // Represamento (docs/SPRINT-5-FRENTE.md §2.2): pendentes cuja data já passou.
     long countBySituacaoAndDataPrevistaBefore(SituacaoRevisao situacao, LocalDate data);
 

@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.2.0** |
+| Versão do documento | **2.6.0** |
 | Status | **Congelado** |
-| Data | 2026-08-31 |
-| Total | 31 ADRs — 20 vigentes, 10 substituídas, 1 revogada |
+| Data | 2026-09-01 |
+| Total | 36 ADRs — 25 vigentes, 10 substituídas, 1 revogada |
 
 ---
 
@@ -960,6 +960,9 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.6.0 | 2026-09-01 | **ADR-036 escrita e aceita** — OpenAPI/Swagger via `springdoc-openapi-starter-webmvc-ui`, gerado do código (`@Tag`/`@Operation`/`@Schema`). Aplicado a todo Controller e todo `*Request`/`*Response`, a pedido do usuário — escopo completo desde o início, diferente do piloto de ADR-035. Total passa a 36 ADRs, 25 vigentes |
+| 2.5.0 | 2026-09-01 | **ADR-035 escrita e aceita** — Bean Validation para forma do request (presença/faixa de campo), piloto em `AssuntoRequest`/`criar`. `@Valid` nunca em `atualizar` (PATCH): campo ausente lá é instrução, não erro. Constraint do banco continua como garantia final. Total passa a 35 ADRs, 24 vigentes |
+| 2.4.0 | 2026-09-01 | Acerto de contagem: ADR-034 (`open-in-view: false`, aceita 2026-08-31) tinha sido escrita sem atualizar versão/total deste documento. Total passa a 34 ADRs, 23 vigentes — achado ao escrever ADR-035 |
 | 2.3.0 | 2026-08-30 | **ADR-033 escrita e aceita** (Sprint 5) — sai de "Pendentes de redação" para vigente. A decisão final ficou mais simples que a prevista: nem visão de banco entrou, a classificação é uma consulta Spring Data + Java no `FrenteService`. Lista de "Pendentes de redação" removida — as duas que existiam (ADR-032, ADR-033) estão escritas. Total passa a 33 ADRs, 22 vigentes |
 | 2.2.0 | 2026-08-30 | **ADR-032 escrita e aceita** (Sprint 4) — sai de "Pendentes de redação" para vigente, exatamente no momento previsto ("quando a sprint que implementa o roteamento da escada começar"). Total passa a 32 ADRs, 21 vigentes |
 | 2.1.1 | 2026-08-28 | Correção administrativa: mecanismo de exclusão lógica do Assunto na ADR-011 dizia `status = 'ARQUIVADO'`, resíduo da v1 que sobrou do reset. O schema real (`V1__tabelas.sql`) e `docs/SPRINT-2-CADASTRO.md` §1.2 usam `ativo BOOLEAN`, igual Disciplina — corrigido para bater com o que existe. Achado durante a revisão do documento técnico da Sprint 2 (item 2.0 do `PROGRESSO.md`) |
@@ -1076,6 +1079,131 @@ dois endpoints afetados.
 |---|---|
 | Deixar `true` (default) | É exatamente a escolha de tutorial que o projeto evita em outro lugar (Lombok, `ddl-auto: update`, DTO de erro próprio) — aqui teria entrado por omissão, não por decisão |
 | `@EntityGraph` nos repositórios em vez de `join fetch` | Mesmo efeito, mas o projeto já tem o padrão de `@Query` com `join fetch` comentado (`AssuntoRepository`, `RevisaoRepository`) — duas formas de resolver o mesmo problema não vale a pena introduzir agora |
+
+---
+
+## ADR-035 — Bean Validation para forma do request, não para regra de domínio
+
+**Status:** Aceita · 2026-09-01
+
+### Contexto
+
+Campo obrigatório de Request hoje só é garantido pela constraint do banco,
+traduzida em `traduzirViolacaoDeIntegridade` — ex.: `AssuntoRequest.ordem`
+(D-41) via `ck_assunto_d41_ordem_obrigatoria`. Isso gasta um `INSERT` inteiro
+contra o Postgres pra rejeitar algo decidível só olhando o corpo da
+requisição. É diferente de D-05/D-45 (ADR-031): aquelas *precisam* do banco
+porque têm concorrência real (janela entre checar e escrever); presença de
+campo não tem disputa nenhuma — nada mais preenche o campo entre eu ler o
+JSON e eu decidir se ele veio.
+
+Pior: nem todo campo obrigatório tem tradução. `nome`, `peso` e
+`dificuldade_percebida` ausentes ou fora de faixa (`ck_assunto_peso`,
+`ck_assunto_dificuldade_percebida`) não têm `branch` em
+`traduzirViolacaoDeIntegridade` — caem em `DataIntegrityViolationException`
+não tratada, HTTP 500, não o 422 com `codigo` que o resto da API garante
+(ADR-026). Achado ao revisar `AssuntoRequest` (`/agents/mentor.md`).
+
+### Decisão
+
+Bean Validation (`spring-boot-starter-validation`) para validação de
+**forma**: presença e faixa de campo, decidível sem consultar nada. Anotação
+no record de Request; `@Valid` só no endpoint de **criação** — nunca no de
+atualização parcial, porque lá "campo ausente" é uma instrução legítima ("não
+mude isto"), não um erro. Aplicado primeiro em `AssuntoRequest` /
+`AssuntoController.criar`, como piloto — cada Request migra quando alguém for
+mexer nele, não todos de uma vez (mesma disciplina de "documento nasce quando
+a sprint usa", `CLAUDE.md`).
+
+`GlobalExceptionHandler` ganha um `@ExceptionHandler(MethodArgumentNotValidException.class)`,
+convertendo pro mesmo `ProblemDetail` (ADR-026): o `codigo` vem da própria
+mensagem da anotação (`@NotNull(message = "ORDEM_OBRIGATORIA")`), reusando a
+convenção `<CAMPO>_OBRIGATORIO(A)` que os erros de domínio já seguem. Só o
+primeiro erro de campo vira resposta — a API já devolve um erro por vez em
+todo o resto.
+
+A constraint do banco **não sai**. Continua a garantia final — mesmo
+princípio de sempre (D-05/ADR-031, D-47/D-48): nunca confiar só na camada de
+aplicação. Bean Validation intercepta o caminho feliz mais cedo; o
+`CHECK`/`NOT NULL` é o que de fato torna a regra inviolável, inclusive contra
+quem pular o Controller (chamada direta ao Service, script, bug futuro).
+
+### Consequências
+
+- `criar` fica mais barato no caminho de erro: rejeita sem abrir transação
+  nem tocar o banco.
+- `atualizar` continua sem `@Valid` — se um dia precisar validar forma de
+  campo *presente* nessa rota, é checagem manual; "ausente" nunca é erro ali.
+- A constraint do banco correspondente deixa de ser exercida pelo caminho
+  HTTP normal — só dispara se algo pular a validação. O teste estrutural que
+  a prova continua existindo (`RestricoesInvariantesTest`), não só o teste
+  HTTP da anotação.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Checagem manual (`if (x == null) throw ...`) no Service, como `ErroService.assuntoId` | Funciona, mas não escala: cada campo obrigatório vira um `if` a mais pra manter. Bean Validation é declarativo e padrão do ecossistema — a ferramenta certa já existe |
+| Generalizar para todo `*Request` na mesma mudança | Maior superfície pra revisar de uma vez, sem ainda ter visto o padrão funcionando contra um caso real. Migra Request por Request |
+| `@Valid` também em `atualizar` (PATCH) | Forçaria todo campo a estar presente numa atualização parcial — contradiz a própria razão de `atualizar` existir |
+
+---
+
+## ADR-036 — OpenAPI/Swagger gerado a partir do código
+
+**Status:** Aceita · 2026-09-01
+
+### Contexto
+
+O projeto chegou a 10 controllers e mais de vinte DTOs sem nenhuma
+documentação de API navegável — quem for consumir (o frontend da Sprint 9,
+ou teste manual) só tem o código-fonte ou os arquivos `.http` de
+`http/`. Os `.http` cobrem cenário de teste; não substituem uma referência
+de forma de payload por endpoint.
+
+### Decisão
+
+`springdoc-openapi-starter-webmvc-ui` (3.1.0, compatível com Spring Boot
+4 — o projeto está em 4.1.0). Gera `/v3/api-docs` e serve Swagger UI em
+`/swagger-ui.html`, direto das anotações do código — não há YAML/JSON de
+especificação escrito à mão pra divergir do código com o tempo.
+
+Convenção:
+
+| Anotação | Onde | Pra quê |
+|---|---|---|
+| `@Tag(name, description)` | Classe do Controller | Agrupa os endpoints na UI por recurso |
+| `@Operation(summary, description)` | Cada método de endpoint | O que aquela chamada faz, em uma frase |
+| `@Schema(description, example)` | Cada campo de Request/Response | O que o campo significa; exemplo de valor |
+
+`@Schema` não repete `required` — springdoc já deriva isso sozinho das
+anotações de Bean Validation (`@NotNull` etc., ADR-035) no mesmo campo.
+Erro (`ProblemDetail`/`codigo`/`campo`/`requestId`, ADR-026) não ganha
+`@Schema` por endpoint: é o mesmo formato em toda a API, documentado uma vez,
+não replicado quarenta vezes.
+
+Rede da Tailscale (`CLAUDE.md`), não a internet pública — Swagger UI fica
+habilitado sem perfil separado. Reavaliar se a exposição de rede mudar.
+
+### Consequências
+
+- Nenhuma mudança de comportamento de runtime além da nova rota
+  `/v3/api-docs` e `/swagger-ui.html`.
+- A fonte de verdade continua sendo `especificacao/` e `docs/` — o Swagger
+  documenta **forma de payload**, não decide regra. Divergência entre o
+  `@Schema` e o texto de `01_DOMINIO`/`02_JORNADAS` é defeito de anotação,
+  não motivo pra reabrir a regra.
+- Todo `*Request`/`*Response` e todo Controller ganham a anotação nesta
+  mudança — ao contrário de ADR-035 (que migrou um Request só), aqui o
+  usuário pediu escopo completo de uma vez.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Escrever o YAML/JSON do OpenAPI à mão | Caro de manter, diverge do código na primeira mudança de campo esquecida |
+| Não documentar (manter só os `.http`) | Já era o estado anterior — não cobre forma de payload, só cenário de teste |
+| `@Schema(required = true)` replicando o que `@NotNull` já diz | Duplicação: duas fontes pra a mesma informação divergem — springdoc já lê Bean Validation sozinho |
 
 ---
 

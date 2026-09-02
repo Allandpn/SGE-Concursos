@@ -38,15 +38,20 @@ Content-Type: application/json
   "peso": "MEDIO"
 }
 
-### Nome duplicado é permitido em Disciplina — sem restrição de unicidade (só Assunto tem J-1).
-### Isto devolve 201 de novo, não erro — é o comportamento esperado, não um bug.
+### Nome duplicado -> 409 NOME_DUPLICADO (D-47, insensível a caixa/acento — o
+### PATCH acima renomeou disciplinaId para "Banco de Dados" com peso MEDIO)
 POST {{baseUrl}}/api/disciplinas
 Content-Type: application/json
 
 {
-  "nome": "Banco de Dados",
+  "nome": "banco de dados",
   "peso": "ALTO"
 }
+
+> {%
+    client.assert(response.status === 409, "esperado 409, veio " + response.status);
+    client.assert(response.body.codigo === "NOME_DUPLICADO", "codigo esperado NOME_DUPLICADO, veio " + response.body.codigo);
+%}
 
 ### Arquivar disciplina — cria uma descartável só pra isso, não mexe em disciplinaId
 POST {{baseUrl}}/api/disciplinas
@@ -66,3 +71,17 @@ POST {{baseUrl}}/api/disciplinas/{{disciplinaDescartavelId}}/arquivar
 
 ### Arquivar disciplina inexistente -> 404 DISCIPLINA_INEXISTENTE
 POST {{baseUrl}}/api/disciplinas/999999/arquivar
+
+### Reativar (D-49) — volta ativo=true; disciplinaDescartavelId não tinha
+### assunto nenhum, então não há revisão pra restaurar (só o próprio estado)
+POST {{baseUrl}}/api/disciplinas/{{disciplinaDescartavelId}}/reativar
+
+> {%
+    client.assert(response.status === 204, "esperado 204, veio " + response.status);
+%}
+
+### Confirma que voltou pra listagem
+GET {{baseUrl}}/api/disciplinas
+
+### Reativar disciplina inexistente -> 404 DISCIPLINA_INEXISTENTE
+POST {{baseUrl}}/api/disciplinas/999999/reativar

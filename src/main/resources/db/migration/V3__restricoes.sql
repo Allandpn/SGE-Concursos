@@ -56,6 +56,18 @@ CREATE UNIQUE INDEX ux_sessao_d45_tentativa_unica
 CREATE UNIQUE INDEX ux_assunto_j1_nome_por_disciplina
     ON assunto (disciplina_id, unaccent_imutavel(lower(nome)));
 
+CREATE UNIQUE INDEX ux_d47_nome_disciplina
+    ON disciplina (unaccent_imutavel(lower(nome)));
+
+-- D-48 — ordem é única só entre os assuntos ATIVOS da mesma disciplina
+-- (índice PARCIAL, mesmo molde de D-05): ao contrário do nome (D-47, acima),
+-- ordem não é identidade permanente, é disputa pela vaga — arquivar libera o
+-- número. Achado em FrenteService.proximaVaga, que desempatava por ordem de
+-- retorno do banco (sem ORDER BY, não determinística).
+CREATE UNIQUE INDEX ux_assunto_d48_ordem_por_disciplina
+    ON assunto (disciplina_id, ordem)
+    WHERE ativo = true;
+
 
 
 

@@ -7,7 +7,7 @@ Content-Type: application/json
 
 {
   "disciplinaId": {{disciplinaId}},
-  "nome": "Normalização e Dependências Funcionais",
+  "nome": "Normalização e Dependências Disfuncionais",
   "peso": "ALTO",
   "dificuldadePercebida": 4,
   "ordem": 1
@@ -44,7 +44,7 @@ Content-Type: application/json
   "nome": "Normalização e Dependências Funcionais",
   "peso": "ALTO",
   "dificuldadePercebida": 5,
-  "ordem": 1
+  "ordem": 3
 }
 
 ### Erro de domínio — nome duplicado na mesma disciplina, variando acento/caixa -> 409 NOME_DUPLICADO
@@ -82,6 +82,23 @@ Content-Type: application/json
   "dificuldadePercebida": 3
 }
 
+### Erro de domínio — ordem duplicada na mesma disciplina (D-48, só entre ativos) -> 409 ORDEM_DUPLICADA
+POST {{baseUrl}}/api/assuntos
+Content-Type: application/json
+
+{
+  "disciplinaId": {{disciplinaId}},
+  "nome": "Assunto Ordem Colidida",
+  "peso": "MEDIO",
+  "dificuldadePercebida": 3,
+  "ordem": 2
+}
+
+> {%
+    client.assert(response.status === 409, "esperado 409, veio " + response.status);
+    client.assert(response.body.codigo === "ORDEM_DUPLICADA", "codigo esperado ORDEM_DUPLICADA, veio " + response.body.codigo);
+%}
+
 ### Arquivar assunto — cria um descartável só pra isso
 POST {{baseUrl}}/api/assuntos
 Content-Type: application/json
@@ -103,3 +120,16 @@ POST {{baseUrl}}/api/assuntos/{{assuntoDescartavelId}}/arquivar
 
 ### Confirma que o arquivado some da listagem
 GET {{baseUrl}}/api/assuntos?disciplinaId={{disciplinaId}}
+
+### Reativar (D-49) — nunca teve sessão/revisão, então só volta ativo=true
+POST {{baseUrl}}/api/assuntos/{{assuntoDescartavelId}}/reativar
+
+> {%
+    client.assert(response.status === 204, "esperado 204, veio " + response.status);
+%}
+
+### Confirma que voltou pra listagem
+GET {{baseUrl}}/api/assuntos?disciplinaId={{disciplinaId}}
+
+### Reativar assunto inexistente -> 404 ASSUNTO_INEXISTENTE
+POST {{baseUrl}}/api/assuntos/999999/reativar

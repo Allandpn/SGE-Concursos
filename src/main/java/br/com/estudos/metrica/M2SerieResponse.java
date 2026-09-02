@@ -1,6 +1,7 @@
 package br.com.estudos.metrica;
 
 import br.com.estudos.shared.enums.TipoSessao;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Uma série de retenção por tipo de sessão — nunca somada com as outras
@@ -9,8 +10,8 @@ import br.com.estudos.shared.enums.TipoSessao;
  * houve revisão depois da primeira.
  */
 public record M2SerieResponse(
-    TipoSessao tipo,
-    Double percentualPrimeira,
-    Double percentualMediaSeguintes,
-    int totalObservacoes
+    @Schema(description = "Tipo de sessão desta série") TipoSessao tipo,
+    @Schema(description = "Percentual de acerto na primeira exposição") Double percentualPrimeira,
+    @Schema(description = "Média de percentual nas exposições seguintes — null se ainda não houve nenhuma") Double percentualMediaSeguintes,
+    @Schema(description = "Total de observações nesta série") int totalObservacoes
 ) {}

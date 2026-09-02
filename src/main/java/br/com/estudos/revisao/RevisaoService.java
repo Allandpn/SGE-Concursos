@@ -1,5 +1,7 @@
 package br.com.estudos.revisao;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -25,10 +27,12 @@ public class RevisaoService {
 
     private final RevisaoRepository revisaoRepository;
     private final ParametroRepository parametroRepository;
+    private final Clock clock;
 
-    public RevisaoService(RevisaoRepository revisaoRepository, ParametroRepository parametroRepository) {
+    public RevisaoService(RevisaoRepository revisaoRepository, ParametroRepository parametroRepository, Clock clock) {
         this.revisaoRepository = revisaoRepository;
         this.parametroRepository = parametroRepository;
+        this.clock = clock;
     }
 
     /** docs/SPRINT-4-ESCADA.md §3.1/§3.2. */
@@ -60,6 +64,30 @@ public class RevisaoService {
     /** D-17 — chamado por DisciplinaService.arquivar. */
     public void cancelarPendentesPorDisciplina(Long disciplinaId) {
         revisaoRepository.cancelarPendentesPorDisciplina(disciplinaId);
+    }
+
+    /**
+     * D-49 (01_DOMINIO §3.4) — chamado por AssuntoService.reativar e, em
+     * laço, por DisciplinaService.reativar (um assunto por vez, mesmo
+     * método: reativar disciplina não é um caminho especial). Nunca reescreve
+     * a CANCELADA (D-18); se ela existir, nasce uma PENDENTE nova no mesmo
+     * nível — reusa intervaloDaPendente para herdar o intervalo de manutenção
+     * se o assunto já estava consolidado, não só o intervalo de escada.
+     */
+    public void restaurarPendenteSeCancelada(Long assuntoId) {
+        var ultima = revisaoRepository.buscarUltimaPorAssunto(assuntoId);
+        if (ultima.isEmpty() || ultima.get().getSituacao() != SituacaoRevisao.CANCELADA) {
+            return;
+        }
+        var cancelada = ultima.get();
+
+        var nova = new Revisao();
+        nova.setAssunto(cancelada.getAssunto());
+        nova.setNivel(cancelada.getNivel());
+        nova.setDataPrevista(LocalDate.now(clock).plusDays(intervaloDaPendente(cancelada)));
+        nova.setSessaoOrigem(cancelada.getSessaoOrigem());
+        nova.setSituacao(SituacaoRevisao.PENDENTE);
+        revisaoRepository.save(nova);
     }
 
     /**

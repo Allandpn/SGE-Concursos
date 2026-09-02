@@ -38,6 +38,22 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
+        <!-- Validation: Bean Validation nos *Request, só pra forma (presença/
+             faixa de campo) — ADR-035. Não substitui constraint de banco. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- OpenAPI/Swagger gerado do código — ADR-036. Versão fixada à mão:
+             não vem do BOM do spring-boot-starter-parent (é terceiro, não
+             oficial Spring). 3.1.0 é a linha compatível com Spring Boot 4. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
         <!-- Actuator: /actuator/health é o critério de "pronto" da Sprint 1
              e o healthcheck do docker-compose. -->
         <dependency>

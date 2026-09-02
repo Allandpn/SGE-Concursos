@@ -8,10 +8,7 @@ import java.util.Optional;
 public interface DisciplinaRepository extends JpaRepository<Disciplina,Long> {
     List<Disciplina> findByAtivoTrue();
 
-    // Sem restrição de unicidade no banco para nome de disciplina (não há
-    // ux_disciplina_nome) — usado só para resolver a importação por nome,
-    // não como garantia de unicidade.
+    // ux_d47_nome_disciplina garante a unicidade (D-47); este método é usado
+    // só para resolver a importação por nome, não como verificação prévia.
     Optional<Disciplina> findByNomeIgnoreCase(String nome);
-
-    boolean existsByNome(String nome);
 }

@@ -49,6 +49,20 @@ class AssuntoErroDominioTest extends IntegracaoTestBase {
     }
 
     @Test
+    void ordemDuplicada_devolve409() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Teste ORDEM_DUPLICADA", TipoPeso.MEDIO));
+        criarAssunto(disciplina.getId(), "Assunto Um");
+
+        // corpoAssunto sempre usa ordem 1 — nome diferente, ordem igual, é
+        // isto que D-48 recusa (nome duplicado recusaria antes se repetisse o nome)
+        mockMvc.perform(post("/api/assuntos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(corpoAssunto(disciplina.getId(), "Assunto Dois")))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("ORDEM_DUPLICADA"));
+    }
+
+    @Test
     void ordemObrigatoria_devolve422() throws Exception {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Teste ORDEM_OBRIGATORIA", TipoPeso.MEDIO));
 
@@ -60,6 +74,66 @@ class AssuntoErroDominioTest extends IntegracaoTestBase {
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.codigo").value("ORDEM_OBRIGATORIA"))
             .andExpect(jsonPath("$.campo").value("ordem"));
+    }
+
+    // ADR-035: os quatro abaixo, antes de Bean Validation, caíam direto na
+    // constraint do banco (peso e dificuldade) ou nem tinham constraint pra
+    // pegar (disciplinaId ausente ia pra getReferenceById(null)) — os três
+    // davam DataIntegrityViolationException/IllegalArgumentException não
+    // traduzida, HTTP 500. Agora rejeitam antes de abrir transação.
+
+    @Test
+    void disciplinaIdAusente_devolve422() throws Exception {
+        mockMvc.perform(post("/api/assuntos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"nome": "Assunto Sem Disciplina", "peso": "ALTO", "dificuldadePercebida": 3, "ordem": 1}
+                    """))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("DISCIPLINA_OBRIGATORIA"))
+            .andExpect(jsonPath("$.campo").value("disciplinaId"));
+    }
+
+    @Test
+    void nomeAusente_devolve422() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Teste NOME_OBRIGATORIO", TipoPeso.MEDIO));
+
+        mockMvc.perform(post("/api/assuntos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"disciplinaId": %d, "peso": "ALTO", "dificuldadePercebida": 3, "ordem": 1}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("NOME_OBRIGATORIO"))
+            .andExpect(jsonPath("$.campo").value("nome"));
+    }
+
+    @Test
+    void pesoAusente_devolve422() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Teste PESO_OBRIGATORIO", TipoPeso.MEDIO));
+
+        mockMvc.perform(post("/api/assuntos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"disciplinaId": %d, "nome": "Assunto Sem Peso", "dificuldadePercebida": 3, "ordem": 1}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("PESO_OBRIGATORIO"))
+            .andExpect(jsonPath("$.campo").value("peso"));
+    }
+
+    @Test
+    void dificuldadePercebidaForaDaFaixa_devolve422() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Teste DIFICULDADE_INVALIDA", TipoPeso.MEDIO));
+
+        mockMvc.perform(post("/api/assuntos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"disciplinaId": %d, "nome": "Assunto Dificuldade Invalida", "peso": "ALTO", "dificuldadePercebida": 9, "ordem": 1}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("DIFICULDADE_PERCEBIDA_INVALIDA"))
+            .andExpect(jsonPath("$.campo").value("dificuldadePercebida"));
     }
 
     private void criarAssunto(Long disciplinaId, String nome) throws Exception {

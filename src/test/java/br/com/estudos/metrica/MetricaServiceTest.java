@@ -79,7 +79,13 @@ class MetricaServiceTest extends IntegracaoTestBase {
     }
 
     private Assunto novoAssunto(Long disciplinaId) {
-        return assuntoService.criar(new AssuntoRequest(disciplinaId, "Assunto Metrica " + UUID.randomUUID(), TipoPeso.MEDIO, (short) 3, 1));
+        return novoAssunto(disciplinaId, 1);
+    }
+
+    // D-48: ordem única por disciplina entre ativos — testes com mais de um
+    // assunto na mesma disciplina precisam de ordem distinta.
+    private Assunto novoAssunto(Long disciplinaId, int ordem) {
+        return assuntoService.criar(new AssuntoRequest(disciplinaId, "Assunto Metrica " + UUID.randomUUID(), TipoPeso.MEDIO, (short) 3, ordem));
     }
 
     private void registrarQuestoes(Long assuntoId, LocalDate data, int corretas, int total, FormatoBanca formato, Short previsao) {
@@ -201,9 +207,9 @@ class MetricaServiceTest extends IntegracaoTestBase {
     void m3_subjetiva_contaSuperestimouSubestimouEAcertou() {
         var baseline = metricaService.m3().subjetiva();
         var disciplina = novaDisciplina();
-        var superestimou = novoAssunto(disciplina.getId());
-        var subestimou = novoAssunto(disciplina.getId());
-        var acertou = novoAssunto(disciplina.getId());
+        var superestimou = novoAssunto(disciplina.getId(), 1);
+        var subestimou = novoAssunto(disciplina.getId(), 2);
+        var acertou = novoAssunto(disciplina.getId(), 3);
 
         registrarRecuperacao(superestimou.getId(), HOJE, ResultadoSessao.SUCESSO, ResultadoSessao.FALHA); // previu que ia, não foi
         registrarRecuperacao(subestimou.getId(), HOJE, ResultadoSessao.FALHA, ResultadoSessao.SUCESSO); // previu que não ia, foi
@@ -223,13 +229,13 @@ class MetricaServiceTest extends IntegracaoTestBase {
         var disciplina = novaDisciplina();
 
         // ESTUDO em HOJE agenda nivel 1, previsto pra HOJE+1 (intervalo_nivel_1 = 1).
-        var dentroDoPrazo = novoAssunto(disciplina.getId());
+        var dentroDoPrazo = novoAssunto(disciplina.getId(), 1);
         sessaoService.registrar(new SessaoRequest(
             dentroDoPrazo.getId(), TipoSessao.ESTUDO, HOJE, 20, null, null, null, null, null, null,
             UUID.randomUUID(), null, null));
         registrarRecuperacao(dentroDoPrazo.getId(), HOJE.plusDays(1), ResultadoSessao.SUCESSO, ResultadoSessao.SUCESSO); // diff = 0
 
-        var foraDoPrazo = novoAssunto(disciplina.getId());
+        var foraDoPrazo = novoAssunto(disciplina.getId(), 2);
         sessaoService.registrar(new SessaoRequest(
             foraDoPrazo.getId(), TipoSessao.ESTUDO, HOJE, 20, null, null, null, null, null, null,
             UUID.randomUUID(), null, null));

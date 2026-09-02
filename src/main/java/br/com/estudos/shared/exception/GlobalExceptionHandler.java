@@ -5,6 +5,7 @@ import java.net.URI;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -39,11 +40,28 @@ public class GlobalExceptionHandler {
         return montar(HttpStatus.CONFLICT, e);
     }
 
+    /**
+     * ADR-035 — Bean Validation de forma do request (`@NotNull`/`@NotBlank`
+     * etc.), não de regra de domínio. O `codigo` vem da própria mensagem da
+     * anotação (`message = "ORDEM_OBRIGATORIA"`), mesma convenção dos
+     * `codigo` de {@link ValidationException}. Só o primeiro erro de campo
+     * vira resposta — a API já devolve um erro por vez em todo o resto.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail tratarCampoInvalido(MethodArgumentNotValidException e) {
+        var erro = e.getBindingResult().getFieldErrors().get(0);
+        return montar(HttpStatus.UNPROCESSABLE_ENTITY, "Campo inválido: " + erro.getField(), erro.getDefaultMessage(), erro.getField());
+    }
+
     private ProblemDetail montar(HttpStatus status, DominioException e) {
-        var problema = ProblemDetail.forStatusAndDetail(status, e.getMessage());
+        return montar(status, e.getMessage(), e.getCodigo(), e.getCampo());
+    }
+
+    private ProblemDetail montar(HttpStatus status, String detalhe, String codigo, String campo) {
+        var problema = ProblemDetail.forStatusAndDetail(status, detalhe);
         problema.setType(TYPE_REGRA_DE_NEGOCIO);
-        problema.setProperty("codigo", e.getCodigo());
-        problema.setProperty("campo", e.getCampo());
+        problema.setProperty("codigo", codigo);
+        problema.setProperty("campo", campo);
         problema.setProperty("requestId", MDC.get(RequestIdFilter.REQUEST_ID));
         return problema;
     }

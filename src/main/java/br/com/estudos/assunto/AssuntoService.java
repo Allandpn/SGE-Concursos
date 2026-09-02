@@ -103,6 +103,25 @@ public class AssuntoService {
     }
 
     /**
+     * Reativa um assunto arquivado — operação simétrica de {@link #arquivar}
+     * (D-49, 01_DOMINIO §3.4). saveAndFlush antes de mexer em revisão: se a
+     * ordem colidir com a de outro assunto que a assumiu enquanto este estava
+     * arquivado (D-48 só vale entre ativos), o catch precisa disparar antes
+     * de qualquer revisão nova ser criada.
+     */
+    @Transactional
+    public void reativar(Long id) {
+        var assunto = buscar(id);
+        assunto.setAtivo(true);
+        try {
+            assuntoRepository.saveAndFlush(assunto);
+        } catch (DataIntegrityViolationException e) {
+            throw traduzirViolacaoDeIntegridade(e);
+        }
+        revisaoService.restaurarPendenteSeCancelada(assunto.getId());
+    }
+
+    /**
      * Traduz a exceção do driver pelo nome da restrição violada (§3.1).
      */
     private RuntimeException traduzirViolacaoDeIntegridade(DataIntegrityViolationException e) {
@@ -113,6 +132,13 @@ public class AssuntoService {
                 return new ConflictException(
                     "Já existe um assunto com este nome nesta disciplina.",
                     "NOME_DUPLICADO"
+                );
+            }
+
+            if (nomeRestricao.contains("ux_assunto_d48_ordem_por_disciplina")) {
+                return new ConflictException(
+                    "Já existe um assunto ativo com esta ordem nesta disciplina.",
+                    "ORDEM_DUPLICADA"
                 );
             }
 

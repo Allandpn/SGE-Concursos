@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.3.0 |
-| Data | 2026-08-31 |
+| Versão | 1.6.0 |
+| Data | 2026-09-01 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -109,59 +109,65 @@ conceitual — envelhecer por motivo errado.
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
-| # | Natureza | Onde mora | Como se sabe que quebrou |
-|---|---|---|---|
-| D-01 | Invariante | **P** | Sessão sem assunto ou com dois tipos é recusada pela escrita |
-| D-02 | Invariante | **P** | Sessão `ESTUDO` com resultado preenchido é recusada |
-| D-03 | Comportamento | S + I | Teste: resultado enviado sem a produção declarada → recusado |
-| D-04a | Invariante | **P** | Resultado sem previsão é recusado |
-| D-04b | Comportamento | S | Teste: alterar previsão de sessão fechada → exceção de domínio |
-| D-05 | **Invariante crítica** | **P** | Duas revisões pendentes do mesmo assunto → a segunda escrita falha |
-| D-06 | Invariante | **P** | Revisão cumprida sem apontar sessão é recusada |
-| D-07 | Comportamento | S | Teste por resultado: sobe / repete / regride + volta à fila |
-| D-08 | Comportamento | S | Teste: o intervalo do nível N é sempre o mesmo, qualquer que seja o histórico |
-| D-09 | Comportamento | S | Teste: lote abaixo do mínimo grava sessão e **não** cumpre revisão |
-| D-10 | Comportamento | S | Teste: consolida só com escada concluída **e** dois `SUCESSO` |
-| D-11 | Comportamento | S | Teste: `FALHA` em manutenção → volta à escada e à fila de estudo |
-| D-12 | Derivação | S | Teste: M-1 calculada com e sem flashcards dá o mesmo número |
-| D-13 | Invariante | **P** | Resultado de simulado apontando assunto é recusado |
-| D-14 | **Política** | **H** | Revisão de cada tela: existe algum caminho que bloqueia? |
-| D-15 | Derivação | S | Teste: fila com 40 vencidas e teto 8 devolve 8, as mais urgentes |
-| D-16 | Derivação | S + **P** | A fase é calculada; **e não existe coluna de fase** (§4.2) |
-| D-17 | Comportamento | S | Teste: arquivar assunto cancela as revisões pendentes na mesma transação |
-| D-18 | Invariante | **P** | Não existe caminho de remoção física |
-| D-19 | Derivação | S | Teste: a frente calculada bate com a definição; um só lugar a calcula |
-| D-20 | Comportamento | S + I | Teste: frente cheia → nenhuma sugestão nova; abertura manual continua |
-| D-21 | Comportamento | S | Teste: consolidar abre vaga e a próxima sugestão já a usa |
-| D-22 | Política | **H** | Postura da recomendação. Não verificável por teste |
-| D-23 | Comportamento | S | Teste: peso alto → alvo 6; médio → 4; baixo → 3 |
-| D-24 | Comportamento | **S** | Teste: arquivar disciplina com assunto na frente é recusado; sugestão nunca puxa de disciplina inativa |
-| D-25 | Comportamento | S | Teste: vaga preenchida pela menor ordem do backlog da mesma disciplina |
-| D-26 | Política | **H** | Regra de dimensionamento, não de escrita |
-| D-27 | Comportamento | S | Teste: a recomendação devolve plano, não item |
-| D-28 | Derivação | S + **P** | O plano é recalculado; **e não existe entidade de turno** (§4.2) |
-| D-29 | Comportamento | S | Teste: alterar o parâmetro muda a duração sugerida sem reinício |
-| D-30 | Política | **H** | Regra sobre o que **não** vira parâmetro |
-| D-31 | Comportamento | S | Teste: teto abaixo da taxa da frente → aviso emitido |
-| D-32 | Política | **H** | Padrão de apresentação. Sem parâmetro, sem teste |
-| D-33 | Política | **H** | Nenhum código sabe se um assunto é grande demais |
-| D-34 | Política | **H** | Idem |
-| D-35 | Comportamento | S | Teste: 4 `PARCIAL` seguidos → sugestão; nunca divisão automática |
-| D-36 | Invariante | **P** | Sessão `QUESTOES` sem formato é recusada |
-| D-37 | Comportamento | S + I | Teste: os três valores válidos; rótulos ancorados na tela |
-| D-38 | Comportamento | S | Teste: cumprir fora da janela é recusado como cumprimento |
-| D-39 | Comportamento | S | Teste: fora da janela a sessão grava e a revisão continua pendente |
-| D-40 | Comportamento | S | Teste: pedir além do teto devolve mais itens |
-| D-41 | Invariante | **P** | Assunto sem ordem é recusado |
-| D-42 | Comportamento | S | Teste: dividir arquiva o original; nenhuma sessão muda de assunto |
-| D-43 | Comportamento | S | Teste: novos nascem no nível do original |
-| D-44 | Comportamento | S | Teste: importação com estrutura de divisão é recusada |
-| D-45 | **Invariante** | **P** | Reenviar a mesma tentativa → segunda escrita recusada, resposta de sucesso |
-| D-46 | Invariante | **P** | Erro apontando para assunto ou sessão inexistente é recusado pela escrita |
+| #     | Natureza | Onde mora | Como se sabe que quebrou                                                                              |
+|-------|---|---|-------------------------------------------------------------------------------------------------------|
+| D-01  | Invariante | **P** | Sessão sem assunto ou com dois tipos é recusada pela escrita                                          |
+| D-02  | Invariante | **P** | Sessão `ESTUDO` com resultado preenchido é recusada                                                   |
+| D-03  | Comportamento | S + I | Teste: resultado enviado sem a produção declarada → recusado                                          |
+| D-04a | Invariante | **P** | Resultado sem previsão é recusado                                                                     |
+| D-04b | Comportamento | S | Teste: alterar previsão de sessão fechada → exceção de domínio                                        |
+| D-05  | **Invariante crítica** | **P** | Duas revisões pendentes do mesmo assunto → a segunda escrita falha                                    |
+| D-06  | Invariante | **P** | Revisão cumprida sem apontar sessão é recusada                                                        |
+| D-07  | Comportamento | S | Teste por resultado: sobe / repete / regride + volta à fila                                           |
+| D-08  | Comportamento | S | Teste: o intervalo do nível N é sempre o mesmo, qualquer que seja o histórico                         |
+| D-09  | Comportamento | S | Teste: lote abaixo do mínimo grava sessão e **não** cumpre revisão                                    |
+| D-10  | Comportamento | S | Teste: consolida só com escada concluída **e** dois `SUCESSO`                                         |
+| D-11  | Comportamento | S | Teste: `FALHA` em manutenção → volta à escada e à fila de estudo                                      |
+| D-12  | Derivação | S | Teste: M-1 calculada com e sem flashcards dá o mesmo número                                           |
+| D-13  | Invariante | **P** | Resultado de simulado apontando assunto é recusado                                                    |
+| D-14  | **Política** | **H** | Revisão de cada tela: existe algum caminho que bloqueia?                                              |
+| D-15  | Derivação | S | Teste: fila com 40 vencidas e teto 8 devolve 8, as mais urgentes                                      |
+| D-16  | Derivação | S + **P** | A fase é calculada; **e não existe coluna de fase** (§4.2)                                            |
+| D-17  | Comportamento | S | Teste: arquivar assunto cancela as revisões pendentes na mesma transação                              |
+| D-18  | Invariante | **P** | Não existe caminho de remoção física                                                                  |
+| D-19  | Derivação | S | Teste: a frente calculada bate com a definição; um só lugar a calcula                                 |
+| D-20  | Comportamento | S + I | Teste: frente cheia → nenhuma sugestão nova; abertura manual continua                                 |
+| D-21  | Comportamento | S | Teste: consolidar abre vaga e a próxima sugestão já a usa                                             |
+| D-22  | Política | **H** | Postura da recomendação. Não verificável por teste                                                    |
+| D-23  | Comportamento | S | Teste: peso alto → alvo 6; médio → 4; baixo → 3                                                       |
+| D-24  | Comportamento | **S** | Teste: arquivar disciplina com assunto na frente é recusado; sugestão nunca puxa de disciplina inativa |
+| D-25  | Comportamento | S | Teste: vaga preenchida pela menor ordem do backlog da mesma disciplina                                |
+| D-26  | Política | **H** | Regra de dimensionamento, não de escrita                                                              |
+| D-27  | Comportamento | S | Teste: a recomendação devolve plano, não item                                                         |
+| D-28  | Derivação | S + **P** | O plano é recalculado; **e não existe entidade de turno** (§4.2)                                      |
+| D-29  | Comportamento | S | Teste: alterar o parâmetro muda a duração sugerida sem reinício                                       |
+| D-30  | Política | **H** | Regra sobre o que **não** vira parâmetro                                                              |
+| D-31  | Comportamento | S | Teste: teto abaixo da taxa da frente → aviso emitido                                                  |
+| D-32  | Política | **H** | Padrão de apresentação. Sem parâmetro, sem teste                                                      |
+| D-33  | Política | **H** | Nenhum código sabe se um assunto é grande demais                                                      |
+| D-34  | Política | **H** | Idem                                                                                                  |
+| D-35  | Comportamento | S | Teste: 4 `PARCIAL` seguidos → sugestão; nunca divisão automática                                      |
+| D-36  | Invariante | **P** | Sessão `QUESTOES` sem formato é recusada                                                              |
+| D-37  | Comportamento | S + I | Teste: os três valores válidos; rótulos ancorados na tela                                             |
+| D-38  | Comportamento | S | Teste: cumprir fora da janela é recusado como cumprimento                                             |
+| D-39  | Comportamento | S | Teste: fora da janela a sessão grava e a revisão continua pendente                                    |
+| D-40  | Comportamento | S | Teste: pedir além do teto devolve mais itens                                                          |
+| D-41  | Invariante | **P** | Assunto sem ordem é recusado                                                                          |
+| D-42  | Comportamento | S | Teste: dividir arquiva o original; nenhuma sessão muda de assunto                                     |
+| D-43  | Comportamento | S | Teste: novos nascem no nível do original                                                              |
+| D-44  | Comportamento | S | Teste: importação com estrutura de divisão é recusada                                                 |
+| D-45  | **Invariante** | **P** | Reenviar a mesma tentativa → segunda escrita recusada, resposta de sucesso                            |
+| D-46  | Invariante | **P** | Erro apontando para assunto ou sessão inexistente é recusado pela escrita                             |
+| D-47  | **Invariante** | **P** | Cadastrar disciplina com nome duplicado é recusada                                                    |
+| D-48  | **Invariante** | **P** | Dois assuntos ativos da mesma disciplina com a mesma ordem → a segunda escrita falha                  |
+| D-49  | Comportamento | S | Teste: reativar cria pendente nova no nível da última; a `CANCELADA` nunca é reescrita                |
 
-**Contagem:** 11 invariantes · 5 derivações · 24 comportamentos · 7 políticas — 47 linhas para 46 regras.
+**Contagem:** 13 invariantes · 5 derivações · 25 comportamentos · 7 políticas — 50 linhas para 49 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
-(01_DOMINIO v1.12.0) — linha ausente aqui até esta revisão, achado em
+(01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
+(01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
+(01_DOMINIO v1.14.0). D-49 acrescentada ao decidir como reativar funciona
+(01_DOMINIO v1.15.0) — linhas ausentes aqui até esta revisão, achado em
 auditoria (`/agents/mentor.md`).
 
 ### 3.1 As três reclassificações desta versão
@@ -456,6 +462,9 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.6.0 | 2026-09-01 | **D-49 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.15.0 (reativar cria revisão pendente nova, nunca restaura a cancelada). Comportamento, garantido por `S` (lógica de serviço, sem constraint — nada no banco impede reescrever uma `CANCELADA`, é disciplina de código). Contagem de §3 corrigida para 13 invariantes / 25 comportamentos / 50 linhas / 49 regras |
+| 1.5.0 | 2026-09-01 | **D-48 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.14.0 (ordem de assunto única entre ativos da mesma disciplina). Invariante, garantida por `P`, mas **parcial** (`WHERE ativo = true`), diferente de D-05/D-45/D-47: a unicidade só importa enquanto o assunto compete pela vaga, arquivar libera o número. Contagem de §3 corrigida para 13 invariantes / 49 linhas / 48 regras |
+| 1.4.0 | 2026-09-01 | **D-47 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.13.0 (nome de disciplina único). Invariante, garantida por `P` (mesma família de D-05/D-45: unicidade por índice, sem pré-checagem no serviço). Contagem de §3 corrigida para 12 invariantes / 48 linhas / 47 regras |
 | 1.3.0 | 2026-08-31 | **D-46 adicionada à tabela de §3** — existia em `01_DOMINIO.md` desde v1.12.0 (Sprint 7), mas esta classificação nunca ganhou a linha correspondente. Invariante, garantida por `P` (mesma família de D-01/D-13, integridade referencial). Contagem de §3 e as três menções a "45 regras" (§0, §9) corrigidas para 46. Achado em auditoria (`/agents/mentor.md`) |
 | 1.2.0 | 2026-08-19 | Quatro decisões de garantia fechadas (§11.1): **D-45** por identificador de tentativa gerado ao abrir a tela — restrição sobre conteúdo daria falso positivo em uso legítimo; **D-18** sem filtro global de leitura, porque quebraria D-42, com o acesso padrão devolvendo ativos e o irrestrito exigindo nome explícito; **controle de versão na revisão** para regras que dependem de histórico, registrado como **complementar e não redundante** com D-45; e carimbo de criação/alteração. §9.1: citação de regra como metadado da linguagem, com as duas ressalvas que impedem falha permanente do teste de cobertura |
 | 1.1.0 | 2026-08-19 | Revisão do usuário. Nova natureza **Derivação** (§1.1) com riscos próprios. "Banco" vira **Persistência** — por acoplamento de documento, não por portabilidade. A hierarquia vira *"a camada mais baixa que comporte sem distorção"*: a escada pertence ao serviço e isso está certo. **D-24 rebaixada** para comportamento; **D-04 dividida** em duas naturezas; D-16/D-19/D-28 reclassificadas como derivação; **D-45** acrescentada. Ausência passa a exigir teste estrutural **nos dois caminhos** — código e schema. Nova §9 (rastreabilidade pelo código, não por tabela), §10 (cinco princípios) e §11 (decisões pendentes, com duas viradas ADR). Recusada a troca de "revisão humana" por "governança" |
