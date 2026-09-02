@@ -50,6 +50,14 @@ ALTER TABLE sessao
     ADD CONSTRAINT ck_sessao_d36_questoes_tem_formato
         CHECK (tipo != 'QUESTOES' OR formato IS NOT NULL);
 
+-- Higiene, sem regra numerada (docs/SPRINT-1-BANCO.md §3.5, mesmo padrão de
+-- ck_sessao_questoes_por_tipo): a de cima só exige formato QUANDO QUESTOES;
+-- sozinha, deixa passar formato preenchido em ESTUDO/FLASHCARDS/RECUPERACAO
+-- (achado testando o fluxo manualmente — a suíte não tinha esse caso).
+ALTER TABLE sessao
+    ADD CONSTRAINT ck_sessao_formato_por_tipo
+        CHECK (tipo = 'QUESTOES' OR formato IS NULL);
+
 CREATE UNIQUE INDEX ux_sessao_d45_tentativa_unica
     ON sessao (tentativa_id);
 

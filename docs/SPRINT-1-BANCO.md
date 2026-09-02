@@ -7,8 +7,8 @@ para nascer. Nasce agora porque a Sprint 1 é "ambiente e schema"
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.3.0 |
-| Data | 2026-08-31 |
+| Versão | 1.5.0 |
+| Data | 2026-09-01 |
 | Status | Vigente |
 | Subordinado a | `especificacao/01_DOMINIO.md`, `especificacao/02_JORNADAS.md`, `especificacao/03_INVARIANTES.md`, `docs/00A_ADR.md`, `docs/09_CODE_STYLE.md` |
 
@@ -122,8 +122,6 @@ edita depois de aceito.
 | `previsao_percentual` | `SMALLINT CHECK (BETWEEN 0 AND 100)` | NULL | M-3 variante objetiva (`00_PRODUTO` §7) — só `QUESTOES`/`FLASHCARDS`, amarrado por **D-04a** (ver §3); representação em duas colunas é decisão minha, ver §7.4 |
 | `previsao_reconstrucao` | `TEXT CHECK IN ('SUCESSO','PARCIAL','FALHA')` | NULL | M-3 variante subjetiva — só `RECUPERACAO`, amarrado por **D-04a** (ver §3); mesma escala de três vias que `resultado` (`00_PRODUTO` §7, nota v1.6.0 — decisão de tela em `02_JORNADAS §4.1`, não booleano); ver §7.4 |
 | `tentativa_id` | `UUID` | NOT NULL | **D-45** — identificador gerado pelo cliente ao abrir a tela; tipo é decisão minha, ver §7.5 |
-| `proxima_sessao_data` | `DATE` | NULL | §3.3 — intenção opcional, "quando" |
-| `proxima_sessao_descricao` | `TEXT` | NULL | §3.3 — intenção opcional, "o quê" |
 | `ativo` | `BOOLEAN DEFAULT true` | NOT NULL | ADR-011 — sessão arquivada sai de **todas** as agregações; semântica diferente do soft-delete de disciplina/assunto (correção, não descontinuação) |
 | `criado_em`, `atualizado_em` | `TIMESTAMPTZ` | NOT NULL | §1 |
 
@@ -275,11 +273,17 @@ nome (`09_CODE_STYLE` §1: só tabela + assunto).
 |---|---|
 | `CHECK (questoes_corretas <= questoes_total)` em `sessao` | `ck_sessao_questoes_corretas_limite` |
 | `CHECK (tipo IN ('QUESTOES','FLASHCARDS') OR (questoes_corretas IS NULL AND questoes_total IS NULL))` em `sessao` | `ck_sessao_questoes_por_tipo` |
+| `CHECK (tipo = 'QUESTOES' OR formato IS NULL)` em `sessao` | `ck_sessao_formato_por_tipo` |
 
 A segunda decide, de propósito, uma pergunta que a v1.0.0 tinha deixado
-solta: contagem de questões é amarrada ao tipo, no mesmo padrão que
-`formato` (D-36) e que a previsão (D-04a, §3.1) já seguem. Justificativa
-completa em §7.9.
+solta: contagem de questões é amarrada ao tipo, no mesmo padrão que a
+previsão (D-04a, §3.1). Justificativa completa em §7.9.
+
+A terceira fecha uma lacuna real: `ck_sessao_d36_questoes_tem_formato` só
+garante formato **presente** quando `QUESTOES` — sozinha, deixava formato
+**preenchido** em `ESTUDO`/`FLASHCARDS`/`RECUPERACAO` passar. Esta linha
+tinha sido escrita (v1.1.0) achando que já existia; não existia. Achado
+testando o fluxo manualmente, não em auditoria de código.
 
 ---
 
@@ -508,6 +512,8 @@ uma nova substituindo a tabela de ADR-011 para `Assunto`.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.5.0 | 2026-09-01 | Nova `ck_sessao_formato_por_tipo` (§3.5) — `ck_sessao_d36_questoes_tem_formato` só garantia formato presente quando `QUESTOES`, nunca ausente fora disso; a v1.1.0 já descrevia formato como "amarrado ao tipo" (§3.5), mas a segunda direção nunca foi escrita. Achado testando o fluxo de sessão manualmente |
+| 1.4.0 | 2026-09-01 | `proxima_sessao_data`/`proxima_sessao_descricao` removidas de `sessao` (V1) — `00_PRODUTO` v1.7.0/`01_DOMINIO` v1.16.0 tiram o conceito de "próxima sessão pretendida" |
 | 1.3.0 | 2026-08-31 | Quatro menções a "45 regras" corrigidas para 46 (`01_DOMINIO` ganhou D-46 na Sprint 7, este documento nunca foi atualizado) — achado em auditoria (`/agents/mentor.md`) |
 | 1.2.0 | 2026-08-31 | `previsao_reconstrucao`: `BOOLEAN` → `TEXT CHECK IN ('SUCESSO','PARCIAL','FALHA')`, mesma escala de `resultado`. Fecha contradição achada em auditoria entre `00_PRODUTO §7` (fraseado solto, lido como binário) e `02_JORNADAS §4.1` (três botões, desenhados de propósito) — `00_PRODUTO` v1.6.0 explicita que a granularidade é decisão de tela, não da métrica. D-04a (§3.1) não muda: a `CHECK` já era só de nulidade por tipo, indiferente ao tipo de dado da coluna |
 | 1.1.0 | 2026-08-19 | Revisão do usuário, 7 correções. **Parâmetros entram no schema**: nova tabela `parametro` (§6), corrigindo a conclusão da v1.0.0 à luz do próprio teste de D-29 ("sem reinício"). Nova `CHECK` de higiene `questoes_corretas ≤ questoes_total`. `revisao.sessao_origem_id` passa a `NULL` (assunto de divisão, retomada após falha em manutenção). **D-04a** reescrita para amarrar cada previsão ao tipo que a comporta, no padrão de D-36. `assunto.status` renomeado para `assunto.ativo BOOLEAN` (colisão de nome com o que D-16 proíbe; diverge da tabela de ADR-011, registrado em §7.11). Contagem de questões amarrada ao tipo, decidido em §7.9. Nova restrição **J-1** (`02_JORNADAS`, agora fonte do documento): nome de assunto único por disciplina, sem acento/caixa, via `unaccent_imutavel`. Encontrada e registrada (não resolvida) inconsistência de enum de peso entre `01_DOMINIO` e `02_JORNADAS` J-1 |

@@ -5,8 +5,8 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.6.0 |
-| Data | 2026-08-31 |
+| Versão | 1.7.0 |
+| Data | 2026-09-01 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
 
@@ -149,7 +149,7 @@ Declaradas pelo usuário, em ordem de peso.
 |---|---|---|
 | "Esqueço o que estudei semanas atrás" | Espaçamento (§3.2) | **Sim**, e bem |
 | "Estudo, acho que entendi, e na prova erro" | **Calibração (§3.4)** | **Não.** Nada ataca isto |
-| "Não mantenho constância" | Atrito baixo + intenção de implementação | Parcial, e pelo caminho errado (§8.2) |
+| "Não mantenho constância" | Atrito baixo — a fila decide o quê, o usuário só executa | Parcial, e pelo caminho errado (§8.2) |
 
 ### 4.1 A dor que ele não tem
 
@@ -568,10 +568,17 @@ M-1 e M-4.
 
 A sequência não mede aprendizado e ainda corrompe o que mede.
 
-Substituto para a terceira dor: **intenção de implementação** — ao encerrar,
-registrar *quando* e *o quê* será a próxima sessão. Planos de "quando-onde-como"
-têm efeito substancialmente maior sobre execução do que qualquer contador de
-dias, e olham para frente em vez de pressionar para trás.
+A terceira dor fica só com **atrito baixo** — e basta: abrir o sistema já
+entrega o que fazer (fila de recuperação + bloco de conteúdo, `02_JORNADAS
+§2.1`/§4.1), sem decisão nenhuma do usuário. Nenhum planejamento a fazer é
+mais barato que qualquer planejamento, por mais rápido que seja.
+
+Chegou a existir um substituto — **intenção de implementação**: ao encerrar,
+declarar por escrito *quando* e *o quê* seria a próxima sessão. Removido: o
+campo nunca era lido de volta por nada — nem tela, nem cálculo, nem lembrete
+— e §9.1 é claro sobre o que fazer com informação que não muda decisão nem
+alimenta métrica. Pedia o mesmo planejamento que a fila já faz sozinha,
+gastando a força cognitiva exatamente onde a tese promete poupar.
 
 ### 8.3 Cobertura do edital como progresso
 
@@ -703,6 +710,7 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.7.0 | 2026-09-01 | §8.2: **intenção de implementação removida** como substituto da terceira dor — o campo (`Sessao.proximaSessaoData`/`proximaSessaoDescricao`) nunca era lido de volta por nada, falhando o próprio critério de §9.1 (informação que não muda decisão nem alimenta métrica). A dor passa a ser atacada só por atrito baixo — a fila automática já entrega o que fazer, sem o usuário planejar nada. §4: pilar da dor #3 atualizado. Decisão do usuário, testando o fluxo de sessão |
 | 1.6.0 | 2026-08-31 | §7 M-3: nota explícita de que a granularidade do par previsto×real da variante subjetiva é decisão de tela (`02_JORNADAS §4.1`), não deste documento — fecha uma contradição achada em auditoria (`/agents/mentor.md`): a frase solta "vai conseguir reconstruir? / conseguiu?" tinha sido lida como binária no código (`previsaoReconstrucao: Boolean`), enquanto `02_JORNADAS` já desenhava três botões e o próprio `resultado` de `RECUPERACAO` já é `SUCESSO`/`PARCIAL`/`FALHA` desde a Sprint 3 (D-07 exige isso de qualquer sessão que cumpre revisão). Não é mudança da métrica — é a mesma métrica, granularidade explicitada. Código corrigido na mesma sessão: `previsaoReconstrucao` passa a `ResultadoSessao` |
 | ~~1.3.0–1.5.0~~ | — | Bump de versão sem changelog correspondente, achado nesta revisão — não reconstruído aqui (fora do escopo do que foi pedido); registrado para não se perder |
 | 1.2.0 | 2026-08-19 | Segunda revisão do usuário. **Regra da produção obrigatória** (§5.2.1): recuperação livre exige produzir antes de julgar — o sistema nunca pergunta se você acha que lembra. **Resultado unificado** `SUCESSO`/`PARCIAL`/`FALHA` (§6.3): o tipo muda a apuração, não o significado; consolidação passa a depender do resultado e não do limiar. **Definição de sessão** (§6.2): 1:1 com assunto, uma estratégia por sessão, turno fora do modelo, registro em lote é interface. **Simulado** (§6.6): evento por disciplina, alimenta só M-1, implementação adiada. M-3 ganha duas variantes reportadas separadamente |

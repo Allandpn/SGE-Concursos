@@ -85,8 +85,6 @@ public class SessaoService {
         sessao.setPrevisaoPercentual(request.previsaoPercentual());
         sessao.setPrevisaoReconstrucao(request.previsaoReconstrucao());
         sessao.setTentativaId(request.tentativaId());
-        sessao.setProximaSessaoData(request.proximaSessaoData());
-        sessao.setProximaSessaoDescricao(request.proximaSessaoDescricao());
         sessao.setAtivo(true);
         sessao.setResultado(calcularResultado(request));
 
@@ -208,6 +206,9 @@ public class SessaoService {
         }
         if (nomeRestricao.contains("ck_sessao_d36_questoes_tem_formato")) {
             return new ValidationException("Formato é obrigatório para QUESTOES.", "FORMATO_OBRIGATORIO", "formato");
+        }
+        if (nomeRestricao.contains("ck_sessao_formato_por_tipo")) {
+            return new ValidationException("Formato só é aplicável a sessões QUESTOES.", "FORMATO_NAO_APLICAVEL", "formato");
         }
 
         throw e;

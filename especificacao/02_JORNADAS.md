@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.2 |
-| Data | 2026-08-30 |
+| Versão | 1.3.0 |
+| Data | 2026-09-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -70,7 +70,6 @@ SEGUNDA A SEXTA · 1 h 30
   2. Clica num item quando fizer. Abre a tela de registro daquele tipo.
   3. Recuperação: registra logo após cada uma.        ⟵ NA HORA
   4. Conteúdo: registra ao terminar o bloco.          ⟵ NO FIM
-  5. Declara a próxima sessão pretendida (opcional).
 
 SÁBADO E DOMINGO · 3 h
   Igual, com dois blocos de conteúdo.
@@ -185,7 +184,6 @@ O cadastro manual continua existindo, para o assunto avulso que aparece depois.
 | Cada recuperação | Duas etapas, sem campo de resultado na primeira | **≤ 15 s** de registro |
 | Bloco de conteúdo | Assunto já preenchido pelo plano; tempo e tipo | **≤ 20 s** |
 | Lote de questões | Assunto, formato, feitas, certas, previsão | **≤ 25 s** |
-| Encerrar | Próxima sessão pretendida — opcional, um toque para pular | ≤ 10 s |
 
 O orçamento total de registro num turno de 1 h 30: **5 × 15 s + 20 s ≈ 1 min
 35 s.** Menos de 2% do turno. Acima disso, o sistema começa a competir com o
@@ -477,6 +475,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-09-01 | §2: removido o passo "declara a próxima sessão pretendida" do fluxo de turno. §4.1 (J-2): removida a linha "Encerrar" do orçamento — `00_PRODUTO` v1.7.0 tira a intenção de implementação como substituto da terceira dor (§8.2 de lá); campo nunca era lido de volta por nada. Soma do orçamento total não muda — essa linha nunca entrava na conta |
 | 1.2.2 | 2026-08-30 | Duas lacunas encontradas implementando a importação (Sprint 2, item 2.5), mesma causa raiz: o CSV é definido por linha de **assunto**, então nenhum atributo que só existe em **disciplina** tem coluna. (1) Tabela de colunas não tinha `dificuldadePercebida`, mas `Assunto.dificuldadePercebida` é `NOT NULL` no banco (`docs/SPRINT-2-CADASTRO.md` §1.2) — assunto novo criado via importação não tinha valor para essa coluna. (2) Disciplina criada pela importação (linha nova referenciando disciplina inexistente) também não tinha de onde tirar `peso`, que também é `NOT NULL`. Corrigidas as duas com o mesmo padrão já usado para o `peso` do assunto: default fixo (`3` para dificuldade, `MEDIO` para peso de disciplina), ajustável depois pela interface. A tabela "Situação" (linha com `id` conhecido) também estava desatualizada — dizia que só nome/peso/ordem eram atualizados; `dificuldadePercebida` entra na mesma lista, mesmo tratamento dos outros três campos opcionais |
 | 1.2.1 | 2026-08-19 | Correção: o enum de peso do CSV estava no feminino (`ALTA`/`MEDIA`/`BAIXA`), divergindo de `01_DOMINIO` D-23. *Peso* é masculino — `ALTO`/`MEDIO`/`BAIXO`. Divergência encontrada ao derivar o schema da Sprint 1 |
 | 1.2.0 | 2026-08-19 | Segunda revisão. **Coluna `id` no CSV** e ciclo exportar–editar–importar: sem isso, corrigir um typo de disciplina duplicava a base inteira. Renomear passa a ser exigência de interface. J-3: **ordem das métricas invertida** — M-1 é lenta demais para liderar tela semanal; M-2 e M-3 assumem, e semanal × trimestral viram telas distintas. Nova §4.3, lugar do **puxar mais**, no fim da lista e nunca no topo. Nova §5.1: orçamento é tempo do usuário, transição otimista, falha não destrutiva, fila offline deliberadamente fora |

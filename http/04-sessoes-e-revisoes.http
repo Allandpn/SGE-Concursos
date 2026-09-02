@@ -189,6 +189,19 @@ Content-Type: application/json
   "tentativaId": "{{$uuid}}"
 }
 
+### ESTUDO com formato preenchido -> 422 FORMATO_NAO_APLICAVEL (higiene, sem D-xx — SPRINT-1-BANCO §3.5)
+POST {{baseUrl}}/api/sessoes
+Content-Type: application/json
+
+{
+  "assuntoId": {{assuntoSecundarioId}},
+  "tipo": "ESTUDO",
+  "data": "2026-01-01",
+  "tempoMinutos": 20,
+  "formato": "CERTO_ERRADO",
+  "tentativaId": "{{$uuid}}"
+}
+
 ### previsaoReconstrucao/previsaoPercentual no tipo errado -> 422 PREVISAO_INVALIDA (D-04a)
 POST {{baseUrl}}/api/sessoes
 Content-Type: application/json

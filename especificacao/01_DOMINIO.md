@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.15.0 |
+| Versão | 1.16.0 |
 | Data | 2026-09-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -218,10 +218,6 @@ Três consequências que essa matriz decide:
    62% em questões de banca infla a métrica que sustenta a tese inteira. Por
    isso é tipo próprio e não um rótulo de `QUESTOES`.
 3. **`RECUPERACAO` é o caminho principal**, por aritmética (`00_PRODUTO` §5.3).
-
-Toda sessão tem, opcionalmente, a **próxima sessão pretendida** — quando e o
-quê. É o substituto do *streak* (`00_PRODUTO` §8.2): intenção de implementação,
-olhando para frente, em vez de contador pressionando para trás.
 
 ### 3.3.1 Registrar duas vezes conta uma
 
@@ -1073,7 +1069,6 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | `FALHA` regride um nível | Recomeçar a escada | Simulação: recomeçar diverge (92 recuperações/assunto no cenário ruim) |
 | Fase derivada | Fase guardada no assunto | Estado derivado persistido diverge, e a divergência só aparece quando confiam nela |
 | Teto diário com transbordo | Mostrar tudo o que venceu | A carga cresce quando o desempenho cai; lista impossível faz abandonar o sistema |
-| Intenção de próxima sessão como atributo | Entidade "plano" | Dois campos opcionais não justificam entidade (economia cognitiva) |
 | Frente de estudo como conjunto derivado | Entidade ou marca no assunto | Já é derivável de `{em estudo} ∪ {em escada}`; marcar seria estado duplicado que diverge (§7) |
 | Teto global **e** por disciplina | Só um dos dois | Carga e balanceamento são problemas diferentes: o global impede a dívida, o por disciplina impede o monopólio |
 | Frente dimensionada pela fila | Número escolhido por intuição | O tamanho é forçado por `assuntos × permanência ÷ horizonte`. Frente de 60 com escada completa cobre 171 assuntos em 42 meses, não em 24 |
@@ -1124,6 +1119,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.16.0 | 2026-09-01 | §3.3: removida a **próxima sessão pretendida** — campo nunca lido de volta por nada, `00_PRODUTO` v1.7.0 retira a intenção de implementação como substituto da terceira dor (§8.2 de lá). §11: removida a linha de decisão correspondente ("Intenção de próxima sessão como atributo") — a alternativa que ela recusava (entidade "plano") também deixou de fazer sentido, o conceito inteiro saiu, não só a forma dele. Decisão do usuário, testando o fluxo de sessão |
 | 1.15.0 | 2026-09-01 | **D-49**, nova: reativar disciplina/assunto é a operação simétrica de D-17, mas nunca restaura a revisão `CANCELADA` — cria uma `PENDENTE` nova, no nível da última, data recalculada a partir de hoje. Decidido para não precisar de um campo novo em `Revisao` só para registrar por que uma revisão foi cancelada (arquivamento do próprio assunto vs. da disciplina) — sem isso, reativar uma disciplina poderia ressuscitar a revisão de um assunto arquivado à parte, por outro motivo. Fechada com o usuário ao perceber que arquivar não tinha operação inversa |
 | 1.14.0 | 2026-09-01 | **D-48**, nova: ordem do assunto é única entre os ativos da mesma disciplina; arquivar libera o número (ao contrário de D-47, que é permanente). Sem isso, "o assunto de menor ordem" (D-41, §3.2) não tinha resposta única em caso de empate — achado ao revisar `FrenteService.proximaVaga`, que desempatava por ordem de retorno do banco (não determinística, sem `ORDER BY`), em auditoria (`/agents/mentor.md`) |
 | 1.13.0 | 2026-09-01 | **D-47**, nova: nome de disciplina é único, mesmo arquivada. Mesma semântica que `ux_assunto_j1_nome_por_disciplina` já dava ao assunto (D-41/§3.2), faltando para `Disciplina` desde que §3.1 foi escrita. Fechada com o usuário ao revisar `DisciplinaService.criar`, antes do índice único poder citar a regra |

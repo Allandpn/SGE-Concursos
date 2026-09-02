@@ -141,7 +141,7 @@ class ErroDominioTest extends IntegracaoTestBase {
         var assunto = novoAssunto();
         var sessao = sessaoService.registrar(new SessaoRequest(
             assunto.getId(), TipoSessao.ESTUDO, LocalDate.now(), 20,
-            null, null, null, null, null, null, UUID.randomUUID(), null, null));
+            null, null, null, null, null, null, UUID.randomUUID()));
 
         mockMvc.perform(post("/api/erros")
                 .contentType(MediaType.APPLICATION_JSON)

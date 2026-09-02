@@ -92,6 +92,20 @@ class SessaoErroDominioTest extends IntegracaoTestBase {
     }
 
     @Test
+    void estudoComFormato_devolve422() throws Exception {
+        // ck_sessao_d36_questoes_tem_formato sozinha só exige formato PRESENTE em QUESTOES —
+        // sem ck_sessao_formato_por_tipo, formato preenchido em ESTUDO passava (achado manualmente).
+        mockMvc.perform(post("/api/sessoes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"assuntoId": %d, "tipo": "ESTUDO", "data": "2026-08-30", "tempoMinutos": 10,
+                     "formato": "CERTO_ERRADO", "tentativaId": "66666666-6666-6666-6666-666666666666"}
+                    """.formatted(assuntoId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("FORMATO_NAO_APLICAVEL"));
+    }
+
+    @Test
     void flashcardsSemContagem_devolve422() throws Exception {
         mockMvc.perform(post("/api/sessoes")
                 .contentType(MediaType.APPLICATION_JSON)

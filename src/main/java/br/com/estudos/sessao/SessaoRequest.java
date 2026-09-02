@@ -45,11 +45,5 @@ public record SessaoRequest(
     ResultadoSessao resultado,
 
     @Schema(description = "Identificador da tentativa, gerado no cliente ao abrir a tela (D-45) — reenviar o mesmo id devolve o registro original, nunca duplica")
-    UUID tentativaId,
-
-    @Schema(description = "Data sugerida para a próxima sessão deste assunto — livre, não move a escada")
-    LocalDate proximaSessaoData,
-
-    @Schema(description = "Descrição livre da próxima sessão sugerida")
-    String proximaSessaoDescricao
+    UUID tentativaId
 ) {}

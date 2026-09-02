@@ -19,8 +19,6 @@ public final class SessaoMapper {
             sessao.getPrevisaoPercentual(),
             sessao.getPrevisaoReconstrucao(),
             sessao.getTentativaId(),
-            sessao.getProximaSessaoData(),
-            sessao.getProximaSessaoDescricao(),
             sessao.isAtivo()
         );
     }

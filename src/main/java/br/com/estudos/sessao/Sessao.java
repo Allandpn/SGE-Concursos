@@ -88,12 +88,6 @@ public class Sessao {
     private UUID tentativaId;
 
     @Setter
-    private LocalDate proximaSessaoData;
-
-    @Setter
-    private String proximaSessaoDescricao;
-
-    @Setter
     @Column(nullable = false)
     private boolean ativo = true;
 

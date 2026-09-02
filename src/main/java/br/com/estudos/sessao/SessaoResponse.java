@@ -22,7 +22,5 @@ public record SessaoResponse(
     @Schema(description = "Previsão percentual declarada antes do resultado") Short previsaoPercentual,
     @Schema(description = "Previsão declarada de reconstrução — só RECUPERACAO") ResultadoSessao previsaoReconstrucao,
     @Schema(description = "Identificador da tentativa (D-45) — igual entre o envio original e um reenvio") UUID tentativaId,
-    @Schema(description = "Data sugerida para a próxima sessão") LocalDate proximaSessaoData,
-    @Schema(description = "Descrição livre da próxima sessão sugerida") String proximaSessaoDescricao,
     @Schema(description = "Sessão nunca é arquivada — sempre true (é evento, não cadastro)") boolean ativo
 ) {}

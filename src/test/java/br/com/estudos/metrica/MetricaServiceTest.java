@@ -91,13 +91,13 @@ class MetricaServiceTest extends IntegracaoTestBase {
     private void registrarQuestoes(Long assuntoId, LocalDate data, int corretas, int total, FormatoBanca formato, Short previsao) {
         sessaoService.registrar(new SessaoRequest(
             assuntoId, TipoSessao.QUESTOES, data, 20, corretas, total, formato, previsao, null, null,
-            UUID.randomUUID(), null, null));
+            UUID.randomUUID()));
     }
 
     private void registrarRecuperacao(Long assuntoId, LocalDate data, ResultadoSessao previsaoReconstrucao, ResultadoSessao resultado) {
         sessaoService.registrar(new SessaoRequest(
             assuntoId, TipoSessao.RECUPERACAO, data, 8, null, null, null, null, previsaoReconstrucao, resultado,
-            UUID.randomUUID(), null, null));
+            UUID.randomUUID()));
     }
 
     @Test
@@ -232,13 +232,13 @@ class MetricaServiceTest extends IntegracaoTestBase {
         var dentroDoPrazo = novoAssunto(disciplina.getId(), 1);
         sessaoService.registrar(new SessaoRequest(
             dentroDoPrazo.getId(), TipoSessao.ESTUDO, HOJE, 20, null, null, null, null, null, null,
-            UUID.randomUUID(), null, null));
+            UUID.randomUUID()));
         registrarRecuperacao(dentroDoPrazo.getId(), HOJE.plusDays(1), ResultadoSessao.SUCESSO, ResultadoSessao.SUCESSO); // diff = 0
 
         var foraDoPrazo = novoAssunto(disciplina.getId(), 2);
         sessaoService.registrar(new SessaoRequest(
             foraDoPrazo.getId(), TipoSessao.ESTUDO, HOJE, 20, null, null, null, null, null, null,
-            UUID.randomUUID(), null, null));
+            UUID.randomUUID()));
         registrarRecuperacao(foraDoPrazo.getId(), HOJE.plusDays(5), ResultadoSessao.SUCESSO, ResultadoSessao.SUCESSO); // diff = 4
 
         var depois = metricaService.m4();

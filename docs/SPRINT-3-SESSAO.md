@@ -7,8 +7,8 @@ endpoint REST. Nasce agora porque a Sprint 3 é "registrar sessão" (`PROGRESSO.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.1.0 |
-| Data | 2026-08-31 |
+| Versão | 1.3.0 |
+| Data | 2026-09-01 |
 | Status | Vigente |
 | Subordinado a | `especificacao/01_DOMINIO.md` §2, §3.3, §3.3.1, §4; `especificacao/03_INVARIANTES.md` §11.1 (D-45); `docs/00A_ADR.md` (ADR-031); `docs/09_CODE_STYLE.md`; `docs/SPRINT-1-BANCO.md` (schema já existe, não muda) |
 
@@ -57,7 +57,6 @@ para popular `parametro` (§2).
 | `previsaoPercentual` | `Short` | só `QUESTOES`/`FLASHCARDS`, 0..100 |
 | `previsaoReconstrucao` | `ResultadoSessao` | só `RECUPERACAO`; mesma escala de `resultado` (`00_PRODUTO` §7 v1.6.0) |
 | `tentativaId` | `UUID` | `NOT NULL`, identifica a tentativa de registro (D-45) — **nunca gerado pelo servidor** |
-| `proximaSessaoData`, `proximaSessaoDescricao` | `LocalDate`, `String` | opcionais, ambos ou nenhum não é regra do banco — sem `CHECK` correspondente |
 | `ativo` | `boolean` | D-18, igual `Assunto`/`Disciplina` |
 | `criadoEm`, `atualizadoEm` | `Instant` | idem |
 
@@ -108,6 +107,7 @@ diferença: **uma das restrições não vira erro.**
 | `ck_sessao_d02_estudo_sem_resultado` | `ESTUDO_SEM_RESULTADO` | 422, campo `resultado` |
 | `ck_sessao_d04a_previsao_por_tipo` | `PREVISAO_INVALIDA` | 422 |
 | `ck_sessao_d36_questoes_tem_formato` | `FORMATO_OBRIGATORIO` | 422, campo `formato` |
+| `ck_sessao_formato_por_tipo` | `FORMATO_NAO_APLICAVEL` | 422, campo `formato` — higiene, sem regra numerada (`docs/SPRINT-1-BANCO.md` §3.5) |
 | `ux_sessao_d45_tentativa_unica` | **não é erro** — ver §3.3 | 201 (mesmo status do sucesso original) |
 
 Qualquer outra restrição (`ck_sessao_tipo`, `ck_sessao_tempo_minutos`, etc. —
@@ -179,7 +179,7 @@ registrada — é evento, não cadastro. Sem exportação/importação (isso é 
 
 `SessaoRequest`: `assuntoId, tipo, data, tempoMinutos, questoesCorretas,
 questoesTotal, formato, previsaoPercentual, previsaoReconstrucao, resultado,
-tentativaId, proximaSessaoData, proximaSessaoDescricao`. `SessaoResponse`
+tentativaId`. `SessaoResponse`
 espelha a entidade (sem expor `Assunto`, só `assuntoId` — mesmo padrão de
 `AssuntoResponse`).
 
@@ -215,5 +215,7 @@ Cobertura mínima:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-09-01 | Nova `ck_sessao_formato_por_tipo` → `FORMATO_NAO_APLICAVEL` (`docs/SPRINT-1-BANCO.md` v1.5.0) — `ck_sessao_d36_questoes_tem_formato` sozinha aceitava formato preenchido fora de `QUESTOES`. Achado testando o fluxo manualmente |
+| 1.2.0 | 2026-09-01 | `proximaSessaoData`/`proximaSessaoDescricao` removidos de `Sessao`, `SessaoRequest` e `SessaoResponse` — `00_PRODUTO` v1.7.0 e `01_DOMINIO` v1.16.0 tiram o conceito de "próxima sessão pretendida" (nunca era lido de volta por nada). Colunas removidas de `V1__tabelas.sql` — ainda não há banco persistente, editada em vez de nova migração |
 | 1.1.0 | 2026-08-31 | `previsaoReconstrucao`: `Boolean` → `ResultadoSessao` (`docs/SPRINT-1-BANCO.md` v1.2.0, `00_PRODUTO` v1.6.0) — mesma escala de três vias do `resultado`, fecha contradição achada em auditoria entre `00_PRODUTO §7` e `02_JORNADAS §4.1` |
 | 1.0.0 | 2026-08-30 | Criado. Escopo definido em conversa com o usuário: sessão nasce sem tocar em `Revisao` (pendência até a Sprint 4, mesmo tratamento de D-17), lote mínimo sem efeito nesta sprint, só API |

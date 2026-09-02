@@ -49,7 +49,7 @@ class ErroListagemTest extends IntegracaoTestBase {
             new AssuntoRequest(disciplina.getId(), "Assunto Erro Listagem", TipoPeso.MEDIO, (short) 3, 1));
         var sessao = sessaoService.registrar(new SessaoRequest(
             assunto.getId(), TipoSessao.ESTUDO, LocalDate.now(), 20,
-            null, null, null, null, null, null, UUID.randomUUID(), null, null));
+            null, null, null, null, null, null, UUID.randomUUID()));
 
         mockMvc.perform(post("/api/erros")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -50,8 +50,6 @@ CREATE TABLE sessao (
     previsao_percentual       SMALLINT,
     previsao_reconstrucao     TEXT,
     tentativa_id              UUID NOT NULL,
-    proxima_sessao_data       DATE,
-    proxima_sessao_descricao  TEXT,
     ativo                     BOOLEAN NOT NULL DEFAULT true,
     criado_em                 TIMESTAMPTZ NOT NULL DEFAULT now(),
     atualizado_em             TIMESTAMPTZ NOT NULL DEFAULT now(),

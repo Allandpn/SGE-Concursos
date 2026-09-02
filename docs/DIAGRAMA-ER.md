@@ -11,8 +11,8 @@ está desatualizado — não o contrário.
 
 | Campo | Valor |
 |---|---|
-| Versão | 2.1.0 |
-| Data | 2026-08-31 |
+| Versão | 2.2.0 |
+| Data | 2026-09-01 |
 | Status | Vigente |
 | Subordinado a | `docs/SPRINT-1-BANCO.md`, `docs/SPRINT-4-ESCADA.md` (ADR-032), `docs/SPRINT-7-METRICAS.md` (D-46), `docs/SPRINT-8-SIMULADO.md` (D-13); `src/main/resources/db/migration/V1`, `V3`, `V5`, `V7`, `V8` |
 
@@ -66,8 +66,6 @@ erDiagram
         smallint previsao_percentual
         text previsao_reconstrucao "SUCESSO|PARCIAL|FALHA, nullable"
         uuid tentativa_id "único, D-45"
-        date proxima_sessao_data
-        text proxima_sessao_descricao
         boolean ativo
         timestamptz criado_em
         timestamptz atualizado_em
@@ -158,6 +156,7 @@ erDiagram
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.2.0 | 2026-09-01 | `sessao.proxima_sessao_data`/`proxima_sessao_descricao` removidas (`docs/SPRINT-1-BANCO.md` v1.4.0) |
 | 2.1.0 | 2026-08-31 | `sessao.previsao_reconstrucao`: `boolean` → `text` (V1, `docs/SPRINT-1-BANCO.md` v1.2.0) |
 | 2.0.0 | 2026-08-31 | `simulado`/`resultado_simulado` adicionados (Sprint 8, V8); `revisao.versao` adicionado (ADR-032, V5, esquecido na v1.0.0); `fk_erro_assunto` renomeado para `fk_erro_d46_assunto` (V7); notas de leitura atualizadas para 8 tabelas |
 | 1.0.0 | 2026-08-28 | Criado, a partir de `V1__tabelas.sql` e `V3__restricoes.sql` (schema fechado desde a Sprint 1) |
