@@ -82,7 +82,7 @@ class TurnoServiceTest extends IntegracaoTestBase {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Fila", TipoPeso.MEDIO));
         // 9 assuntos vencidos, cada um estudado num dia diferente — o teto diário é 8.
         for (int i = 1; i <= 9; i++) {
-            var assunto = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto " + i, TipoPeso.BAIXO, (short) 3, i));
+            var assunto = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto " + i, TipoPeso.BAIXO, (short) 3, i, null));
             registrarEstudo(assunto.getId(), HOJE.minusMonths(1).minusDays(i)); // quanto maior i, mais atrasado
         }
 
@@ -119,9 +119,9 @@ class TurnoServiceTest extends IntegracaoTestBase {
         parametroRepository.saveAndFlush(tetoGlobal);
 
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Teto Global", TipoPeso.MEDIO));
-        var naFrente = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Ja Na Frente", TipoPeso.BAIXO, (short) 3, 1));
+        var naFrente = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Ja Na Frente", TipoPeso.BAIXO, (short) 3, 1, null));
         registrarEstudo(naFrente.getId(), HOJE);
-        assuntoService.criar(new AssuntoRequest(disciplina.getId(), "No Backlog", TipoPeso.BAIXO, (short) 3, 2));
+        assuntoService.criar(new AssuntoRequest(disciplina.getId(), "No Backlog", TipoPeso.BAIXO, (short) 3, 2, null));
 
         var plano = turnoService.plano();
 

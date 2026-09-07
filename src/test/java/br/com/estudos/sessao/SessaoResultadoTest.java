@@ -33,7 +33,7 @@ class SessaoResultadoTest extends IntegracaoTestBase {
     private Long assuntoId() {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Resultado Teste", TipoPeso.MEDIO));
         var assunto = assuntoService.criar(
-            new AssuntoRequest(disciplina.getId(), "Assunto Resultado Teste " + System.nanoTime(), TipoPeso.MEDIO, (short) 3, 1));
+            new AssuntoRequest(disciplina.getId(), "Assunto Resultado Teste " + System.nanoTime(), TipoPeso.MEDIO, (short) 3, 1, null));
         return assunto.getId();
     }
 

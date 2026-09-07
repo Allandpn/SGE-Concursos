@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.16.0 |
-| Data | 2026-09-01 |
+| Versão | 1.18.0 |
+| Data | 2026-09-06 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -104,6 +104,14 @@ empatassem, e a vaga na frente passaria a depender de acidente de
 armazenamento, não da regra. Ao contrário do nome (D-47), arquivar **libera**
 o número: ordem não é identidade permanente do assunto, é só a disputa pela
 próxima vaga — perde sentido fora do backlog.
+
+Pode carregar, opcionalmente, uma **chave externa**: um identificador dado por
+um sistema de planejamento de estudos externo ao SGE, que o SGE guarda mas
+nunca interpreta — existe só para esse sistema conseguir apontar, mais tarde,
+um segmento de material (§3.7) para o assunto certo, sem depender do `id` que
+o SGE decide na importação (`02_JORNADAS` J-1). Quando presente, é **única
+entre todos os assuntos** (D-52) — do contrário, a importação de segmentos não
+teria resposta única de para qual assunto apontar.
 
 O assunto **não guarda a própria fase**. Ver §8.
 
@@ -311,6 +319,38 @@ Não é sessão, não gera revisão, não consolida nada. Alimenta **apenas M-1*
 preditor isolado de desempenho na prova.
 
 Desenho decidido; implementação adiada.
+
+### 3.7 Segmento
+
+Um pedaço do material de estudo de um assunto — granularidade de **leitura**,
+não de recuperação. Não confundir com o bloco de conteúdo do turno (§7.1): um
+é unidade de *tempo* na agenda; este é unidade de *material*.
+
+Pertence a um assunto, em sequência ordenada. A ordem é **única dentro do
+assunto** (D-50, mesmo padrão de D-48). Carrega uma referência ao material
+(apostila, página, link) que o sistema **guarda, nunca abre** — mesma
+natureza que a referência de material já tinha antes de virar sequência
+(`02_JORNADAS` §1.1).
+
+Nasce só por importação (`02_JORNADAS` J-1) — o SGE não cria segmento por
+conta própria. Existe porque um sistema externo de planejamento de estudos
+fatia o material antes de ele chegar aqui (`docs/00A_ADR.md` ADR-037).
+
+**Sessão de `ESTUDO` pode apontar, opcionalmente, para um segmento do mesmo
+assunto** (D-51) — os outros três tipos continuam apontando só para o assunto
+(D-01 intacto). Generalizar fragmentaria a escada por segmento em vez de por
+assunto, competindo com o mecanismo que já existe para granularidade fina
+(§3.2.1, dividir assunto).
+
+Carrega, **obrigatoriamente**, uma **chave externa** própria — mesma natureza
+que a chave externa do assunto (§3.2), mas aqui sem ser opcional: como
+segmento só nasce por importação, todo segmento tem, por origem, um
+identificador dado pelo sistema de planejamento. É **única entre todos os
+segmentos** (D-53). Existe para a reimportação corrigir um segmento já
+existente (o link do material mudou) sem depender de `ordem` como
+identidade — se o material for reordenado depois de importado, a posição de
+um segmento pode mudar sem que o segmento deixe de ser "o mesmo", e uma
+reimportação por posição confundiria conteúdo antigo com novo.
 
 ---
 
@@ -988,6 +1028,8 @@ Disciplina 1 ──── N Assunto
 Assunto    1 ──── N Sessão            (1:1 no sentido sessão → assunto)
 Assunto    1 ──── N Revisão           (no máximo 1 pendente por vez)
 Assunto    1 ──── N Erro
+Assunto    1 ──── N Segmento          (ordenado)
+Segmento   1 ──── N Sessão            (opcional; só sessão ESTUDO aponta)
 Revisão    N ──── 1 Sessão (origem)   qual estudo iniciou a escada
 Revisão    1 ──── 1 Sessão (cumpriu)  onde vive o resultado
 Sessão     1 ──── N Erro              opcional
@@ -1054,6 +1096,10 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-47 | Nome de disciplina é único; arquivar não libera o nome para reuso | §3.1 |
 | D-48 | Ordem do assunto é única entre os ativos da mesma disciplina; arquivar libera o número | §3.2 |
 | D-49 | Reativar cria uma revisão pendente nova, no nível da última; nunca restaura a cancelada | §3.4 |
+| D-50 | Ordem do segmento é única dentro do assunto | §3.7 |
+| D-51 | Segmento referenciado por uma sessão pertence ao mesmo assunto dessa sessão | §3.7 |
+| D-52 | Chave externa do assunto, quando presente, é única entre todos os assuntos | §3.2 |
+| D-53 | Todo segmento tem chave externa, obrigatória e única entre todos os segmentos | §3.7 |
 
 ---
 
@@ -1074,6 +1120,10 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Frente dimensionada pela fila | Número escolhido por intuição | O tamanho é forçado por `assuntos × permanência ÷ horizonte`. Frente de 60 com escada completa cobre 171 assuntos em 42 meses, não em 24 |
 | Nível-alvo variável por peso | Escada igual para todo assunto | É o que reconcilia a fila com o orçamento de horas (§6.5). Escada igual em tudo faz esperar 42 meses o que as horas entregariam em 15 |
 | Backlog como fase derivada, em assunto e disciplina | Lista separada, ou marca de "planejado" | É o mesmo conjunto que já existia sob o nome errado ("não iniciado"). O nome mudou o comportamento do algoritmo, não o modelo |
+| Segmento como entidade própria, referenciada por Sessão | Derivar "próximo pedaço" contando sessões de `ESTUDO` já registradas | Contagem quebra se o candidato estudar dois segmentos na mesma sentada ou fora de ordem; FK direta responde "existe segmento sem sessão apontando pra ele?" sem ambiguidade |
+| Segmento só referenciado por sessão `ESTUDO` | Generalizar para os quatro tipos | Fragmentaria a escada por segmento em vez de por assunto; duplicaria o mecanismo que já existe para granularidade fina (§3.2.1) |
+| Chave externa opcional em Assunto, gerada pelo sistema de planejamento | Sistema de planejamento referenciar o assunto pelo nome | Nome pode ser corrigido depois de importado — mesmo risco que a coluna `id` do J-1 já existe para evitar (`02_JORNADAS` §"Por que existe a coluna id"). Chave gerada fora do SGE não muda com a correção |
+| Chave externa **obrigatória** em Segmento (diferente da de Assunto, que é opcional) | Reimportação identificada por `(assuntoId, ordem)` | Segmento só nasce por importação — não existe caminho manual sem a chave, então torná-la opcional só adiaria um `NOT NULL` que sempre valeria na prática. E `ordem` é posição, não identidade: reordenar depois de importado confundiria, em silêncio, o segmento antigo com um novo na mesma posição — acharia que uma sessão antiga aponta pro material certo quando o conteúdo já mudou |
 
 ---
 
@@ -1119,6 +1169,8 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.18.0 | 2026-09-06 | **§3.7 revisada**: `Segmento` ganha atributo **chave externa obrigatória** (diferente da de `Assunto`, que é opcional) — todo segmento nasce de importação, então sempre tem uma. Existe para a reimportação identificar um segmento já existente pela chave, não por `ordem`: reordenar o material depois de importado não pode fazer o SGE confundir um segmento antigo (já referenciado por sessões passadas) com um novo que ocupa a mesma posição. Nova **D-53** (§10) e linha de decisão em §11 explicando por que aqui a chave é obrigatória, ao contrário do caso de `Assunto`. Decidido com o usuário ao revisar o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md` (ainda não fechado) — acrescentado antes do documento técnico, seguindo a regra central do `CLAUDE.md` |
+| 1.17.0 | 2026-09-05 | Nova **§3.7, entidade Segmento**: pedaço de material de leitura dentro de um assunto, ordenado, nascido só por importação de um sistema de planejamento externo (`docs/00A_ADR.md` ADR-037). Sessão de `ESTUDO` pode apontar, opcionalmente, para um segmento do mesmo assunto — os outros três tipos continuam apontando só para o assunto (D-01 intacto). `Assunto` ganha atributo opcional **chave externa** (§3.2), que o SGE guarda sem interpretar, para o sistema de planejamento referenciar o assunto certo ao importar segmentos sem depender do `id` que o SGE decide (evita o mesmo risco que a coluna `id` do J-1 já resolve para o próprio assunto). §9 ganha as duas relações novas. D-50 a D-52. Decidido com o usuário na abertura da Sprint 10 (referência de material por blocos), sequenciada antes da Sprint 9 (frontend pausado) |
 | 1.16.0 | 2026-09-01 | §3.3: removida a **próxima sessão pretendida** — campo nunca lido de volta por nada, `00_PRODUTO` v1.7.0 retira a intenção de implementação como substituto da terceira dor (§8.2 de lá). §11: removida a linha de decisão correspondente ("Intenção de próxima sessão como atributo") — a alternativa que ela recusava (entidade "plano") também deixou de fazer sentido, o conceito inteiro saiu, não só a forma dele. Decisão do usuário, testando o fluxo de sessão |
 | 1.15.0 | 2026-09-01 | **D-49**, nova: reativar disciplina/assunto é a operação simétrica de D-17, mas nunca restaura a revisão `CANCELADA` — cria uma `PENDENTE` nova, no nível da última, data recalculada a partir de hoje. Decidido para não precisar de um campo novo em `Revisao` só para registrar por que uma revisão foi cancelada (arquivamento do próprio assunto vs. da disciplina) — sem isso, reativar uma disciplina poderia ressuscitar a revisão de um assunto arquivado à parte, por outro motivo. Fechada com o usuário ao perceber que arquivar não tinha operação inversa |
 | 1.14.0 | 2026-09-01 | **D-48**, nova: ordem do assunto é única entre os ativos da mesma disciplina; arquivar libera o número (ao contrário de D-47, que é permanente). Sem isso, "o assunto de menor ordem" (D-41, §3.2) não tinha resposta única em caso de empate — achado ao revisar `FrenteService.proximaVaga`, que desempatava por ordem de retorno do banco (não determinística, sem `ORDER BY`), em auditoria (`/agents/mentor.md`) |

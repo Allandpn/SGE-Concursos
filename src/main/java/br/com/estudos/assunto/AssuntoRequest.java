@@ -34,5 +34,8 @@ public record AssuntoRequest(
 
     @NotNull(message = "ORDEM_OBRIGATORIA")
     @Schema(description = "Prioridade no backlog da disciplina — menor ordem entra primeiro na frente (D-41). Única entre ativos (D-48)", example = "1")
-    Integer ordem
+    Integer ordem,
+
+    @Schema(description = "Identificador dado por um sistema de planejamento externo — o SGE guarda, nunca interpreta. Opcional, única entre todos os assuntos (D-52)", example = "3f2a1c9e-...")
+    String chaveExterna
 ) {}

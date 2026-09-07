@@ -13,7 +13,8 @@ public final class AssuntoMapper {
             assunto.getPeso(),
             assunto.getDificuldadePercebida(),
             assunto.getOrdem(),
-            assunto.isAtivo()
+            assunto.isAtivo(),
+            assunto.getChaveExterna()
         );
     }
 }

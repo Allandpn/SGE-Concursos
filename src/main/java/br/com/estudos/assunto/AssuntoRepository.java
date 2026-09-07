@@ -10,6 +10,10 @@ public interface AssuntoRepository extends JpaRepository<Assunto, Long> {
     List<Assunto> findByDisciplinaIdAndAtivoTrue(Long disciplinaId);
     Optional<Assunto> findByDisciplinaIdAndNomeIgnoreCase(Long disciplinaId, String nome);
 
+    // Sprint 10 (docs/SPRINT-10-SEGMENTO.md §3.1): resolve chaveExternaAssunto
+    // do CSV de segmentos pro assunto certo, sem expor o id interno.
+    Optional<Assunto> findByChaveExterna(String chaveExterna);
+
     // join fetch: exportação lê o nome da disciplina de todo assunto ativo,
     // sem isto seria N+1 (09_CODE_STYLE checklist).
     @Query("""

@@ -46,7 +46,7 @@ class RevisaoEscadaTest extends IntegracaoTestBase {
 
     private Assunto novoAssunto(String nome) {
         Disciplina disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina " + nome, TipoPeso.MEDIO));
-        return assuntoService.criar(new AssuntoRequest(disciplina.getId(), nome, TipoPeso.BAIXO, (short) 3, 1));
+        return assuntoService.criar(new AssuntoRequest(disciplina.getId(), nome, TipoPeso.BAIXO, (short) 3, 1, null));
     }
 
     private void registrar(String corpo) throws Exception {
@@ -228,8 +228,8 @@ class RevisaoEscadaTest extends IntegracaoTestBase {
     @Test
     void arquivarDisciplina_cancelaPendentesDeTodosOsAssuntos() throws Exception {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Arquivar Todos", TipoPeso.MEDIO));
-        var assunto1 = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Um", TipoPeso.BAIXO, (short) 3, 1));
-        var assunto2 = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Dois", TipoPeso.BAIXO, (short) 3, 2));
+        var assunto1 = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Um", TipoPeso.BAIXO, (short) 3, 1, null));
+        var assunto2 = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Dois", TipoPeso.BAIXO, (short) 3, 2, null));
         registrar(estudo(assunto1.getId(), LocalDate.of(2026, 1, 1)));
         registrar(estudo(assunto2.getId(), LocalDate.of(2026, 1, 1)));
 

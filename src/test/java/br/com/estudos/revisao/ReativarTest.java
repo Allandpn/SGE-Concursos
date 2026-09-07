@@ -65,7 +65,7 @@ class ReativarTest extends IntegracaoTestBase {
     }
 
     private Assunto novoAssunto(Long disciplinaId, String nome, int ordem) {
-        return assuntoService.criar(new AssuntoRequest(disciplinaId, nome, TipoPeso.BAIXO, (short) 3, ordem));
+        return assuntoService.criar(new AssuntoRequest(disciplinaId, nome, TipoPeso.BAIXO, (short) 3, ordem, null));
     }
 
     private void registrarEstudo(Long assuntoId, LocalDate data) throws Exception {

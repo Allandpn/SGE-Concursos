@@ -45,5 +45,8 @@ public record SessaoRequest(
     ResultadoSessao resultado,
 
     @Schema(description = "Identificador da tentativa, gerado no cliente ao abrir a tela (D-45) — reenviar o mesmo id devolve o registro original, nunca duplica")
-    UUID tentativaId
+    UUID tentativaId,
+
+    @Schema(description = "Segmento de material lido nesta sessão — só ESTUDO pode preencher (D-51), e precisa pertencer ao mesmo assunto")
+    Long segmentoId
 ) {}

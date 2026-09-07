@@ -26,7 +26,7 @@ class EstruturaSchemaTest extends RestricaoTestBase {
     void d16_assuntoSemColunaDeFase() throws SQLException {
         Set<String> esperado = Set.of(
                 "id", "disciplina_id", "nome", "peso", "dificuldade_percebida",
-                "ordem", "ativo", "criado_em", "atualizado_em");
+                "ordem", "ativo", "criado_em", "atualizado_em", "chave_externa");
         assertEquals(esperado, colunasDeAssunto());
     }
 
@@ -34,7 +34,7 @@ class EstruturaSchemaTest extends RestricaoTestBase {
     void d28_semTabelaDeTurno() throws SQLException {
         Set<String> esperado = Set.of(
                 "disciplina", "assunto", "sessao", "revisao", "erro", "parametro",
-                "simulado", "resultado_simulado");
+                "simulado", "resultado_simulado", "segmento");
         assertEquals(esperado, tabelasDoSchema());
     }
 

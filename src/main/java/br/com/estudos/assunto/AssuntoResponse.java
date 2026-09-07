@@ -11,5 +11,6 @@ public record AssuntoResponse(
     @Schema(description = "Peso do assunto no edital") TipoPeso peso,
     @Schema(description = "Dificuldade percebida, de 1 a 5") Short dificuldadePercebida,
     @Schema(description = "Prioridade no backlog da disciplina") Integer ordem,
-    @Schema(description = "false quando arquivado (D-18: nunca removido, só arquivado)") boolean ativo
+    @Schema(description = "false quando arquivado (D-18: nunca removido, só arquivado)") boolean ativo,
+    @Schema(description = "Identificador dado por um sistema de planejamento externo, quando presente (D-52)") String chaveExterna
 ) {}

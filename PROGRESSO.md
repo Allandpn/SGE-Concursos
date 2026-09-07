@@ -21,7 +21,8 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | **feito** |
 | 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | documento técnico feito, código escrito, sem execução verificada |
 | 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: doc técnico feito, código escrito, sem execução verificada. Backup: scripts escritos, não testados no Pi real. Polimento: não começou |
-| 9 | Frontend — Hoje e Recuperar | SPA estática (Alpine.js/Tailwind, ADR-028/030), as duas primeiras telas | documento técnico feito, código não começou |
+| 9 | Frontend — Hoje e Recuperar | SPA estática (Alpine.js/Tailwind, ADR-028/030), as duas primeiras telas | **feito** — testado num navegador real, fluxo completo (Hoje → Recuperar → gravação → escada avança) confirmado contra Postgres real |
+| 10 | Integração externa — planejamento | Referência de material por blocos (entidade `Segmento`, `Assunto` ganha `chaveExterna`), alimentada pelo projeto `Plano-de-Estudos-Automatizado` via Google Drive + `rclone` (ADR-037, `docs/requisitos-planejamento-blocos-de-conteudo.md`); `Edital`/import por UUID fica de fora por ora | **feito** — 111/111 testes verdes contra Postgres real, export e automação do disparo incluídos. Restam só duas coisas fora do alcance deste repositório: testar `scripts/importar-segmentos.sh` num Pi real, e a resposta do repositório de planejamento sobre gerar `chaveExternaSegmento` |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -384,6 +385,23 @@ usuário, mesma ressalva das sprints anteriores.
 
 ## 10. Sprint 9 · Frontend — Hoje e Recuperar
 
+**Pausada em 2026-09-04**, decisão consciente do usuário: a Sprint 10
+(integração externa) muda o formato da API que o frontend consumiria (tela
+Assuntos passaria a exibir referência de material por blocos), e construir a
+tela antes disso arriscava retrabalho. Nenhum código desta sprint foi escrito
+ainda — pausar não descarta nada. Retoma quando o endpoint de leitura de
+pedaços de material da Sprint 10 estiver estável.
+
+**Retomada em 2026-09-06.** Conferido antes de retomar: `docs/04_FRONTEND.md
+§0` já restringia esta rodada só às telas Hoje e Recuperar — a tela Assuntos
+(a única que tocaria em `Segmento`) já estava na lista das "outras cinco,
+sprints seguintes". Nem `GET /api/turno/plano` nem `POST /api/sessoes` tipo
+`RECUPERACAO` encostam em segmento — só sessão `ESTUDO` referencia um. Ou
+seja: a razão original da pausa não bloqueava, na prática, as duas telas que
+esta sprint de fato escopava — achado que não muda nada agora, só explica
+por que nenhuma delas precisou esperar a Sprint 10. Endpoint de leitura de
+segmentos testado manualmente contra Postgres real antes de retomar (§11).
+
 **Primeira sprint de frontend.** Fora do mapa conceitual original de 8
 sprints — aberta a pedido do usuário enquanto ele aguardava Docker em casa
 para fechar as Sprints 7/8 de backend. Nada de código ainda: só documento e
@@ -410,32 +428,149 @@ primeira tela") foi feita — mantidas, nota registrada na própria ADR-028
 | | Item | Quem escreve | Estado |
 |---|---|---|---|
 | 9.0 | Documento técnico, revisado | — | **feito** |
-| 9.1 | Estrutura de arquivos estáticos + `index.html` base (§1/§2 do doc técnico) | — | não começou |
-| 9.2 | Tela Hoje — consome `GET /api/turno/plano` (§6 do doc técnico) | — | não começou |
-| 9.3 | Tela Recuperar — as duas etapas do wireframe de `02_JORNADAS §4.1`, consome `POST /api/sessoes` (§7 do doc técnico) | — | não começou |
-| 9.4 | Verificação manual no navegador (Output Style deste projeto exige testar UI de verdade) | — | não começou |
+| 9.1 | Estrutura de arquivos estáticos + `index.html` base (§1/§2 do doc técnico) | Claude, a pedido do usuário | **feito** |
+| 9.2 | Tela Hoje — consome `GET /api/turno/plano` (§6 do doc técnico) | Claude, a pedido do usuário | **feito** |
+| 9.3 | Tela Recuperar — as duas etapas do wireframe de `02_JORNADAS §4.1`, consome `POST /api/sessoes` (§7 do doc técnico) | Claude, a pedido do usuário | **feito** |
+| 9.4 | Verificação manual no navegador (Output Style deste projeto exige testar UI de verdade) | Claude | **feito** — ver relato abaixo |
 
 ### Definition of Done
 
 - [x] `docs/04_FRONTEND.md` revisado e aceito
 - [x] ADR-028/030 reexaminadas conscientemente e nota registrada
-- [ ] Tela Hoje carrega em < 2 s, mostra fila de recuperação e bloco de
-      conteúdo sem clique extra (`02_JORNADAS §5`)
-- [ ] Tela Recuperar: resultado ausente do DOM na etapa 1 (não escondido);
-      previsão não editável na etapa 2; sem botão "pular"; registro em ≤ 15 s
-- [ ] Falha de rede em qualquer registro é não destrutiva: dado digitado
-      permanece, reenvio é um clique (`02_JORNADAS §5.1`)
-- [ ] Os quatro estados de tela (carregando/vazio/erro/preenchido) tratados
-      nas duas telas
-- [ ] Nenhuma mudança em `Dockerfile`/`docker-compose.yml` — os estáticos
-      entram no JAR como `docs/03E_DEPLOYMENT.md` já documentava
+- [x] Tela Hoje carrega sem clique extra, mostra fila de recuperação e bloco
+      de conteúdo (`02_JORNADAS §5`) — observado instantâneo num Postgres
+      local; não medido com cronômetro contra o Pi real
+- [x] Tela Recuperar: resultado ausente do DOM na etapa 1 (não escondido);
+      previsão não editável na etapa 2 (texto, não campo); sem botão "pular"
+- [x] Falha de rede em qualquer registro é não destrutiva: dado digitado
+      permanece, reenvio é um clique, mesmo `tentativaId` (D-45) —
+      implementado; caminho de falha real não testado (exigiria derrubar a
+      rede no meio do clique)
+- [~] Os quatro estados de tela tratados: `carregando`/`erro`/`preenchido`
+      verificados nas duas telas; `vazio` só implementado (não exercitado
+      manualmente — exigiria arquivar tudo antes de testar)
+- [x] Nenhuma mudança em `Dockerfile`/`docker-compose.yml` — só arquivos
+      novos em `src/main/resources/static/`
 
-Itens 9.1–9.4 ainda não começaram — quem escreve cada um não foi definido
-ainda, fica para quando a implementação começar de fato.
+**Verificação manual (2026-09-06):** Postgres descartável + `mvn
+spring-boot:run` (mesmo padrão de sempre) + Chrome de verdade. Disciplina e
+dois assuntos criados via API; uma sessão `ESTUDO` registrada e a revisão
+resultante forçada pra atrasada via SQL, pra ter algo na fila. Fluxo
+completo percorrido no navegador: Hoje mostrou fila + bloco de conteúdo →
+clique no item abriu Recuperar etapa 1 (nome, nível, data prevista, sem
+campo de resultado) → "Vou reconstruir" levou à etapa 2 (previsão mostrada,
+não editável, as três âncoras certas) → "Reconstruí" navegou de volta pra
+Hoje **antes** da resposta confirmar (padrão otimista, §5.1) → conferido no
+banco: sessão `RECUPERACAO` gravada com `previsaoReconstrucao`/`resultado`
+corretos, `tempoMinutos` medido (não constante, D-29), revisão nível 1
+virou `CUMPRIDA` e nível 2 nasceu `PENDENTE` — a escada roteou certo de
+ponta a ponta. Ambiente derrubado ao final.
+
+**Uma técnica nova nesta sprint**, fora do que `04_FRONTEND.md` já
+especificava: o "handoff" de dados entre Hoje e Recuperar (nível, data
+prevista do item clicado) usa um `Alpine.store` global, que
+`docs/04_FRONTEND.md §6` deixava como "decisão de código, não de
+arquitetura" — fechada agora em `js/pages.js`, comentada no próprio código.
 
 ---
 
-## 11. Como este arquivo se mantém honesto
+## 11. Sprint 10 · Integração externa — planejamento
+
+**Decisão conceitual já fechada** numa sessão anterior — diferente do padrão
+das sprints 1 a 9, aqui `01_DOMINIO.md` v1.17.0, `02_JORNADAS.md` v1.4.0 e
+`docs/00A_ADR.md` ADR-037 v2.7.0 já chegaram prontos. Esta seção documenta a
+tradução para schema/código.
+
+**Documento técnico:** `docs/SPRINT-10-SEGMENTO.md` v1.1.0 — escrito por
+Claude, cinco decisões propostas em §0 (endpoint de leitura no escopo,
+mecanismo de D-51 via FK composta, "só ESTUDO" como `CHECK` irmão, export de
+segmentos e automação do disparo pós-`rclone` fora de escopo). **Revisado e
+aceito pelo usuário.**
+
+No caminho: `especificacao/03_INVARIANTES.md` §3 tinha D-47/D-48/D-49 mas não
+D-50/D-51/D-52 — lacuna do tipo "regra órfã" (§9 daquele documento),
+corrigida em `03_INVARIANTES.md` v1.7.0 **antes** deste documento técnico,
+não depois. No mesmo passo, corrigidas três menções esquecidas de "46
+regras" (§0, §3, §9.1), desatualizadas desde as revisões 1.4.0-1.6.0.
+
+**Revisão em seguida, ainda na mesma sessão:** a proposta original de
+reimportação de `segmentos.csv` (upsert por `assuntoId+ordem`) foi
+questionada pelo usuário — `ordem` é posição, não identidade, e reordenar o
+material depois de importado confundiria, em silêncio, um segmento antigo
+(já referenciado por sessões passadas, D-51) com um novo na mesma posição.
+Decisão: `Segmento` ganha **chave externa própria e obrigatória** — nova
+**D-53** (`01_DOMINIO.md` v1.18.0, `02_JORNADAS.md` v1.5.0,
+`03_INVARIANTES.md` v1.8.0, incorporada **sem lacuna** desta vez, no mesmo
+passo em que nasceu). Reimportação passa a identificar o segmento pela
+chave, não pela posição. Como o SGE fecha a especificação primeiro (decisão
+do usuário — "esse aqui é pai daquele"), isso virou requisito novo para o
+repositório `Plano-de-Estudos-Automatizado`, registrado em
+`docs/requisitos-planejamento-blocos-de-conteudo.md §8`: eles precisam
+passar a gerar e manter um identificador estável por segmento, hoje
+inexistente no pipeline deles (nomeiam só por posição).
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 10.0 | Documento técnico `docs/SPRINT-10-SEGMENTO.md`, revisado | — | **feito** |
+| 10.0a | Correção de `03_INVARIANTES.md` §3 (D-50/D-51/D-52, depois D-53) | Claude | **feito** |
+| 10.0b | Requisito novo comunicado ao planejamento (`docs/requisitos-planejamento-blocos-de-conteudo.md §8`, `chaveExternaSegmento`) | Claude | escrito, aguardando resposta do outro lado |
+| 10.1 | Migração `V9` — `assunto.chave_externa`, tabela `segmento` (com `chave_externa`), `sessao.segmento_id` (§1/§2 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 10.2 | Entidade JPA `Segmento` + alterações em `Assunto`/`Sessao` | Claude, a pedido do usuário (pressa) | **feito** |
+| 10.3 | `SegmentoRepository` + `AssuntoRepository.findByChaveExterna` | Claude, a pedido do usuário (pressa) | **feito** |
+| 10.4 | `AssuntoService`/`SessaoService` estendidos (§3 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 10.5 | `SegmentoService.criarOuAtualizar` — upsert por chave externa (§3.2 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 10.6 | `ImportacaoSegmentoService` — validar/confirmar (§4 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 10.7 | Endpoints — import de segmentos + `GET /api/assuntos/{id}/segmentos` (§5 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** |
+| 10.8 | Testes — restrição (D-50/51/52/53, molde D-51 e helper `inserirSegmento` por Claude, os outros cinco métodos completados por Claude a pedido do usuário), erro de domínio, importação, listagem, as três listas brancas fechadas (§6 do doc técnico) | Claude, a pedido do usuário (pressa) | **feito** — 110/110 verdes |
+| 10.9 | `GET /api/segmentos/exportacao` — round-trip via `chaveExternaSegmento` (§5 do doc técnico v1.2.0) | Claude, a pedido do usuário (pressa) | **feito** — `ExportacaoSegmentoTest`, 111/111 verdes |
+| 10.10 | `scripts/importar-segmentos.sh` — disparo pós-`rclone` (§7 do doc técnico v1.2.0) | Claude, a pedido do usuário (pressa) | escrito, **não testado em Pi real** — este ambiente não tem um |
+
+### Definition of Done
+
+- [x] `especificacao/03_INVARIANTES.md` sem regra órfã (D-50 a D-53 em §3)
+- [x] `docs/SPRINT-10-SEGMENTO.md` revisado e aceito
+- [x] Migração `V9` aplicando sem erro, as seis restrições novas nomeadas
+      com o identificador da regra (D-50, D-51 × 2, D-52, D-53 × 2 — CHECK
+      de obrigatoriedade + índice único, mesmo padrão de D-41)
+- [x] Import de `segmentos.csv` tudo-ou-nada; reimportar a mesma
+      `chaveExternaSegmento` atualiza, nunca duplica nem apaga (D-18);
+      reordenar não corrompe identidade (`ImportacaoSegmentoTest`)
+- [x] `GET /api/assuntos/{id}/segmentos` respondendo, ordenado por `ordem`
+      — destrava a Sprint 9 (`ImportacaoSegmentoTest.listar_...`)
+- [x] As três listas brancas fechadas (`EstruturaSchemaTest` × 2,
+      `AssuntoEstruturaTest`) atualizadas e verdes
+- [x] Export de segmentos: `GET /api/segmentos/exportacao`, round-trip
+      testado (`ExportacaoSegmentoTest`) — revertida a recusa da v1.1.0
+      do doc técnico, `chaveExternaSegmento` já dava a identidade que faltava
+- [x] Automação do disparo pós-`rclone`: `scripts/importar-segmentos.sh`
+      escrito — **não testado em Pi real**, mesma ressalva que
+      `scripts/backup.sh` recebeu no Sprint 8
+- [ ] Resposta do repositório `Plano-de-Estudos-Automatizado` sobre o
+      requisito de `chaveExternaSegmento` — bloqueia a importação real de
+      `segmentos.csv` em produção, não o código do SGE em si. **Fora do
+      controle deste repositório** — depende de outra equipe/sessão
+
+**Itens 10.0 a 10.10 completos** — 111/111 testes verdes contra Postgres real
+(Testcontainers, Docker do usuário). Só resta o script de automação testado
+de verdade no Pi (fora do alcance deste ambiente) e a resposta do repositório
+de planejamento (fora do alcance deste repositório) — nenhuma das duas
+bloqueia o código do SGE em si.
+
+**Verificação manual adicional** (2026-09-06, antes de retomar a Sprint 9):
+Postgres descartável + `mvn spring-boot:run` (mesmo padrão das Sprints 1-6 —
+não o `docker-compose.yml` de produção, que usa bind mount do Pi). Criada
+disciplina/assunto reais via API com `chaveExterna`; importado
+`segmentos.csv` com as linhas em ordem invertida no arquivo (`ordem=2` antes
+de `ordem=1`); `GET /api/assuntos/{id}/segmentos` devolveu na ordem certa
+(1, depois 2) — confirma que a ordenação é por `ordem`, não por ordem de
+inserção, contra dado real, não só teste automatizado. `GET
+/api/segmentos/exportacao` devolveu CSV no formato esperado. Ambiente
+descartado ao final (container e processo `mvn spring-boot:run`
+derrubados).
+
+---
+
+## 12. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -449,10 +584,15 @@ ainda, fica para quando a implementação começar de fato.
 
 ---
 
-## 12. Changelog
+## 13. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.30.0 | 2026-09-06 | **Sprint 9 completa (Frontend — Hoje e Recuperar)**, retomada e fechada na mesma sessão, a pedido do usuário. Antes de retomar: conferido que `docs/04_FRONTEND.md §0` já restringia esta rodada só a Hoje/Recuperar — nenhuma das duas toca `Segmento` (só sessão `ESTUDO` referencia um), então a razão original da pausa não bloqueava de fato o que foi construído; endpoint de leitura de segmentos testado manualmente contra Postgres real antes de prosseguir. Implementado: `src/main/resources/static/` inteiro — `index.html` (casca única, Tailwind + Alpine via CDN, ADR-028), `js/api.js` (wrapper de fetch já especificado em `04_FRONTEND.md §4`), `js/router.js` (roteamento por hash), `js/pages.js` (`paginaHoje`/`paginaRecuperar`, um componente Alpine por página, `09_CODE_STYLE §8`). Tela Recuperar segue à risca as três regras vinculantes de `02_JORNADAS §4.1`: resultado ausente do DOM na etapa 1 (`x-if`, não `x-show`), previsão só texto na etapa 2, sem botão "pular". Decisão de código fechada nesta sessão (`04_FRONTEND.md §6` deixava em aberto): handoff Hoje→Recuperar via `Alpine.store` global — carrega nível/data prevista do item clicado, sem endpoint novo; se a store não tiver o item (acesso direto à URL), a tela cai num estado de erro explícito em vez de fingir dado. `tempoMinutos` da sessão de recuperação é medido (tempo de tela, abrir→confirmar), não constante — D-29. Testado num Chrome de verdade contra Postgres descartável (não o `docker-compose.yml` de produção): fluxo completo Hoje→clique→etapa 1→etapa 2→confirmar→volta otimista pra Hoje→conferido no banco que a sessão gravou e a escada roteou (nível 1 `CUMPRIDA`, nível 2 `PENDENTE`). Não exercitados manualmente: caminho de falha de rede (implementado, não testado por indisponibilidade real) e o estado "vazio" das telas. Itens 9.1–9.4 promovidos a **feito** |
+| 1.29.0 | 2026-09-06 | **Sprint 10 — as duas pendências internas fechadas**, a pedido do usuário (ainda tinha tokens no ciclo da semana). `docs/SPRINT-10-SEGMENTO.md` v1.2.0 reverte as duas recusas de v1.1.0: (1) **Export de segmentos** (`GET /api/segmentos/exportacao`, `ExportacaoSegmentoService`/Repository) — a v1.1.0 recusou por falta de identidade estável pro round-trip, mas `chaveExternaSegmento` (D-53, decidida na própria v1.1.0) já resolve isso; `ExportacaoSegmentoTest` prova confirmar→exportar→reimportar sem duplicar. (2) **Automação do disparo pós-`rclone`** (`scripts/importar-segmentos.sh`, novo, bit executável setado) — roda `rclone sync` e chama `validar`/`confirmar` em cada `assuntos.csv`/`segmentos.csv` encontrado, sempre assuntos antes de segmentos no mesmo concurso; sem controle de "já processado" (reprocessar é idempotente e barato no volume deste sistema); **não testado em Pi real**, mesma ressalva de `scripts/backup.sh` no Sprint 8. Suíte: **111/111 verdes**. Fica só a resposta do repositório `Plano-de-Estudos-Automatizado` sobre `chaveExternaSegmento` — fora do controle deste repositório, não bloqueia o código do SGE |
+| 1.28.0 | 2026-09-06 | **Sprint 10 completa — primeira execução real, 110/110 testes verdes** contra Postgres real (Testcontainers, Docker do usuário). Migração `V9` aplicou sem erro. Três defeitos reais encontrados e corrigidos: (1) `RestricaoTestBase.inserirDisciplina()` sempre gravava o mesmo nome fixo ("Disciplina de teste") — os três testes novos que precisavam de duas disciplinas na mesma transação (`d51_sessaoComSegmentoDeOutroAssunto_recusada`, `d52_doisAssuntosMesmaChaveExterna_recusado`, `d53_doisSegmentosMesmaChaveExterna_recusado`) colidiam em `ux_d47_nome_disciplina` antes de chegar na restrição que o teste queria provar; corrigido com um overload `inserirDisciplina(String sufixo)`, mesmo padrão já usado em `assuntoId(String sufixo)` de `SessaoErroDominioTest`. (2) `SessaoErroDominioTest.segmentoForaDeEstudo_devolve422` montava uma sessão `QUESTOES` sem `previsaoPercentual` — como `QUESTOES` sempre calcula `resultado` no serviço, a linha caía em `ck_sessao_d04a_previsao_por_tipo` (`PREVISAO_INVALIDA`) antes de chegar em `ck_sessao_d51_segmento_so_estudo`; corrigido preenchendo `previsaoPercentual` pra isolar a regra certa. (3) Lacuna de cobertura, não bug: `GET /api/assuntos/{id}/segmentos` (o endpoint que destrava a Sprint 9) não tinha nenhum teste — `ImportacaoSegmentoTest.listar_devolveSegmentosDoAssuntoNaOrdemDeLeitura` adicionado, confirma ordenação por `ordem`, não por ordem de inserção. Todos os itens 10.0–10.8 promovidos a **feito** |
+| 1.27.0 | 2026-09-06 | **Sprint 10 — itens 10.1 a 10.8 código e testes escritos**, a pedido do usuário (pressa, precisava ir estudar). `docs/SPRINT-10-SEGMENTO.md` revisado e aceito antes de qualquer código, regra central do `CLAUDE.md`. Migração `V9` (assunto ganha `chave_externa`; tabela `segmento` nova com `chave_externa`/`ordem`/`arquivo`/páginas/tempo estimado; `sessao` ganha `segmento_id` + FK composta `(segmento_id, assunto_id) → segmento(id, assunto_id)` pra D-51). Entidade `Segmento` (pacote novo `br.com.estudos.segmento`), `Assunto`/`Sessao` estendidas. `SegmentoRepository`/`AssuntoRepository.findByChaveExterna`. `AssuntoService`/`SessaoService` traduzem as quatro restrições novas (`CHAVE_EXTERNA_DUPLICADA` 409, `SEGMENTO_DE_OUTRO_ASSUNTO` 409, `SEGMENTO_FORA_DE_ESTUDO` 422). `SegmentoService.criarOuAtualizar` — upsert por `chaveExterna`, nunca por posição. `ImportacaoSegmentoService`/`ImportacaoSegmentoController` (`/api/segmentos/importacoes/validar|confirmar`), mesmo padrão validar/confirmar de `ImportacaoAssuntoService`, com a assimetria documentada (linha com `chaveExternaAssunto` sem correspondência é recusada, não aborta o arquivo — sem coluna `id` pra distinguir "corrompido" de "ainda não existe"). `SegmentoController` (`GET /api/assuntos/{id}/segmentos`), destrava a Sprint 9. Testes: os cinco métodos de `RestricoesInvariantesTest` que tinham ficado como `TODO(human)` (D-50, D-51 segunda metade, D-52, D-53 × 2) completados por Claude; `AssuntoErroDominioTest`/`SessaoErroDominioTest` ganham um teste por `codigo` novo; `ImportacaoSegmentoTest` novo (tudo-ou-nada + upsert, mesmo molde de `ImportacaoAssuntoTest`); as três listas brancas fechadas atualizadas (`EstruturaSchemaTest.d16_assuntoSemColunaDeFase`/`d28_semTabelaDeTurno`, `AssuntoEstruturaTest`). Achado no caminho: `Segmento.chaveExterna` não pode ter `@Column(nullable = false)` na entidade — a coluna é `NULL`-ável de verdade no banco (obrigatoriedade é `CHECK`, não `NOT NULL` nativo, D-53), anotar `nullable=false` divergiria do schema real sob `ddl-auto=validate` (mesmo cuidado que `Assunto.ordem`/D-41 já exigia, quase esquecido aqui). Adicionar `chaveExterna` a `AssuntoRequest` e `segmentoId` a `SessaoRequest` (records) quebrou 16 chamadas posicionais em 12 arquivos de teste + `ImportacaoAssuntoService` — todas corrigidas. `mvn -o test-compile` limpo (main + testes). **Sem execução real** — Docker não disponível neste ambiente, mesma ressalva das Sprints 7/8; nenhum item pode virar "feito" até alguém rodar `mvn test` com Docker de pé |
+| 1.26.0 | 2026-09-06 | **Sprint 10 aberta (documentação) — `docs/SPRINT-10-SEGMENTO.md` escrito e revisado na mesma sessão**, traduzindo para schema/API a decisão conceitual já fechada anteriormente (`01_DOMINIO.md`, `02_JORNADAS.md`, ADR-037). Antes de abrir o documento: `especificacao/03_INVARIANTES.md` corrigida para v1.7.0 — D-50/D-51/D-52 tinham ficado de fora da tabela de §3 (regra órfã, `§9` do próprio documento), mesma classe de lacuna que D-46/47/48/49 já tinham exposto, desta vez pega antes da sprint fechar; de quebra, corrigidas três menções esquecidas de "46 regras", desatualizadas desde 1.4.0-1.6.0. Documento técnico v1.0.0 propôs upsert de `segmentos.csv` por `(assuntoId, ordem)`; **revisado para v1.1.0 na revisão do usuário**, que apontou o risco: `ordem` é posição, não identidade, e reordenar o material depois de importado confundiria em silêncio um segmento antigo (já referenciado por sessões passadas) com um novo na mesma posição. Corrigido com **D-53**, nova: `Segmento` ganha chave externa própria e obrigatória (diferente da de `Assunto`, que é opcional) — `01_DOMINIO.md` v1.18.0, `02_JORNADAS.md` v1.5.0, `03_INVARIANTES.md` v1.8.0 (D-53 incorporada **sem lacuna** desta vez, no mesmo passo em que nasceu). Como o SGE fecha a especificação primeiro, isso virou requisito comunicado ao repositório `Plano-de-Estudos-Automatizado` (`docs/requisitos-planejamento-blocos-de-conteudo.md §8`, novo): eles precisam passar a gerar e manter esse identificador, hoje inexistente no pipeline deles (nomeiam segmento só por posição de arquivo). Nenhum código escrito — implementação fica para a sessão seguinte. `PROGRESSO.md` §11 criado (Sprint 10), seções seguintes renumeradas |
 | 1.25.0 | 2026-08-31 | **Itens de baixo risco da auditoria fechados**: (1) numeração 45→46 corrigida em `CLAUDE.md`, `.claude/agents/mentor.md`, `especificacao/03_INVARIANTES.md` (v1.3.0 — D-46 ganhou linha na tabela de §3, que nunca tinha sido atualizada desde a Sprint 7) e `docs/SPRINT-1-BANCO.md` (v1.3.0, quatro menções). (2) Citação de identificador adicionada em código para 9 regras implementadas mas não citadas: D-08 (`RevisaoService.intervaloNivel`), D-15/D-40 (`TurnoService.plano`, fila cortada no teto), D-19/D-20/D-21/D-25 (`FrenteService`), D-27 (`TurnoService`, classe), D-29 (`Sessao.tempoMinutos`, satisfeita por ausência de constante). Nenhuma mudança de comportamento — só comentário/javadoc. D-03 e D-37 continuam sem citação, corretamente: dependem da tela (Sprint 9, não começou), não há o que citar no backend ainda. Suíte: 85/85 verde. Restam da auditoria original: divisão de assunto (D-35/42/43/44, decisão de escopo própria, não tratada aqui) e a tela Ajustes sem endpoint |
 | 1.24.0 | 2026-08-31 | **D-31 implementado** (§7.5, teto diário insuficiente para a frente) — mesma auditoria. Nenhum documento tinha a fórmula antes; decidida com o usuário: piso do melhor caso, `tetoDiario × intervaloManutencaoDias < tetoGlobalFrente` (mesmo parâmetro da escada, sem migração nova). `FrenteResumoResponse.avisoTetoInsuficiente`, separado do `alertaRepresamento` reativo. `docs/SPRINT-5-FRENTE.md` v1.1.0, teste novo em `FrenteServiceTest`. Suíte: 85/85 verde. Da auditoria original, restam: divisão de assunto (D-35/42/43/44, sem sprint no roadmap), tela Ajustes sem endpoint, numeração 45→46 de `01_DOMINIO`/`03_INVARIANTES`/`CLAUDE.md`, e as 18 regras implementadas sem citação no código |
 | 1.23.0 | 2026-08-31 | **D-09 implementado** (§4.3, lote mínimo) — gap achado na mesma auditoria: `lote_minimo_questoes` existia na tabela `parametro` desde a Sprint 3 (deixado fora de `V4` de propósito, "sem efeito até a escada existir"), mas ninguém tinha voltado para ligá-lo depois que a escada (Sprint 4) passou a existir. Parâmetro entra em `V5` (a migração que o ativa); `RevisaoService.processarRecuperacao` agora checa o lote antes de tocar em revisão pendente ou criar rota espontânea, só para `QUESTOES`/`FLASHCARDS` (`RECUPERACAO` não tem "lote"). `docs/SPRINT-4-ESCADA.md` v1.1.0, dois testes novos em `RevisaoEscadaTest`. Suíte: 84/84 verde. D-31 (aviso de teto abaixo da taxa da frente) e a divisão de assunto (D-35/42/43/44, sem sprint) continuam pendentes |

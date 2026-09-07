@@ -5,16 +5,17 @@ do que já existe nas migrações; a fonte de verdade de coluna, restrição e
 índice é sempre `src/main/resources/db/migration/`, documentada por
 `docs/SPRINT-1-BANCO.md` e pelos documentos técnicos das sprints que
 alteraram o schema depois (`SPRINT-4-ESCADA` — `versao`; `SPRINT-7-METRICAS`
-— D-46; `SPRINT-8-SIMULADO` — `simulado`/`resultado_simulado`). Se este
-diagrama e o schema real divergirem, o schema real vence, e este arquivo
-está desatualizado — não o contrário.
+— D-46; `SPRINT-8-SIMULADO` — `simulado`/`resultado_simulado`;
+`SPRINT-10-SEGMENTO` — `segmento`, `assunto.chave_externa`,
+`sessao.segmento_id`). Se este diagrama e o schema real divergirem, o
+schema real vence, e este arquivo está desatualizado — não o contrário.
 
 | Campo | Valor |
 |---|---|
-| Versão | 2.2.0 |
-| Data | 2026-09-01 |
+| Versão | 2.3.0 |
+| Data | 2026-09-06 |
 | Status | Vigente |
-| Subordinado a | `docs/SPRINT-1-BANCO.md`, `docs/SPRINT-4-ESCADA.md` (ADR-032), `docs/SPRINT-7-METRICAS.md` (D-46), `docs/SPRINT-8-SIMULADO.md` (D-13); `src/main/resources/db/migration/V1`, `V3`, `V5`, `V7`, `V8` |
+| Subordinado a | `docs/SPRINT-1-BANCO.md`, `docs/SPRINT-4-ESCADA.md` (ADR-032), `docs/SPRINT-7-METRICAS.md` (D-46), `docs/SPRINT-8-SIMULADO.md` (D-13), `docs/SPRINT-10-SEGMENTO.md` (D-50 a D-53); `src/main/resources/db/migration/V1`, `V3`, `V5`, `V7`, `V8`, `V9` |
 
 ---
 
@@ -31,6 +32,8 @@ erDiagram
     sessao |o--o{ revisao : "fk_revisao_sessao_cumpriu (D-06, opcional)"
     sessao |o--o{ erro : "fk_erro_sessao (opcional)"
     simulado ||--o{ resultado_simulado : "fk_resultado_simulado_simulado"
+    assunto ||--o{ segmento : "fk_segmento_assunto (D-50: ordem única no assunto)"
+    segmento |o--o{ sessao : "fk_sessao_d51_segmento_mesmo_assunto (composta, opcional, só ESTUDO)"
 
     disciplina {
         bigint id PK
@@ -49,6 +52,7 @@ erDiagram
         smallint dificuldade_percebida "CHECK 1..5"
         integer ordem "obrigatório via CHECK, D-41"
         boolean ativo
+        text chave_externa "opcional, único (D-52) — nullable, sem WHERE"
         timestamptz criado_em
         timestamptz atualizado_em
     }
@@ -67,6 +71,20 @@ erDiagram
         text previsao_reconstrucao "SUCESSO|PARCIAL|FALHA, nullable"
         uuid tentativa_id "único, D-45"
         boolean ativo
+        bigint segmento_id FK "nullable, só ESTUDO (D-51, ck_sessao_d51_segmento_so_estudo)"
+        timestamptz criado_em
+        timestamptz atualizado_em
+    }
+
+    segmento {
+        bigint id PK
+        bigint assunto_id FK
+        text chave_externa "obrigatório via CHECK + único (D-53) — identidade de reimportação"
+        integer ordem "único no assunto (D-50) — posição, não identidade"
+        text arquivo "link/identificador do material, nunca aberto pelo SGE"
+        integer pagina_inicial
+        integer pagina_final
+        integer tempo_estimado_min
         timestamptz criado_em
         timestamptz atualizado_em
     }
@@ -139,16 +157,28 @@ erDiagram
 - `resultado_simulado` é único por `(simulado_id, disciplina_id)` — um
   simulado não tem duas apurações da mesma disciplina. Higiene de dado, sem
   `D-xx` (a restrição não aparece no diagrama, que mostra só FK/PK).
-- Todas as **8 tabelas** já existem no schema: as 5 de domínio original
-  desde a Sprint 1, `simulado`/`resultado_simulado` desde a Sprint 8. Ganhar
-  entidade JPA é progresso de sprint separado: `disciplina`/`assunto` na
-  Sprint 2; `sessao` na Sprint 3; `revisao` na Sprint 4; `erro` e
-  `Simulado`/`ResultadoSimulado` na Sprint 7/8 (`docs/SPRINT-2-CADASTRO.md`
-  §0) — `erro` e `simulado`/`resultado_simulado` tinham a **tabela** desde a
-  Sprint 1, só ganharam entidade/service/controller bem depois.
+- Todas as **9 tabelas** já existem no schema: as 5 de domínio original
+  desde a Sprint 1, `simulado`/`resultado_simulado` desde a Sprint 8,
+  `segmento` desde a Sprint 10. Ganhar entidade JPA é progresso de sprint
+  separado: `disciplina`/`assunto` na Sprint 2; `sessao` na Sprint 3;
+  `revisao` na Sprint 4; `erro` e `Simulado`/`ResultadoSimulado` na
+  Sprint 7/8 (`docs/SPRINT-2-CADASTRO.md` §0) — `erro` e
+  `simulado`/`resultado_simulado` tinham a **tabela** desde a Sprint 1, só
+  ganharam entidade/service/controller bem depois.
 - `fk_erro_assunto` virou `fk_erro_d46_assunto` na Sprint 7 (migração `V7`):
   a restrição já existia desde V1, sem identificador de regra — D-46
   formalizou o que faltava, sem mudar o schema em si.
+- `segmento.chave_externa` e `assunto.chave_externa` são obrigatoriedade via
+  `CHECK`, nunca `NOT NULL` nativo (mesmo padrão de D-41 em `assunto.ordem`)
+  — é o que deixa o identificador da regra no nome da restrição
+  (`03_INVARIANTES §9.1`); por isso o diagrama não marca essas colunas como
+  `NOT NULL` mesmo quando obrigatórias.
+- `fk_sessao_d51_segmento_mesmo_assunto` é **FK composta**
+  `(segmento_id, assunto_id) → segmento (id, assunto_id)`, não uma FK
+  simples — é o mecanismo que impõe "o segmento pertence ao mesmo assunto
+  da sessão" sem checagem prévia no serviço. O Mermaid não representa FK
+  composta como relação própria; a linha do diagrama mostra a cardinalidade,
+  o nome completo do mecanismo está só no rótulo.
 
 ---
 
@@ -156,6 +186,7 @@ erDiagram
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.3.0 | 2026-09-06 | Sprint 10 (`V9`): tabela `segmento` nova (`chave_externa` obrigatória e única — D-53 —, `ordem` única no assunto — D-50); `assunto.chave_externa` (opcional, único — D-52); `sessao.segmento_id` (nullable, só `ESTUDO` — D-51, via FK composta `fk_sessao_d51_segmento_mesmo_assunto`). Notas de leitura atualizadas para 9 tabelas |
 | 2.2.0 | 2026-09-01 | `sessao.proxima_sessao_data`/`proxima_sessao_descricao` removidas (`docs/SPRINT-1-BANCO.md` v1.4.0) |
 | 2.1.0 | 2026-08-31 | `sessao.previsao_reconstrucao`: `boolean` → `text` (V1, `docs/SPRINT-1-BANCO.md` v1.2.0) |
 | 2.0.0 | 2026-08-31 | `simulado`/`resultado_simulado` adicionados (Sprint 8, V8); `revisao.versao` adicionado (ADR-032, V5, esquecido na v1.0.0); `fk_erro_assunto` renomeado para `fk_erro_d46_assunto` (V7); notas de leitura atualizadas para 8 tabelas |

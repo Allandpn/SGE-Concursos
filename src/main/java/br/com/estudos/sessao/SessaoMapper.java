@@ -19,7 +19,8 @@ public final class SessaoMapper {
             sessao.getPrevisaoPercentual(),
             sessao.getPrevisaoReconstrucao(),
             sessao.getTentativaId(),
-            sessao.isAtivo()
+            sessao.isAtivo(),
+            sessao.getSegmento() == null ? null : sessao.getSegmento().getId()
         );
     }
 }

@@ -43,7 +43,7 @@ class SessaoIdempotenciaTest extends IntegracaoTestBase {
     void reenviarMesmaTentativa_devolveMesmoIdEGravaUmaVezSo() throws Exception {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Idempotencia Teste", TipoPeso.MEDIO));
         var assunto = assuntoService.criar(
-            new AssuntoRequest(disciplina.getId(), "Assunto Idempotencia Teste", TipoPeso.MEDIO, (short) 3, 1));
+            new AssuntoRequest(disciplina.getId(), "Assunto Idempotencia Teste", TipoPeso.MEDIO, (short) 3, 1, null));
         var tentativaId = UUID.randomUUID();
 
         var corpo = """

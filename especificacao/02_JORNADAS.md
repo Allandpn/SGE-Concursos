@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.3.0 |
-| Data | 2026-09-01 |
+| Versão | 1.5.0 |
+| Data | 2026-09-06 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -137,6 +137,7 @@ Banco de Dados,Normalização e Dependências Funcionais,ALTO,4
 | `peso` | não | `ALTO` · `MEDIO` · `BAIXO`. Ausente → `MEDIO` |
 | `ordem` | não | Inteiro. Ausente → ordem de aparição no arquivo |
 | `dificuldadePercebida` | não | Inteiro 1..5. Ausente → `3` (meio da escala). Ajustável depois pela interface |
+| `chaveExterna` | não | Opcional, única entre todos os assuntos (`01_DOMINIO` D-52). Identificador dado por um sistema de planejamento de estudos externo — o SGE guarda sem interpretar. Só é necessária se for importar segmentos de material depois (ver abaixo) |
 
 #### Por que existe a coluna `id`
 
@@ -173,6 +174,51 @@ interface.** Corrigir um typo não pode exigir exportar, editar e reimportar.
    é operação de tela (`01_DOMINIO` §3.2.2).
 
 O cadastro manual continua existindo, para o assunto avulso que aparece depois.
+
+#### Segunda importação: segmentos de material
+
+Sprint 10. Um segundo arquivo, próprio — a granularidade é outra: uma linha
+por **segmento**, não por assunto (`01_DOMINIO` §3.7).
+
+```csv
+chaveExternaSegmento,chaveExternaAssunto,ordem,arquivo,paginaInicial,paginaFinal,tempoEstimadoMin
+9c1e7a...,3f2a1c...,1,https://drive.google.com/...,1,12,60
+b04f2d...,3f2a1c...,2,https://drive.google.com/...,13,25,60
+```
+
+| Coluna | Obrigatória | Regra |
+|---|---|---|
+| `chaveExternaSegmento` | sim | Identificador do próprio segmento, dado pelo sistema de planejamento — única entre todos os segmentos (`01_DOMINIO` D-53). É a chave de reimportação (ver abaixo) |
+| `chaveExternaAssunto` | sim | Precisa bater com a `chaveExterna` de um assunto já importado. Sem correspondência, a linha é recusada |
+| `ordem` | sim | Única dentro do assunto (`01_DOMINIO` D-50) — mas não é identidade, ver abaixo |
+| `arquivo` | sim | Link ou identificador do material — o sistema guarda, nunca abre (§1.1) |
+| `paginaInicial` / `paginaFinal` | não | Rastreabilidade até a fonte |
+| `tempoEstimadoMin` | não | Estimativa de leitura, informativa |
+
+Mesmo mecanismo `validar`/`confirmar` do J-1 — tudo-ou-nada, resumo antes de
+confirmar, nunca apaga — só alimentado por um arquivo diferente. Chega ao SGE
+via Google Drive + `rclone`, não upload manual (`docs/00A_ADR.md` ADR-037).
+
+**Por que a chave é externa, e não o `id` do assunto:** o SGE só decide o
+`id` no momento em que importa `assuntos.csv` — o sistema de planejamento
+nunca saberia esse valor sem uma chamada de volta ao SGE, o que reabriria o
+acoplamento direto que a topologia via Drive já evita. A chave externa nasce
+do lado do planejamento e já viaja em `assuntos.csv`, então não depende de
+nenhuma resposta do SGE.
+
+**Por que o segmento também tem chave externa própria, e não usa `ordem`
+como identidade de reimportação:** `ordem` é posição, não identidade. Se o
+material for reordenado depois de já importado (um segmento novo inserido
+no meio da sequência, empurrando os seguintes), reimportar identificando
+"o segmento 3 deste assunto" faria o SGE achar que o segmento na posição 3
+de antes é o mesmo da posição 3 de agora — e sessões antigas que já
+apontavam para aquele segmento (`01_DOMINIO` D-51) passariam a se referir,
+em silêncio, a um material diferente do que o candidato de fato estudou.
+Com uma chave própria por segmento, reimportar reconhece "isto é o mesmo
+pedaço de sempre, só mudou de posição/link" — a identidade nunca depende de
+onde o segmento está na sequência atual. **Reimportar atualiza um segmento
+existente (mesma `chaveExternaSegmento`) em vez de criar um novo — nunca
+apaga** (`01_DOMINIO` D-18).
 
 ### J-2 · O turno de estudo — a jornada principal
 
@@ -445,8 +491,8 @@ O documento de interface é quem amarra isso.
 
 | Jornada | Telas | Regras que a governam |
 |---|---|---|
-| J-1 Primeiro uso | Assuntos, Ajustes | D-19, D-24, D-33, D-34 |
-| J-2 Turno de estudo | Hoje, Recuperar, Registrar, Erros | D-01 a D-09, D-26 a D-29, D-36 |
+| J-1 Primeiro uso | Assuntos, Ajustes | D-19, D-24, D-33, D-34, D-50, D-52, D-53 |
+| J-2 Turno de estudo | Hoje, Recuperar, Registrar, Erros | D-01 a D-09, D-26 a D-29, D-36, D-51 |
 | J-3 Balanço semanal | Progresso, Assuntos | M-1 a M-4, D-35 |
 | J-4 Retorno | Hoje | D-15, D-20, §5.1 |
 
@@ -475,6 +521,8 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.5.0 | 2026-09-06 | `segmentos.csv` (J-1, §"Segunda importação") ganha coluna obrigatória `chaveExternaSegmento` — identidade própria do segmento, dada pelo sistema de planejamento (`01_DOMINIO` D-53, nova). Reimportação passa a identificar o segmento por essa chave, não por `ordem`: `ordem` é posição, e reordenar o material depois de importado não pode confundir, em silêncio, um segmento antigo (já referenciado por sessões passadas, D-51) com um novo na mesma posição. §6 ganha D-53 em J-1. Decidido com o usuário ao discutir o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md`, antes do documento técnico fechar — mesma ordem que D-46 e D-52 já seguiram |
+| 1.4.0 | 2026-09-05 | J-1 ganha coluna opcional `chaveExterna` no CSV de assuntos e uma **segunda importação**, `segmentos.csv` (uma linha por segmento, `01_DOMINIO` §3.7), chegando via Google Drive + `rclone` (`docs/00A_ADR.md` ADR-037), não upload manual. Referencia o assunto pela chave externa em vez do `id` do SGE, porque o sistema de planejamento nunca saberia esse `id` sem uma chamada de volta que reabriria o acoplamento que a topologia via Drive evita. §6 ganha D-50 a D-52 nas jornadas J-1/J-2. Decidido com o usuário na abertura da Sprint 10 |
 | 1.3.0 | 2026-09-01 | §2: removido o passo "declara a próxima sessão pretendida" do fluxo de turno. §4.1 (J-2): removida a linha "Encerrar" do orçamento — `00_PRODUTO` v1.7.0 tira a intenção de implementação como substituto da terceira dor (§8.2 de lá); campo nunca era lido de volta por nada. Soma do orçamento total não muda — essa linha nunca entrava na conta |
 | 1.2.2 | 2026-08-30 | Duas lacunas encontradas implementando a importação (Sprint 2, item 2.5), mesma causa raiz: o CSV é definido por linha de **assunto**, então nenhum atributo que só existe em **disciplina** tem coluna. (1) Tabela de colunas não tinha `dificuldadePercebida`, mas `Assunto.dificuldadePercebida` é `NOT NULL` no banco (`docs/SPRINT-2-CADASTRO.md` §1.2) — assunto novo criado via importação não tinha valor para essa coluna. (2) Disciplina criada pela importação (linha nova referenciando disciplina inexistente) também não tinha de onde tirar `peso`, que também é `NOT NULL`. Corrigidas as duas com o mesmo padrão já usado para o `peso` do assunto: default fixo (`3` para dificuldade, `MEDIO` para peso de disciplina), ajustável depois pela interface. A tabela "Situação" (linha com `id` conhecido) também estava desatualizada — dizia que só nome/peso/ordem eram atualizados; `dificuldadePercebida` entra na mesma lista, mesmo tratamento dos outros três campos opcionais |
 | 1.2.1 | 2026-08-19 | Correção: o enum de peso do CSV estava no feminino (`ALTA`/`MEDIA`/`BAIXA`), divergindo de `01_DOMINIO` D-23. *Peso* é masculino — `ALTO`/`MEDIO`/`BAIXO`. Divergência encontrada ao derivar o schema da Sprint 1 |

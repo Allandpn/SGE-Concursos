@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.6.0 |
-| Data | 2026-09-01 |
+| Versão | 1.8.0 |
+| Data | 2026-09-06 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 46 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 53 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 46 regras, classificadas
+## 3. As 53 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -161,14 +161,25 @@ conceitual — envelhecer por motivo errado.
 | D-47  | **Invariante** | **P** | Cadastrar disciplina com nome duplicado é recusada                                                    |
 | D-48  | **Invariante** | **P** | Dois assuntos ativos da mesma disciplina com a mesma ordem → a segunda escrita falha                  |
 | D-49  | Comportamento | S | Teste: reativar cria pendente nova no nível da última; a `CANCELADA` nunca é reescrita                |
+| D-50  | **Invariante** | **P** | Dois segmentos do mesmo assunto com a mesma ordem → a segunda escrita falha                           |
+| D-51  | **Invariante** | **P** | Sessão apontando para um segmento de outro assunto é recusada pela escrita; e sessão fora de `ESTUDO` com segmento preenchido também |
+| D-52  | **Invariante** | **P** | Cadastrar assunto com chave externa duplicada é recusada                                              |
+| D-53  | **Invariante** | **P** | Segmento sem chave externa, ou com chave externa duplicada, é recusado pela escrita                   |
 
-**Contagem:** 13 invariantes · 5 derivações · 25 comportamentos · 7 políticas — 50 linhas para 49 regras.
+**Contagem:** 17 invariantes · 5 derivações · 25 comportamentos · 7 políticas — 54 linhas para 53 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
 (01_DOMINIO v1.14.0). D-49 acrescentada ao decidir como reativar funciona
-(01_DOMINIO v1.15.0) — linhas ausentes aqui até esta revisão, achado em
-auditoria (`/agents/mentor.md`).
+(01_DOMINIO v1.15.0) — linhas ausentes aqui até a revisão 1.6.0, achado em
+auditoria (`/agents/mentor.md`). D-50/D-51/D-52 acrescentadas na abertura da
+Sprint 10 (01_DOMINIO v1.17.0, entidade `Segmento` e `chaveExterna` de
+`Assunto`) — mesma lacuna do tipo "regra órfã" (§9), desta vez encontrada
+antes de o documento técnico da sprint ser escrito, não depois. D-53
+acrescentada logo em seguida (01_DOMINIO v1.18.0, chave externa obrigatória
+do próprio segmento) — desta vez sem lacuna: entrou em §3 no mesmo passo em
+que nasceu em `01_DOMINIO`, antes até de `docs/SPRINT-10-SEGMENTO.md` ser
+revisado.
 
 ### 3.1 As três reclassificações desta versão
 
@@ -329,7 +340,7 @@ movido — e a tabela vira ficção que ninguém confere.
 | O que se pergunta | Como se responde |
 |---|---|
 | Onde D-07 é implementada? | Varredura por `D-07` no código |
-| Alguma regra ficou sem implementação? | Varredura das 46 contra o resultado |
+| Alguma regra ficou sem implementação? | Varredura das 53 contra o resultado |
 | Esta restrição corresponde a quê? | O identificador está no nome dela |
 
 ### 9.1 Citação como metadado, não como comentário
@@ -339,7 +350,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 46 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 53 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -462,6 +473,8 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.8.0 | 2026-09-06 | **D-53 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.18.0 (chave externa obrigatória do próprio `Segmento`, para reimportação identificar um segmento já existente sem depender de `ordem`). Invariante, `P`, mesmo molde de D-52 — a diferença é que aqui a chave é obrigatória (`Segmento` só nasce por importação, nunca manualmente), não opcional. Diferente de D-50/51/52, esta entrou em §3 **no mesmo passo** em que nasceu em `01_DOMINIO`, sem lacuna — a "regra órfã" da revisão anterior não se repetiu. Contagem de §3 corrigida para 17 invariantes / 54 linhas / 53 regras |
+| 1.7.0 | 2026-09-06 | **D-50, D-51 e D-52 adicionadas à tabela de §3** — novas em `01_DOMINIO.md` v1.17.0 (entidade `Segmento`, §3.7, e `chaveExterna` de `Assunto`, §3.2, decididas na abertura da Sprint 10). As três são Invariante/`P`: D-50 (ordem do segmento única dentro do assunto) e D-52 (chave externa única entre assuntos) seguem o molde exato de D-47/D-48 — índice único, sem pré-checagem no serviço; D-51 (segmento pertence ao mesmo assunto da sessão que o referencia, e só sessão `ESTUDO` pode referenciar segmento) é caso novo — invariante entre duas tabelas, não uma coluna só, mecanismo de imposição a fechar no documento técnico da sprint (`docs/SPRINT-10-SEGMENTO.md`). Corrigida **antes** do documento técnico, não depois — mesma lacuna de "regra órfã" que a revisão 1.4.0-1.6.0 já tinha corrigido para D-47/48/49, desta vez pega antes de a sprint fechar. Contagem de §3 corrigida para 16 invariantes / 53 linhas / 52 regras. Achado no caminho: §0, §3 e §9.1 ainda diziam "46 regras" — número estava desatualizado desde D-47/48/49 (revisões 1.4.0-1.6.0 corrigiram a tabela, mas não o texto em prosa ao redor); corrigido para 52 nos quatro lugares |
 | 1.6.0 | 2026-09-01 | **D-49 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.15.0 (reativar cria revisão pendente nova, nunca restaura a cancelada). Comportamento, garantido por `S` (lógica de serviço, sem constraint — nada no banco impede reescrever uma `CANCELADA`, é disciplina de código). Contagem de §3 corrigida para 13 invariantes / 25 comportamentos / 50 linhas / 49 regras |
 | 1.5.0 | 2026-09-01 | **D-48 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.14.0 (ordem de assunto única entre ativos da mesma disciplina). Invariante, garantida por `P`, mas **parcial** (`WHERE ativo = true`), diferente de D-05/D-45/D-47: a unicidade só importa enquanto o assunto compete pela vaga, arquivar libera o número. Contagem de §3 corrigida para 13 invariantes / 49 linhas / 48 regras |
 | 1.4.0 | 2026-09-01 | **D-47 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.13.0 (nome de disciplina único). Invariante, garantida por `P` (mesma família de D-05/D-45: unicidade por índice, sem pré-checagem no serviço). Contagem de §3 corrigida para 12 invariantes / 48 linhas / 47 regras |

@@ -10,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.assunto.AssuntoRepository;
 import br.com.estudos.revisao.RevisaoService;
+import br.com.estudos.segmento.SegmentoRepository;
 import br.com.estudos.shared.enums.FormatoBanca;
 import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.TipoSessao;
+import br.com.estudos.shared.exception.ConflictException;
 import br.com.estudos.shared.exception.NotFoundException;
 import br.com.estudos.shared.exception.ValidationException;
 import br.com.estudos.shared.parametro.ParametroRepository;
@@ -22,6 +24,7 @@ public class SessaoService {
 
     private final SessaoRepository sessaoRepository;
     private final AssuntoRepository assuntoRepository;
+    private final SegmentoRepository segmentoRepository;
     private final ParametroRepository parametroRepository;
     private final RevisaoService revisaoService;
     private final SessaoService self;
@@ -29,11 +32,13 @@ public class SessaoService {
     public SessaoService(
             SessaoRepository sessaoRepository,
             AssuntoRepository assuntoRepository,
+            SegmentoRepository segmentoRepository,
             ParametroRepository parametroRepository,
             RevisaoService revisaoService,
             @Lazy SessaoService self) {
         this.sessaoRepository = sessaoRepository;
         this.assuntoRepository = assuntoRepository;
+        this.segmentoRepository = segmentoRepository;
         this.parametroRepository = parametroRepository;
         this.revisaoService = revisaoService;
         this.self = self;
@@ -87,6 +92,9 @@ public class SessaoService {
         sessao.setTentativaId(request.tentativaId());
         sessao.setAtivo(true);
         sessao.setResultado(calcularResultado(request));
+        if (request.segmentoId() != null) {
+            sessao.setSegmento(segmentoRepository.getReferenceById(request.segmentoId()));
+        }
 
         var salva = sessaoRepository.save(sessao);
         // Mesma transação: revisão é efeito de sessão, não passo separado
@@ -209,6 +217,12 @@ public class SessaoService {
         }
         if (nomeRestricao.contains("ck_sessao_formato_por_tipo")) {
             return new ValidationException("Formato só é aplicável a sessões QUESTOES.", "FORMATO_NAO_APLICAVEL", "formato");
+        }
+        if (nomeRestricao.contains("fk_sessao_d51_segmento_mesmo_assunto")) {
+            return new ConflictException("O segmento não pertence ao assunto desta sessão.", "SEGMENTO_DE_OUTRO_ASSUNTO");
+        }
+        if (nomeRestricao.contains("ck_sessao_d51_segmento_so_estudo")) {
+            return new ValidationException("Segmento só é aplicável a sessões ESTUDO.", "SEGMENTO_FORA_DE_ESTUDO", "segmentoId");
         }
 
         throw e;

@@ -27,8 +27,8 @@ class ExportacaoAssuntoTest extends IntegracaoTestBase {
     @Test
     void assuntoArquivado_naoApareceNaExportacao() throws Exception {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Exportacao", TipoPeso.MEDIO));
-        assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Ativo", TipoPeso.ALTO, (short) 3, 1));
-        var arquivado = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Arquivado", TipoPeso.ALTO, (short) 3, 2));
+        assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Ativo", TipoPeso.ALTO, (short) 3, 1, null));
+        var arquivado = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Arquivado", TipoPeso.ALTO, (short) 3, 2, null));
         assuntoService.arquivar(arquivado.getId());
 
         var resposta = mockMvc.perform(get("/api/assuntos/exportacao"))

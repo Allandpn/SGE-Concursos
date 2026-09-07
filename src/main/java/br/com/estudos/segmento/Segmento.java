@@ -1,11 +1,9 @@
-package br.com.estudos.assunto;
+package br.com.estudos.segmento;
 
 import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,15 +19,20 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import br.com.estudos.disciplina.Disciplina;
-import br.com.estudos.shared.enums.TipoPeso;
+import br.com.estudos.assunto.Assunto;
 
+/**
+ * Pedaço de material de leitura de um assunto (01_DOMINIO §3.7). Nasce só por
+ * importação (docs/SPRINT-10-SEGMENTO.md §3.2) — sem endpoint de criação
+ * livre pela API, sem coluna `ativo` (D-18 se satisfaz por ausência de
+ * caminho de remoção, não por exclusão lógica).
+ */
 @Entity
 @Table
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Assunto {
+public class Segmento {
 
     @Id
     @EqualsAndHashCode.Include
@@ -37,39 +40,36 @@ public class Assunto {
     private Long id;
 
     @Setter
-    @Column(nullable = false, length = 250)
-    private String nome;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assunto_id")
+    private Assunto assunto;
+
+    // Sem @Column(nullable = false): a coluna é NULL-ável de verdade (D-53 é
+    // CHECK, não NOT NULL nativo — mesmo padrão de Assunto.ordem/D-41).
+    // Anotar nullable=false aqui divergiria do schema real sob ddl-auto=validate.
+    @Setter
+    private String chaveExterna;
 
     @Setter
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private TipoPeso peso;
-
-    @Setter
-    @Column(nullable = false)
-    private Short dificuldadePercebida;
-
-    @Setter
     private Integer ordem;
 
     @Setter
     @Column(nullable = false)
-    private boolean ativo = true;
+    private String arquivo;
 
-    // Opcional (D-52 se satisfaz por índice único simples, sem WHERE — Postgres
-    // já trata múltiplos NULL como não conflitantes). Identificador dado por um
-    // sistema de planejamento externo; o SGE guarda, nunca interpreta (§3.2).
     @Setter
-    private String chaveExterna;
+    private Integer paginaInicial;
+
+    @Setter
+    private Integer paginaFinal;
+
+    @Setter
+    private Integer tempoEstimadoMin;
 
     @CreationTimestamp
     private Instant criadoEm;
 
     @UpdateTimestamp
     private Instant atualizadoEm;
-
-    @Setter
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "disciplina_id")
-    private Disciplina disciplina;
 }

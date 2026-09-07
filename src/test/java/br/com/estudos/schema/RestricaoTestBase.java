@@ -3,6 +3,7 @@ package br.com.estudos.schema;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterEach;
@@ -48,12 +49,22 @@ abstract class RestricaoTestBase {
 
     /** Disciplina mínima válida — setup para testes que precisam só de um id. */
     protected long inserirDisciplina() throws SQLException {
+        return inserirDisciplina("");
+    }
+
+    /**
+     * Sufixo: para testes que precisam de DUAS disciplinas na mesma
+     * transação (ex. D-51/D-52, que exigem dois assuntos "independentes")
+     * — sem ele, a segunda chamada colide em D-47 (nome de disciplina único),
+     * já que o nome base é sempre o mesmo.
+     */
+    protected long inserirDisciplina(String sufixo) throws SQLException {
         try (var ps = conexao.prepareStatement("""
                 INSERT INTO disciplina (nome, peso)
                 VALUES (?, ?)
                 RETURNING id
                 """)) {
-            ps.setString(1, "Disciplina de teste");
+            ps.setString(1, "Disciplina de teste" + sufixo);
             ps.setString(2, "MEDIO");
             var rs = ps.executeQuery();
             rs.next();
@@ -73,6 +84,23 @@ abstract class RestricaoTestBase {
             ps.setString(3, "MEDIO");
             ps.setInt(4, 3);
             ps.setInt(5, 1);
+            var rs = ps.executeQuery();
+            rs.next();
+            return rs.getLong("id");
+        }
+    }
+
+    /** Segmento mínimo válido, chave externa aleatória — setup para testes de D-50/D-51/D-53. */
+    protected long inserirSegmento(long assuntoId) throws SQLException {
+        try (var ps = conexao.prepareStatement("""
+                INSERT INTO segmento (assunto_id, chave_externa, ordem, arquivo)
+                VALUES (?, ?, ?, ?)
+                RETURNING id
+                """)) {
+            ps.setLong(1, assuntoId);
+            ps.setString(2, UUID.randomUUID().toString());
+            ps.setInt(3, 1);
+            ps.setString(4, "https://drive.example/segmento-de-teste");
             var rs = ps.executeQuery();
             rs.next();
             return rs.getLong("id");

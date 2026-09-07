@@ -23,7 +23,7 @@ class AssuntoEstruturaTest {
     void d16_nenhumAtributoMapeadoForaDaListaFechada() {
         var esperado = Set.of(
             "id", "disciplina", "nome", "peso", "dificuldadePercebida",
-            "ordem", "ativo", "criadoEm", "atualizadoEm");
+            "ordem", "ativo", "criadoEm", "atualizadoEm", "chaveExterna");
 
         var encontrado = Arrays.stream(Assunto.class.getDeclaredFields())
             .map(Field::getName)

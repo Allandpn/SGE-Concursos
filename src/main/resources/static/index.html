@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pages.js"></script>
+  <script src="js/router.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+<header class="border-b border-gray-200 bg-white px-4 py-3">
+  <a href="#/hoje" class="text-lg font-semibold">Estudos</a>
+</header>
+
+<main class="mx-auto max-w-md px-4 py-6">
+
+  <!-- Tela Hoje — porta de entrada, J-2/J-4 (04_FRONTEND.md §6) -->
+  <section id="pagina-hoje" x-data="paginaHoje()">
+
+    <template x-if="carregando">
+      <p class="text-gray-500">Carregando...</p>
+    </template>
+
+    <template x-if="!carregando && erro">
+      <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <p x-text="erro"></p>
+        <button type="button" class="mt-2 underline" @click="init()">Tentar de novo</button>
+      </div>
+    </template>
+
+    <template x-if="!carregando && !erro && vazio">
+      <p class="text-gray-500">Nada para hoje. Volte amanhã.</p>
+    </template>
+
+    <template x-if="!carregando && !erro && !vazio">
+      <div class="space-y-6">
+        <div x-show="fila.length > 0">
+          <h2 class="mb-2 text-sm font-medium text-gray-500">Recuperar</h2>
+          <ul class="space-y-2">
+            <template x-for="item in fila" :key="item.assuntoId">
+              <li>
+                <button
+                  type="button"
+                  class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50"
+                  @click="abrirRecuperacao(item)">
+                  <span class="block font-medium" x-text="item.nome"></span>
+                  <span class="text-sm text-gray-500" x-text="'Nível ' + item.nivel"></span>
+                </button>
+              </li>
+            </template>
+          </ul>
+        </div>
+
+        <div x-show="blocoConteudo">
+          <h2 class="mb-2 text-sm font-medium text-gray-500">Conteúdo novo</h2>
+          <div class="rounded border border-gray-200 bg-white p-3">
+            <span class="block font-medium" x-text="blocoConteudo?.nome"></span>
+          </div>
+        </div>
+      </div>
+    </template>
+  </section>
+
+  <!-- Tela Recuperar — única com sequência vinculante (04_FRONTEND.md §7, 02_JORNADAS §4.1) -->
+  <section id="pagina-recuperar" x-data="paginaRecuperar()" hidden>
+
+    <template x-if="semDados">
+      <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <p>Não foi possível abrir esta recuperação.</p>
+        <a href="#/hoje" class="mt-2 inline-block underline">Voltar para Hoje</a>
+      </div>
+    </template>
+
+    <template x-if="!semDados && erro">
+      <div class="mb-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <p x-text="erro"></p>
+        <button type="button" class="mt-2 underline" :disabled="enviando" @click="reenviar()">Reenviar</button>
+      </div>
+    </template>
+
+    <!-- Etapa 1: sem campo de resultado no DOM — nunca escondido, ausente (regra vinculante) -->
+    <template x-if="!semDados && etapa === 1">
+      <div class="space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold" x-text="nome"></h2>
+          <p class="text-sm text-gray-500"
+             x-text="'Nível ' + nivel + (dataPrevista ? ' · previsto para ' + dataPrevista : '')"></p>
+        </div>
+
+        <p class="font-medium">O que você espera?</p>
+        <div class="space-y-2">
+          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('SUCESSO')">Vou reconstruir</button>
+          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('PARCIAL')">Vai faltar um pedaço</button>
+          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('FALHA')">Não vai vir</button>
+        </div>
+
+        <p class="text-sm text-gray-500">Feche o material e reconstrua de memória.</p>
+      </div>
+    </template>
+
+    <!-- Etapa 2: previsão mostrada, não editável (regra vinculante) -->
+    <template x-if="!semDados && etapa === 2">
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold" x-text="nome"></h2>
+        <p class="text-sm text-gray-500">
+          Você previu:
+          <span x-text="{SUCESSO: 'vou reconstruir', PARCIAL: 'vai faltar um pedaço', FALHA: 'não vai vir'}[previsao]"></span>
+        </p>
+
+        <p class="font-medium">Conseguiu reconstruir?</p>
+        <div class="space-y-2">
+          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('SUCESSO')">
+            <span class="block">Reconstruí</span>
+            <span class="text-sm text-gray-500">os pontos principais vieram; faltou detalhe, não estrutura</span>
+          </button>
+          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('PARCIAL')">
+            <span class="block">Faltou um pedaço</span>
+            <span class="text-sm text-gray-500">a estrutura veio, mas um bloco inteiro não</span>
+          </button>
+          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('FALHA')">
+            <span class="block">Não veio</span>
+            <span class="text-sm text-gray-500">preciso reler antes de tentar de novo</span>
+          </button>
+        </div>
+
+        <!-- Tela de Erros é sprint futura (04_FRONTEND.md §9) — link presente no
+             wireframe (02_JORNADAS §4.1), mas inerte até ela existir. -->
+        <a href="#" class="text-sm text-gray-400" title="Ainda não implementado" @click.prevent>+ registrar um erro</a>
+      </div>
+    </template>
+  </section>
+
+</main>
+</body>
+</html>

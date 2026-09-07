@@ -242,4 +242,163 @@ class RestricoesInvariantesTest extends RestricaoTestBase {
 
     // sessao precisa de tempo_minutos, data e tentativa_id (UUID, NOT NULL) em
     // toda inserção — mesmo nos testes que não são sobre essas colunas.
+
+    // D-51 — molde. A crítica (docs/SPRINT-10-SEGMENTO.md §1.3): FK composta,
+    // apontando para uma UNIQUE de duas colunas em `segmento`, não só a PK —
+    // é assim que o Postgres impõe "o segmento pertence ao mesmo assunto da
+    // sessão", uma invariante entre duas tabelas. Dois assuntos distintos
+    // (disciplinas diferentes, pra não colidir com D-48 — inserirAssunto usa
+    // sempre ordem=1) provam que um segmento do assunto A não serve pra uma
+    // sessão do assunto B.
+    @Test
+    void d51_sessaoComSegmentoDeOutroAssunto_recusada() throws SQLException {
+        long disciplinaA = inserirDisciplina("A");
+        long disciplinaB = inserirDisciplina("B");
+        long assuntoA = inserirAssunto(disciplinaA);
+        long assuntoB = inserirAssunto(disciplinaB);
+        long segmentoDeA = inserirSegmento(assuntoA);
+
+        try (var ps = conexao.prepareStatement("""
+                INSERT INTO sessao (assunto_id, tipo, data, tempo_minutos, tentativa_id, segmento_id)
+                VALUES (?, ?, CURRENT_DATE, 1, ?, ?)
+                """)) {
+            ps.setLong(1, assuntoB);
+            ps.setString(2, "ESTUDO");
+            ps.setObject(3, UUID.randomUUID());
+            ps.setLong(4, segmentoDeA);
+            ps.executeUpdate();
+            fail("sessão do assunto B com segmento do assunto A deveria ter sido recusada");
+        } catch (PSQLException e) {
+            assertEquals("fk_sessao_d51_segmento_mesmo_assunto", e.getServerErrorMessage().getConstraint());
+        }
+    }
+
+    // D-50 — dois segmentos do MESMO assunto com a MESMA ordem.
+    // inserirSegmento sempre grava ordem=1, então chamar duas vezes pro
+    // mesmo assuntoId já colide de propósito.
+    @Test
+    void d50_doisSegmentosMesmaOrdemMesmoAssunto_recusado() throws SQLException {
+        long disciplinaId = inserirDisciplina();
+        long assuntoId = inserirAssunto(disciplinaId);
+        inserirSegmento(assuntoId);
+
+        try (var ps = conexao.prepareStatement("""
+                INSERT INTO segmento (assunto_id, chave_externa, ordem, arquivo)
+                VALUES (?, ?, 1, ?)
+                """)) {
+            ps.setLong(1, assuntoId);
+            ps.setString(2, UUID.randomUUID().toString());
+            ps.setString(3, "https://drive.example/segmento-duplicado");
+            ps.executeUpdate();
+            fail("segundo segmento do mesmo assunto com a mesma ordem deveria ter sido recusado");
+        } catch (PSQLException e) {
+            assertEquals("ux_segmento_d50_ordem_por_assunto", e.getServerErrorMessage().getConstraint());
+        }
+    }
+
+    // D-51 (segunda metade, mecanismo diferente do molde acima) — sessão fora
+    // de ESTUDO com segmento_id preenchido é recusada, mesmo que o segmento
+    // pertença ao assunto certo (isola que é o TIPO que recusa aqui, não a
+    // primeira metade de D-51).
+    @Test
+    void d51_sessaoNaoEstudoComSegmento_recusada() throws SQLException {
+        long disciplinaId = inserirDisciplina();
+        long assuntoId = inserirAssunto(disciplinaId);
+        long segmentoId = inserirSegmento(assuntoId);
+
+        try (var ps = conexao.prepareStatement("""
+                INSERT INTO sessao (assunto_id, tipo, data, tempo_minutos, tentativa_id, segmento_id, formato)
+                VALUES (?, 'QUESTOES', CURRENT_DATE, 1, ?, ?, 'MULTIPLA_ESCOLHA')
+                """)) {
+            ps.setLong(1, assuntoId);
+            ps.setObject(2, UUID.randomUUID());
+            ps.setLong(3, segmentoId);
+            ps.executeUpdate();
+            fail("sessão QUESTOES com segmento preenchido deveria ter sido recusada");
+        } catch (PSQLException e) {
+            assertEquals("ck_sessao_d51_segmento_so_estudo", e.getServerErrorMessage().getConstraint());
+        }
+    }
+
+    // D-52 — dois assuntos (disciplinas diferentes, mesmo cuidado do molde de
+    // D-51 pra não esbarrar em D-48) com a MESMA chave_externa.
+    @Test
+    void d52_doisAssuntosMesmaChaveExterna_recusado() throws SQLException {
+        long disciplinaA = inserirDisciplina("A");
+        long disciplinaB = inserirDisciplina("B");
+        var chaveExterna = UUID.randomUUID().toString();
+
+        try (var ps = conexao.prepareStatement("""
+                UPDATE assunto SET chave_externa = ? WHERE id = ?
+                """)) {
+            ps.setString(1, chaveExterna);
+            ps.setLong(2, inserirAssunto(disciplinaA));
+            ps.executeUpdate();
+        }
+
+        try (var ps = conexao.prepareStatement("""
+                UPDATE assunto SET chave_externa = ? WHERE id = ?
+                """)) {
+            ps.setString(1, chaveExterna);
+            ps.setLong(2, inserirAssunto(disciplinaB));
+            ps.executeUpdate();
+            fail("dois assuntos com a mesma chave externa deveriam ter sido recusados");
+        } catch (PSQLException e) {
+            assertEquals("ux_assunto_d52_chave_externa", e.getServerErrorMessage().getConstraint());
+        }
+    }
+
+    // D-53 (primeira metade) — segmento sem chave externa. INSERT direto,
+    // não usa inserirSegmento (que sempre preenche a chave).
+    @Test
+    void d53_segmentoSemChaveExterna_recusado() throws SQLException {
+        long disciplinaId = inserirDisciplina();
+        long assuntoId = inserirAssunto(disciplinaId);
+
+        try (var ps = conexao.prepareStatement("""
+                INSERT INTO segmento (assunto_id, chave_externa, ordem, arquivo)
+                VALUES (?, NULL, 1, ?)
+                """)) {
+            ps.setLong(1, assuntoId);
+            ps.setString(2, "https://drive.example/sem-chave");
+            ps.executeUpdate();
+            fail("segmento sem chave externa deveria ter sido recusado");
+        } catch (PSQLException e) {
+            assertEquals("ck_segmento_d53_chave_externa_obrigatoria", e.getServerErrorMessage().getConstraint());
+        }
+    }
+
+    // D-53 (segunda metade) — dois segmentos com a MESMA chave externa,
+    // mesmo em assuntos diferentes (a regra é global, não por assunto).
+    @Test
+    void d53_doisSegmentosMesmaChaveExterna_recusado() throws SQLException {
+        long disciplinaA = inserirDisciplina("A");
+        long disciplinaB = inserirDisciplina("B");
+        long assuntoA = inserirAssunto(disciplinaA);
+        long assuntoB = inserirAssunto(disciplinaB);
+        var chaveExterna = UUID.randomUUID().toString();
+
+        try (var ps = conexao.prepareStatement("""
+                INSERT INTO segmento (assunto_id, chave_externa, ordem, arquivo)
+                VALUES (?, ?, 1, ?)
+                """)) {
+            ps.setLong(1, assuntoA);
+            ps.setString(2, chaveExterna);
+            ps.setString(3, "https://drive.example/segmento-a");
+            ps.executeUpdate();
+        }
+
+        try (var ps = conexao.prepareStatement("""
+                INSERT INTO segmento (assunto_id, chave_externa, ordem, arquivo)
+                VALUES (?, ?, 1, ?)
+                """)) {
+            ps.setLong(1, assuntoB);
+            ps.setString(2, chaveExterna);
+            ps.setString(3, "https://drive.example/segmento-b");
+            ps.executeUpdate();
+            fail("dois segmentos com a mesma chave externa deveriam ter sido recusados");
+        } catch (PSQLException e) {
+            assertEquals("ux_segmento_d53_chave_externa", e.getServerErrorMessage().getConstraint());
+        }
+    }
 }

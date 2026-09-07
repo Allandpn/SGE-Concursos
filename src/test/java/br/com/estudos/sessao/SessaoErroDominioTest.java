@@ -9,10 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 import br.com.estudos.assunto.AssuntoRequest;
 import br.com.estudos.assunto.AssuntoService;
 import br.com.estudos.disciplina.DisciplinaRequest;
 import br.com.estudos.disciplina.DisciplinaService;
+import br.com.estudos.segmento.SegmentoRequest;
+import br.com.estudos.segmento.SegmentoService;
 import br.com.estudos.shared.IntegracaoTestBase;
 import br.com.estudos.shared.enums.TipoPeso;
 
@@ -33,10 +37,20 @@ class SessaoErroDominioTest extends IntegracaoTestBase {
     @Autowired
     private AssuntoService assuntoService;
 
+    @Autowired
+    private SegmentoService segmentoService;
+
     private Long assuntoId() {
-        var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Sessao Teste", TipoPeso.MEDIO));
+        return assuntoId("");
+    }
+
+    // sufixo: cada teste que precisa de DOIS assuntos na mesma transação
+    // (D-51) não pode repetir "Disciplina Sessao Teste" — colidiria em
+    // NOME_DUPLICADO antes de chegar no que o teste quer provar.
+    private Long assuntoId(String sufixo) {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Sessao Teste" + sufixo, TipoPeso.MEDIO));
         var assunto = assuntoService.criar(
-            new AssuntoRequest(disciplina.getId(), "Assunto Sessao Teste", TipoPeso.MEDIO, (short) 3, 1));
+            new AssuntoRequest(disciplina.getId(), "Assunto Sessao Teste" + sufixo, TipoPeso.MEDIO, (short) 3, 1, null));
         return assunto.getId();
     }
 
@@ -127,5 +141,45 @@ class SessaoErroDominioTest extends IntegracaoTestBase {
                     """.formatted(assuntoId())))
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.codigo").value("RESULTADO_OBRIGATORIO"));
+    }
+
+    @Test
+    void segmentoDeOutroAssunto_devolve409() throws Exception {
+        var assuntoDoSegmento = assuntoId("SegA");
+        var outroAssunto = assuntoId("SegB");
+        var segmento = segmentoService.criarOuAtualizar(new SegmentoRequest(
+            assuntoDoSegmento, UUID.randomUUID().toString(), 1, "https://drive.example/segmento-a",
+            null, null, null));
+
+        mockMvc.perform(post("/api/sessoes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"assuntoId": %d, "tipo": "ESTUDO", "data": "2026-08-30", "tempoMinutos": 10,
+                     "tentativaId": "77777777-7777-7777-7777-777777777777", "segmentoId": %d}
+                    """.formatted(outroAssunto, segmento.getId())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("SEGMENTO_DE_OUTRO_ASSUNTO"));
+    }
+
+    @Test
+    void segmentoForaDeEstudo_devolve422() throws Exception {
+        var id = assuntoId("SegC");
+        var segmento = segmentoService.criarOuAtualizar(new SegmentoRequest(
+            id, UUID.randomUUID().toString(), 1, "https://drive.example/segmento-c", null, null, null));
+
+        // previsaoPercentual precisa vir preenchido: QUESTOES sempre calcula
+        // resultado no serviço, e D-04a exige previsaoPercentual presente
+        // quando resultado não é nulo — sem isso, a linha cairia em
+        // PREVISAO_INVALIDA antes de chegar em D-51 (achado rodando o teste).
+        mockMvc.perform(post("/api/sessoes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"assuntoId": %d, "tipo": "QUESTOES", "data": "2026-08-30", "tempoMinutos": 10,
+                     "questoesCorretas": 5, "questoesTotal": 10, "formato": "MULTIPLA_ESCOLHA",
+                     "previsaoPercentual": 50,
+                     "tentativaId": "88888888-8888-8888-8888-888888888888", "segmentoId": %d}
+                    """.formatted(id, segmento.getId())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("SEGMENTO_FORA_DE_ESTUDO"));
     }
 }

@@ -46,10 +46,10 @@ class ErroListagemTest extends IntegracaoTestBase {
         var disciplina = disciplinaService.criar(
             new DisciplinaRequest("Disciplina Erro Listagem " + UUID.randomUUID(), TipoPeso.MEDIO));
         var assunto = assuntoService.criar(
-            new AssuntoRequest(disciplina.getId(), "Assunto Erro Listagem", TipoPeso.MEDIO, (short) 3, 1));
+            new AssuntoRequest(disciplina.getId(), "Assunto Erro Listagem", TipoPeso.MEDIO, (short) 3, 1, null));
         var sessao = sessaoService.registrar(new SessaoRequest(
             assunto.getId(), TipoSessao.ESTUDO, LocalDate.now(), 20,
-            null, null, null, null, null, null, UUID.randomUUID()));
+            null, null, null, null, null, null, UUID.randomUUID(), null));
 
         mockMvc.perform(post("/api/erros")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -112,7 +112,8 @@ public class ImportacaoAssuntoService {
             var ordem = lerOrdem(linha, numeroLinha, disciplina.getId(), proximaOrdemPorDisciplina, recusadas);
             if (ordem == null) continue;
 
-            var request = new AssuntoRequest(disciplina.getId(), nomeAssunto, peso, dificuldade, ordem);
+            var chaveExterna = valor(linha, "chaveExterna");
+            var request = new AssuntoRequest(disciplina.getId(), nomeAssunto, peso, dificuldade, ordem, chaveExterna);
             var idTexto = valor(linha, "id");
 
             try {

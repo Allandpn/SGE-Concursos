@@ -24,6 +24,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import br.com.estudos.assunto.Assunto;
+import br.com.estudos.segmento.Segmento;
 import br.com.estudos.shared.enums.FormatoBanca;
 import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.TipoSessao;
@@ -45,6 +46,14 @@ public class Sessao {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assunto_id")
     private Assunto assunto;
+
+    // Opcional, só relevante em tipo=ESTUDO (D-51 — banco recusa fora disso
+    // e recusa um segmento de outro assunto via FK composta, nunca pré-checado
+    // aqui no serviço).
+    @Setter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "segmento_id")
+    private Segmento segmento;
 
     @Setter
     @Column(nullable = false)

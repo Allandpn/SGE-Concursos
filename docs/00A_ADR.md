@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.6.0** |
+| Versão do documento | **2.7.0** |
 | Status | **Congelado** |
-| Data | 2026-09-01 |
-| Total | 36 ADRs — 25 vigentes, 10 substituídas, 1 revogada |
+| Data | 2026-09-04 |
+| Total | 37 ADRs — 26 vigentes, 10 substituídas, 1 revogada |
 
 ---
 
@@ -64,6 +64,10 @@ que custa e o que foi descartado.
 | [ADR-031](#adr-031--unicidade-por-tentativa-e-por-revisão-pendente) | Unicidade por tentativa e por revisão pendente | Sprint 1 |
 | [ADR-032](#adr-032--controle-de-versão-na-escrita) | Controle de versão na escrita | Sprint 4 |
 | [ADR-033](#adr-033--derivação-por-consulta-simples-nunca-materializada) | Derivação por consulta simples, nunca materializada | Sprint 5 |
+| [ADR-034](#adr-034--open-in-view-false) | `open-in-view: false` | Sprint 7/8 |
+| [ADR-035](#adr-035--bean-validation-para-forma-do-request-não-para-regra-de-domínio) | Bean Validation para forma do request, não para regra de domínio | v2 |
+| [ADR-036](#adr-036--openapiswagger-gerado-a-partir-do-código) | OpenAPI/Swagger gerado a partir do código | v2 |
+| [ADR-037](#adr-037--artefatos-do-planejamento-chegam-via-google-drive-e-rclone) | Artefatos do planejamento chegam via Google Drive e `rclone` | Sprint 10 |
 
 ### 1.2 Históricas
 
@@ -960,6 +964,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.7.0 | 2026-09-04 | **ADR-037 escrita e aceita** (Sprint 10) — artefatos do planejamento (`Plano-de-Estudos-Automatizado`) chegam ao Pi via Google Drive + `rclone`, reaproveitando o mecanismo já aceito em ADR-018 (backup), em vez de API do Drive na aplicação (contradiria ADR-015/016) ou contato direto Tailscale PC→Pi (exigiria os dois sistemas online ao mesmo tempo). PDFs ficam só no Drive, referenciados por link — nunca chegam ao Pi. Total passa a 37 ADRs, 26 vigentes. No caminho: §1.1 (índice de vigentes) corrigida — ADR-034/035/036 nunca tinham sido adicionadas à lista, só ao total (mesma classe de lacuna que a 2.4.0 já tinha corrigido para a contagem) |
 | 2.6.0 | 2026-09-01 | **ADR-036 escrita e aceita** — OpenAPI/Swagger via `springdoc-openapi-starter-webmvc-ui`, gerado do código (`@Tag`/`@Operation`/`@Schema`). Aplicado a todo Controller e todo `*Request`/`*Response`, a pedido do usuário — escopo completo desde o início, diferente do piloto de ADR-035. Total passa a 36 ADRs, 25 vigentes |
 | 2.5.0 | 2026-09-01 | **ADR-035 escrita e aceita** — Bean Validation para forma do request (presença/faixa de campo), piloto em `AssuntoRequest`/`criar`. `@Valid` nunca em `atualizar` (PATCH): campo ausente lá é instrução, não erro. Constraint do banco continua como garantia final. Total passa a 35 ADRs, 24 vigentes |
 | 2.4.0 | 2026-09-01 | Acerto de contagem: ADR-034 (`open-in-view: false`, aceita 2026-08-31) tinha sido escrita sem atualizar versão/total deste documento. Total passa a 34 ADRs, 23 vigentes — achado ao escrever ADR-035 |
@@ -1204,6 +1209,75 @@ habilitado sem perfil separado. Reavaliar se a exposição de rede mudar.
 | Escrever o YAML/JSON do OpenAPI à mão | Caro de manter, diverge do código na primeira mudança de campo esquecida |
 | Não documentar (manter só os `.http`) | Já era o estado anterior — não cobre forma de payload, só cenário de teste |
 | `@Schema(required = true)` replicando o que `@NotNull` já diz | Duplicação: duas fontes pra a mesma informação divergem — springdoc já lê Bean Validation sozinho |
+
+---
+
+## ADR-037 — Artefatos do planejamento chegam via Google Drive e `rclone`
+
+**Status:** Aceita · 2026-09-04 · Sprint 10
+
+### Contexto
+
+O sistema de planejamento (`Plano-de-Estudos-Automatizado`, projeto Python
+separado) gera, por edital, o cadastro de assuntos e o material de estudo
+fatiado em blocos (PDFs referenciados por link, `docs/requisitos-planejamento-blocos-de-conteudo.md`).
+Ele roda **sob demanda**, num PC pessoal, só quando surge um edital novo. O
+SGE roda **24/7** no Raspberry Pi (ADR-016). Os dois nunca precisam estar de
+pé ao mesmo tempo por natureza de uso — mas a premissa original do lado do
+planejamento (`arquitetura-integracao-planejamento-sge.md §3`, do outro
+repositório) supunha contato direto entre os dois via Tailscale no momento
+da exportação, o que exigiria justamente essa coincidência.
+
+ADR-015 já rejeitou abrir superfície de autenticação nova no Pi (OAuth com
+callback público) pelo mesmo raciocínio que se aplicaria aqui. ADR-016 já
+rejeita peso extra numa JVM que compartilha 4–8 GB com o Pi-hole. E ADR-018
+**já aceitou** Google Drive + `rclone` como mecanismo padrão para mover
+arquivo entre o Pi e fora dele — hoje usado para backup.
+
+### Decisão
+
+- O CSV de assuntos/pedaços de material chega ao Pi por **`rclone sync`** de
+  uma pasta do Google Drive — a mesma ferramenta já aceita em ADR-018,
+  aplicada na direção inversa (puxar, não só enviar). Agendado por
+  cron/systemd timer, fora do processo da JVM.
+- O import continua pelo mecanismo já existente (`validar`/`confirmar`,
+  Sprint 2) — só passa a ser alimentado por um arquivo que aparece numa pasta
+  local sincronizada, em vez de upload manual multipart.
+- Os **PDFs dos blocos de conteúdo não precisam chegar ao Pi**. Ficam no
+  Drive; `referência_material` (Sprint 10) guarda o link como texto — o SGE
+  nunca abre nem serve esse arquivo (`02_JORNADAS.md §1.1`: o sistema nunca
+  exibe material de estudo). O candidato abre o link direto do Drive, em
+  qualquer aparelho, tablet inclusive.
+- **Nenhum código Java fala com a API do Google Drive.** A sincronização é
+  responsabilidade da camada de infraestrutura (`docs/03E_DEPLOYMENT.md`),
+  fora da aplicação.
+
+### Consequências
+
+- Planejamento e SGE nunca precisam estar online ao mesmo tempo — o Drive
+  funciona como caixa-postal assíncrona. Estritamente melhor que o contato
+  direto Tailscale PC→Pi no momento da exportação, porque o planejamento roda
+  só ocasionalmente.
+- Nenhuma credencial de API dentro do container: `rclone` já gerencia sua
+  própria autenticação com o Drive, fora do processo do SGE — mesma
+  configuração que já existe para o backup (ADR-018).
+- A garantia "tudo ou nada" do import (Sprint 2) não muda — a origem do
+  arquivo é irrelevante para a transação.
+- **Não é automático de ponta a ponta por esta decisão sozinha**: alguém
+  (script ou disparo manual pelo endpoint já existente) ainda precisa iniciar
+  `validar`/`confirmar` depois que o arquivo chega na pasta sincronizada.
+  Automatizar esse último passo é detalhe da Sprint 10, não desta ADR.
+- `referência_material` passa a guardar link do Drive, não caminho de arquivo
+  local — reflexo direto no payload que a Sprint 10 vai desenhar.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| SGE integra com a API do Google Drive (client Java, OAuth/service account) | Contradiz ADR-015 (evita exatamente essa classe de superfície de autenticação nova) e ADR-016 (peso extra numa JVM que já disputa memória com o Pi-hole) |
+| Contato direto Tailscale PC→Pi no momento da exportação (planejamento chama um endpoint de import do SGE) | Exige os dois sistemas online ao mesmo tempo, mas o planejamento roda só ocasionalmente sob demanda enquanto o SGE é 24/7 — um requisito de disponibilidade simultânea que a própria natureza de uso já torna desnecessário |
+| Upload manual do CSV via tela/endpoint, como hoje | É exatamente a dependência de "subir na mão" que motivou esta decisão |
+| Sincronizar os PDFs pro Pi também, servidos pelo SGE | O SGE nunca exibe material (`02_JORNADAS.md §1.1`) — sincronizar um arquivo que a aplicação nunca vai ler é custo sem função |
 
 ---
 

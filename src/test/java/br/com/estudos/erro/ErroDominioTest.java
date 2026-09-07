@@ -44,7 +44,7 @@ class ErroDominioTest extends IntegracaoTestBase {
 
     private Assunto novoAssunto() {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Erro " + UUID.randomUUID(), TipoPeso.MEDIO));
-        return assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Erro", TipoPeso.MEDIO, (short) 3, 1));
+        return assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Assunto Erro", TipoPeso.MEDIO, (short) 3, 1, null));
     }
 
     @Test
@@ -141,7 +141,7 @@ class ErroDominioTest extends IntegracaoTestBase {
         var assunto = novoAssunto();
         var sessao = sessaoService.registrar(new SessaoRequest(
             assunto.getId(), TipoSessao.ESTUDO, LocalDate.now(), 20,
-            null, null, null, null, null, null, UUID.randomUUID()));
+            null, null, null, null, null, null, UUID.randomUUID(), null));
 
         mockMvc.perform(post("/api/erros")
                 .contentType(MediaType.APPLICATION_JSON)

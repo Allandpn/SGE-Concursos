@@ -44,6 +44,7 @@ public class AssuntoService {
         assunto.setDificuldadePercebida(request.dificuldadePercebida());
         assunto.setOrdem(request.ordem());
         assunto.setAtivo(true);
+        assunto.setChaveExterna(request.chaveExterna());
 
         try {
             return assuntoRepository.save(assunto);
@@ -78,6 +79,7 @@ public class AssuntoService {
         if (request.peso() != null) assunto.setPeso(request.peso());
         if (request.dificuldadePercebida() != null) assunto.setDificuldadePercebida(request.dificuldadePercebida());
         if (request.ordem() != null) assunto.setOrdem(request.ordem());
+        if (request.chaveExterna() != null) assunto.setChaveExterna(request.chaveExterna());
 
         try {
             // saveAndFlush, não save: a entidade já é gerenciada (veio de
@@ -139,6 +141,13 @@ public class AssuntoService {
                 return new ConflictException(
                     "Já existe um assunto ativo com esta ordem nesta disciplina.",
                     "ORDEM_DUPLICADA"
+                );
+            }
+
+            if (nomeRestricao.contains("ux_assunto_d52_chave_externa")) {
+                return new ConflictException(
+                    "Já existe um assunto com esta chave externa.",
+                    "CHAVE_EXTERNA_DUPLICADA"
                 );
             }
 

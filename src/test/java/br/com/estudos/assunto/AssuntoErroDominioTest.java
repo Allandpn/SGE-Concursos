@@ -63,6 +63,25 @@ class AssuntoErroDominioTest extends IntegracaoTestBase {
     }
 
     @Test
+    void chaveExternaDuplicada_devolve409() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Teste CHAVE_EXTERNA_DUPLICADA", TipoPeso.MEDIO));
+        mockMvc.perform(post("/api/assuntos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"disciplinaId": %d, "nome": "Assunto Com Chave", "peso": "ALTO", "dificuldadePercebida": 3, "ordem": 1, "chaveExterna": "chave-repetida"}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/assuntos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"disciplinaId": %d, "nome": "Outro Assunto", "peso": "ALTO", "dificuldadePercebida": 3, "ordem": 2, "chaveExterna": "chave-repetida"}
+                    """.formatted(disciplina.getId())))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.codigo").value("CHAVE_EXTERNA_DUPLICADA"));
+    }
+
+    @Test
     void ordemObrigatoria_devolve422() throws Exception {
         var disciplina = disciplinaService.criar(new DisciplinaRequest("Disciplina Teste ORDEM_OBRIGATORIA", TipoPeso.MEDIO));
 
