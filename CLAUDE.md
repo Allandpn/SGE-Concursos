@@ -176,6 +176,33 @@ Herdadas da tentativa anterior, e continuam valendo:
 
 ---
 
+## Canal com o projeto de planejamento (`Plano-de-Estudos-Automatizado`)
+
+Dois sistemas separados, cada um com sua IA, cada um só escrevendo no
+próprio repositório — **nunca** acesso de escrita cruzado. A troca acontece
+por leitura pública do repositório do outro, no início do trabalho que
+tocar a integração (D-50 a D-53, `Segmento`, `chaveExterna`, ADR-037, ou
+qualquer coisa envolvendo o projeto de planejamento).
+
+- **Nosso canal de saída, pra eles:** `docs/requisitos-planejamento-blocos-de-conteudo.md`
+  — só cresce, nunca é reescrito por cima; toda seção nova leva data e é
+  marcada "Requisito novo" ou "Requisito especulativo" (assim quem lê
+  distingue pedido fechado de ideia em aberto).
+- **O canal deles, pra nós — leia antes de assumir que algo mudou lá:**
+  `docs/requisitos-sge-integracao.md` e
+  `docs/arquitetura-integracao-planejamento-sge.md`, em
+  `github.com/Allandpn/Plano-de-Estudos-Automatizado` (leitura pública via
+  GitHub, nunca clone com credencial de escrita).
+- **Nada lido de lá vira código ou muda `01_DOMINIO.md` sozinho.** Uma
+  seção nova no canal deles é sugestão a avaliar com o usuário — mesmo
+  processo de qualquer mudança de domínio: documento primeiro, decisão
+  discutida, só depois código (regra central deste arquivo).
+- Se algo que eles relatam como implementado precisar embasar uma decisão
+  real daqui, confira o commit real do lado deles antes de tratar como
+  fato — relato não é o mesmo que verificado.
+
+---
+
 ## Ao terminar qualquer tarefa
 
 - [ ] a regra implementada está **citada** no código pelo identificador;
