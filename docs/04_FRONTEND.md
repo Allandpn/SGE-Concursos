@@ -5,14 +5,17 @@ no JAR, como a SPA consome a API, e o padrão de UI otimista que
 `02_JORNADAS.md §5.1` exige. Nasce agora porque a Sprint 9 é a primeira a
 tocar frontend — nenhuma sprint anterior escreveu uma linha de HTML/CSS/JS.
 
-Não define cor, tipografia ou componente visual — isso é doc futuro,
-quando as primeiras telas já existirem para servir de referência real
-(mesma fronteira que `02_JORNADAS §0` já declarava: "isso é do documento de
-interface, que vem depois").
+Definia cor e tipografia como "doc futuro, quando as primeiras telas já
+existirem" (mesma fronteira que `02_JORNADAS §0` traçava: "isso é do
+documento de interface, que vem depois") — com quatro telas em produção
+(Hoje, Recuperar, Registrar, Assuntos), essa condição se cumpriu; §8A fecha
+isso. Continua não definindo **componente visual** (biblioteca própria,
+espaçamento sistemático, ícones) — refinamento maior que uma paleta e uma
+fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.0 |
+| Versão | 1.3.0 |
 | Data | 2026-09-07 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-028 (zero build, revisada nesta data), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -379,13 +382,48 @@ seletor de segmento ausente quando o assunto não tem nenhum — coberto em
 
 ---
 
+## 8A. Paleta e tipografia
+
+Decisão do usuário: referência visual é o **qconcursos.com** — plataforma
+de estudo pra concurso já conhecida, não um mockup inventado. Cores
+extraídas de verdade do site (`getComputedStyle`, não achismo de captura de
+tela), depois mapeadas por **papel funcional**, não copiadas 1:1 — o
+qconcursos usa verde pra CTA de venda de plano, que o SGE não tem.
+
+### Tokens (`tailwind.config`, no `<head>` de `index.html`)
+
+| Token | Papel | Hex | Onde aparece hoje |
+|---|---|---|---|
+| `primary-600` | Ação principal | `#0694a2` | Botão "Registrar", pílula de tipo/formato selecionada |
+| `primary-700` | Hover da ação principal | `#057885` | `:hover` dos mesmos botões |
+| `primary-100`/`primary-800` | Destaque suave | `#c7edf0`/`#045e68` | Chip de fase `FRENTE` |
+| `alerta-50`/`alerta-600` | Atenção | `#fff4ed`/`#fe6112` | Chip de peso `ALTO` — mesmo par bg/texto que o qconcursos usa no próprio badge de urgência |
+| `font-sans` | Tipografia padrão | Open Sans (Google Fonts) | Todo o app — Tailwind Preflight aplica em `html` sem precisar de classe |
+
+**Por que teal e não verde pro `primary`:** no qconcursos, teal é a cor do
+botão "Mesa de Estudos" — a ação de estudar em si; verde fica reservado a
+preço/upsell, papel que o SGE não tem. `primary` no SGE é literalmente
+"a ação que o usuário mais clica" (Registrar, seletor de tipo) — o mesmo
+papel do teal lá.
+
+**Fácil personalizar, de propósito:** nenhuma tela usa hex direto — sempre
+`primary-*`/`alerta-*`. Trocar a paleta inteira depois é editar só o bloco
+`tailwind.config` no `<head>`; nenhum outro arquivo muda. Cores neutras
+(cinza de texto/borda, verde de `CONSOLIDADO`, âmbar de peso `MEDIO`, e o
+vermelho de estado de erro) continuam nos utilitários padrão do Tailwind —
+não são identidade visual, são estado semântico, e ficam de fora da paleta
+customizada de propósito (erro precisa continuar "vermelho de erro"
+reconhecível, nunca a cor de destaque do produto).
+
+---
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
   `02_JORNADAS §5.1`).
-- Design visual completo — cor, tipografia, biblioteca de componente.
-  Usa utilitários padrão do Tailwind por enquanto; refinamento é documento
-  futuro, quando houver tela real para servir de referência.
+- Biblioteca de componente própria e espaçamento sistemático — cor e
+  tipografia já estão definidas (§8A); o que falta é refinamento maior,
+  ainda sem tela suficiente pra justificar o investimento.
 - As três telas restantes (Erros, Progresso, Ajustes) — cada uma decide,
   na sua sprint, se precisa de padrão novo além do que este documento já
   fixa.
@@ -405,6 +443,7 @@ seletor de segmento ausente quando o assunto não tem nenhum — coberto em
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-09-07 | Nova **§8A, paleta e tipografia** — a pedido do usuário, que quis a paleta e o estilo do qconcursos.com. Cor extraída de verdade do site (`getComputedStyle`) e mapeada por papel funcional, confirmada com o usuário antes de implementar (teal como `primary` — ação principal, no lugar do verde de upsell que o qconcursos usa; laranja só no chip de peso `ALTO`; fonte trocada pra Open Sans). Tokens `primary`/`alerta` no `tailwind.config` do `<head>`, nenhum hex direto nas telas — trocar a paleta depois é editar um bloco só. Aplicado retroativamente às quatro telas já existentes (Hoje, Recuperar, Registrar, Assuntos), sem mudar nenhuma delas de arquitetura. §0/§9 atualizados: "cor e tipografia são doc futuro" fechado, resta só biblioteca de componente/espaçamento como fora de escopo |
 | 1.2.0 | 2026-09-07 | Sprint 12 aberta — nova **§7B, tela Assuntos** (lista por disciplina + detalhe, `#/assuntos` e `#/assuntos/{id}`). Fecha a pendência de entrada pra Questões/Flashcards/conteúdo livre que a Sprint 11 tinha deixado registrada: o detalhe do assunto ganha três ações que escrevem no mesmo `Alpine.store('registrar')` que Hoje já usava. Decisão de escopo: upload de CSV pela interface (mostrado no wireframe de referência) fica de fora — os endpoints de importação já são usados por script, não por upload manual; registrado em §9. Fase por assunto é uma chamada por assunto, decisão consciente dado a escala de uso (usuário único, dezenas de assuntos), não descuido. §4 ganha quatro linhas de endpoint, nenhuma nova (todas já existiam de sprints anteriores) |
 | 1.1.0 | 2026-09-06 | Sprint 11 aberta — nova **§7A, tela Registrar sessão** (Conteúdo/Questões/Flashcards, um componente Alpine, rota `#/registrar/{tipo}/{assuntoId}`). Dois padrões novos: seletor de tipo por pílulas, e campo de segmento opcional (Sprint 10, `GET /api/assuntos/{id}/segmentos`). Decisão de escopo: só o card "Conteúdo novo" de Hoje vira ponto de entrada nesta sprint — Questões/Flashcards e "conteúdo em outro assunto" ficam sem link na interface até a tela Assuntos existir, registrado como pendência em §9. §4 ganha as duas linhas de endpoint; §8 esclarece que "vazio" em Registrar sessão não é um quinto estado |
 | 1.0.0 | 2026-08-31 | Criado. Sprint 9 aberta (frontend, Hoje + Recuperar). ADR-028/030 reexaminadas contra a exigência de UI otimista de `02_JORNADAS §5.1` e mantidas — decisão fechada com o usuário, nota registrada em `docs/00A_ADR.md`. Os "quatro estados de tela" citados por `09_CODE_STYLE §9` sem nunca terem sido definidos ficam fechados em §8 |

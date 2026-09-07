@@ -4,7 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Estudos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Paleta (docs/04_FRONTEND.md §8A) — extraída do qconcursos.com, cor
+    // por papel funcional, não um único "brand color". Trocar a paleta
+    // depois é editar só este bloco: todo o resto do HTML usa os nomes
+    // (primary/alerta), nunca hex direto.
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#e6f7f8', 100: '#c7edf0', 600: '#0694a2', 700: '#057885', 800: '#045e68' },
+            alerta: { 50: '#fff4ed', 600: '#fe6112', 700: '#e2530a' },
+          },
+          fontFamily: {
+            sans: ['"Open Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
   <link rel="stylesheet" href="css/styles.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
   <script src="js/api.js"></script>
@@ -164,15 +186,15 @@
         <div class="flex gap-2">
           <button type="button"
             class="rounded-full px-3 py-1 text-sm"
-            :class="tipo === 'conteudo' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            :class="tipo === 'conteudo' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('conteudo')">Conteúdo</button>
           <button type="button"
             class="rounded-full px-3 py-1 text-sm"
-            :class="tipo === 'questoes' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            :class="tipo === 'questoes' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('questoes')">Questões</button>
           <button type="button"
             class="rounded-full px-3 py-1 text-sm"
-            :class="tipo === 'flashcards' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            :class="tipo === 'flashcards' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('flashcards')">Flashcards</button>
         </div>
 
@@ -192,11 +214,11 @@
           <div class="flex gap-2">
             <button type="button"
               class="rounded-full px-3 py-1 text-sm"
-              :class="formato === 'MULTIPLA_ESCOLHA' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+              :class="formato === 'MULTIPLA_ESCOLHA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
               @click="formato = 'MULTIPLA_ESCOLHA'">Múltipla escolha</button>
             <button type="button"
               class="rounded-full px-3 py-1 text-sm"
-              :class="formato === 'CERTO_ERRADO' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+              :class="formato === 'CERTO_ERRADO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
               @click="formato = 'CERTO_ERRADO'">Certo/errado</button>
           </div>
         </div>
@@ -217,7 +239,7 @@
           <input type="number" min="0" max="100" x-model="previsao" class="w-full rounded border border-gray-200 bg-white p-2">
         </div>
 
-        <button type="button" class="w-full rounded bg-gray-900 p-3 text-center font-medium text-white" :disabled="enviando" @click="registrar()">Registrar</button>
+        <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-white hover:bg-primary-700" :disabled="enviando" @click="registrar()">Registrar</button>
       </div>
     </template>
   </section>
@@ -253,10 +275,10 @@
                     <span class="block font-medium" x-text="assunto.ordem + '. ' + assunto.nome"></span>
                     <span class="mt-1 flex gap-2">
                       <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                            :class="{ALTO: 'bg-red-100 text-red-800', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[assunto.peso]"
+                            :class="{ALTO: 'bg-alerta-50 text-alerta-600', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[assunto.peso]"
                             x-text="{ALTO: 'Alto', MEDIO: 'Médio', BAIXO: 'Baixo'}[assunto.peso]"></span>
                       <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                            :class="{BACKLOG: 'bg-gray-100 text-gray-500', FRENTE: 'bg-blue-100 text-blue-800', CONSOLIDADO: 'bg-green-100 text-green-800'}[assunto.fase]"
+                            :class="{BACKLOG: 'bg-gray-100 text-gray-500', FRENTE: 'bg-primary-100 text-primary-800', CONSOLIDADO: 'bg-green-100 text-green-800'}[assunto.fase]"
                             x-text="{BACKLOG: 'Backlog', FRENTE: 'Frente', CONSOLIDADO: 'Consolidado'}[assunto.fase]"></span>
                     </span>
                   </button>
@@ -290,10 +312,10 @@
           <h2 class="text-lg font-semibold" x-text="nome"></h2>
           <span class="mt-1 flex gap-2">
             <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                  :class="{ALTO: 'bg-red-100 text-red-800', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[peso]"
+                  :class="{ALTO: 'bg-alerta-50 text-alerta-600', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[peso]"
                   x-text="{ALTO: 'Alto', MEDIO: 'Médio', BAIXO: 'Baixo'}[peso]"></span>
             <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                  :class="{BACKLOG: 'bg-gray-100 text-gray-500', FRENTE: 'bg-blue-100 text-blue-800', CONSOLIDADO: 'bg-green-100 text-green-800'}[fase]"
+                  :class="{BACKLOG: 'bg-gray-100 text-gray-500', FRENTE: 'bg-primary-100 text-primary-800', CONSOLIDADO: 'bg-green-100 text-green-800'}[fase]"
                   x-text="{BACKLOG: 'Backlog', FRENTE: 'Frente', CONSOLIDADO: 'Consolidado'}[fase]"></span>
           </span>
         </div>
