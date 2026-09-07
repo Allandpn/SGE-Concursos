@@ -12,8 +12,8 @@ interface, que vem depois").
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.1.0 |
-| Data | 2026-09-06 |
+| Versão | 1.2.0 |
+| Data | 2026-09-07 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-028 (zero build, revisada nesta data), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
 
@@ -22,13 +22,16 @@ interface, que vem depois").
 ## 0. Escopo
 
 **Sprint 9** (v1.0.0 deste documento): **Hoje** e **Recuperar**. **Sprint
-11** (esta revisão): **Registrar sessão** — reabre este documento porque
-introduz dois padrões novos (seletor de tipo, campo numérico) que as duas
-telas anteriores não tinham, §7A.
+11**: **Registrar sessão** — reabriu este documento porque introduziu dois
+padrões novos (seletor de tipo, campo numérico) que as duas telas anteriores
+não tinham, §7A. **Sprint 12** (esta revisão): **Assuntos** — reabre de novo
+porque fecha a pendência que a própria Sprint 11 registrou (§9 da v1.1.0):
+sem esta tela, Questões/Flashcards e "conteúdo em assunto livre" não tinham
+como ser abertos pela interface.
 
-As quatro telas restantes (Assuntos, Erros, Progresso, Ajustes) ficam para
-sprints de frontend seguintes — cada uma reabre este documento só se
-precisar de um padrão novo; do contrário, segue o que já está aqui.
+As três telas restantes (Erros, Progresso, Ajustes) ficam para sprints de
+frontend seguintes — cada uma reabre este documento só se precisar de um
+padrão novo; do contrário, segue o que já está aqui.
 
 Decisão de stack não é feita aqui — é reaproveitada de ADR-028/030,
 reexaminadas em 2026-08-31 contra a exigência de §1 abaixo e mantidas
@@ -131,10 +134,16 @@ async function api(caminho, opcoes = {}) {
 | Recuperar | `POST` | `/api/sessoes` | corpo `SessaoRequest` com `tipo: "RECUPERACAO"`; resposta `SessaoResponse` |
 | Registrar sessão | `POST` | `/api/sessoes` | mesmo endpoint, `tipo: "ESTUDO"\|"QUESTOES"\|"FLASHCARDS"` (§7A) |
 | Registrar sessão (Conteúdo) | `GET` | `/api/assuntos/{id}/segmentos` | `SegmentoResponse[]` — popula o seletor opcional de segmento (Sprint 10) |
+| Assuntos | `GET` | `/api/disciplinas` | `DisciplinaResponse[]` — agrupa a lista |
+| Assuntos | `GET` | `/api/assuntos?disciplinaId={id}` | `AssuntoResponse[]` — um `fetch` por disciplina ativa |
+| Assuntos | `GET` | `/api/assuntos/{id}/fase` | `AssuntoFaseResponse` — um `fetch` por assunto listado (§7B, "N chamadas") |
+| Assunto detalhe | `GET` | `/api/assuntos/{id}/segmentos` | mesmo endpoint da linha acima, reaproveitado — mostra o material do assunto |
 
 Nenhum endpoint novo pra gravar — `/api/sessoes` já existe e está testado
 (`docs/SPRINT-3-SESSAO.md`). A leitura de segmentos já existe e está
-testada desde a Sprint 10 (`docs/SPRINT-10-SEGMENTO.md §5`).
+testada desde a Sprint 10 (`docs/SPRINT-10-SEGMENTO.md §5`); a leitura de
+fase, desde a Sprint 5 (`docs/SPRINT-5-FRENTE.md §2.1`). A Sprint 12 não
+abre nenhum endpoint novo — só passou a consumir o que já existia.
 
 ---
 
@@ -273,6 +282,82 @@ preenchidos intactos e um jeito de reenviar em um clique.
 
 ---
 
+## 7B. Tela Assuntos (Sprint 12)
+
+Serve J-1 e J-3 (`02_JORNADAS §4`: "cadastro em lote, peso, frente ×
+backlog"). Duas rotas, dois componentes Alpine — lista e detalhe, mesmo
+padrão de mestre-detalhe que Hoje→Recuperar/Registrar já usa:
+
+- `#/assuntos` — lista, agrupada por disciplina ativa, de todos os
+  assuntos ativos, cada um com o chip de peso (`TipoPeso`) e o chip de fase
+  (`FaseAssunto`, D-16 — derivada, nunca uma coluna).
+- `#/assuntos/{id}` — detalhe de um assunto: nome, disciplina, peso, fase,
+  e a lista de segmentos importados (Sprint 10) — `arquivo` de cada
+  segmento é o link direto pro material (o SGE nunca abre o arquivo, só
+  guarda o link, `02_JORNADAS §1.1`).
+
+Não existe `GET /api/assuntos/{id}` (só listagem por disciplina, §4) — em
+vez de criar esse endpoint novo, o detalhe reaproveita o mesmo mecanismo de
+handoff que Hoje→Recuperar e Hoje→Registrar já usam (§6 da v1.0.0):
+`Alpine.store('assuntoDetalhe')`, escrito pela lista no clique da linha
+(que já tem `assunto`, `disciplina.nome` e `fase` em mãos, montados pra
+renderizar o próprio chip). Só o resto (segmentos) vem de um `fetch` novo,
+igual a §7A já faz. Mesma consequência que Recuperar/Registrar já aceitam:
+abrir `#/assuntos/{id}` direto (sem passar pela lista antes — bookmark,
+refresh) cai em `semDados`, não decisão nova desta sprint.
+
+### Decisão de escopo desta sprint
+
+O wireframe de referência (`Assuntos.dc.html`/`AssuntoDetalhe.dc.html`, já
+existente da exploração de design anterior) também mostra botões "Importar
+CSV"/"Exportar CSV" no topo da lista. **Ficam de fora nesta sprint**: os
+dois endpoints já existem e já são usados na prática — mas por
+`scripts/importar-*.sh` disparado por `rclone` (ADR-037,
+`docs/SPRINT-10-SEGMENTO.md §7`) ou por `curl` direto, nunca por upload
+manual pela interface. Construir upload de arquivo na SPA (`<input
+type="file">`, `FormData`, tela de pré-visualização de erro por linha) é
+escopo novo de verdade, não uma variação de padrão já existente — igual ao
+corte que a Sprint 11 já fez pra Questões/Flashcards, registrado como
+pendência consciente, não escondida (§9 abaixo). O que **não** pode
+esperar é o motivo original de abrir esta sprint: dar à interface um jeito
+de chegar em Questões, Flashcards e "conteúdo em assunto livre" — isso a
+tela de detalhe resolve.
+
+### Fase por assunto: N chamadas, não uma nova
+
+`GET /api/assuntos/{id}/fase` já existe (Sprint 5) mas é por assunto, não
+em lote — não há (e não se está criando agora) um endpoint que devolva a
+fase de todos de uma vez. A lista faz um `fetch` de fase por assunto
+carregado. Decisão consciente, não descuido: a escala deste sistema é um
+usuário, dezenas de assuntos — N chamadas pequenas em paralelo (`Promise.all`)
+custam bem menos que o orçamento de carga que J-3 tolera (balanço semanal,
+não a porta de entrada de todo dia — `02_JORNADAS §5` não fixa orçamento
+de segundo pra esta tela, ao contrário de Hoje/Recuperar). Se o número de
+assuntos crescer a ponto de doer, endpoint de fase em lote é decisão de
+sprint própria, não algo a antecipar agora sem o problema ter aparecido
+(mesmo princípio de "sem fila offline" de §5).
+
+### Entrada pra Registrar, a partir do detalhe
+
+O detalhe do assunto ganha três ações — Conteúdo, Questões, Flashcards —
+que fazem exatamente o que o card "Conteúdo novo" de Hoje já fazia (§7A):
+`Alpine.store('registrar').selecionar(assunto)` seguido de navegação pra
+`#/registrar/{tipo}/{assuntoId}`. Mesmo store, mesmo formato de item
+(`AssuntoResponse` tem `id`/`nome`, que é tudo que `paginaRegistrar.abrir`
+lê dele) — nenhum padrão novo aqui, só um segundo lugar que escreve no
+mesmo store. Isso fecha a pendência de §9 da v1.1.0: Questões, Flashcards e
+Conteúdo em qualquer assunto (não só o sugerido por Hoje) agora têm ponto
+de entrada na interface.
+
+### Estados de tela (§8)
+
+Lista: carregando/erro/vazio (nenhuma disciplina ativa, ou nenhum assunto
+ativo em nenhuma)/preenchido — os quatro de sempre. Detalhe: mesma
+estrutura de Recuperar/Registrar quando o `id` da URL não corresponde a
+assunto nenhum (`semDados`, §7A) — em vez de um erro genérico de rede.
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -301,11 +386,16 @@ seletor de segmento ausente quando o assunto não tem nenhum — coberto em
 - Design visual completo — cor, tipografia, biblioteca de componente.
   Usa utilitários padrão do Tailwind por enquanto; refinamento é documento
   futuro, quando houver tela real para servir de referência.
-- As quatro telas restantes (Assuntos, Erros, Progresso, Ajustes) — cada
-  uma decide, na sua sprint, se precisa de padrão novo além do que este
-  documento já fixa.
-- Ponto de entrada pra Questões/Flashcards e Conteúdo em assunto livre
-  (§7A) — depende da tela Assuntos.
+- As três telas restantes (Erros, Progresso, Ajustes) — cada uma decide,
+  na sua sprint, se precisa de padrão novo além do que este documento já
+  fixa.
+- Upload de CSV (assunto e segmento) pela interface — os endpoints
+  existem e são usados por script/`curl`; a tela Assuntos (§7B) só lê.
+  Cadastro em lote continua fora da SPA por ora.
+- Endpoint de fase em lote — a lista de Assuntos faz uma chamada por
+  assunto (§7B); antecipar um endpoint agregado sem o custo real ter
+  aparecido contrariaria o mesmo princípio que manteve a fila offline fora
+  de escopo em §5.
 - Otimização para celular (`02_JORNADAS §1.2`: evitar decisões que
   impeçam depois, sem pagar o custo de otimizar agora).
 
@@ -315,5 +405,6 @@ seletor de segmento ausente quando o assunto não tem nenhum — coberto em
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.0 | 2026-09-07 | Sprint 12 aberta — nova **§7B, tela Assuntos** (lista por disciplina + detalhe, `#/assuntos` e `#/assuntos/{id}`). Fecha a pendência de entrada pra Questões/Flashcards/conteúdo livre que a Sprint 11 tinha deixado registrada: o detalhe do assunto ganha três ações que escrevem no mesmo `Alpine.store('registrar')` que Hoje já usava. Decisão de escopo: upload de CSV pela interface (mostrado no wireframe de referência) fica de fora — os endpoints de importação já são usados por script, não por upload manual; registrado em §9. Fase por assunto é uma chamada por assunto, decisão consciente dado a escala de uso (usuário único, dezenas de assuntos), não descuido. §4 ganha quatro linhas de endpoint, nenhuma nova (todas já existiam de sprints anteriores) |
 | 1.1.0 | 2026-09-06 | Sprint 11 aberta — nova **§7A, tela Registrar sessão** (Conteúdo/Questões/Flashcards, um componente Alpine, rota `#/registrar/{tipo}/{assuntoId}`). Dois padrões novos: seletor de tipo por pílulas, e campo de segmento opcional (Sprint 10, `GET /api/assuntos/{id}/segmentos`). Decisão de escopo: só o card "Conteúdo novo" de Hoje vira ponto de entrada nesta sprint — Questões/Flashcards e "conteúdo em outro assunto" ficam sem link na interface até a tela Assuntos existir, registrado como pendência em §9. §4 ganha as duas linhas de endpoint; §8 esclarece que "vazio" em Registrar sessão não é um quinto estado |
 | 1.0.0 | 2026-08-31 | Criado. Sprint 9 aberta (frontend, Hoje + Recuperar). ADR-028/030 reexaminadas contra a exigência de UI otimista de `02_JORNADAS §5.1` e mantidas — decisão fechada com o usuário, nota registrada em `docs/00A_ADR.md`. Os "quatro estados de tela" citados por `09_CODE_STYLE §9` sem nunca terem sido definidos ficam fechados em §8 |

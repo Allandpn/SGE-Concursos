@@ -24,6 +24,18 @@ document.addEventListener('alpine:init', () => {
     },
   });
 
+  // Mesmo handoff, pra lista de Assuntos → detalhe (04_FRONTEND §7B). Não
+  // existe GET /api/assuntos/{id} — a lista já monta assunto+disciplina+fase
+  // pra desenhar a própria linha, então passa isso adiante em vez de o
+  // detalhe buscar de novo. Consequência aceita, mesma de Recuperar/
+  // Registrar: abrir a URL direto sem passar pela lista cai em semDados.
+  Alpine.store('assuntoDetalhe', {
+    item: null,
+    selecionar(item) {
+      this.item = item;
+    },
+  });
+
   Alpine.data('paginaHoje', () => ({
     carregando: true,
     erro: null,
@@ -242,6 +254,93 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.enviando = false;
       }
+    },
+  }));
+
+  Alpine.data('paginaAssuntos', () => ({
+    carregando: true,
+    erro: null,
+    grupos: [], // [{ disciplina, assuntos: [{...AssuntoResponse, fase}] }]
+
+    async init() {
+      this.carregando = true;
+      this.erro = null;
+      try {
+        const disciplinas = await api('/disciplinas');
+        this.grupos = await Promise.all(disciplinas.map(async (disciplina) => {
+          const assuntos = await api(`/assuntos?disciplinaId=${disciplina.id}`);
+          const comFase = await Promise.all(assuntos.map(async (assunto) => {
+            const { fase } = await api(`/assuntos/${assunto.id}/fase`);
+            return { ...assunto, fase };
+          }));
+          return { disciplina, assuntos: comFase };
+        }));
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    get vazio() {
+      return this.grupos.every((g) => g.assuntos.length === 0);
+    },
+
+    abrirDetalhe(disciplina, assuntoComFase) {
+      Alpine.store('assuntoDetalhe').selecionar({ disciplina, assunto: assuntoComFase });
+      window.location.hash = `#/assuntos/${assuntoComFase.id}`;
+    },
+  }));
+
+  Alpine.data('paginaAssuntoDetalhe', () => ({
+    assuntoId: null,
+    nome: null,
+    disciplinaNome: null,
+    peso: null,
+    fase: null,
+    segmentos: [],
+    carregando: false,
+    semDados: false,
+
+    // Chamado pelo router a cada navegação para #/assuntos/{id}. Sem
+    // GET /api/assuntos/{id} (§7B do doc técnico), os dados do próprio
+    // assunto vêm do store escrito pela lista — só os segmentos são um
+    // fetch novo.
+    async abrir(assuntoId) {
+      const item = Alpine.store('assuntoDetalhe').item;
+      this.semDados = !item || item.assunto.id !== assuntoId;
+      if (this.semDados) return;
+
+      this.assuntoId = assuntoId;
+      this.nome = item.assunto.nome;
+      this.disciplinaNome = item.disciplina.nome;
+      this.peso = item.assunto.peso;
+      this.fase = item.assunto.fase;
+      this.carregando = true;
+      try {
+        this.segmentos = await api(`/assuntos/${assuntoId}/segmentos`);
+      } catch (e) {
+        // Segmentos são auxiliares, não bloqueiam o detalhe (mesmo
+        // princípio de paginaRegistrar §7A) — se falhar, a lista de
+        // material simplesmente não aparece.
+        this.segmentos = [];
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    get temSegmentos() {
+      return this.segmentos.length > 0;
+    },
+
+    // Mesmo mecanismo de abrirRegistroConteudo (Hoje §6/§7A) — escreve no
+    // MESMO store que paginaRegistrar.abrir() lê, só que a partir do
+    // detalhe de Assuntos em vez do card de Hoje. Fecha a pendência da
+    // Sprint 11: agora Questões/Flashcards/Conteúdo em qualquer assunto
+    // têm de onde partir.
+    irRegistrar(tipo) {
+      Alpine.store('registrar').selecionar({ id: this.assuntoId, nome: this.nome });
+      window.location.hash = `#/registrar/${tipo}/${this.assuntoId}`;
     },
   }));
 });

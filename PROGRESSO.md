@@ -24,6 +24,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 9 | Frontend — Hoje e Recuperar | SPA estática (Alpine.js/Tailwind, ADR-028/030), as duas primeiras telas | **feito** — testado num navegador real, fluxo completo (Hoje → Recuperar → gravação → escada avança) confirmado contra Postgres real |
 | 10 | Integração externa — planejamento | Referência de material por blocos (entidade `Segmento`, `Assunto` ganha `chaveExterna`), alimentada pelo projeto `Plano-de-Estudos-Automatizado` via Google Drive + `rclone` (ADR-037, `docs/requisitos-planejamento-blocos-de-conteudo.md`); `Edital`/import por UUID fica de fora por ora | **feito** — 111/111 testes verdes contra Postgres real, export e automação do disparo incluídos. Restam só duas coisas fora do alcance deste repositório: testar `scripts/importar-segmentos.sh` num Pi real, e a resposta do repositório de planejamento sobre gerar `chaveExternaSegmento` |
 | 11 | Frontend — Registrar sessão | Terceira tela: Conteúdo/Questões/Flashcards (`04_FRONTEND.md §7A`) — não confundir com a Sprint 3 (o backend do mesmo evento) | **feito** — testada num navegador real, os três tipos gravam certo no Postgres real |
+| 12 | Frontend — Assuntos | Quarta tela: lista por disciplina + detalhe, fecha a pendência de entrada pra Questões/Flashcards que a Sprint 11 deixou (`04_FRONTEND.md §7B`) | **feito** — testada num navegador real, lista/detalhe/entrada pra Registrar conferidos contra Postgres real |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -634,7 +635,68 @@ explícita é necessária de qualquer forma.
 
 ---
 
-## 13. Como este arquivo se mantém honesto
+## 13. Sprint 12 · Frontend — Assuntos
+
+**Documento técnico:** `docs/04_FRONTEND.md` v1.2.0 — nova §7B. Reabre o
+documento porque fecha a pendência que a própria Sprint 11 registrou: sem
+esta tela, Questões, Flashcards e "conteúdo em assunto livre" não tinham
+como ser abertos pela interface.
+
+Decisão de escopo fechada ao abrir: upload de CSV pela interface (mostrado
+no wireframe de referência) fica de fora — os endpoints de import/export já
+existem e já são usados por script/`curl`, não por upload manual. Esta
+sprint é leitura: lista + detalhe + as três ações que levam pra Registrar.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 12.0 | Documento técnico `docs/04_FRONTEND.md` §7B | — | **feito** |
+| 12.1 | Componente Alpine `paginaAssuntos` — lista por disciplina, chip de peso + fase | Claude, a pedido do usuário | **feito** |
+| 12.2 | Componente Alpine `paginaAssuntoDetalhe` — segmentos + três ações pra Registrar | Claude, a pedido do usuário | **feito** |
+| 12.3 | Rotas `#/assuntos` e `#/assuntos/{id}` + link no cabeçalho | Claude, a pedido do usuário | **feito** |
+| 12.4 | Verificação manual no navegador | Claude | **feito** — ver relato abaixo |
+
+### Definition of Done
+
+- [x] `docs/04_FRONTEND.md §7B` revisado e aceito
+- [x] Lista mostra assuntos agrupados por disciplina ativa, com chip de
+      peso e chip de fase (`GET /api/assuntos/{id}/fase` por assunto)
+- [x] Detalhe mostra os segmentos do assunto (`GET
+      /api/assuntos/{id}/segmentos`), cada um com link pro `arquivo`
+- [x] As três ações do detalhe (Conteúdo/Questões/Flashcards) navegam pra
+      `#/registrar/{tipo}/{assuntoId}` com o assunto certo pré-preenchido
+- [x] Abrir `#/assuntos/{id}` sem passar pela lista (sessão nova, sem
+      store) cai em `semDados` — comportamento documentado, conferido
+- [x] Testado num navegador real contra Postgres real, mesmo padrão das
+      Sprints 9/11
+
+**Verificação manual (2026-09-07):** Postgres descartável + `mvn
+spring-boot:run` + Chrome real. Seed via `curl`: duas disciplinas, três
+assuntos (um com dois segmentos importados via Sprint 10, um levado a
+`FRENTE` por uma sessão registrada direto no banco). Lista mostrou os dois
+grupos certos, cada assunto com o chip de peso e o chip de fase corretos
+(inclusive `FRENTE` calculado on-the-fly pela API, não hardcoded). Clique
+no assunto abriu o detalhe com disciplina/nome/chips certos e os dois
+segmentos (páginas, tempo estimado, link `abrir material` apontando pro
+`arquivo`). Botão "Questões" no detalhe navegou pra
+`#/registrar/questoes/{id}` com o assunto pré-preenchido (mesmo mecanismo
+de store que Hoje→Registrar já usava) — registrada uma sessão de verdade e
+conferida no Postgres: `tipo=QUESTOES`, `formato=MULTIPLA_ESCOLHA`,
+`questoes_total=10`, `questoes_corretas=7`, `previsao_percentual=60`,
+`resultado=PARCIAL`, navegação otimista de volta pra Hoje confirmada.
+Testado também o caso sem dado: abrir `#/assuntos/{id}` numa aba nova (sem
+o store populado pela lista) caiu em `semDados`, exatamente como o
+documento técnico já previa como consequência aceita de não existir `GET
+/api/assuntos/{id}`. Nenhum bug encontrado.
+
+Uma armadilha conhecida se repetiu e não é bug: o clique via ferramenta de
+automação falhou silenciosamente na primeira tentativa em mais de um ponto
+(mesmo padrão de flakiness já visto nas Sprints 9/11) — contornado
+chamando os métodos do componente Alpine direto via `javascript_tool`
+quando o clique não registrava.
+
+---
+
+## 14. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -648,10 +710,12 @@ explícita é necessária de qualquer forma.
 
 ---
 
-## 14. Changelog
+## 15. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.34.0 | 2026-09-07 | **Sprint 12 completa** — testada num Chrome real contra Postgres descartável: duas disciplinas, três assuntos (um com dois segmentos da Sprint 10, um levado a `FRENTE` por sessão registrada direto no banco). Lista agrupou certo por disciplina com chip de peso e de fase (`FRENTE` calculado pela API em tempo real, não hardcoded); detalhe mostrou os segmentos com link pro material; botão "Questões" do detalhe abriu Registrar com o assunto pré-preenchido e uma sessão real foi gravada e conferida no banco (`QUESTOES`/`MULTIPLA_ESCOLHA`/10 feitas/7 certas/60% previsto/resultado `PARCIAL`). Caso sem dado testado também: `#/assuntos/{id}` numa aba nova sem passar pela lista caiu em `semDados`, exatamente a consequência que o documento técnico já previa por não existir `GET /api/assuntos/{id}`. Nenhum bug encontrado. Itens 12.1–12.4 promovidos a **feito** |
+| 1.33.0 | 2026-09-07 | **Sprint 12 aberta (Frontend — Assuntos)**, a pedido do usuário ("pode avançar com o código até que haja alguma questão que precise ser decidida") logo depois de fechar a Sprint 11. Escolha do que abrir: a própria Sprint 11 já tinha registrado a pendência (sem tela Assuntos, Questões/Flashcards/conteúdo livre não têm ponto de entrada) — nenhum endpoint novo foi necessário, todos já existiam (`GET /api/disciplinas`, `/api/assuntos`, `/api/assuntos/{id}/fase`, `/api/assuntos/{id}/segmentos`), então não houve decisão de arquitetura a levantar, só de escopo de tela. `docs/04_FRONTEND.md` v1.2.0, nova §7B: lista por disciplina (`#/assuntos`) + detalhe (`#/assuntos/{id}`) com as três ações que escrevem no mesmo `Alpine.store('registrar')` que Hoje já usava. Decisão de escopo fechada ao abrir: upload de CSV pela interface (aparece no wireframe de referência) fica de fora — os endpoints de import/export já são usados por script/`curl`, não por upload manual; registrado como pendência em `04_FRONTEND.md §9`. `PROGRESSO.md` §13 criado (Sprint 12), seções seguintes renumeradas. Nenhum código escrito ainda |
 | 1.32.0 | 2026-09-07 | **Sprint 11 completa** — retomada numa sessão nova depois de bater o limite de uso no meio da verificação anterior (código ficou escrito, sem commit, exatamente como registrado). Testado num Chrome real contra Postgres descartável: três assuntos, um com dois segmentos importados. Fluxo Hoje→clique→Registrar funcionando; as três variantes (Conteúdo/Questões/Flashcards) registram e conferidas no banco com os campos certos, incluindo `resultado` calculado pelo backend em cada caso e `tempoMinutos` medido (D-29). O estado "vazio" de Hoje (pendência da Sprint 9) apareceu de verdade e foi confirmado, sem precisar de código novo. Um bug real achado e corrigido: `<option :value="null">` de Alpine virava a **string** `"null"` no DOM (não o `null` de JS) — selecionar "nenhum segmento" mandaria `"segmentoId": "null"` pro backend, um campo `Long`; corrigido pra `value=""` + conversão explícita (`Number(...)`/`null`) em `registrar()`. Itens 11.1–11.4 promovidos a **feito** |
 | 1.31.0 | 2026-09-06 | **Sprint 11 aberta (Frontend — Registrar sessão)**, a pedido do usuário logo depois de fechar a Sprint 9. `docs/04_FRONTEND.md` v1.1.0, nova §7A: três variantes (Conteúdo/Questões/Flashcards) num componente Alpine só, dois padrões novos (seletor de tipo por pílulas, campo de segmento opcional consumindo `GET /api/assuntos/{id}/segmentos` da Sprint 10). Decisão de escopo fechada ao abrir: só o card "Conteúdo novo" de Hoje vira ponto de entrada nesta sprint — Questões/Flashcards e "conteúdo em assunto livre" ficam sem link na interface até a tela Assuntos existir, registrado como pendência, não escondido. `PROGRESSO.md` §12 criado (Sprint 11), seções seguintes renumeradas. Nenhum código escrito ainda |
 | 1.30.0 | 2026-09-06 | **Sprint 9 completa (Frontend — Hoje e Recuperar)**, retomada e fechada na mesma sessão, a pedido do usuário. Antes de retomar: conferido que `docs/04_FRONTEND.md §0` já restringia esta rodada só a Hoje/Recuperar — nenhuma das duas toca `Segmento` (só sessão `ESTUDO` referencia um), então a razão original da pausa não bloqueava de fato o que foi construído; endpoint de leitura de segmentos testado manualmente contra Postgres real antes de prosseguir. Implementado: `src/main/resources/static/` inteiro — `index.html` (casca única, Tailwind + Alpine via CDN, ADR-028), `js/api.js` (wrapper de fetch já especificado em `04_FRONTEND.md §4`), `js/router.js` (roteamento por hash), `js/pages.js` (`paginaHoje`/`paginaRecuperar`, um componente Alpine por página, `09_CODE_STYLE §8`). Tela Recuperar segue à risca as três regras vinculantes de `02_JORNADAS §4.1`: resultado ausente do DOM na etapa 1 (`x-if`, não `x-show`), previsão só texto na etapa 2, sem botão "pular". Decisão de código fechada nesta sessão (`04_FRONTEND.md §6` deixava em aberto): handoff Hoje→Recuperar via `Alpine.store` global — carrega nível/data prevista do item clicado, sem endpoint novo; se a store não tiver o item (acesso direto à URL), a tela cai num estado de erro explícito em vez de fingir dado. `tempoMinutos` da sessão de recuperação é medido (tempo de tela, abrir→confirmar), não constante — D-29. Testado num Chrome de verdade contra Postgres descartável (não o `docker-compose.yml` de produção): fluxo completo Hoje→clique→etapa 1→etapa 2→confirmar→volta otimista pra Hoje→conferido no banco que a sessão gravou e a escada roteou (nível 1 `CUMPRIDA`, nível 2 `PENDENTE`). Não exercitados manualmente: caminho de falha de rede (implementado, não testado por indisponibilidade real) e o estado "vazio" das telas. Itens 9.1–9.4 promovidos a **feito** |
