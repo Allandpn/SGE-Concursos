@@ -258,9 +258,42 @@ ao risco de reordenação descrito acima. Registrado como requisito, não
 bloqueio: se reordenar segmentos já importados não é algo que aconteça na
 prática, o risco pode ficar documentado e aceito em vez de resolvido agora.
 
-## 9. Rastreabilidade
+## 9. Requisito especulativo (2026-09-06): manifesto do concurso (nome e data da prova)
+
+Diferente do §8 acima, isto **não nasceu de uma sprint fechada** — nasceu
+esboçando telas futuras do SGE (protótipo, sem decisão de domínio ainda:
+`Concurso`/`Edital` continua fora de `01_DOMINIO.md`). Registrado aqui como
+aviso antecipado, não como pedido para agir agora.
+
+**O problema:** hoje o SGE identifica um concurso só pelo **slug da pasta**
+em `SGE-Importacao/<slug>/` (ADR-037) — não existe, em `assuntos.csv` nem em
+nenhum outro arquivo do contrato atual, um nome de exibição (ex.: "SEFAZ SC")
+nem a data da prova. E o SGE **nunca cria** concurso, só importa o que vocês
+já prepararam — então, se esses dois dados um dia forem necessários do lado
+de cá, eles têm que vir de vocês, não digitados manualmente no SGE.
+
+**Por que isso pode vir a importar:** ao esboçar as telas futuras, o usuário
+pediu um indicador de "progresso vs. data da prova" — não um cronograma
+dia-a-dia (o SGE decidiu explicitamente não ter tela de calendário,
+`00_PRODUTO.md §8.5`). O percentual de cobertura do edital já é calculável
+só com o que o SGE tem hoje (backlog/frente/consolidado); os **dias
+restantes até a prova**, não — dependem de uma data que hoje não existe em
+lugar nenhum do contrato entre os dois sistemas.
+
+**Proposta, só para quando isto virar prioridade de verdade:** um manifesto
+pequeno por concurso, na mesma pasta do Drive (ex.:
+`SGE-Importacao/<slug>/concurso.json`, ou colunas extras num CSV de
+cabeçalho) com `nome` e `dataProva`. Mesmo princípio de `chaveExterna` (§8):
+o SGE guarda o valor, nunca decide nada a partir dele.
+
+**Nada bloqueado, nada decidido.** Se vocês quiserem adiantar esse campo do
+lado de vocês, ele fica pronto esperando o SGE decidir usá-lo; se não, não
+afeta nada do que já está funcionando hoje (Fase 1 e Fase 2, §7).
+
+## 10. Rastreabilidade
 
 Regras do SGE citadas: `01_DOMINIO.md` D-07, D-19, D-20, D-23, D-26, D-27,
-D-29, D-50, D-51, D-53 (nova, §8 acima); `02_JORNADAS.md §1.1`, `§7.3`.
-Decisão de infraestrutura: `docs/00A_ADR.md` ADR-037 (artefatos via Google
-Drive + `rclone`).
+D-29, D-50, D-51, D-53 (§8); `02_JORNADAS.md §1.1`, `§7.3`;
+`00_PRODUTO.md §8.5` (sem tela de calendário, §9). Decisão de
+infraestrutura: `docs/00A_ADR.md` ADR-037 (artefatos via Google Drive +
+`rclone`).
