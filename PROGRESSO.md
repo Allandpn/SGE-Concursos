@@ -23,6 +23,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: doc técnico feito, código escrito, sem execução verificada. Backup: scripts escritos, não testados no Pi real. Polimento: não começou |
 | 9 | Frontend — Hoje e Recuperar | SPA estática (Alpine.js/Tailwind, ADR-028/030), as duas primeiras telas | **feito** — testado num navegador real, fluxo completo (Hoje → Recuperar → gravação → escada avança) confirmado contra Postgres real |
 | 10 | Integração externa — planejamento | Referência de material por blocos (entidade `Segmento`, `Assunto` ganha `chaveExterna`), alimentada pelo projeto `Plano-de-Estudos-Automatizado` via Google Drive + `rclone` (ADR-037, `docs/requisitos-planejamento-blocos-de-conteudo.md`); `Edital`/import por UUID fica de fora por ora | **feito** — 111/111 testes verdes contra Postgres real, export e automação do disparo incluídos. Restam só duas coisas fora do alcance deste repositório: testar `scripts/importar-segmentos.sh` num Pi real, e a resposta do repositório de planejamento sobre gerar `chaveExternaSegmento` |
+| 11 | Frontend — Registrar sessão | Terceira tela: Conteúdo/Questões/Flashcards (`04_FRONTEND.md §7A`) — não confundir com a Sprint 3 (o backend do mesmo evento) | **feito** — testada num navegador real, os três tipos gravam certo no Postgres real |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -570,7 +571,70 @@ derrubados).
 
 ---
 
-## 12. Como este arquivo se mantém honesto
+## 12. Sprint 11 · Frontend — Registrar sessão
+
+**Documento técnico:** `docs/04_FRONTEND.md` v1.1.0 — nova §7A. Reabre o
+documento da Sprint 9 porque introduz dois padrões novos (seletor de tipo
+por pílulas, campo de segmento opcional) que Hoje/Recuperar não tinham.
+
+Decisão de escopo fechada ao abrir: só o card "Conteúdo novo" de Hoje vira
+ponto de entrada nesta sprint. Questões, Flashcards e "conteúdo em outro
+assunto" ficam **sem link na interface** até a tela Assuntos existir — as
+telas funcionam se abertas direto pela URL, pendência registrada, não
+escondida (mesma ressalva que outras sprints já usaram pra escopo cortado
+conscientemente).
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 11.0 | Documento técnico `docs/04_FRONTEND.md` §7A, revisado | — | **feito** |
+| 11.1 | Componente Alpine `paginaRegistrar` — três variantes, seletor de tipo (§7A do doc técnico) | Claude, a pedido do usuário | **feito** |
+| 11.2 | Campo de segmento opcional em Conteúdo — consome `GET /api/assuntos/{id}/segmentos` | Claude, a pedido do usuário | **feito** |
+| 11.3 | Rota `#/registrar/{tipo}/{assuntoId}` + card "Conteúdo novo" de Hoje vira clicável | Claude, a pedido do usuário | **feito** |
+| 11.4 | Verificação manual no navegador | Claude | **feito** — ver relato abaixo |
+
+### Definition of Done
+
+- [x] `docs/04_FRONTEND.md §7A` revisado e aceito
+- [x] As três variantes (Conteúdo/Questões/Flashcards) registram via
+      `POST /api/sessoes` com o `tipo` certo — conferido no banco pros três
+- [x] Conteúdo mostra o seletor de segmento só quando o assunto tem
+      segmentos; ausente do DOM quando não tem (não desabilitado)
+- [x] Card "Conteúdo novo" de Hoje navega pra Registrar Conteúdo com o
+      assunto já preenchido
+- [x] Falha de rede é não destrutiva, mesmo padrão de Recuperar
+      (implementado — mesmo padrão de Recuperar; caminho de falha real não
+      exercitado, mesma ressalva da Sprint 9)
+- [ ] Questões/Flashcards sem link na interface: **fora de escopo por
+      ora**, pendência documentada, não escondida
+- [x] Testado num navegador real contra Postgres real, mesmo padrão da
+      Sprint 9
+
+**Verificação manual (2026-09-07):** Postgres descartável + `mvn
+spring-boot:run` + Chrome real, três assuntos, um deles com dois segmentos
+importados. Clique em "Conteúdo novo" abriu Registrar com o assunto certo e
+o seletor de segmento populado (os dois segmentos). Pílulas trocaram os
+campos certos nas três variantes (segmento some fora de Conteúdo; formato
+só em Questões). Registrado um de cada tipo — todos otimistas (voltam pra
+Hoje antes da resposta) e conferidos no banco: `ESTUDO` com `segmentoId`
+certo e `resultado=null` (D-02); `FLASHCARDS` sem `formato`, resultado
+calculado pelo limiar certo; `QUESTOES` com `formato=CERTO_ERRADO` trocado
+em tempo real, resultado `FALHA` batendo o limiar (70% < 75%). De quebra,
+o estado "vazio" de Hoje apareceu de verdade (backlog esgotado) — pendência
+que a Sprint 9 tinha deixado sem exercitar manualmente, fechada aqui sem
+nenhuma mudança de código.
+
+**Um bug real encontrado e corrigido:** o `<option>` de "nenhum segmento"
+usava `:value="null"` (binding Alpine) — no DOM isso vira a **string**
+`"null"`, não o `null` de JavaScript. Selecionar essa opção mandaria
+`"segmentoId": "null"` pro backend (campo `Long`), que teria recusado.
+Corrigido trocando pra `value=""` no HTML e convertendo em `registrar()`
+(`this.segmentoId ? Number(this.segmentoId) : null`) — só um `<select>`
+sem `.number` no `x-model` sempre devolve string, então a conversão
+explícita é necessária de qualquer forma.
+
+---
+
+## 13. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -584,10 +648,12 @@ derrubados).
 
 ---
 
-## 13. Changelog
+## 14. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.32.0 | 2026-09-07 | **Sprint 11 completa** — retomada numa sessão nova depois de bater o limite de uso no meio da verificação anterior (código ficou escrito, sem commit, exatamente como registrado). Testado num Chrome real contra Postgres descartável: três assuntos, um com dois segmentos importados. Fluxo Hoje→clique→Registrar funcionando; as três variantes (Conteúdo/Questões/Flashcards) registram e conferidas no banco com os campos certos, incluindo `resultado` calculado pelo backend em cada caso e `tempoMinutos` medido (D-29). O estado "vazio" de Hoje (pendência da Sprint 9) apareceu de verdade e foi confirmado, sem precisar de código novo. Um bug real achado e corrigido: `<option :value="null">` de Alpine virava a **string** `"null"` no DOM (não o `null` de JS) — selecionar "nenhum segmento" mandaria `"segmentoId": "null"` pro backend, um campo `Long`; corrigido pra `value=""` + conversão explícita (`Number(...)`/`null`) em `registrar()`. Itens 11.1–11.4 promovidos a **feito** |
+| 1.31.0 | 2026-09-06 | **Sprint 11 aberta (Frontend — Registrar sessão)**, a pedido do usuário logo depois de fechar a Sprint 9. `docs/04_FRONTEND.md` v1.1.0, nova §7A: três variantes (Conteúdo/Questões/Flashcards) num componente Alpine só, dois padrões novos (seletor de tipo por pílulas, campo de segmento opcional consumindo `GET /api/assuntos/{id}/segmentos` da Sprint 10). Decisão de escopo fechada ao abrir: só o card "Conteúdo novo" de Hoje vira ponto de entrada nesta sprint — Questões/Flashcards e "conteúdo em assunto livre" ficam sem link na interface até a tela Assuntos existir, registrado como pendência, não escondido. `PROGRESSO.md` §12 criado (Sprint 11), seções seguintes renumeradas. Nenhum código escrito ainda |
 | 1.30.0 | 2026-09-06 | **Sprint 9 completa (Frontend — Hoje e Recuperar)**, retomada e fechada na mesma sessão, a pedido do usuário. Antes de retomar: conferido que `docs/04_FRONTEND.md §0` já restringia esta rodada só a Hoje/Recuperar — nenhuma das duas toca `Segmento` (só sessão `ESTUDO` referencia um), então a razão original da pausa não bloqueava de fato o que foi construído; endpoint de leitura de segmentos testado manualmente contra Postgres real antes de prosseguir. Implementado: `src/main/resources/static/` inteiro — `index.html` (casca única, Tailwind + Alpine via CDN, ADR-028), `js/api.js` (wrapper de fetch já especificado em `04_FRONTEND.md §4`), `js/router.js` (roteamento por hash), `js/pages.js` (`paginaHoje`/`paginaRecuperar`, um componente Alpine por página, `09_CODE_STYLE §8`). Tela Recuperar segue à risca as três regras vinculantes de `02_JORNADAS §4.1`: resultado ausente do DOM na etapa 1 (`x-if`, não `x-show`), previsão só texto na etapa 2, sem botão "pular". Decisão de código fechada nesta sessão (`04_FRONTEND.md §6` deixava em aberto): handoff Hoje→Recuperar via `Alpine.store` global — carrega nível/data prevista do item clicado, sem endpoint novo; se a store não tiver o item (acesso direto à URL), a tela cai num estado de erro explícito em vez de fingir dado. `tempoMinutos` da sessão de recuperação é medido (tempo de tela, abrir→confirmar), não constante — D-29. Testado num Chrome de verdade contra Postgres descartável (não o `docker-compose.yml` de produção): fluxo completo Hoje→clique→etapa 1→etapa 2→confirmar→volta otimista pra Hoje→conferido no banco que a sessão gravou e a escada roteou (nível 1 `CUMPRIDA`, nível 2 `PENDENTE`). Não exercitados manualmente: caminho de falha de rede (implementado, não testado por indisponibilidade real) e o estado "vazio" das telas. Itens 9.1–9.4 promovidos a **feito** |
 | 1.29.0 | 2026-09-06 | **Sprint 10 — as duas pendências internas fechadas**, a pedido do usuário (ainda tinha tokens no ciclo da semana). `docs/SPRINT-10-SEGMENTO.md` v1.2.0 reverte as duas recusas de v1.1.0: (1) **Export de segmentos** (`GET /api/segmentos/exportacao`, `ExportacaoSegmentoService`/Repository) — a v1.1.0 recusou por falta de identidade estável pro round-trip, mas `chaveExternaSegmento` (D-53, decidida na própria v1.1.0) já resolve isso; `ExportacaoSegmentoTest` prova confirmar→exportar→reimportar sem duplicar. (2) **Automação do disparo pós-`rclone`** (`scripts/importar-segmentos.sh`, novo, bit executável setado) — roda `rclone sync` e chama `validar`/`confirmar` em cada `assuntos.csv`/`segmentos.csv` encontrado, sempre assuntos antes de segmentos no mesmo concurso; sem controle de "já processado" (reprocessar é idempotente e barato no volume deste sistema); **não testado em Pi real**, mesma ressalva de `scripts/backup.sh` no Sprint 8. Suíte: **111/111 verdes**. Fica só a resposta do repositório `Plano-de-Estudos-Automatizado` sobre `chaveExternaSegmento` — fora do controle deste repositório, não bloqueia o código do SGE |
 | 1.28.0 | 2026-09-06 | **Sprint 10 completa — primeira execução real, 110/110 testes verdes** contra Postgres real (Testcontainers, Docker do usuário). Migração `V9` aplicou sem erro. Três defeitos reais encontrados e corrigidos: (1) `RestricaoTestBase.inserirDisciplina()` sempre gravava o mesmo nome fixo ("Disciplina de teste") — os três testes novos que precisavam de duas disciplinas na mesma transação (`d51_sessaoComSegmentoDeOutroAssunto_recusada`, `d52_doisAssuntosMesmaChaveExterna_recusado`, `d53_doisSegmentosMesmaChaveExterna_recusado`) colidiam em `ux_d47_nome_disciplina` antes de chegar na restrição que o teste queria provar; corrigido com um overload `inserirDisciplina(String sufixo)`, mesmo padrão já usado em `assuntoId(String sufixo)` de `SessaoErroDominioTest`. (2) `SessaoErroDominioTest.segmentoForaDeEstudo_devolve422` montava uma sessão `QUESTOES` sem `previsaoPercentual` — como `QUESTOES` sempre calcula `resultado` no serviço, a linha caía em `ck_sessao_d04a_previsao_por_tipo` (`PREVISAO_INVALIDA`) antes de chegar em `ck_sessao_d51_segmento_so_estudo`; corrigido preenchendo `previsaoPercentual` pra isolar a regra certa. (3) Lacuna de cobertura, não bug: `GET /api/assuntos/{id}/segmentos` (o endpoint que destrava a Sprint 9) não tinha nenhum teste — `ImportacaoSegmentoTest.listar_devolveSegmentosDoAssuntoNaOrdemDeLeitura` adicionado, confirma ordenação por `ordem`, não por ordem de inserção. Todos os itens 10.0–10.8 promovidos a **feito** |

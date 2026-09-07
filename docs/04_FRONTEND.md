@@ -12,18 +12,22 @@ interface, que vem depois").
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
-| Data | 2026-08-31 |
+| Versão | 1.1.0 |
+| Data | 2026-09-06 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-028 (zero build, revisada nesta data), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
 
 ---
 
-## 0. Escopo desta primeira rodada
+## 0. Escopo
 
-Só duas telas: **Hoje** e **Recuperar** (Sprint 9, `PROGRESSO.md`). As
-outras cinco (Registrar sessão, Assuntos, Erros, Progresso, Ajustes) ficam
-para sprints de frontend seguintes — cada uma reabre este documento só se
+**Sprint 9** (v1.0.0 deste documento): **Hoje** e **Recuperar**. **Sprint
+11** (esta revisão): **Registrar sessão** — reabre este documento porque
+introduz dois padrões novos (seletor de tipo, campo numérico) que as duas
+telas anteriores não tinham, §7A.
+
+As quatro telas restantes (Assuntos, Erros, Progresso, Ajustes) ficam para
+sprints de frontend seguintes — cada uma reabre este documento só se
 precisar de um padrão novo; do contrário, segue o que já está aqui.
 
 Decisão de stack não é feita aqui — é reaproveitada de ADR-028/030,
@@ -125,9 +129,12 @@ async function api(caminho, opcoes = {}) {
 |---|---|---|---|
 | Hoje | `GET` | `/api/turno/plano` | `TurnoPlanoResponse` — `filaRecuperacao: FilaRecuperacaoItemResponse[]`, `blocoConteudo: AssuntoResponse \| null` |
 | Recuperar | `POST` | `/api/sessoes` | corpo `SessaoRequest` com `tipo: "RECUPERACAO"`; resposta `SessaoResponse` |
+| Registrar sessão | `POST` | `/api/sessoes` | mesmo endpoint, `tipo: "ESTUDO"\|"QUESTOES"\|"FLASHCARDS"` (§7A) |
+| Registrar sessão (Conteúdo) | `GET` | `/api/assuntos/{id}/segmentos` | `SegmentoResponse[]` — popula o seletor opcional de segmento (Sprint 10) |
 
-Nenhum endpoint novo — os dois já existem e estão testados (`docs/
-SPRINT-6-TURNO.md`, `docs/SPRINT-3-SESSAO.md`).
+Nenhum endpoint novo pra gravar — `/api/sessoes` já existe e está testado
+(`docs/SPRINT-3-SESSAO.md`). A leitura de segmentos já existe e está
+testada desde a Sprint 10 (`docs/SPRINT-10-SEGMENTO.md §5`).
 
 ---
 
@@ -205,6 +212,67 @@ Orçamento: **≤ 15 s**, 2 campos visíveis por etapa (`02_JORNADAS §5`).
 
 ---
 
+## 7A. Tela Registrar sessão (Sprint 11)
+
+Três variantes de um mesmo tipo de tela — `02_JORNADAS §4`: "Conteúdo,
+questões ou flashcards" —, não três telas independentes. Compartilham
+componente Alpine (`paginaRegistrar`) e rota por segmento de hash:
+`#/registrar/{tipo}` (`tipo` = `conteudo`\|`questoes`\|`flashcards`),
+opcionalmente `#/registrar/{tipo}/{assuntoId}` quando já vem com o assunto
+definido (link de Hoje, abaixo).
+
+### Seletor de tipo (padrão novo)
+
+Três pílulas no topo (Conteúdo/Questões/Flashcards), `@click` troca
+`this.tipo` e reseta os campos abaixo — nunca navega para outra rota (ao
+contrário de Hoje→Recuperar, aqui é o mesmo componente trocando de forma).
+Primeiro caso deste projeto de UI condicional por tipo dentro da mesma
+tela; `09_CODE_STYLE §8` já cobre ("sem lógica em atributo Alpine") — a
+troca é um método nomeado (`selecionarTipo(tipo)`), nunca expressão inline.
+
+### Campos por tipo (`02_JORNADAS §5`, orçamento)
+
+| Tipo | Campos | Orçamento |
+|---|---|---|
+| Conteúdo (`ESTUDO`) | Assunto, Segmento (opcional) | ≤ 20 s |
+| Questões (`QUESTOES`) | Assunto, Formato da banca, Feitas, Certas, Previsão | ≤ 25 s |
+| Flashcards (`FLASHCARDS`) | Assunto, Feitas, Certas, Previsão | sem linha própria no orçamento — mesmo molde de Questões, sem formato (D-36 só exige formato em `QUESTOES`) |
+
+`tempoMinutos` não é campo visível em nenhuma variante — medido (tempo de
+tela, `init()`→confirmar), mesmo padrão já usado em Recuperar (D-29: nunca
+constante, sempre medido).
+
+### Segmento (só em Conteúdo)
+
+Se o assunto tem segmentos importados (Sprint 10), `GET
+/api/assuntos/{id}/segmentos` popula um seletor opcional — mostra `ordem`
+e `arquivo` de cada um. Ausente ou lista vazia: campo não aparece (não é
+"desabilitado", é ausente do DOM, mesmo princípio da regra vinculante de
+Recuperar §7). Ao enviar, `segmentoId` só vai no corpo se o candidato
+escolheu um.
+
+### Confirmar e enviar
+
+`POST /api/sessoes`, mesmo padrão otimista de §5/§7: navega de volta pra
+Hoje antes da resposta confirmar; falha volta pra esta tela com os campos
+preenchidos intactos e um jeito de reenviar em um clique.
+
+### Como se chega aqui (decisão de escopo desta sprint)
+
+- **Conteúdo, com assunto pré-preenchido**: o card "Conteúdo novo" da tela
+  Hoje (§6) passa a ser clicável, mesmo mecanismo de handoff que já existe
+  pra Recuperar (`Alpine.store`, §6 da v1.0.0) — leva pra
+  `#/registrar/conteudo/{assuntoId}`.
+- **Questões, Flashcards, ou Conteúdo em outro assunto**: **sem ponto de
+  entrada nesta sprint.** Escolher livremente qualquer assunto exige
+  navegar/buscar entre todos os assuntos ativos — isso é a tela Assuntos
+  (`02_JORNADAS §4`, ainda fora de escopo, `§9` abaixo). Registrado como
+  pendência consciente, não escondida: as telas de Questões/Flashcards
+  existem e funcionam se abertas direto pela URL, mas não há link pra elas
+  em lugar nenhum da interface ainda.
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -218,8 +286,11 @@ documento que nunca existiu) sem nunca ter sido definido. Fechado aqui:
 | **Erro** | `fetch` falhou ou a API devolveu `problem+json` | `problema.detail` exibido, ação de reenviar — nunca destrutivo (§5) |
 | **Preenchido** | Estado normal | O conteúdo real da tela |
 
-Toda tela desta sprint (Hoje, Recuperar) implementa os quatro — é o que
-`carregando`/`erro` no `x-data` de §3 já antecipam.
+Toda tela implementa os quatro — é o que `carregando`/`erro` no `x-data`
+de §3 já antecipam. Em Registrar sessão (§7A), "vazio" não se aplica do
+mesmo jeito que em Hoje (não é uma lista): o estado equivalente é o
+seletor de segmento ausente quando o assunto não tem nenhum — coberto em
+§7A, não é um quinto estado novo.
 
 ---
 
@@ -230,9 +301,11 @@ Toda tela desta sprint (Hoje, Recuperar) implementa os quatro — é o que
 - Design visual completo — cor, tipografia, biblioteca de componente.
   Usa utilitários padrão do Tailwind por enquanto; refinamento é documento
   futuro, quando houver tela real para servir de referência.
-- As cinco telas restantes (Registrar sessão, Assuntos, Erros, Progresso,
-  Ajustes) — cada uma decide, na sua sprint, se precisa de padrão novo
-  além do que este documento já fixa.
+- As quatro telas restantes (Assuntos, Erros, Progresso, Ajustes) — cada
+  uma decide, na sua sprint, se precisa de padrão novo além do que este
+  documento já fixa.
+- Ponto de entrada pra Questões/Flashcards e Conteúdo em assunto livre
+  (§7A) — depende da tela Assuntos.
 - Otimização para celular (`02_JORNADAS §1.2`: evitar decisões que
   impeçam depois, sem pagar o custo de otimizar agora).
 
@@ -242,4 +315,5 @@ Toda tela desta sprint (Hoje, Recuperar) implementa os quatro — é o que
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-09-06 | Sprint 11 aberta — nova **§7A, tela Registrar sessão** (Conteúdo/Questões/Flashcards, um componente Alpine, rota `#/registrar/{tipo}/{assuntoId}`). Dois padrões novos: seletor de tipo por pílulas, e campo de segmento opcional (Sprint 10, `GET /api/assuntos/{id}/segmentos`). Decisão de escopo: só o card "Conteúdo novo" de Hoje vira ponto de entrada nesta sprint — Questões/Flashcards e "conteúdo em outro assunto" ficam sem link na interface até a tela Assuntos existir, registrado como pendência em §9. §4 ganha as duas linhas de endpoint; §8 esclarece que "vazio" em Registrar sessão não é um quinto estado |
 | 1.0.0 | 2026-08-31 | Criado. Sprint 9 aberta (frontend, Hoje + Recuperar). ADR-028/030 reexaminadas contra a exigência de UI otimista de `02_JORNADAS §5.1` e mantidas — decisão fechada com o usuário, nota registrada em `docs/00A_ADR.md`. Os "quatro estados de tela" citados por `09_CODE_STYLE §9` sem nunca terem sido definidos ficam fechados em §8 |

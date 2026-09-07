@@ -5,14 +5,21 @@ function renderizarRotaAtual() {
   const hash = window.location.hash || '#/hoje';
   const elHoje = document.getElementById('pagina-hoje');
   const elRecuperar = document.getElementById('pagina-recuperar');
+  const elRegistrar = document.getElementById('pagina-registrar');
   const matchRecuperar = hash.match(/^#\/recuperar\/(\d+)$/);
+  const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards)\/(\d+)$/);
+
+  elHoje.hidden = true;
+  elRecuperar.hidden = true;
+  elRegistrar.hidden = true;
 
   if (matchRecuperar) {
-    elHoje.hidden = true;
     elRecuperar.hidden = false;
     Alpine.$data(elRecuperar).abrir(Number(matchRecuperar[1]));
+  } else if (matchRegistrar) {
+    elRegistrar.hidden = false;
+    Alpine.$data(elRegistrar).abrir(matchRegistrar[1], Number(matchRegistrar[2]));
   } else {
-    elRecuperar.hidden = true;
     elHoje.hidden = false;
     Alpine.$data(elHoje).init();
   }

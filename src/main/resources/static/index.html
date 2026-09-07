@@ -58,9 +58,12 @@
 
         <div x-show="blocoConteudo">
           <h2 class="mb-2 text-sm font-medium text-gray-500">Conteúdo novo</h2>
-          <div class="rounded border border-gray-200 bg-white p-3">
+          <button
+            type="button"
+            class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50"
+            @click="abrirRegistroConteudo(blocoConteudo)">
             <span class="block font-medium" x-text="blocoConteudo?.nome"></span>
-          </div>
+          </button>
         </div>
       </div>
     </template>
@@ -131,6 +134,89 @@
         <!-- Tela de Erros é sprint futura (04_FRONTEND.md §9) — link presente no
              wireframe (02_JORNADAS §4.1), mas inerte até ela existir. -->
         <a href="#" class="text-sm text-gray-400" title="Ainda não implementado" @click.prevent>+ registrar um erro</a>
+      </div>
+    </template>
+  </section>
+
+  <!-- Tela Registrar sessão — Conteúdo/Questões/Flashcards (04_FRONTEND.md §7A) -->
+  <section id="pagina-registrar" x-data="paginaRegistrar()" hidden>
+
+    <template x-if="semDados">
+      <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <p>Não foi possível abrir este registro.</p>
+        <a href="#/hoje" class="mt-2 inline-block underline">Voltar para Hoje</a>
+      </div>
+    </template>
+
+    <template x-if="!semDados">
+      <div class="space-y-5">
+        <template x-if="erro">
+          <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+            <p x-text="erro"></p>
+            <button type="button" class="mt-2 underline" :disabled="enviando" @click="registrar()">Reenviar</button>
+          </div>
+        </template>
+
+        <h2 class="text-lg font-semibold" x-text="nome"></h2>
+
+        <!-- Seletor de tipo — troca de forma, nunca de rota (§7A) -->
+        <div class="flex gap-2">
+          <button type="button"
+            class="rounded-full px-3 py-1 text-sm"
+            :class="tipo === 'conteudo' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            @click="selecionarTipo('conteudo')">Conteúdo</button>
+          <button type="button"
+            class="rounded-full px-3 py-1 text-sm"
+            :class="tipo === 'questoes' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            @click="selecionarTipo('questoes')">Questões</button>
+          <button type="button"
+            class="rounded-full px-3 py-1 text-sm"
+            :class="tipo === 'flashcards' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            @click="selecionarTipo('flashcards')">Flashcards</button>
+        </div>
+
+        <!-- Segmento: ausente do DOM quando o assunto não tem nenhum, não desabilitado -->
+        <div x-show="tipo === 'conteudo' && temSegmentos">
+          <label class="mb-1 block text-sm font-medium text-gray-500">Segmento (opcional)</label>
+          <select x-model="segmentoId" class="w-full rounded border border-gray-200 bg-white p-2">
+            <option value="">Nenhum em especial</option>
+            <template x-for="s in segmentos" :key="s.id">
+              <option :value="s.id" x-text="s.ordem + '. ' + s.arquivo"></option>
+            </template>
+          </select>
+        </div>
+
+        <div x-show="tipo === 'questoes'">
+          <label class="mb-1 block text-sm font-medium text-gray-500">Formato da banca</label>
+          <div class="flex gap-2">
+            <button type="button"
+              class="rounded-full px-3 py-1 text-sm"
+              :class="formato === 'MULTIPLA_ESCOLHA' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+              @click="formato = 'MULTIPLA_ESCOLHA'">Múltipla escolha</button>
+            <button type="button"
+              class="rounded-full px-3 py-1 text-sm"
+              :class="formato === 'CERTO_ERRADO' ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+              @click="formato = 'CERTO_ERRADO'">Certo/errado</button>
+          </div>
+        </div>
+
+        <div x-show="tipo === 'questoes' || tipo === 'flashcards'" class="flex gap-3">
+          <div class="flex-1">
+            <label class="mb-1 block text-sm font-medium text-gray-500" x-text="tipo === 'questoes' ? 'Questões feitas' : 'Cartões feitos'"></label>
+            <input type="number" min="1" x-model="feitas" class="w-full rounded border border-gray-200 bg-white p-2">
+          </div>
+          <div class="flex-1">
+            <label class="mb-1 block text-sm font-medium text-gray-500">Acertos</label>
+            <input type="number" min="0" x-model="certas" class="w-full rounded border border-gray-200 bg-white p-2">
+          </div>
+        </div>
+
+        <div x-show="tipo === 'questoes' || tipo === 'flashcards'">
+          <label class="mb-1 block text-sm font-medium text-gray-500">Previsão de acerto antes de ver o resultado (%)</label>
+          <input type="number" min="0" max="100" x-model="previsao" class="w-full rounded border border-gray-200 bg-white p-2">
+        </div>
+
+        <button type="button" class="w-full rounded bg-gray-900 p-3 text-center font-medium text-white" :disabled="enviando" @click="registrar()">Registrar</button>
       </div>
     </template>
   </section>
