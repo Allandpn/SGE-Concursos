@@ -5,9 +5,9 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.0.0** |
+| Versão do documento | **1.0.1** |
 | Status | **Congelado** |
-| Data | 2026-08-15 |
+| Data | 2026-09-07 |
 
 ---
 
@@ -449,4 +449,5 @@ prática de ADR-015. Faça os dois.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.0.1 | 2026-09-07 | Verificação pré-Pi, não mudança de desenho (continua **Congelado**). `docker compose up -d --build` rodado de verdade nesta máquina (x86_64, não ARM): build multi-estágio, as 9 migrações do Flyway aplicadas numa base limpa, `/actuator/health` respondendo `UP`, as duas linhas de segurança conferidas (`postgres` sem porta publicada, `app` só em `127.0.0.1:8080`). `backup.sh` testado de ponta a ponta: dump+gzip+sanidade funcionam; o piso de 10 KB só é ultrapassado com uso real (~100+ sessões nesta verificação — uma base recém-instalada, vazia, vai acusar "backup suspeito" na primeira vez, e isso é esperado, não bug). `testar-restauracao.sh` restaurou com sucesso e as contagens bateram; só o `dropdb` final falhou, por disco cheio do ambiente de teste desta máquina (não do Pi — confirmado via `df` dentro do contêiner). `rclone` não testado (sem remoto configurado fora do Pi). `.gitattributes` ganhou `*.sql text eol=lf`, mesma proteção que `*.sh` já tinha — um CRLF introduzido por `autocrlf` de cliente Windows produz o mesmo sintoma que uma migração divergente (checksum do Flyway diverge), achado indiretamente nesta verificação. Continuam genuinamente pendentes, só testáveis no hardware real: build ARM, SSD por UUID, Tailscale, `rclone` de verdade, cron — checklist §8 |
 | 1.0.0 | 2026-08-15 | Documento novo. Docker Compose, Dockerfile ARM multi-estágio, montagem do SSD, exposição pela Tailscale, backup com verificação de sanidade e teste de restauração trimestral |

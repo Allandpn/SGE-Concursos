@@ -2,3 +2,10 @@
 # `set -euo pipefail`. Força LF no repositório independente do autocrlf
 # do cliente Windows usado para editar (docs/03E_DEPLOYMENT.md §2).
 *.sh text eol=lf
+
+# Migração do Flyway identifica arquivo pelo checksum do conteúdo exato.
+# CRLF introduzido por autocrlf=true (comum em cliente Windows) muda o
+# checksum sem mudar o SQL — Flyway recusa subir com "checksum mismatch",
+# sintoma idêntico ao de uma migração de fato divergente. Achado testando
+# o deploy real localmente (PROGRESSO.md, verificação pré-Pi).
+*.sql text eol=lf
