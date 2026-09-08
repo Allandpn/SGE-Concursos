@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.5.0 |
+| Versão | 1.6.0 |
 | Data | 2026-09-07 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-028 (zero build, revisada nesta data), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -36,9 +36,11 @@ um erro"). **Sprint 14** (esta revisão): **Progresso** — M-1, M-3 e M-4
 numa tela nova; M-2 (retenção por assunto) entra como seção nova no
 detalhe de Assuntos (§7B), não aqui — §7D explica por quê.
 
-Só **Ajustes** fica pra uma sprint de frontend futura — reabre este
-documento se precisar de um padrão novo; do contrário, segue o que já está
-aqui.
+**Sprint 15** (esta revisão): **Ajustes**, a sétima e última tela do mapa
+de `02_JORNADAS §4`. Diferente das seis anteriores: não existia endpoint
+nenhum pra consumir — `docs/SPRINT-15-AJUSTES.md` abre `GET`/`PATCH
+/api/parametros` sobre a tabela `parametro` que já existia desde a Sprint
+3. É a primeira sprint de frontend que também é sprint de backend.
 
 Decisão de stack não é feita aqui — é reaproveitada de ADR-028/030,
 reexaminadas em 2026-08-31 contra a exigência de §1 abaixo e mantidas
@@ -151,6 +153,8 @@ async function api(caminho, opcoes = {}) {
 | Progresso | `GET` | `/api/metricas/m3` | `M3Response` |
 | Progresso | `GET` | `/api/metricas/m4` | `M4Response` |
 | Assunto detalhe | `GET` | `/api/metricas/m2?assuntoId={id}` | `M2Response` — nova seção "Retenção" no detalhe (§7B), não na tela Progresso |
+| Ajustes | `GET` | `/api/parametros` | `ParametroResponse[]` — as 18 chaves (`docs/SPRINT-15-AJUSTES.md`) |
+| Ajustes | `PATCH` | `/api/parametros/{chave}` | corpo `{ valor }`; resposta `ParametroResponse` atualizado — endpoint novo desta sprint |
 
 Nenhum endpoint novo pra gravar — `/api/sessoes` já existe e está testado
 (`docs/SPRINT-3-SESSAO.md`). A leitura de segmentos já existe e está
@@ -527,6 +531,54 @@ M-4: percentual (ou "—" se `totalCumpridas = 0`) + fração
 
 ---
 
+## 7E. Tela Ajustes (Sprint 15)
+
+Serve J-1 e J-3 (`02_JORNADAS §4`: "tetos, limiares, intervalos"). Rota
+`#/ajustes`, novo link no cabeçalho. Lista as 18 chaves de `Parametro`
+(`GET /api/parametros`), agrupadas em três seções — Tetos, Limiares de
+resultado, Escada — mesmo agrupamento do wireframe de referência
+(`Ajustes.dc.html`), derivado do prefixo da chave (`teto_*`, `limiar_*`, o
+resto é Escada). Cada linha: rótulo amigável (mapa fixo em `pages.js`,
+`ROTULOS_PARAMETRO` — chave→texto em português, `02_JORNADAS` nunca expôs
+a chave crua ao usuário) + campo de valor editável.
+
+### Edição por linha, sem botão "salvar tudo"
+
+Cada campo salva sozinho no `@change` (perde o foco com o valor mudado) —
+sem otimismo (mesmo motivo de Erros §7C: não há navegação nenhuma
+acontecendo, então não há o que antecipar) e sem um botão de salvar global,
+porque os 18 valores são independentes entre si (mudar um não afeta outro
+visualmente). O campo usa `x-model="draft[chave]"` — uma cópia editável,
+separada de `parametro.valor` (que só muda quando o `PATCH` confirma) —
+**não** `:value="parametro.valor"` direto. Tentativa inicial foi essa
+ligação direta, pensando que reverteria sozinha em caso de falha; achado
+testando no navegador que não reverte: se `PATCH` falha, `parametro.valor`
+nunca muda, e o Alpine só reescreve o DOM quando uma propriedade reativa
+**muda de valor** — nada muda, nada reescreve, o texto inválido fica preso
+no campo mesmo com o estado interno certo. A correção: em caso de falha,
+`draft[chave]` é reatribuído pro valor antigo — essa atribuição **é** uma
+mudança de verdade (de `"abc"` pra `"10"`, por exemplo), então o Alpine
+reage e o campo volta visualmente. Mensagem de erro aparece **ao lado da
+linha** que falhou, não um banner de tela inteira — as outras 17 continuam
+editáveis.
+
+### Validação é só a do backend
+
+`docs/SPRINT-15-AJUSTES.md §0`: PATCH aceita qualquer número positivo, sem
+faixa por chave — decisão do usuário, registrada lá. O frontend não
+duplica validação nenhuma: manda o texto que o campo tem, deixa o `422`
+(`VALOR_INVALIDO`) do backend decidir, mostra `problema.detail` (ADR-026,
+mesmo padrão de toda tela).
+
+### Sem POST/DELETE
+
+A lista de 18 chaves é fechada — `Ajustes` só edita `valor`, nunca cria ou
+remove uma chave. Não há formulário de "novo parâmetro" nesta tela, nem
+deveria haver (`01_DOMINIO §7.5`: a lista do que é ajustável já é fechada
+pela própria especificação).
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -590,8 +642,6 @@ reconhecível, nunca a cor de destaque do produto).
 - Biblioteca de componente própria e espaçamento sistemático — cor e
   tipografia já estão definidas (§8A); o que falta é refinamento maior,
   ainda sem tela suficiente pra justificar o investimento.
-- **Ajustes**, única tela restante — decide, quando abrir, se precisa de
-  padrão novo além do que este documento já fixa.
 - Seta de tendência de M-1 (`00_PRODUTO §7`, "seta... exigem n ≥ 100") —
   `M1Response` não carrega um período anterior pra comparar; precisa de
   decisão de backend (novo parâmetro ou endpoint), não é lacuna de
@@ -619,6 +669,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.6.0 | 2026-09-07 | Sprint 15 aberta e fechada — nova **§7E, tela Ajustes**, a sétima e última do mapa de `02_JORNADAS §4`. Primeira sprint de frontend que também é sprint de backend: `docs/SPRINT-15-AJUSTES.md` abre `GET`/`PATCH /api/parametros` sobre a tabela `parametro` (Sprint 3), decisão de validação (número positivo, sem faixa por chave) fechada com o usuário antes do código. As 18 chaves em três seções (Tetos/Limiares/Escada, mesmo agrupamento do wireframe de referência); cada linha salva sozinha no `@change`, reverte pra trás sozinha em caso de erro via `:value` (não `x-model`). §9 perde a última entrada de tela pendente |
 | 1.5.0 | 2026-09-07 | Sprint 14 aberta — nova **§7D, tela Progresso** (M-1 com pílula de janela GLOBAL/POR_DISCIPLINA, M-3, M-4). Decisão de escopo: M-2 exige `assuntoId`, então vira seção nova ("Retenção") no detalhe de Assuntos em vez de morar em Progresso — §7B ganha esse parágrafo. Seta de tendência de M-1 (pedida por `00_PRODUTO §7`) fica de fora: `M1Response` não carrega um período anterior pra comparar, precisa de decisão de backend; registrado em §9. Nenhum endpoint novo: `/api/metricas/*` já existia da Sprint 7, testado (17/17 verdes contando Erro+Métrica) antes de escolher esta sprint. §4 ganha quatro linhas de endpoint |
 | 1.4.0 | 2026-09-07 | Sprint 13 aberta — nova **§7C, tela Erros**. Fecha o link inerte "+ registrar um erro" que a Sprint 9 deixou em Recuperar. Decisão de escopo: `02_JORNADAS §4.2` pede um atalho global de registrar erro em qualquer tela; esta sprint entrega só dois pontos de entrada contextuais (Recuperar pós-tentativa com `sessaoId`, detalhe de Assuntos sem `sessaoId`) — o atalho verdadeiramente global fica registrado em §9, exige um padrão de componente que a arquitetura ainda não tem. Nenhum endpoint novo: `GET`/`POST /api/erros` já existiam da Sprint 7 e passaram no teste completo (111/111) antes de abrir esta sprint. §4 ganha duas linhas de endpoint |
 | 1.3.0 | 2026-09-07 | Nova **§8A, paleta e tipografia** — a pedido do usuário, que quis a paleta e o estilo do qconcursos.com. Cor extraída de verdade do site (`getComputedStyle`) e mapeada por papel funcional, confirmada com o usuário antes de implementar (teal como `primary` — ação principal, no lugar do verde de upsell que o qconcursos usa; laranja só no chip de peso `ALTO`; fonte trocada pra Open Sans). Tokens `primary`/`alerta` no `tailwind.config` do `<head>`, nenhum hex direto nas telas — trocar a paleta depois é editar um bloco só. Aplicado retroativamente às quatro telas já existentes (Hoje, Recuperar, Registrar, Assuntos), sem mudar nenhuma delas de arquitetura. §0/§9 atualizados: "cor e tipografia são doc futuro" fechado, resta só biblioteca de componente/espaçamento como fora de escopo |

@@ -1,5 +1,30 @@
 // js/pages.js — um componente Alpine por página (09_CODE_STYLE §8).
 
+// Rótulo amigável por chave de parâmetro (04_FRONTEND §7E) — a tela
+// Ajustes nunca expõe a chave crua ao usuário. Chave nova na tabela
+// `parametro` sem entrada aqui cai no fallback (a própria chave) em vez de
+// quebrar — ver paginaAjustes.rotulo().
+const ROTULOS_PARAMETRO = {
+  teto_diario_recuperacoes: 'Recuperações por dia',
+  teto_global_frente: 'Assuntos na frente (global)',
+  teto_disciplina_frente: 'Assuntos na frente (por disciplina)',
+  limiar_sucesso_multipla_escolha: 'Sucesso · múltipla escolha',
+  limiar_parcial_multipla_escolha: 'Parcial · múltipla escolha',
+  limiar_sucesso_certo_errado: 'Sucesso · certo/errado',
+  limiar_parcial_certo_errado: 'Parcial · certo/errado',
+  limiar_sucesso_flashcards: 'Sucesso · flashcards',
+  limiar_parcial_flashcards: 'Parcial · flashcards',
+  intervalo_nivel_1: 'Intervalo nível 1',
+  intervalo_nivel_2: 'Intervalo nível 2',
+  intervalo_nivel_3: 'Intervalo nível 3',
+  intervalo_nivel_4: 'Intervalo nível 4',
+  intervalo_nivel_5: 'Intervalo nível 5',
+  intervalo_nivel_6: 'Intervalo nível 6',
+  intervalo_manutencao_dias: 'Manutenção (consolidado)',
+  janela_tolerancia_percentual: 'Janela de tolerância',
+  lote_minimo_questoes: 'Lote mínimo de questões',
+};
+
 document.addEventListener('alpine:init', () => {
 
   // Handoff Hoje → Recuperar (04_FRONTEND.md §6, "decisão de código, não de
@@ -491,6 +516,77 @@ document.addEventListener('alpine:init', () => {
     // POR_DISCIPLINA precisa do nome de verdade (04_FRONTEND §7D).
     rotuloLinha(linha) {
       return linha.disciplinaId === null ? 'Global' : (this.disciplinasPorId[linha.disciplinaId] ?? '—');
+    },
+  }));
+
+  Alpine.data('paginaAjustes', () => ({
+    carregando: true,
+    erro: null,
+    parametros: [],
+    draft: {}, // cópia editável por chave — só o que o <input> lê/escreve
+    salvando: {},
+    erroPorChave: {},
+
+    async init() {
+      this.carregando = true;
+      this.erro = null;
+      try {
+        this.parametros = await api('/parametros');
+        this.draft = Object.fromEntries(this.parametros.map((p) => [p.chave, p.valor]));
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    rotulo(chave) {
+      return ROTULOS_PARAMETRO[chave] ?? chave;
+    },
+
+    // Três seções por prefixo de chave, mesmo agrupamento do wireframe de
+    // referência (04_FRONTEND §7E).
+    get grupos() {
+      const nomeDoGrupo = (chave) => {
+        if (chave.startsWith('teto_')) return 'Tetos';
+        if (chave.startsWith('limiar_')) return 'Limiares de resultado';
+        return 'Escada';
+      };
+      const porGrupo = {};
+      for (const p of this.parametros) {
+        const grupo = nomeDoGrupo(p.chave);
+        (porGrupo[grupo] ??= []).push(p);
+      }
+      return ['Tetos', 'Limiares de resultado', 'Escada']
+        .filter((nome) => porGrupo[nome])
+        .map((nome) => ({ nome, itens: porGrupo[nome] }));
+    },
+
+    // Cada linha salva sozinha, sem otimismo (não há navegação pra
+    // antecipar, 04_FRONTEND §7E). `draft` é o que o <input> lê/escreve
+    // (x-model); `parametro.valor` só muda quando o PATCH confirma. Em
+    // caso de falha, reatribuir draft[chave] força o Alpine a reescrever o
+    // campo — só reatribuir p.valor (que nunca mudou) não dispara nada, o
+    // valor "novo" seria igual ao antigo e o Alpine não re-renderiza uma
+    // propriedade que não mudou (achado testando isto no navegador: o
+    // campo ficava com o texto inválido preso, mesmo com o estado certo).
+    async salvar(parametro, valorNovo) {
+      if (valorNovo === parametro.valor) return;
+      this.erroPorChave[parametro.chave] = null;
+      this.salvando[parametro.chave] = true;
+      try {
+        const atualizado = await api(`/parametros/${parametro.chave}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ valor: valorNovo }),
+        });
+        parametro.valor = atualizado.valor;
+        this.draft[parametro.chave] = atualizado.valor;
+      } catch (e) {
+        this.erroPorChave[parametro.chave] = e.message;
+        this.draft[parametro.chave] = parametro.valor;
+      } finally {
+        this.salvando[parametro.chave] = false;
+      }
     },
   }));
 });

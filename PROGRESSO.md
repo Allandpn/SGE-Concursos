@@ -27,6 +27,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 12 | Frontend — Assuntos | Quarta tela: lista por disciplina + detalhe, fecha a pendência de entrada pra Questões/Flashcards que a Sprint 11 deixou (`04_FRONTEND.md §7B`) | **feito** — testada num navegador real, lista/detalhe/entrada pra Registrar conferidos contra Postgres real |
 | 13 | Frontend — Erros | Quinta tela: formulário + consulta por assunto, fecha o link inerte que a Sprint 9 deixou em Recuperar (`04_FRONTEND.md §7C`) | **feito** — testada num navegador real, os dois pontos de entrada e o registro conferidos contra Postgres real |
 | 14 | Frontend — Progresso | Sexta tela: M-1/M-3/M-4 globais; M-2 (por assunto) vira seção nova no detalhe de Assuntos (`04_FRONTEND.md §7D`) | **feito** — testada num navegador real, as quatro métricas conferidas contra Postgres real |
+| 15 | Frontend — Ajustes | Sétima e última tela do mapa: os 18 parâmetros, editáveis (`04_FRONTEND.md §7E`) — primeira sprint de frontend que também abre endpoint novo (`docs/SPRINT-15-AJUSTES.md`) | **feito** — testada num navegador real, edição/erro/reversão conferidos contra Postgres real; um bug real achado e corrigido no caminho |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -812,7 +813,69 @@ por honestidade.
 
 ---
 
-## 16. Como este arquivo se mantém honesto
+## 16. Sprint 15 · Frontend — Ajustes
+
+**Documentos técnicos:** `docs/SPRINT-15-AJUSTES.md` v1.0.0 (novo — os
+endpoints) e `docs/04_FRONTEND.md` v1.6.0, nova §7E (a tela). Primeira
+sprint de frontend desta rodada que também precisou de código de backend:
+não existia `ParametroController` — os 18 parâmetros já existiam (Sprints
+3/4/5), mas só eram lidos direto pelos serviços, nunca expostos por API.
+
+Decisão fechada com o usuário **antes** de escrever qualquer código
+(pergunta explícita, dado que valores aqui já rodam de verdade no Pi):
+validação do `PATCH` é só "número positivo", sem faixa por chave — decisão
+consciente, não descuido, registrada em `docs/SPRINT-15-AJUSTES.md §0`.
+`Parametro` não ganhou regra `D-xx` nova — `01_DOMINIO §3` já declara
+parâmetro como "configuração, não domínio", fora da numeração.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 15.0 | Documentos técnicos (`SPRINT-15-AJUSTES.md` + `04_FRONTEND.md §7E`) | — | **feito** |
+| 15.1 | `GET`/`PATCH /api/parametros` — `ParametroController`/`Service`/`Mapper`/DTOs | Claude, a pedido do usuário | **feito** |
+| 15.2 | Testes de backend (`ParametroListagemTest`, `ParametroAtualizarTest`, `ParametroErroDominioTest`) | Claude, a pedido do usuário | **feito** — 118/118 verdes |
+| 15.3 | Componente Alpine `paginaAjustes` — três seções, edição por linha, rota `#/ajustes` + link no cabeçalho | Claude, a pedido do usuário | **feito** |
+| 15.4 | Verificação manual no navegador | Claude | **feito** — ver relato abaixo |
+
+### Definition of Done
+
+- [x] Documentos técnicos revisados e aceitos
+- [x] `PATCH` recusa vazio/não numérico/`≤0` com `422`/`VALOR_INVALIDO`;
+      chave inexistente devolve `404`/`PARAMETRO_INEXISTENTE`
+- [x] 118/118 testes de backend verdes (111 anteriores + 7 novos)
+- [x] Tela mostra as 18 chaves em três seções, rótulo amigável, valor
+      editável
+- [x] Editar um valor salva sozinho; falha reverte o campo e mostra erro
+      só naquela linha, sem afetar as outras 17
+- [x] Testado num navegador real contra Postgres real, mesmo padrão das
+      Sprints 9/11/12/13/14
+
+**Verificação manual (2026-09-07):** Postgres descartável + `mvn
+spring-boot:run` + Chrome real. As 18 chaves renderizaram nas três seções
+certas, com os valores exatos dos seeds das Sprints 3/4/5. Editar
+"Recuperações por dia" pra `10` gravou certo, conferido direto no Postgres.
+Editar de novo pra `abc` foi recusado pelo backend (`422`/`VALOR_INVALIDO`)
+— aqui apareceu um bug real (abaixo), corrigido, reiniciado o app e
+reconferido: o campo reverteu visualmente pro `10`, mensagem de erro só
+naquela linha, e o Postgres confirmou que o valor inválido nunca foi
+persistido. Um terceiro campo ("Lote mínimo de questões") editado com
+sucesso pra `6`, conferido no banco, como checagem de regressão da correção.
+Nenhum erro de console.
+
+**Um bug real encontrado e corrigido:** o campo usava `:value="p.valor"`
+(não `x-model`) na ideia de que, se o `PATCH` falhasse, `p.valor` (que
+nunca mudou) faria o Alpine reescrever o campo de volta sozinho. Não
+acontece: o Alpine só reage quando uma propriedade **muda de valor** — como
+`p.valor` ficou o tempo todo `"10"`, não houve mudança nenhuma pra reagir,
+e o texto inválido (`"abc"`) ficava visualmente preso no campo, mesmo com
+o estado interno (e o banco) corretos. Corrigido introduzindo `draft` — uma
+cópia editável por chave, ligada por `x-model` — que em caso de falha é
+explicitamente reatribuída pro valor antigo; essa reatribuição **é** uma
+mudança de verdade (`"abc"` → `"10"`), e o Alpine reage. `docs/04_FRONTEND.md
+§7E` já reflete o mecanismo corrigido.
+
+---
+
+## 17. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -826,10 +889,12 @@ por honestidade.
 
 ---
 
-## 17. Changelog
+## 18. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.41.0 | 2026-09-07 | **Sprint 15 completa — as sete telas do mapa de `02_JORNADAS §4` fechadas.** Testada num Chrome real contra Postgres descartável: as 18 chaves nas três seções certas, edição gravando de verdade (conferido no Postgres). Um bug real achado e corrigido: campo usava `:value="p.valor"` direto, na ideia de que uma falha reverteria sozinha — não acontece, porque `p.valor` nunca muda numa falha, e o Alpine só reage a propriedade que muda de valor; o texto inválido ficava preso no campo mesmo com o estado (e o banco) corretos. Corrigido com `draft` — cópia editável por chave, via `x-model`, reatribuída explicitamente no erro. Reconferido depois da correção: reversão visual, erro só na linha certa, valor inválido nunca persistido; um terceiro campo editado com sucesso como checagem de regressão. Itens 15.3–15.4 promovidos a **feito** |
+| 1.40.0 | 2026-09-07 | **Sprint 15 aberta (Frontend — Ajustes)**, a última do mapa de sete telas. Diferente de todas as sprints de frontend anteriores: não havia endpoint pra consumir, então esta sprint também é sprint de backend. Antes de qualquer código, pergunta explícita ao usuário sobre o tamanho da validação do `PATCH` — os 18 valores já rodam de verdade no Pi — decidido "só número positivo, sem faixa por chave"; `Parametro` continua fora da numeração `D-xx` (`01_DOMINIO §3` já declara "configuração, não domínio"). `docs/SPRINT-15-AJUSTES.md` criado (v1.0.0): `GET`/`PATCH /api/parametros`. `ParametroController`/`Service`/`Mapper`/DTOs escritos, mais três arquivos de teste — suíte completa em 118/118 (111 anteriores + 7 novos). `docs/04_FRONTEND.md` v1.6.0, nova §7E. `PROGRESSO.md` §16 criado (Sprint 15), seções seguintes renumeradas. Código de tela ainda não escrito |
 | 1.39.0 | 2026-09-07 | **Sprint 14 completa** — testada num Chrome real contra Postgres descartável (um assunto, um `ESTUDO`, uma `RECUPERACAO` e duas `QUESTOES`). M-1 conferido 72% (18/25) contra o `curl` cru, nas duas janelas (Global e Por disciplina, esta com nome de disciplina resolvido certo). M-3 objetiva/subjetiva batendo com a API; M-4 100% (3/3). Seção "Retenção" no detalhe de Assuntos mostrando as duas séries de M-2, com `percentualMediaSeguintes` nulo escondendo a parte certa. Nenhum bug encontrado. Ressalva registrada: caminho `n<10`/`n=0` (percentual/"sem dados ainda") não foi exercitado com dado real, só a lógica conferida — mesmo padrão já provado noutras telas. Itens 14.1–14.3 promovidos a **feito** |
 | 1.38.0 | 2026-09-07 | **Sprint 14 aberta (Frontend — Progresso)**, a pedido do usuário ("pode seguir"), logo depois de fechar a Sprint 13. Backend de métricas (`/api/metricas/*`) já pronto e testado desde a Sprint 7. Decisão de escopo fechada ao abrir: M-2 exige `assuntoId`, não é leitura global como M-1/M-3/M-4 — vira seção nova no detalhe de Assuntos em vez de morar em Progresso; seta de tendência de M-1 (pedida por `00_PRODUTO §7`) fica de fora porque `M1Response` não carrega período anterior pra comparar — decisão de backend, registrada como pendência, não escondida. `docs/04_FRONTEND.md` v1.5.0, nova §7D (+ parágrafo em §7B pra M-2). `PROGRESSO.md` §15 criado (Sprint 14), seções seguintes renumeradas. Nenhum código de tela escrito ainda |
 | 1.37.0 | 2026-09-07 | **Sprint 13 completa** — testada num Chrome real contra Postgres descartável, depois de rodar o teste completo do backend (111/111 verdes). Os dois pontos de entrada contextuais funcionaram: Recuperar (etapa 2) → "+ registrar um erro" → formulário → registrado com `sessao_id` nulo (como previsto, D-46) e `causa`/`confianca` certos; detalhe de Assuntos → botão "Erros" → mesma tela, já mostrando o erro recém-registrado na consulta por assunto. Caso sem dado testado numa aba nova: `#/erros/{id}` direto caiu em `semDados`. Nenhum bug encontrado. Itens 13.1–13.4 promovidos a **feito** |
