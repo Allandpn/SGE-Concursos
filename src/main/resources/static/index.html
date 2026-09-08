@@ -154,9 +154,7 @@
           </button>
         </div>
 
-        <!-- Tela de Erros é sprint futura (04_FRONTEND.md §9) — link presente no
-             wireframe (02_JORNADAS §4.1), mas inerte até ela existir. -->
-        <a href="#" class="text-sm text-gray-400" title="Ainda não implementado" @click.prevent>+ registrar um erro</a>
+        <button type="button" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
       </div>
     </template>
   </section>
@@ -324,6 +322,7 @@
           <button type="button" @click="irRegistrar('conteudo')" class="flex-1 rounded border border-gray-200 bg-white p-2 text-center text-sm hover:bg-gray-50">Conteúdo</button>
           <button type="button" @click="irRegistrar('questoes')" class="flex-1 rounded border border-gray-200 bg-white p-2 text-center text-sm hover:bg-gray-50">Questões</button>
           <button type="button" @click="irRegistrar('flashcards')" class="flex-1 rounded border border-gray-200 bg-white p-2 text-center text-sm hover:bg-gray-50">Flashcards</button>
+          <button type="button" @click="irErros()" class="flex-1 rounded border border-gray-200 bg-white p-2 text-center text-sm hover:bg-gray-50">Erros</button>
         </div>
 
         <div x-show="temSegmentos" class="space-y-2">
@@ -336,6 +335,86 @@
                   <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
                 </div>
                 <a :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </div>
+    </template>
+  </section>
+
+  <!-- Tela Erros — formulário + consulta por assunto (04_FRONTEND.md §7C) -->
+  <section id="pagina-erros" x-data="paginaErros()" hidden>
+
+    <template x-if="semDados">
+      <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <p>Não foi possível abrir os erros deste assunto.</p>
+        <a href="#/assuntos" class="mt-2 inline-block underline">Voltar para Assuntos</a>
+      </div>
+    </template>
+
+    <template x-if="!semDados">
+      <div class="space-y-6">
+        <div class="space-y-4">
+          <h2 class="text-lg font-semibold" x-text="nome"></h2>
+
+          <template x-if="erroEnvio">
+            <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+              <p x-text="erroEnvio"></p>
+            </div>
+          </template>
+
+          <div>
+            <label class="mb-1 block text-sm font-medium text-gray-500">O que aconteceu?</label>
+            <textarea x-model="descricao" rows="3" class="w-full rounded border border-gray-200 bg-white p-2"></textarea>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-sm font-medium text-gray-500">Causa</label>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'FALTA_CONHECIMENTO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'FALTA_CONHECIMENTO'">Falta de conhecimento</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'ESQUECIMENTO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'ESQUECIMENTO'">Esquecimento</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'INTERPRETACAO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'INTERPRETACAO'">Interpretação</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'DESATENCAO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'DESATENCAO'">Desatenção</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'PEGADINHA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'PEGADINHA'">Pegadinha</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'CHUTE' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'CHUTE'">Chute</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'GESTAO_TEMPO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'GESTAO_TEMPO'">Gestão de tempo</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-sm font-medium text-gray-500">Você tinha certeza quando errou?</label>
+            <div class="flex gap-2">
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'BAIXA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'BAIXA'">Baixa</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'MEDIA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'MEDIA'">Média</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'ALTA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'ALTA'">Alta</button>
+            </div>
+          </div>
+
+          <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-white hover:bg-primary-700" :disabled="enviando" @click="registrar()">Registrar</button>
+        </div>
+
+        <div class="space-y-2 border-t border-gray-200 pt-4">
+          <h3 class="text-sm font-medium text-gray-500">Erros deste assunto</h3>
+
+          <template x-if="carregandoLista">
+            <p class="text-gray-500">Carregando...</p>
+          </template>
+
+          <template x-if="!carregandoLista && erros.length === 0">
+            <p class="text-gray-500">Nenhum erro registrado ainda.</p>
+          </template>
+
+          <ul class="space-y-2">
+            <template x-for="e in erros" :key="e.id">
+              <li class="rounded border border-gray-200 bg-white p-3">
+                <p class="text-sm" x-text="e.descricao"></p>
+                <div class="mt-1 flex gap-2">
+                  <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                        x-text="{FALTA_CONHECIMENTO: 'Falta de conhecimento', ESQUECIMENTO: 'Esquecimento', INTERPRETACAO: 'Interpretação', DESATENCAO: 'Desatenção', PEGADINHA: 'Pegadinha', CHUTE: 'Chute', GESTAO_TEMPO: 'Gestão de tempo'}[e.causa]"></span>
+                  <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                        x-text="'confiança ' + {BAIXA: 'baixa', MEDIA: 'média', ALTA: 'alta'}[e.confianca]"></span>
+                </div>
               </li>
             </template>
           </ul>

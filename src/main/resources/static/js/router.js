@@ -8,16 +8,19 @@ function renderizarRotaAtual() {
   const elRegistrar = document.getElementById('pagina-registrar');
   const elAssuntos = document.getElementById('pagina-assuntos');
   const elAssuntoDetalhe = document.getElementById('pagina-assunto-detalhe');
+  const elErros = document.getElementById('pagina-erros');
   const matchRecuperar = hash.match(/^#\/recuperar\/(\d+)$/);
   const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards)\/(\d+)$/);
   const matchAssuntoDetalhe = hash.match(/^#\/assuntos\/(\d+)$/);
   const matchAssuntos = hash === '#/assuntos';
+  const matchErros = hash.match(/^#\/erros\/(\d+)$/);
 
   elHoje.hidden = true;
   elRecuperar.hidden = true;
   elRegistrar.hidden = true;
   elAssuntos.hidden = true;
   elAssuntoDetalhe.hidden = true;
+  elErros.hidden = true;
 
   if (matchRecuperar) {
     elRecuperar.hidden = false;
@@ -31,6 +34,9 @@ function renderizarRotaAtual() {
   } else if (matchAssuntos) {
     elAssuntos.hidden = false;
     Alpine.$data(elAssuntos).init();
+  } else if (matchErros) {
+    elErros.hidden = false;
+    Alpine.$data(elErros).abrir(Number(matchErros[1]));
   } else {
     elHoje.hidden = false;
     Alpine.$data(elHoje).init();

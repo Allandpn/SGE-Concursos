@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.3.0 |
+| Versão | 1.4.0 |
 | Data | 2026-09-07 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-028 (zero build, revisada nesta data), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -27,14 +27,16 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 **Sprint 9** (v1.0.0 deste documento): **Hoje** e **Recuperar**. **Sprint
 11**: **Registrar sessão** — reabriu este documento porque introduziu dois
 padrões novos (seletor de tipo, campo numérico) que as duas telas anteriores
-não tinham, §7A. **Sprint 12** (esta revisão): **Assuntos** — reabre de novo
-porque fecha a pendência que a própria Sprint 11 registrou (§9 da v1.1.0):
-sem esta tela, Questões/Flashcards e "conteúdo em assunto livre" não tinham
-como ser abertos pela interface.
+não tinham, §7A. **Sprint 12**: **Assuntos** — reabriu porque fechou a
+pendência que a própria Sprint 11 registrou (§9 da v1.1.0): sem essa tela,
+Questões/Flashcards e "conteúdo em assunto livre" não tinham como ser
+abertos pela interface. **Sprint 13** (esta revisão): **Erros** — reabre
+porque fecha o link inerte que a Sprint 9 já tinha deixado em Recuperar
+(§7, "+ registrar um erro").
 
-As três telas restantes (Erros, Progresso, Ajustes) ficam para sprints de
-frontend seguintes — cada uma reabre este documento só se precisar de um
-padrão novo; do contrário, segue o que já está aqui.
+As duas telas restantes (Progresso, Ajustes) ficam para sprints de frontend
+seguintes — cada uma reabre este documento só se precisar de um padrão
+novo; do contrário, segue o que já está aqui.
 
 Decisão de stack não é feita aqui — é reaproveitada de ADR-028/030,
 reexaminadas em 2026-08-31 contra a exigência de §1 abaixo e mantidas
@@ -141,12 +143,18 @@ async function api(caminho, opcoes = {}) {
 | Assuntos | `GET` | `/api/assuntos?disciplinaId={id}` | `AssuntoResponse[]` — um `fetch` por disciplina ativa |
 | Assuntos | `GET` | `/api/assuntos/{id}/fase` | `AssuntoFaseResponse` — um `fetch` por assunto listado (§7B, "N chamadas") |
 | Assunto detalhe | `GET` | `/api/assuntos/{id}/segmentos` | mesmo endpoint da linha acima, reaproveitado — mostra o material do assunto |
+| Erros | `GET` | `/api/erros?assuntoId={id}` | `ErroResponse[]` — consulta por assunto (`02_JORNADAS §4`) |
+| Erros | `POST` | `/api/erros` | corpo `ErroRequest` (`assuntoId`, `sessaoId` opcional, `descricao`, `causa`, `confianca`); resposta `ErroResponse` |
 
 Nenhum endpoint novo pra gravar — `/api/sessoes` já existe e está testado
 (`docs/SPRINT-3-SESSAO.md`). A leitura de segmentos já existe e está
 testada desde a Sprint 10 (`docs/SPRINT-10-SEGMENTO.md §5`); a leitura de
-fase, desde a Sprint 5 (`docs/SPRINT-5-FRENTE.md §2.1`). A Sprint 12 não
-abre nenhum endpoint novo — só passou a consumir o que já existia.
+fase, desde a Sprint 5 (`docs/SPRINT-5-FRENTE.md §2.1`). `/api/erros` já
+existe e está testado desde a Sprint 7 (`docs/SPRINT-7-METRICAS.md §5`) —
+111/111 testes verdes confirmados nesta sessão antes de abrir a Sprint 13,
+corrigindo o que `PROGRESSO.md` ainda registrava como "sem execução
+verificada". Nenhuma sprint de frontend até aqui abriu endpoint novo — só
+passou a consumir o que já existia.
 
 ---
 
@@ -361,6 +369,84 @@ assunto nenhum (`semDados`, §7A) — em vez de um erro genérico de rede.
 
 ---
 
+## 7C. Tela Erros (Sprint 13)
+
+Serve J-2 e J-3 (`02_JORNADAS §4`: "registro com causa e confiança; consulta
+por assunto"). Uma rota, `#/erros/{assuntoId}`, um componente — formulário
+de registro em cima, lista de erros do assunto embaixo (mesmo desenho do
+wireframe de referência já existente, `Erros.dc.html`): descrição livre,
+sete pílulas de causa (`CausaErro`), três de confiança (`NivelConfianca`),
+botão Registrar; abaixo, os erros já registrados desse assunto.
+
+### Decisão de escopo desta sprint
+
+`02_JORNADAS §4.2` é explícito: **"registrar erro é ação global, disponível
+em qualquer tela"** — um atalho que existiria em toda tela, não uma tela
+que se navega até. Essa sprint **não entrega isso**. O que entrega são dois
+pontos de entrada contextuais:
+
+- **De Recuperar** (§7): o link "+ registrar um erro" da etapa 2, inerte
+  desde a Sprint 9, passa a levar pra `#/erros/{assuntoId}`.
+- **Do detalhe de Assuntos** (§7B): uma quarta ação, "Erros", ao lado de
+  Conteúdo/Questões/Flashcards.
+
+**`sessaoId` fica de fora nesta sprint, dos dois pontos de entrada.** O
+link de Recuperar aparece na etapa 2 **antes** de `confirmar()` rodar — a
+sessão daquela tentativa só é gravada quando um dos três botões de
+resultado é clicado, e nesse momento a tela já navega embora (padrão
+otimista, §5). Não existe, na experiência atual, um instante em que uma
+`sessaoId` concreta esteja disponível no momento de registrar o erro, sem
+reestruturar o fluxo vinculante de Recuperar — fora do escopo desta sprint
+(regra central do `CLAUDE.md`: não é uma correção que este documento já
+precise, então não se antecipa). `ErroRequest.sessaoId` continua existindo
+no backend (D-46 já cobre isso desde a Sprint 7); o formulário desta sprint
+sempre manda `null`.
+
+O atalho **verdadeiramente global** — visível em qualquer tela, sem
+precisar estar em Recuperar ou no detalhe de um assunto — fica de fora,
+registrado em §9. Ele exige um padrão de componente que a arquitetura atual
+não tem: algo sempre montado fora de uma seção de página (`09_CODE_STYLE
+§8` hoje pressupõe "um componente por página"), mais um seletor de assunto
+dentro do próprio formulário (as duas entradas desta sprint já carregam o
+assunto de contexto; um atalho global não teria de onde puxar isso).
+Entregar os dois pontos de entrada contextuais já é estritamente melhor que
+o link inerte que existia — e não fecha a porta pro atalho global depois.
+
+### Handoff e `semDados`
+
+Mesmo mecanismo de §7B: `Alpine.store('erro')`, escrito pelas duas telas de
+origem com `{ assuntoId, nome }`. Sem `GET /api/assuntos/{id}`
+(mesma ausência já documentada em §7B), abrir `#/erros/{assuntoId}` sem vir
+de um dos dois pontos de entrada cai em `semDados` — consequência aceita,
+mesma de Recuperar/Registrar/Assunto detalhe.
+
+### Sem resolver, por enquanto
+
+`Erro.resolvido` existe na entidade mas nasce sempre `false` — a Sprint 7
+não abriu endpoint de atualizar (`ErroService`, javadoc: "Sem
+atualizar/resolver nesta sprint"). A lista mostra o erro, não uma ação de
+resolver — não é uma omissão desta sprint de frontend, é limite do backend
+que ela consome.
+
+### Não é otimista, e é deliberado
+
+Diferente de Recuperar/Registrar (§5, §7A), o registro aqui **não** navega
+antes da resposta confirmar — espera o `POST` e só então limpa o formulário
+e atualiza a lista. A regra de §5 existe pra proteger o orçamento de tempo
+de telas que são **passo de um fluxo** (o turno de estudo não pode travar
+esperando rede); Erros não navega embora depois de registrar — a tela
+continua aberta, pronta pro próximo erro, então não há navegação nenhuma
+pra antecipar. Falha ainda é não destrutiva (texto digitado permanece se o
+`POST` falhar), só que sem o salto de tela que caracteriza "otimista".
+
+### Orçamento
+
+`02_JORNADAS §5`: "Registrar erro, 30 s, 3 campos" — bate com o formulário
+(descrição, causa, confiança); a lista abaixo não conta orçamento, é
+consulta, não parte do registro.
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -424,9 +510,15 @@ reconhecível, nunca a cor de destaque do produto).
 - Biblioteca de componente própria e espaçamento sistemático — cor e
   tipografia já estão definidas (§8A); o que falta é refinamento maior,
   ainda sem tela suficiente pra justificar o investimento.
-- As três telas restantes (Erros, Progresso, Ajustes) — cada uma decide,
-  na sua sprint, se precisa de padrão novo além do que este documento já
-  fixa.
+- As duas telas restantes (Progresso, Ajustes) — cada uma decide, na sua
+  sprint, se precisa de padrão novo além do que este documento já fixa.
+- Atalho global de "registrar erro", visível em qualquer tela sem
+  depender de contexto (Recuperar ou detalhe de Assunto) — `02_JORNADAS
+  §4.2` pede isso, a Sprint 13 entrega só os dois pontos de entrada
+  contextuais (§7C). Exige um padrão de componente novo (algo fora de
+  "um componente por página") e um seletor de assunto no formulário.
+- Resolver um erro (`Erro.resolvido`) — sem endpoint desde a Sprint 7;
+  a lista de Erros (§7C) só mostra, não fecha o ciclo.
 - Upload de CSV (assunto e segmento) pela interface — os endpoints
   existem e são usados por script/`curl`; a tela Assuntos (§7B) só lê.
   Cadastro em lote continua fora da SPA por ora.
@@ -443,6 +535,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.4.0 | 2026-09-07 | Sprint 13 aberta — nova **§7C, tela Erros**. Fecha o link inerte "+ registrar um erro" que a Sprint 9 deixou em Recuperar. Decisão de escopo: `02_JORNADAS §4.2` pede um atalho global de registrar erro em qualquer tela; esta sprint entrega só dois pontos de entrada contextuais (Recuperar pós-tentativa com `sessaoId`, detalhe de Assuntos sem `sessaoId`) — o atalho verdadeiramente global fica registrado em §9, exige um padrão de componente que a arquitetura ainda não tem. Nenhum endpoint novo: `GET`/`POST /api/erros` já existiam da Sprint 7 e passaram no teste completo (111/111) antes de abrir esta sprint. §4 ganha duas linhas de endpoint |
 | 1.3.0 | 2026-09-07 | Nova **§8A, paleta e tipografia** — a pedido do usuário, que quis a paleta e o estilo do qconcursos.com. Cor extraída de verdade do site (`getComputedStyle`) e mapeada por papel funcional, confirmada com o usuário antes de implementar (teal como `primary` — ação principal, no lugar do verde de upsell que o qconcursos usa; laranja só no chip de peso `ALTO`; fonte trocada pra Open Sans). Tokens `primary`/`alerta` no `tailwind.config` do `<head>`, nenhum hex direto nas telas — trocar a paleta depois é editar um bloco só. Aplicado retroativamente às quatro telas já existentes (Hoje, Recuperar, Registrar, Assuntos), sem mudar nenhuma delas de arquitetura. §0/§9 atualizados: "cor e tipografia são doc futuro" fechado, resta só biblioteca de componente/espaçamento como fora de escopo |
 | 1.2.0 | 2026-09-07 | Sprint 12 aberta — nova **§7B, tela Assuntos** (lista por disciplina + detalhe, `#/assuntos` e `#/assuntos/{id}`). Fecha a pendência de entrada pra Questões/Flashcards/conteúdo livre que a Sprint 11 tinha deixado registrada: o detalhe do assunto ganha três ações que escrevem no mesmo `Alpine.store('registrar')` que Hoje já usava. Decisão de escopo: upload de CSV pela interface (mostrado no wireframe de referência) fica de fora — os endpoints de importação já são usados por script, não por upload manual; registrado em §9. Fase por assunto é uma chamada por assunto, decisão consciente dado a escala de uso (usuário único, dezenas de assuntos), não descuido. §4 ganha quatro linhas de endpoint, nenhuma nova (todas já existiam de sprints anteriores) |
 | 1.1.0 | 2026-09-06 | Sprint 11 aberta — nova **§7A, tela Registrar sessão** (Conteúdo/Questões/Flashcards, um componente Alpine, rota `#/registrar/{tipo}/{assuntoId}`). Dois padrões novos: seletor de tipo por pílulas, e campo de segmento opcional (Sprint 10, `GET /api/assuntos/{id}/segmentos`). Decisão de escopo: só o card "Conteúdo novo" de Hoje vira ponto de entrada nesta sprint — Questões/Flashcards e "conteúdo em outro assunto" ficam sem link na interface até a tela Assuntos existir, registrado como pendência em §9. §4 ganha as duas linhas de endpoint; §8 esclarece que "vazio" em Registrar sessão não é um quinto estado |

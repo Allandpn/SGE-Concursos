@@ -36,6 +36,17 @@ document.addEventListener('alpine:init', () => {
     },
   });
 
+  // Mesmo handoff, pra Erros (04_FRONTEND §7C) — escrito por Recuperar
+  // (etapa 2) e pelo detalhe de Assuntos, os dois pontos de entrada
+  // contextuais desta sprint. Só { assuntoId, nome } — sessaoId fica de
+  // fora nesta sprint (ver §7C do doc técnico pra entender por quê).
+  Alpine.store('erro', {
+    item: null,
+    selecionar(item) {
+      this.item = item;
+    },
+  });
+
   Alpine.data('paginaHoje', () => ({
     carregando: true,
     erro: null,
@@ -151,6 +162,14 @@ document.addEventListener('alpine:init', () => {
 
     reenviar() {
       this.confirmar(this.resultado);
+    },
+
+    // Link "+ registrar um erro" da etapa 2 (04_FRONTEND §7C) — aparece
+    // ANTES de confirmar(), então não existe sessaoId nenhum ainda; leva
+    // só o assunto de contexto, mesmo mecanismo de store de Hoje→Registrar.
+    abrirErro() {
+      Alpine.store('erro').selecionar({ assuntoId: this.assuntoId, nome: this.nome });
+      window.location.hash = `#/erros/${this.assuntoId}`;
     },
   }));
 
@@ -341,6 +360,82 @@ document.addEventListener('alpine:init', () => {
     irRegistrar(tipo) {
       Alpine.store('registrar').selecionar({ id: this.assuntoId, nome: this.nome });
       window.location.hash = `#/registrar/${tipo}/${this.assuntoId}`;
+    },
+
+    // Quarta ação do detalhe, ao lado de Conteúdo/Questões/Flashcards
+    // (04_FRONTEND §7C) — mesmo mecanismo de store de irRegistrar.
+    irErros() {
+      Alpine.store('erro').selecionar({ assuntoId: this.assuntoId, nome: this.nome });
+      window.location.hash = `#/erros/${this.assuntoId}`;
+    },
+  }));
+
+  Alpine.data('paginaErros', () => ({
+    assuntoId: null,
+    nome: null,
+    semDados: false,
+    descricao: '',
+    causa: null,
+    confianca: null,
+    enviando: false,
+    erroEnvio: null,
+    erros: [],
+    carregandoLista: true,
+
+    // Chamado pelo router a cada navegação para #/erros/{assuntoId}. Sem
+    // GET /api/assuntos/{id} (mesma ausência de §7B), nome/assunto vêm do
+    // store escrito por Recuperar ou pelo detalhe de Assuntos.
+    async abrir(assuntoId) {
+      const item = Alpine.store('erro').item;
+      this.semDados = !item || item.assuntoId !== assuntoId;
+      if (this.semDados) return;
+
+      this.assuntoId = assuntoId;
+      this.nome = item.nome;
+      this.descricao = '';
+      this.causa = null;
+      this.confianca = null;
+      this.erroEnvio = null;
+      await this.carregarLista();
+    },
+
+    async carregarLista() {
+      this.carregandoLista = true;
+      try {
+        this.erros = await api(`/erros?assuntoId=${this.assuntoId}`);
+      } catch (e) {
+        this.erros = [];
+      } finally {
+        this.carregandoLista = false;
+      }
+    },
+
+    // Não otimista, de propósito — esta tela não navega embora depois de
+    // registrar (04_FRONTEND §7C, "não é otimista, e é deliberado"): espera
+    // o POST, limpa o formulário e atualiza a lista só depois de confirmar.
+    async registrar() {
+      this.erroEnvio = null;
+      this.enviando = true;
+      try {
+        await api('/erros', {
+          method: 'POST',
+          body: JSON.stringify({
+            assuntoId: this.assuntoId,
+            sessaoId: null,
+            descricao: this.descricao,
+            causa: this.causa,
+            confianca: this.confianca,
+          }),
+        });
+        this.descricao = '';
+        this.causa = null;
+        this.confianca = null;
+        await this.carregarLista();
+      } catch (e) {
+        this.erroEnvio = e.message;
+      } finally {
+        this.enviando = false;
+      }
     },
   }));
 });

@@ -19,12 +19,13 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 4 | Escada e revisão | Agendamento, cumprimento, roteamento por resultado, janela | **feito** |
 | 5 | Frente de estudo | Backlog, tetos, vaga por consolidação, alerta de represamento | **feito** |
 | 6 | Plano de turno | A tela Hoje: fila de recuperação + blocos, e o "puxar mais" | **feito** |
-| 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | documento técnico feito, código escrito, sem execução verificada |
+| 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | backend **feito** — 17/17 testes verdes (`ErroDominioTest`+`MetricaServiceTest`), confirmado de novo na Sprint 13; frontend de Erros feito na Sprint 13, Progresso (métricas) ainda sem tela |
 | 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: doc técnico feito, código escrito, sem execução verificada. Backup: scripts escritos, não testados no Pi real. Polimento: não começou |
 | 9 | Frontend — Hoje e Recuperar | SPA estática (Alpine.js/Tailwind, ADR-028/030), as duas primeiras telas | **feito** — testado num navegador real, fluxo completo (Hoje → Recuperar → gravação → escada avança) confirmado contra Postgres real |
 | 10 | Integração externa — planejamento | Referência de material por blocos (entidade `Segmento`, `Assunto` ganha `chaveExterna`), alimentada pelo projeto `Plano-de-Estudos-Automatizado` via Google Drive + `rclone` (ADR-037, `docs/requisitos-planejamento-blocos-de-conteudo.md`); `Edital`/import por UUID fica de fora por ora | **feito** — 111/111 testes verdes contra Postgres real, export e automação do disparo incluídos. Restam só duas coisas fora do alcance deste repositório: testar `scripts/importar-segmentos.sh` num Pi real, e a resposta do repositório de planejamento sobre gerar `chaveExternaSegmento` |
 | 11 | Frontend — Registrar sessão | Terceira tela: Conteúdo/Questões/Flashcards (`04_FRONTEND.md §7A`) — não confundir com a Sprint 3 (o backend do mesmo evento) | **feito** — testada num navegador real, os três tipos gravam certo no Postgres real |
 | 12 | Frontend — Assuntos | Quarta tela: lista por disciplina + detalhe, fecha a pendência de entrada pra Questões/Flashcards que a Sprint 11 deixou (`04_FRONTEND.md §7B`) | **feito** — testada num navegador real, lista/detalhe/entrada pra Registrar conferidos contra Postgres real |
+| 13 | Frontend — Erros | Quinta tela: formulário + consulta por assunto, fecha o link inerte que a Sprint 9 deixou em Recuperar (`04_FRONTEND.md §7C`) | **feito** — testada num navegador real, os dois pontos de entrada e o registro conferidos contra Postgres real |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -696,7 +697,63 @@ quando o clique não registrava.
 
 ---
 
-## 14. Como este arquivo se mantém honesto
+## 14. Sprint 13 · Frontend — Erros
+
+**Documento técnico:** `docs/04_FRONTEND.md` v1.4.0 — nova §7C. Reabre o
+documento porque fecha o link "+ registrar um erro" que a Sprint 9 deixou
+inerte em Recuperar.
+
+Decisão de escopo fechada ao abrir: `02_JORNADAS §4.2` pede um atalho
+global de registrar erro, disponível em qualquer tela — esta sprint entrega
+só dois pontos de entrada contextuais (Recuperar pós-tentativa, detalhe de
+Assuntos), não o atalho verdadeiramente global. Registrado como pendência
+em `04_FRONTEND.md §9`, não escondido — exige um padrão de componente que a
+arquitetura ainda não tem (algo fora de "um componente por página").
+
+Nenhum endpoint novo: `GET`/`POST /api/erros` já existiam da Sprint 7 —
+rodado o teste completo (111/111 verdes) antes de abrir esta sprint,
+corrigindo o que o mapa (§1) ainda registrava como "sem execução
+verificada".
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 13.0 | Documento técnico `docs/04_FRONTEND.md` §7C | — | **feito** |
+| 13.1 | Componente Alpine `paginaErros` — formulário + lista, rota `#/erros/{assuntoId}` | Claude, a pedido do usuário | **feito** |
+| 13.2 | Link "+ registrar um erro" de Recuperar deixa de ser inerte | Claude, a pedido do usuário | **feito** |
+| 13.3 | Quarta ação "Erros" no detalhe de Assuntos | Claude, a pedido do usuário | **feito** |
+| 13.4 | Verificação manual no navegador | Claude | **feito** — ver relato abaixo |
+
+### Definition of Done
+
+- [x] `docs/04_FRONTEND.md §7C` revisado e aceito
+- [x] Formulário registra com os 7 valores de causa e as 3 âncoras de
+      confiança (`sessaoId` fica de fora nesta sprint, dos dois pontos de
+      entrada — `04_FRONTEND.md §7C` explica por quê)
+- [x] Lista mostra os erros do assunto (`GET /api/erros?assuntoId=`)
+- [x] Link de Recuperar e ação de Assuntos abrem `#/erros/{assuntoId}` com
+      o assunto certo pré-preenchido
+- [x] Abrir `#/erros/{id}` sem passar por um dos dois pontos de entrada
+      (aba nova, sem store) cai em `semDados` — conferido
+- [x] Testado num navegador real contra Postgres real, mesmo padrão das
+      Sprints 9/11/12
+
+**Verificação manual (2026-09-07):** Postgres descartável + `mvn
+spring-boot:run` + Chrome real, antes rodado o teste completo do backend
+(111/111 verdes). Fluxo Recuperar → etapa 2 → "+ registrar um erro" →
+`#/erros/{id}` com o assunto certo; formulário preenchido (causa
+"Interpretação", confiança "Média", descrição) e registrado — conferido no
+Postgres: `sessao_id` nulo (como o documento técnico já previa),
+`causa=INTERPRETACAO`, `confianca=MEDIA`, `resolvido=false`. Fluxo do
+detalhe de Assuntos → botão "Erros" → mesma tela, lista já mostrando o erro
+recém-registrado (consulta por assunto funcionando). Caso sem dado testado
+numa aba nova: `#/erros/{id}` sem passar por nenhum dos dois pontos de
+entrada caiu em `semDados`, como documentado. Nenhum bug encontrado. Mesma
+flakiness conhecida do clique via ferramenta de automação (Sprints
+9/11/12) — contornada chamando os métodos do componente Alpine direto.
+
+---
+
+## 15. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -710,10 +767,12 @@ quando o clique não registrava.
 
 ---
 
-## 15. Changelog
+## 16. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.37.0 | 2026-09-07 | **Sprint 13 completa** — testada num Chrome real contra Postgres descartável, depois de rodar o teste completo do backend (111/111 verdes). Os dois pontos de entrada contextuais funcionaram: Recuperar (etapa 2) → "+ registrar um erro" → formulário → registrado com `sessao_id` nulo (como previsto, D-46) e `causa`/`confianca` certos; detalhe de Assuntos → botão "Erros" → mesma tela, já mostrando o erro recém-registrado na consulta por assunto. Caso sem dado testado numa aba nova: `#/erros/{id}` direto caiu em `semDados`. Nenhum bug encontrado. Itens 13.1–13.4 promovidos a **feito** |
+| 1.36.0 | 2026-09-07 | **Sprint 13 aberta (Frontend — Erros)**, a pedido do usuário ("segue em frente na implementação"), logo depois da paleta. Escolha do que abrir: Erros e Progresso tinham backend pronto (rodei o teste completo antes de decidir — 111/111 verdes, corrigindo a linha do mapa que ainda dizia "sem execução verificada" pra Sprint 7); Erros escolhida por ter um pendência concreta e já registrada (o link inerte de Recuperar) e por ser menor que Progresso (2 endpoints contra 4 formatos de métrica). `docs/02_JORNADAS.md §4.2` pede um atalho global de registrar erro em qualquer tela — decisão de escopo fechada ao abrir: esta sprint entrega só dois pontos de entrada contextuais, não o atalho global, que exige um padrão de componente novo; registrado como pendência, não escondido. `docs/04_FRONTEND.md` v1.4.0, nova §7C. `PROGRESSO.md` §14 criado (Sprint 13), seções seguintes renumeradas; §1 corrigido pra refletir o teste completo já verde. Nenhum código de tela escrito ainda |
 | 1.35.0 | 2026-09-07 | **Paleta e tipografia adotadas** (`docs/04_FRONTEND.md` v1.3.0, nova §8A) — a pedido do usuário, que quis a paleta e o estilo do qconcursos.com. Cor extraída de verdade do site e mapeada por papel funcional (teal `primary` na ação principal, laranja só no chip de peso `ALTO`, fonte Open Sans), confirmada com o usuário antes de implementar. Tokens no `tailwind.config` do `<head>`, retroativo às quatro telas já existentes, sem mudar nenhuma de arquitetura. Testado num Chrome real: cores computadas conferem hex a hex com o token (`getComputedStyle`), fonte aplicada, nenhum erro de console |
 | 1.34.0 | 2026-09-07 | **Sprint 12 completa** — testada num Chrome real contra Postgres descartável: duas disciplinas, três assuntos (um com dois segmentos da Sprint 10, um levado a `FRENTE` por sessão registrada direto no banco). Lista agrupou certo por disciplina com chip de peso e de fase (`FRENTE` calculado pela API em tempo real, não hardcoded); detalhe mostrou os segmentos com link pro material; botão "Questões" do detalhe abriu Registrar com o assunto pré-preenchido e uma sessão real foi gravada e conferida no banco (`QUESTOES`/`MULTIPLA_ESCOLHA`/10 feitas/7 certas/60% previsto/resultado `PARCIAL`). Caso sem dado testado também: `#/assuntos/{id}` numa aba nova sem passar pela lista caiu em `semDados`, exatamente a consequência que o documento técnico já previa por não existir `GET /api/assuntos/{id}`. Nenhum bug encontrado. Itens 12.1–12.4 promovidos a **feito** |
 | 1.33.0 | 2026-09-07 | **Sprint 12 aberta (Frontend — Assuntos)**, a pedido do usuário ("pode avançar com o código até que haja alguma questão que precise ser decidida") logo depois de fechar a Sprint 11. Escolha do que abrir: a própria Sprint 11 já tinha registrado a pendência (sem tela Assuntos, Questões/Flashcards/conteúdo livre não têm ponto de entrada) — nenhum endpoint novo foi necessário, todos já existiam (`GET /api/disciplinas`, `/api/assuntos`, `/api/assuntos/{id}/fase`, `/api/assuntos/{id}/segmentos`), então não houve decisão de arquitetura a levantar, só de escopo de tela. `docs/04_FRONTEND.md` v1.2.0, nova §7B: lista por disciplina (`#/assuntos`) + detalhe (`#/assuntos/{id}`) com as três ações que escrevem no mesmo `Alpine.store('registrar')` que Hoje já usava. Decisão de escopo fechada ao abrir: upload de CSV pela interface (aparece no wireframe de referência) fica de fora — os endpoints de import/export já são usados por script/`curl`, não por upload manual; registrado como pendência em `04_FRONTEND.md §9`. `PROGRESSO.md` §13 criado (Sprint 12), seções seguintes renumeradas. Nenhum código escrito ainda |
