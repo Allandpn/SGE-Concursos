@@ -26,6 +26,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 11 | Frontend — Registrar sessão | Terceira tela: Conteúdo/Questões/Flashcards (`04_FRONTEND.md §7A`) — não confundir com a Sprint 3 (o backend do mesmo evento) | **feito** — testada num navegador real, os três tipos gravam certo no Postgres real |
 | 12 | Frontend — Assuntos | Quarta tela: lista por disciplina + detalhe, fecha a pendência de entrada pra Questões/Flashcards que a Sprint 11 deixou (`04_FRONTEND.md §7B`) | **feito** — testada num navegador real, lista/detalhe/entrada pra Registrar conferidos contra Postgres real |
 | 13 | Frontend — Erros | Quinta tela: formulário + consulta por assunto, fecha o link inerte que a Sprint 9 deixou em Recuperar (`04_FRONTEND.md §7C`) | **feito** — testada num navegador real, os dois pontos de entrada e o registro conferidos contra Postgres real |
+| 14 | Frontend — Progresso | Sexta tela: M-1/M-3/M-4 globais; M-2 (por assunto) vira seção nova no detalhe de Assuntos (`04_FRONTEND.md §7D`) | **feito** — testada num navegador real, as quatro métricas conferidas contra Postgres real |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -753,7 +754,65 @@ flakiness conhecida do clique via ferramenta de automação (Sprints
 
 ---
 
-## 15. Como este arquivo se mantém honesto
+## 15. Sprint 14 · Frontend — Progresso
+
+**Documento técnico:** `docs/04_FRONTEND.md` v1.5.0 — nova §7D. Reabre o
+documento pra tela global de M-1/M-3/M-4.
+
+Decisão de escopo fechada ao abrir: M-2 (retenção) exige `assuntoId` — não
+é leitura global como as outras três — então vira seção nova ("Retenção")
+no detalhe de Assuntos (§7B) em vez de morar em Progresso. Seta de
+tendência de M-1 (pedida por `00_PRODUTO §7`) fica de fora: `M1Response`
+não carrega um período anterior pra comparar, precisa de decisão de
+backend, não é lacuna de frontend — registrado em `04_FRONTEND.md §9`.
+
+Nenhum endpoint novo: `/api/metricas/*` já existia da Sprint 7 — o teste
+completo (111/111, incluindo 8/8 `MetricaServiceTest`) já tinha sido
+confirmado antes de abrir a Sprint 13 e continua valendo aqui.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 14.0 | Documento técnico `docs/04_FRONTEND.md` §7D | — | **feito** |
+| 14.1 | Componente Alpine `paginaProgresso` — M-1 (pílula de janela), M-3, M-4, rota `#/progresso` + link no cabeçalho | Claude, a pedido do usuário | **feito** |
+| 14.2 | Seção "Retenção" (M-2) no detalhe de Assuntos | Claude, a pedido do usuário | **feito** |
+| 14.3 | Verificação manual no navegador | Claude | **feito** — ver relato abaixo |
+
+### Definition of Done
+
+- [x] `docs/04_FRONTEND.md §7D` revisado e aceito
+- [x] M-1 troca de janela (GLOBAL/POR_DISCIPLINA) e refaz a consulta;
+      fração sempre visível — caminho `percentual === null` usa o mesmo
+      ternário já provado em Registrar/Progresso-M4, não exercitado com
+      dado real `n < 10` nesta verificação (ressalva abaixo)
+- [x] M-3 mostra objetiva e subjetiva sem somar; `n=0` mostra "sem dados
+      ainda" (lógica conferida, não exercitada com dado real de `n=0`)
+- [x] M-4 mostra percentual (ou "—") e fração
+- [x] Detalhe de Assuntos ganha a seção "Retenção" (M-2), séries por tipo
+      de sessão nunca somadas
+- [x] Testado num navegador real contra Postgres real, mesmo padrão das
+      Sprints 9/11/12/13
+
+**Verificação manual (2026-09-07):** Postgres descartável + `mvn
+spring-boot:run` + Chrome real. Seed: um assunto com um `ESTUDO`, uma
+`RECUPERACAO` (`SUCESSO`) e duas `QUESTOES` (15/10 e 10/8 corretas, com
+previsão). M-1 Global mostrou 72% (18/25), conferido com o `curl` cru antes
+de abrir o navegador; trocar pra "Por disciplina" mostrou "Direito
+Constitucional · Múltipla escolha", nome resolvido certo via
+`GET /api/disciplinas`. M-3 objetiva "2 pts — superestimou" (arredondado
+de 1,67) e subjetiva "0 superestimou · 0 subestimou · 1 acertou" — os dois
+batendo com a resposta crua da API. M-4 "100% em até 3 dias do previsto",
+3/3. Seção "Retenção" no detalhe de Assuntos mostrou as duas séries
+(Questões com 1ª exposição 67% e depois 80%; Recuperação só com 1ª
+exposição 100%, sem "depois" — `percentualMediaSeguintes` nulo escondeu a
+parte certa via `x-show`). Nenhum bug encontrado, nenhum erro de console.
+**Ressalva:** o caminho `n < 10`/`n = 0` (percentual nulo, "sem dados
+ainda") não foi exercitado com dado real nesta verificação — é o mesmo
+padrão de ternário já provado em outras telas, risco baixo, mas registrado
+por honestidade.
+
+---
+
+## 16. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -767,10 +826,12 @@ flakiness conhecida do clique via ferramenta de automação (Sprints
 
 ---
 
-## 16. Changelog
+## 17. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.39.0 | 2026-09-07 | **Sprint 14 completa** — testada num Chrome real contra Postgres descartável (um assunto, um `ESTUDO`, uma `RECUPERACAO` e duas `QUESTOES`). M-1 conferido 72% (18/25) contra o `curl` cru, nas duas janelas (Global e Por disciplina, esta com nome de disciplina resolvido certo). M-3 objetiva/subjetiva batendo com a API; M-4 100% (3/3). Seção "Retenção" no detalhe de Assuntos mostrando as duas séries de M-2, com `percentualMediaSeguintes` nulo escondendo a parte certa. Nenhum bug encontrado. Ressalva registrada: caminho `n<10`/`n=0` (percentual/"sem dados ainda") não foi exercitado com dado real, só a lógica conferida — mesmo padrão já provado noutras telas. Itens 14.1–14.3 promovidos a **feito** |
+| 1.38.0 | 2026-09-07 | **Sprint 14 aberta (Frontend — Progresso)**, a pedido do usuário ("pode seguir"), logo depois de fechar a Sprint 13. Backend de métricas (`/api/metricas/*`) já pronto e testado desde a Sprint 7. Decisão de escopo fechada ao abrir: M-2 exige `assuntoId`, não é leitura global como M-1/M-3/M-4 — vira seção nova no detalhe de Assuntos em vez de morar em Progresso; seta de tendência de M-1 (pedida por `00_PRODUTO §7`) fica de fora porque `M1Response` não carrega período anterior pra comparar — decisão de backend, registrada como pendência, não escondida. `docs/04_FRONTEND.md` v1.5.0, nova §7D (+ parágrafo em §7B pra M-2). `PROGRESSO.md` §15 criado (Sprint 14), seções seguintes renumeradas. Nenhum código de tela escrito ainda |
 | 1.37.0 | 2026-09-07 | **Sprint 13 completa** — testada num Chrome real contra Postgres descartável, depois de rodar o teste completo do backend (111/111 verdes). Os dois pontos de entrada contextuais funcionaram: Recuperar (etapa 2) → "+ registrar um erro" → formulário → registrado com `sessao_id` nulo (como previsto, D-46) e `causa`/`confianca` certos; detalhe de Assuntos → botão "Erros" → mesma tela, já mostrando o erro recém-registrado na consulta por assunto. Caso sem dado testado numa aba nova: `#/erros/{id}` direto caiu em `semDados`. Nenhum bug encontrado. Itens 13.1–13.4 promovidos a **feito** |
 | 1.36.0 | 2026-09-07 | **Sprint 13 aberta (Frontend — Erros)**, a pedido do usuário ("segue em frente na implementação"), logo depois da paleta. Escolha do que abrir: Erros e Progresso tinham backend pronto (rodei o teste completo antes de decidir — 111/111 verdes, corrigindo a linha do mapa que ainda dizia "sem execução verificada" pra Sprint 7); Erros escolhida por ter um pendência concreta e já registrada (o link inerte de Recuperar) e por ser menor que Progresso (2 endpoints contra 4 formatos de métrica). `docs/02_JORNADAS.md §4.2` pede um atalho global de registrar erro em qualquer tela — decisão de escopo fechada ao abrir: esta sprint entrega só dois pontos de entrada contextuais, não o atalho global, que exige um padrão de componente novo; registrado como pendência, não escondido. `docs/04_FRONTEND.md` v1.4.0, nova §7C. `PROGRESSO.md` §14 criado (Sprint 13), seções seguintes renumeradas; §1 corrigido pra refletir o teste completo já verde. Nenhum código de tela escrito ainda |
 | 1.35.0 | 2026-09-07 | **Paleta e tipografia adotadas** (`docs/04_FRONTEND.md` v1.3.0, nova §8A) — a pedido do usuário, que quis a paleta e o estilo do qconcursos.com. Cor extraída de verdade do site e mapeada por papel funcional (teal `primary` na ação principal, laranja só no chip de peso `ALTO`, fonte Open Sans), confirmada com o usuário antes de implementar. Tokens no `tailwind.config` do `<head>`, retroativo às quatro telas já existentes, sem mudar nenhuma de arquitetura. Testado num Chrome real: cores computadas conferem hex a hex com o token (`getComputedStyle`), fonte aplicada, nenhum erro de console |

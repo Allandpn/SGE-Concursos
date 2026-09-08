@@ -318,6 +318,7 @@ document.addEventListener('alpine:init', () => {
     peso: null,
     fase: null,
     segmentos: [],
+    retencao: [],
     carregando: false,
     semDados: false,
 
@@ -346,10 +347,23 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.carregando = false;
       }
+
+      // M-2, adicionado na Sprint 14 (04_FRONTEND §7B) — mesmo princípio
+      // de auxiliar, não bloqueia o detalhe se falhar.
+      try {
+        const m2 = await api(`/metricas/m2?assuntoId=${assuntoId}`);
+        this.retencao = m2.series;
+      } catch (e) {
+        this.retencao = [];
+      }
     },
 
     get temSegmentos() {
       return this.segmentos.length > 0;
+    },
+
+    get temRetencao() {
+      return this.retencao.length > 0;
     },
 
     // Mesmo mecanismo de abrirRegistroConteudo (Hoje §6/§7A) — escreve no
@@ -436,6 +450,47 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.enviando = false;
       }
+    },
+  }));
+
+  Alpine.data('paginaProgresso', () => ({
+    carregando: true,
+    erro: null,
+    janela: 'GLOBAL',
+    disciplinasPorId: {},
+    m1: null,
+    m3: null,
+    m4: null,
+
+    async init() {
+      this.carregando = true;
+      this.erro = null;
+      try {
+        const disciplinas = await api('/disciplinas');
+        this.disciplinasPorId = Object.fromEntries(disciplinas.map((d) => [d.id, d.nome]));
+        await this.carregarM1();
+        this.m3 = await api('/metricas/m3');
+        this.m4 = await api('/metricas/m4');
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    async carregarM1() {
+      this.m1 = await api(`/metricas/m1?janela=${this.janela}`);
+    },
+
+    async trocarJanela(janela) {
+      this.janela = janela;
+      await this.carregarM1();
+    },
+
+    // GLOBAL vem com disciplinaId nulo (soma entre disciplinas, D-19);
+    // POR_DISCIPLINA precisa do nome de verdade (04_FRONTEND §7D).
+    rotuloLinha(linha) {
+      return linha.disciplinaId === null ? 'Global' : (this.disciplinasPorId[linha.disciplinaId] ?? '—');
     },
   }));
 });

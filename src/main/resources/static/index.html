@@ -37,7 +37,10 @@
 
 <header class="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
   <a href="#/hoje" class="text-lg font-semibold">Estudos</a>
-  <a href="#/assuntos" class="text-sm text-gray-500 hover:text-gray-900">Assuntos</a>
+  <nav class="flex gap-4">
+    <a href="#/assuntos" class="text-sm text-gray-500 hover:text-gray-900">Assuntos</a>
+    <a href="#/progresso" class="text-sm text-gray-500 hover:text-gray-900">Progresso</a>
+  </nav>
 </header>
 
 <main class="mx-auto max-w-md px-4 py-6">
@@ -339,6 +342,22 @@
             </template>
           </ul>
         </div>
+
+        <!-- M-2, adicionado na Sprint 14 (04_FRONTEND.md §7B/§7D) -->
+        <div x-show="temRetencao" class="space-y-2">
+          <h3 class="text-sm font-medium text-gray-500">Retenção</h3>
+          <ul class="space-y-2">
+            <template x-for="s in retencao" :key="s.tipo">
+              <li class="rounded border border-gray-200 bg-white p-3">
+                <p class="text-sm font-medium" x-text="{ESTUDO: 'Conteúdo', QUESTOES: 'Questões', FLASHCARDS: 'Flashcards', RECUPERACAO: 'Recuperação'}[s.tipo]"></p>
+                <p class="text-sm text-gray-500">
+                  <span x-text="'1ª exposição: ' + (s.percentualPrimeira === null ? '—' : Math.round(s.percentualPrimeira) + '%')"></span>
+                  <span x-show="s.percentualMediaSeguintes !== null" x-text="' · depois: ' + Math.round(s.percentualMediaSeguintes) + '%'"></span>
+                </p>
+              </li>
+            </template>
+          </ul>
+        </div>
       </div>
     </template>
   </section>
@@ -418,6 +437,69 @@
               </li>
             </template>
           </ul>
+        </div>
+      </div>
+    </template>
+  </section>
+
+  <!-- Tela Progresso — M-1/M-3/M-4 globais (04_FRONTEND.md §7D; M-2 mora no detalhe de Assuntos) -->
+  <section id="pagina-progresso" x-data="paginaProgresso()" hidden>
+
+    <template x-if="carregando">
+      <p class="text-gray-500">Carregando...</p>
+    </template>
+
+    <template x-if="!carregando && erro">
+      <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <p x-text="erro"></p>
+        <button type="button" class="mt-2 underline" @click="init()">Tentar de novo</button>
+      </div>
+    </template>
+
+    <template x-if="!carregando && !erro">
+      <div class="space-y-6">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-medium text-gray-500">M-1 · Aderência ao objetivo</h2>
+            <div class="flex gap-2">
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'GLOBAL' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('GLOBAL')">Global</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'POR_DISCIPLINA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('POR_DISCIPLINA')">Por disciplina</button>
+            </div>
+          </div>
+          <ul class="space-y-2">
+            <template x-for="linha in m1.linhas" :key="(linha.disciplinaId ?? 'global') + '-' + linha.formato">
+              <li class="rounded border border-gray-200 bg-white p-3">
+                <div class="flex items-baseline justify-between">
+                  <span class="font-medium" x-text="rotuloLinha(linha) + ' · ' + {MULTIPLA_ESCOLHA: 'Múltipla escolha', CERTO_ERRADO: 'Certo/errado'}[linha.formato]"></span>
+                  <span class="text-lg font-semibold" x-text="linha.percentual === null ? '—' : Math.round(linha.percentual) + '%'"></span>
+                </div>
+                <div class="mt-1 flex items-center gap-2 text-sm text-gray-500">
+                  <span x-text="linha.acertos + '/' + linha.total"></span>
+                  <span x-show="linha.confiavel" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs">amostra grande</span>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </div>
+
+        <div class="space-y-2 border-t border-gray-200 pt-4">
+          <h2 class="text-sm font-medium text-gray-500">M-3 · Calibração</h2>
+          <div class="rounded border border-gray-200 bg-white p-3">
+            <p class="text-sm text-gray-500">Objetiva (questões/flashcards)</p>
+            <p class="font-semibold" x-text="m3.objetiva.n === 0 ? 'sem dados ainda' : (Math.round(Math.abs(m3.objetiva.mediaDesvio)) + ' pts — ' + (m3.objetiva.mediaDesvio > 0 ? 'superestimou' : m3.objetiva.mediaDesvio < 0 ? 'subestimou' : 'sem desvio'))"></p>
+          </div>
+          <div class="rounded border border-gray-200 bg-white p-3">
+            <p class="text-sm text-gray-500">Subjetiva (recuperação)</p>
+            <p class="font-semibold" x-text="m3.subjetiva.n === 0 ? 'sem dados ainda' : (m3.subjetiva.superestimou + ' superestimou · ' + m3.subjetiva.subestimou + ' subestimou · ' + m3.subjetiva.acertouPrevisao + ' acertou')"></p>
+          </div>
+        </div>
+
+        <div class="space-y-2 border-t border-gray-200 pt-4">
+          <h2 class="text-sm font-medium text-gray-500">M-4 · Aderência ao prazo</h2>
+          <div class="rounded border border-gray-200 bg-white p-3">
+            <p class="font-semibold" x-text="(m4.percentual === null ? '—' : Math.round(m4.percentual) + '%') + ' em até 3 dias do previsto'"></p>
+            <p class="text-sm text-gray-500" x-text="m4.dentroDoPrazo + '/' + m4.totalCumpridas"></p>
+          </div>
         </div>
       </div>
     </template>

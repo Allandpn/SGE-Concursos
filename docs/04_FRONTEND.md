@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.4.0 |
+| Versão | 1.5.0 |
 | Data | 2026-09-07 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-028 (zero build, revisada nesta data), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -30,13 +30,15 @@ padrões novos (seletor de tipo, campo numérico) que as duas telas anteriores
 não tinham, §7A. **Sprint 12**: **Assuntos** — reabriu porque fechou a
 pendência que a própria Sprint 11 registrou (§9 da v1.1.0): sem essa tela,
 Questões/Flashcards e "conteúdo em assunto livre" não tinham como ser
-abertos pela interface. **Sprint 13** (esta revisão): **Erros** — reabre
-porque fecha o link inerte que a Sprint 9 já tinha deixado em Recuperar
-(§7, "+ registrar um erro").
+abertos pela interface. **Sprint 13**: **Erros** — reabriu porque fechou o
+link inerte que a Sprint 9 já tinha deixado em Recuperar (§7, "+ registrar
+um erro"). **Sprint 14** (esta revisão): **Progresso** — M-1, M-3 e M-4
+numa tela nova; M-2 (retenção por assunto) entra como seção nova no
+detalhe de Assuntos (§7B), não aqui — §7D explica por quê.
 
-As duas telas restantes (Progresso, Ajustes) ficam para sprints de frontend
-seguintes — cada uma reabre este documento só se precisar de um padrão
-novo; do contrário, segue o que já está aqui.
+Só **Ajustes** fica pra uma sprint de frontend futura — reabre este
+documento se precisar de um padrão novo; do contrário, segue o que já está
+aqui.
 
 Decisão de stack não é feita aqui — é reaproveitada de ADR-028/030,
 reexaminadas em 2026-08-31 contra a exigência de §1 abaixo e mantidas
@@ -145,6 +147,10 @@ async function api(caminho, opcoes = {}) {
 | Assunto detalhe | `GET` | `/api/assuntos/{id}/segmentos` | mesmo endpoint da linha acima, reaproveitado — mostra o material do assunto |
 | Erros | `GET` | `/api/erros?assuntoId={id}` | `ErroResponse[]` — consulta por assunto (`02_JORNADAS §4`) |
 | Erros | `POST` | `/api/erros` | corpo `ErroRequest` (`assuntoId`, `sessaoId` opcional, `descricao`, `causa`, `confianca`); resposta `ErroResponse` |
+| Progresso | `GET` | `/api/metricas/m1?janela={GLOBAL\|POR_DISCIPLINA}` | `M1Response` — pílula troca a janela, refaz a chamada |
+| Progresso | `GET` | `/api/metricas/m3` | `M3Response` |
+| Progresso | `GET` | `/api/metricas/m4` | `M4Response` |
+| Assunto detalhe | `GET` | `/api/metricas/m2?assuntoId={id}` | `M2Response` — nova seção "Retenção" no detalhe (§7B), não na tela Progresso |
 
 Nenhum endpoint novo pra gravar — `/api/sessoes` já existe e está testado
 (`docs/SPRINT-3-SESSAO.md`). A leitura de segmentos já existe e está
@@ -367,6 +373,14 @@ ativo em nenhuma)/preenchido — os quatro de sempre. Detalhe: mesma
 estrutura de Recuperar/Registrar quando o `id` da URL não corresponde a
 assunto nenhum (`semDados`, §7A) — em vez de um erro genérico de rede.
 
+### Retenção (M-2, adicionado na Sprint 14, §7D)
+
+Nova seção no detalhe, ao lado de Material: `GET
+/api/metricas/m2?assuntoId=` no mesmo `abrir()` que já busca segmentos —
+mostra `percentualPrimeira` × `percentualMediaSeguintes` por tipo de sessão
+(nunca somados entre si). Motivo de morar aqui, não na tela Progresso:
+§7D explica.
+
 ---
 
 ## 7C. Tela Erros (Sprint 13)
@@ -447,6 +461,72 @@ consulta, não parte do registro.
 
 ---
 
+## 7D. Tela Progresso (Sprint 14)
+
+Serve J-3 (`02_JORNADAS §4`: "as quatro métricas, com as regras de n de
+`00_PRODUTO §7`"). Sem contexto de assunto/sessão — rota `#/progresso`,
+novo link no cabeçalho — porque M-1, M-3 e M-4 são leituras globais; **M-2
+não mora aqui** (próxima seção).
+
+### Por que M-2 não está nesta tela
+
+M-2 exige `assuntoId` (`M2Response.assuntoId`) — é retenção *dentro* de um
+assunto específico (primeira exposição × média das seguintes), não uma
+leitura global como as outras três. Colocar M-2 na tela Progresso exigiria
+um seletor de assunto só pra essa métrica — padrão novo, evitável: o
+detalhe de Assuntos (§7B) já tem o `assuntoId` em mãos. M-2 vira uma nova
+seção "Retenção" lá, ao lado de Material — um `GET
+/api/metricas/m2?assuntoId=` a mais no `abrir()` que já existe.
+
+Isso também **não** é o mesmo erro que `00_PRODUTO §7` proíbe
+explicitamente: "acerto por assunto nunca será medida" (linha 258-260) é
+sobre M-1 — comparar assuntos entre si por percentual de acerto, amostra
+pequena demais (13 questões/assunto/ano) pra sustentar. M-2 compara um
+assunto **consigo mesmo** (primeira exposição vs. depois), pergunta
+diferente, já desenhada assim desde a Sprint 7.
+
+### M-1 — pílula de janela
+
+`JanelaMetrica` tem duas opções, com **escopo e período diferentes, não só
+período**: `GLOBAL` soma tudo (`disciplinaId` nulo nas linhas), janela
+trimestral; `POR_DISCIPLINA` quebra por disciplina ativa, janela anual —
+por isso vira pílula (padrão já usado em Registrar §7A), não checkbox: são
+duas consultas diferentes, trocar exige novo `fetch`. `POR_DISCIPLINA`
+precisa do nome de cada disciplina pra rotular a linha — `GET
+/api/disciplinas` de novo, mesmo padrão de N-chamadas-pequenas já aceito em
+§7B.
+
+Cada linha é um cartão: rótulo (nome da disciplina, ou "Global" quando
+`disciplinaId` é nulo) + formato (`D-36`: nunca soma formatos diferentes) +
+percentual. Regra de `n` (`00_PRODUTO §7`, já espelhada nos `@Schema` dos
+DTOs): `percentual` nulo vira **"—"**, nunca `0%`; abaixo disso a fração
+(`acertos`/`total`) ainda aparece, só o percentual some.
+
+### Sem seta de tendência — limite do backend, não desta sprint
+
+O wireframe de referência (`Progresso.dc.html`) mostra uma seta "↑ 10 pts"
+comparando com o período anterior. `00_PRODUTO §7` até prevê isso ("seta de
+tendência... exigem n ≥ 100") — mas `M1Response` não carrega o período
+anterior, nem existe parâmetro pra pedir dois períodos numa chamada só.
+Sem um segundo ponto de dado, não há tendência pra desenhar — inventar um
+"anterior" no cliente seria mentir com número (o próprio `00_PRODUTO §7`
+condena isso). Fica fora, registrado em §9: implementar exigiria decisão de
+backend (nova sprint), não é lacuna de frontend. O campo `confiavel`
+(`n ≥ 100`) aparece nesta sprint só como uma marca discreta "amostra
+grande" — sem cor, sem seta, porque não há com o que comparar ainda.
+
+### M-3 e M-4
+
+M-3: dois cartões, objetiva (`mediaDesvio` com sinal — positivo
+superestimou) e subjetiva (contagem de super/sub/acertou), nunca somadas
+(mesmo texto do `@Schema`). `n = 0` em qualquer uma mostra "sem dados
+ainda", não um desvio de `0.0` que pareceria calibração perfeita sem ser.
+
+M-4: percentual (ou "—" se `totalCumpridas = 0`) + fração
+`dentroDoPrazo`/`totalCumpridas`.
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -510,8 +590,12 @@ reconhecível, nunca a cor de destaque do produto).
 - Biblioteca de componente própria e espaçamento sistemático — cor e
   tipografia já estão definidas (§8A); o que falta é refinamento maior,
   ainda sem tela suficiente pra justificar o investimento.
-- As duas telas restantes (Progresso, Ajustes) — cada uma decide, na sua
-  sprint, se precisa de padrão novo além do que este documento já fixa.
+- **Ajustes**, única tela restante — decide, quando abrir, se precisa de
+  padrão novo além do que este documento já fixa.
+- Seta de tendência de M-1 (`00_PRODUTO §7`, "seta... exigem n ≥ 100") —
+  `M1Response` não carrega um período anterior pra comparar; precisa de
+  decisão de backend (novo parâmetro ou endpoint), não é lacuna de
+  frontend. §7D.
 - Atalho global de "registrar erro", visível em qualquer tela sem
   depender de contexto (Recuperar ou detalhe de Assunto) — `02_JORNADAS
   §4.2` pede isso, a Sprint 13 entrega só os dois pontos de entrada
@@ -535,6 +619,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.5.0 | 2026-09-07 | Sprint 14 aberta — nova **§7D, tela Progresso** (M-1 com pílula de janela GLOBAL/POR_DISCIPLINA, M-3, M-4). Decisão de escopo: M-2 exige `assuntoId`, então vira seção nova ("Retenção") no detalhe de Assuntos em vez de morar em Progresso — §7B ganha esse parágrafo. Seta de tendência de M-1 (pedida por `00_PRODUTO §7`) fica de fora: `M1Response` não carrega um período anterior pra comparar, precisa de decisão de backend; registrado em §9. Nenhum endpoint novo: `/api/metricas/*` já existia da Sprint 7, testado (17/17 verdes contando Erro+Métrica) antes de escolher esta sprint. §4 ganha quatro linhas de endpoint |
 | 1.4.0 | 2026-09-07 | Sprint 13 aberta — nova **§7C, tela Erros**. Fecha o link inerte "+ registrar um erro" que a Sprint 9 deixou em Recuperar. Decisão de escopo: `02_JORNADAS §4.2` pede um atalho global de registrar erro em qualquer tela; esta sprint entrega só dois pontos de entrada contextuais (Recuperar pós-tentativa com `sessaoId`, detalhe de Assuntos sem `sessaoId`) — o atalho verdadeiramente global fica registrado em §9, exige um padrão de componente que a arquitetura ainda não tem. Nenhum endpoint novo: `GET`/`POST /api/erros` já existiam da Sprint 7 e passaram no teste completo (111/111) antes de abrir esta sprint. §4 ganha duas linhas de endpoint |
 | 1.3.0 | 2026-09-07 | Nova **§8A, paleta e tipografia** — a pedido do usuário, que quis a paleta e o estilo do qconcursos.com. Cor extraída de verdade do site (`getComputedStyle`) e mapeada por papel funcional, confirmada com o usuário antes de implementar (teal como `primary` — ação principal, no lugar do verde de upsell que o qconcursos usa; laranja só no chip de peso `ALTO`; fonte trocada pra Open Sans). Tokens `primary`/`alerta` no `tailwind.config` do `<head>`, nenhum hex direto nas telas — trocar a paleta depois é editar um bloco só. Aplicado retroativamente às quatro telas já existentes (Hoje, Recuperar, Registrar, Assuntos), sem mudar nenhuma delas de arquitetura. §0/§9 atualizados: "cor e tipografia são doc futuro" fechado, resta só biblioteca de componente/espaçamento como fora de escopo |
 | 1.2.0 | 2026-09-07 | Sprint 12 aberta — nova **§7B, tela Assuntos** (lista por disciplina + detalhe, `#/assuntos` e `#/assuntos/{id}`). Fecha a pendência de entrada pra Questões/Flashcards/conteúdo livre que a Sprint 11 tinha deixado registrada: o detalhe do assunto ganha três ações que escrevem no mesmo `Alpine.store('registrar')` que Hoje já usava. Decisão de escopo: upload de CSV pela interface (mostrado no wireframe de referência) fica de fora — os endpoints de importação já são usados por script, não por upload manual; registrado em §9. Fase por assunto é uma chamada por assunto, decisão consciente dado a escala de uso (usuário único, dezenas de assuntos), não descuido. §4 ganha quatro linhas de endpoint, nenhuma nova (todas já existiam de sprints anteriores) |
