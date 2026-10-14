@@ -31,6 +31,29 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
     @Query("select distinct s.assunto.id from Sessao s where s.assunto.id in :assuntoIds")
     Set<Long> assuntosComSessao(@Param("assuntoIds") Collection<Long> assuntoIds);
 
+    // D-54 (docs/SPRINT-17-USO-REAL.md §1.1): segmentos do assunto que já
+    // tiveram alguma sessão ESTUDO — o que falta ler é derivado, não guardado.
+    @Query("""
+        select distinct s.segmento.id from Sessao s
+        where s.assunto.id = :assuntoId
+          and s.tipo = br.com.estudos.shared.enums.TipoSessao.ESTUDO
+          and s.segmento is not null
+        """)
+    Set<Long> segmentosEstudados(@Param("assuntoId") Long assuntoId);
+
+    // D-55 (docs/SPRINT-17-USO-REAL.md §1.2): assuntos em estudo — ativos, de
+    // disciplina ativa, com sessão e sem nenhuma revisão (01_DOMINIO §8) —,
+    // o que começou primeiro antes.
+    @Query("""
+        select s.assunto.id from Sessao s
+        where s.assunto.ativo = true
+          and s.assunto.disciplina.ativo = true
+          and not exists (select 1 from Revisao r where r.assunto = s.assunto)
+        group by s.assunto.id
+        order by min(s.id)
+        """)
+    List<Long> assuntosEmEstudo();
+
     // M-2 (docs/SPRINT-7-METRICAS.md §4.2): primeira exposição = data mais
     // antiga; ordenado, o service só pega head/tail da lista, por tipo.
     // Desempate por id: duas sessões do mesmo tipo no mesmo dia (ex.: duas

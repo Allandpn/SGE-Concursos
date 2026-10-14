@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.19.0 |
+| Versão | 1.20.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -341,6 +341,22 @@ assunto** (D-51) — os outros três tipos continuam apontando só para o assunt
 (D-01 intacto). Generalizar fragmentaria a escada por segmento em vez de por
 assunto, competindo com o mecanismo que já existe para granularidade fina
 (§3.2.1, dividir assunto).
+
+**Quando a escada de um assunto com segmentos começa (D-54).** Recuperar um
+assunto do qual só se leu uma parte mede o que não foi estudado, e a escada
+regride por um motivo falso. Por isso, num assunto com segmentos, a primeira
+revisão só é agendada quando **todos os segmentos** tiverem pelo menos uma
+sessão de `ESTUDO`, e é agendada a partir da data da sessão que completou a
+leitura. Uma sessão de `ESTUDO` **sem segmento** num assunto que tem segmentos
+significa "estudei o assunto inteiro" e também inicia a escada — é a saída
+para quem estudou por outro material. Assunto sem segmentos continua como
+sempre: o primeiro estudo inicia a escada. Uma recuperação registrada antes
+de terminar a leitura também inicia a escada, porque foi o usuário quem
+decidiu se testar.
+
+Enquanto a leitura não termina, o assunto está **em estudo** (§8): já tem
+sessão, ainda não tem revisão. É o turno quem leva a leitura até o fim
+(D-55, §7.4).
 
 Carrega, **obrigatoriamente**, uma **chave externa** própria — mesma natureza
 que a chave externa do assunto (§3.2), mas aqui sem ser opcional: como
@@ -926,6 +942,13 @@ Quando há assunto em **reestudo** (§5.1), ele aparece numa lista própria
 entre a fila de recuperação e o bloco de conteúdo novo — é estudo de
 correção de assunto que já está na frente, não abertura de assunto novo.
 
+**O bloco de conteúdo termina o que começou antes de abrir assunto novo
+(D-55).** Se algum assunto está em estudo (§8) e tem segmento ainda não lido,
+o bloco do turno é o **próximo segmento** dele, pela ordem — o assunto em
+estudo há mais tempo primeiro. Só sem leitura pendente o bloco abre um assunto
+do backlog (D-20, D-25), e então já indica o primeiro segmento dele, se houver.
+Continuar não abre vaga nova na frente, então não depende do teto.
+
 O plano é **derivado e efêmero**. Não se guarda, não vira entidade: é recalculado
 a cada pedido, a partir da fila de revisões vencidas, da frente e dos tetos. Se
 o usuário fizer outra coisa, nada quebra — ele nunca prometeu nada
@@ -1025,7 +1048,7 @@ O assunto **não guarda** em que ponto do processo está. A fase é calculada:
 | Fase | Como se reconhece |
 |---|---|
 | **Backlog** | Cadastrado, sem sessão, fora da frente (§6.2) |
-| **Em estudo** | Tem sessão, sem revisão pendente, sem escada concluída |
+| **Em estudo** | Tem sessão e ainda nenhuma revisão: a leitura começou e não terminou (D-54) |
 | **Em escada** | Tem revisão pendente com nível abaixo do máximo |
 | **Consolidado** | Escada concluída **e** os dois últimos resultados `SUCESSO` |
 | **Em manutenção** | Consolidado com revisão pendente de manutenção |
@@ -1121,6 +1144,8 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-51 | Segmento referenciado por uma sessão pertence ao mesmo assunto dessa sessão | §3.7 |
 | D-52 | Chave externa do assunto, quando presente, é única entre todos os assuntos | §3.2 |
 | D-53 | Todo segmento tem chave externa, obrigatória e única entre todos os segmentos | §3.7 |
+| D-54 | Assunto com segmentos só entra na escada quando todos os segmentos foram estudados, ou com estudo do assunto inteiro (sem segmento); sem segmentos, no primeiro estudo | §3.7 |
+| D-55 | O bloco de conteúdo do turno continua o assunto em estudo (próximo segmento não lido) antes de abrir assunto do backlog | §7.4 |
 
 ---
 
@@ -1190,6 +1215,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.20.0 | 2026-10-14 | Atrito 1 da análise de jornada: num assunto com vários segmentos, o primeiro `ESTUDO` agendava a revisão para o dia seguinte (recuperar um assunto lido em 20% fazia a escada regredir por motivo falso), e o turno nunca mais sugeria os segmentos seguintes, embora `docs/requisitos-planejamento-blocos-de-conteudo.md` §3 dissesse que o SGE decide qual segmento é o próximo. Nova **D-54** (§3.7): a escada começa quando a leitura termina. Nova **D-55** (§7.4): o bloco do turno continua o assunto em estudo antes de abrir outro. §8: "em estudo" passa a ter definição operacional (tem sessão, nenhuma revisão). 55 regras. Pedido pelo usuário |
 | 1.19.0 | 2026-10-14 | Duas lacunas achadas em análise do código contra este documento (Sprint 16). (1) **§5.5**: explicitado quando o assunto está consolidado, como sequência de resultados no nível-alvo — `PARCIAL` em manutenção **mantém** consolidado (a tabela já dizia; a implementação o desconsolidava porque só olhava "os dois últimos"). (2) **§5.1**: definido como se reconhece, sem atributo novo, o assunto que `FALHA` devolveu à fila de estudo (*reestudo*) — D-07 e D-11 diziam "volta para a fila de estudo", mas nada dizia como a fila o reconhecia, e a implementação nunca o oferecia. §7.4 ganha a lista de reestudo no plano do turno. Nenhuma regra D-xx nova: as duas são leitura precisa de D-07, D-10 e D-11. Aprovado pelo usuário |
 | 1.18.0 | 2026-09-06 | **§3.7 revisada**: `Segmento` ganha atributo **chave externa obrigatória** (diferente da de `Assunto`, que é opcional) — todo segmento nasce de importação, então sempre tem uma. Existe para a reimportação identificar um segmento já existente pela chave, não por `ordem`: reordenar o material depois de importado não pode fazer o SGE confundir um segmento antigo (já referenciado por sessões passadas) com um novo que ocupa a mesma posição. Nova **D-53** (§10) e linha de decisão em §11 explicando por que aqui a chave é obrigatória, ao contrário do caso de `Assunto`. Decidido com o usuário ao revisar o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md` (ainda não fechado) — acrescentado antes do documento técnico, seguindo a regra central do `CLAUDE.md` |
 | 1.17.0 | 2026-09-05 | Nova **§3.7, entidade Segmento**: pedaço de material de leitura dentro de um assunto, ordenado, nascido só por importação de um sistema de planejamento externo (`docs/00A_ADR.md` ADR-037). Sessão de `ESTUDO` pode apontar, opcionalmente, para um segmento do mesmo assunto — os outros três tipos continuam apontando só para o assunto (D-01 intacto). `Assunto` ganha atributo opcional **chave externa** (§3.2), que o SGE guarda sem interpretar, para o sistema de planejamento referenciar o assunto certo ao importar segmentos sem depender do `id` que o SGE decide (evita o mesmo risco que a coluna `id` do J-1 já resolve para o próprio assunto). §9 ganha as duas relações novas. D-50 a D-52. Decidido com o usuário na abertura da Sprint 10 (referência de material por blocos), sequenciada antes da Sprint 9 (frontend pausado) |

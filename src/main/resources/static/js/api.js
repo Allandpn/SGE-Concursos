@@ -44,3 +44,14 @@ function hojeISO() {
   const dia = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${mes}-${dia}`;
 }
+
+// "Bloco 2 de 5 · p. 31–60 · ~60 min" — o mesmo texto no card de Hoje e no
+// seletor de Registrar (docs/SPRINT-17-USO-REAL.md §1.3). `total` só vem no
+// segmento sugerido pelo plano; na lista de Registrar fica só "Bloco 2".
+function descreverSegmento(s) {
+  if (!s) return '';
+  const partes = [s.total ? `Bloco ${s.ordem} de ${s.total}` : `Bloco ${s.ordem}`];
+  if (s.paginaInicial && s.paginaFinal) partes.push(`p. ${s.paginaInicial}–${s.paginaFinal}`);
+  if (s.tempoEstimadoMin) partes.push(`~${s.tempoEstimadoMin} min`);
+  return partes.join(' · ');
+}

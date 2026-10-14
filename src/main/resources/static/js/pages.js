@@ -78,6 +78,8 @@ document.addEventListener('alpine:init', () => {
     fila: [],
     reestudos: [],
     blocoConteudo: null,
+    blocoContinuacao: false,
+    segmentoSugerido: null,
 
     async init() {
       this.carregando = true;
@@ -87,6 +89,8 @@ document.addEventListener('alpine:init', () => {
         this.fila = plano.filaRecuperacao;
         this.reestudos = plano.reestudos;
         this.blocoConteudo = plano.blocoConteudo;
+        this.blocoContinuacao = plano.blocoContinuacao;
+        this.segmentoSugerido = plano.segmentoSugerido;
       } catch (e) {
         this.erro = e.message;
       } finally {
@@ -106,6 +110,20 @@ document.addEventListener('alpine:init', () => {
     abrirRegistroConteudo(assunto) {
       Alpine.store('registrar').selecionar(assunto);
       window.location.hash = `#/registrar/conteudo/${assunto.id}`;
+    },
+
+    // D-55: o card leva o segmento sugerido pra Registrar já vir com ele marcado.
+    abrirBlocoConteudo() {
+      this.abrirRegistroConteudo({ ...this.blocoConteudo, segmentoSugeridoId: this.segmentoSugerido?.id ?? null });
+    },
+
+    get descricaoSegmento() {
+      return descreverSegmento(this.segmentoSugerido);
+    },
+
+    get linkMaterial() {
+      const arquivo = this.segmentoSugerido?.arquivo;
+      return arquivo && /^https?:\/\//.test(arquivo) ? arquivo : null;
     },
 
     // D-07/D-11: reestudo é uma sessão ESTUDO do mesmo assunto — mesma tela
@@ -247,12 +265,20 @@ document.addEventListener('alpine:init', () => {
       if (!this.semDados) {
         try {
           this.segmentos = await api(`/assuntos/${assuntoId}/segmentos`);
+          // D-55: vindo do card de Hoje, o segmento sugerido já vem marcado.
+          if (item.segmentoSugeridoId && this.segmentos.some((s) => s.id === item.segmentoSugeridoId)) {
+            this.segmentoId = String(item.segmentoSugeridoId);
+          }
         } catch (e) {
           // Lista de segmentos é auxiliar, não bloqueia o registro — se
           // falhar, o campo de segmento simplesmente não aparece (§7A).
           this.segmentos = [];
         }
       }
+    },
+
+    rotuloSegmento(s) {
+      return descreverSegmento(s);
     },
 
     selecionarTipo(tipo) {

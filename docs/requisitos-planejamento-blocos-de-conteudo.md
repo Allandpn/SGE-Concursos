@@ -337,3 +337,27 @@ concurso-alvo.
 **Fechada também a pendência** "o planejamento vai gerar
 `chaveExternaSegmento`?" (§8): já gerava, em `dias/montar_bloco.py` —
 faltava só sair no arquivo certo.
+
+## 12. Requisito novo (2026-10-14): todo segmento é leitura obrigatória antes da escada
+
+O SGE passou a cumprir o que o §3 prometia ("o SGE decide, turno a turno, qual
+segmento é o próximo"), com duas regras novas (`01_DOMINIO.md` v1.20.0):
+
+- **D-54:** num assunto com segmentos, a primeira revisão só é agendada quando
+  **todos** os segmentos tiveram uma sessão de estudo. Antes disso, recuperar o
+  assunto mediria o que ainda não foi lido.
+- **D-55:** o bloco de conteúdo do turno continua o assunto em estudo, pelo
+  próximo segmento na `ordem`, antes de abrir um assunto novo.
+
+**O que isso pede de vocês:**
+
+1. **`ordem` é a ordem de leitura.** O SGE oferece os segmentos exatamente nessa
+   sequência.
+2. **Não exportar material opcional como segmento.** Cada segmento atrasa o início
+   das revisões até ser lido. Leitura complementar fica fora do `segmentos.csv`.
+   Fixação (questões comentadas, resumo) é leitura obrigatória e continua como
+   segmento — é o que o fatiador de vocês já faz.
+3. Assunto sem segmentos continua funcionando como antes: a escada começa no
+   primeiro estudo.
+
+Nada muda no formato dos arquivos (§11).

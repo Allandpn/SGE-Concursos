@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.assunto.AssuntoMapper;
 import br.com.estudos.frente.FrenteService;
+import br.com.estudos.frente.SugestaoConteudo;
 import br.com.estudos.revisao.RevisaoRepository;
 import br.com.estudos.shared.parametro.ParametroRepository;
 
@@ -67,10 +68,17 @@ public class TurnoService {
                 r.getSessaoOrigem().getData()))
             .toList();
 
-        var blocoConteudo = frenteService.proximaSugestaoDeConteudo()
-            .map(AssuntoMapper::toResponse)
+        // D-55: continuar a leitura antes de abrir assunto novo (docs/SPRINT-17-USO-REAL.md §1.2).
+        var sugestao = frenteService.sugestaoDeConteudo();
+        var blocoConteudo = sugestao.map(sg -> AssuntoMapper.toResponse(sg.assunto())).orElse(null);
+        var segmento = sugestao
+            .filter(sg -> sg.segmento() != null)
+            .map(sg -> new SegmentoSugeridoResponse(
+                sg.segmento().getId(), sg.segmento().getOrdem(), sg.totalSegmentos(), sg.segmento().getArquivo(),
+                sg.segmento().getPaginaInicial(), sg.segmento().getPaginaFinal(), sg.segmento().getTempoEstimadoMin()))
             .orElse(null);
+        var continuacao = sugestao.map(SugestaoConteudo::continuacao).orElse(false);
 
-        return new TurnoPlanoResponse(fila, reestudos, blocoConteudo);
+        return new TurnoPlanoResponse(fila, reestudos, blocoConteudo, continuacao, segmento);
     }
 }

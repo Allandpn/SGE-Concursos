@@ -116,13 +116,19 @@
         </div>
 
         <div x-show="blocoConteudo">
-          <h2 class="mb-2 text-sm font-medium text-gray-500">Conteúdo novo</h2>
-          <button
-            type="button"
-            class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50"
-            @click="abrirRegistroConteudo(blocoConteudo)">
-            <span class="block font-medium" x-text="blocoConteudo?.nome"></span>
-          </button>
+          <h2 class="mb-2 text-sm font-medium text-gray-500" x-text="blocoContinuacao ? 'Continuar leitura' : 'Conteúdo novo'"></h2>
+          <div class="rounded border border-gray-200 bg-white">
+            <button
+              type="button"
+              class="min-h-11 w-full p-3 text-left hover:bg-gray-50"
+              @click="abrirBlocoConteudo()">
+              <span class="block font-medium" x-text="blocoConteudo?.nome"></span>
+              <span class="text-sm text-gray-500" x-show="segmentoSugerido" x-text="descricaoSegmento"></span>
+            </button>
+            <!-- D-55: o material do bloco abre direto daqui (o SGE guarda o link, nunca o abre ele mesmo) -->
+            <a x-show="linkMaterial" :href="linkMaterial" target="_blank" rel="noopener"
+              class="flex min-h-11 items-center border-t border-gray-200 px-3 text-sm font-medium text-primary-700 underline">Abrir material</a>
+          </div>
         </div>
       </div>
     </template>
@@ -234,13 +240,15 @@
 
         <!-- Segmento: ausente do DOM quando o assunto não tem nenhum, não desabilitado -->
         <div x-show="tipo === 'conteudo' && temSegmentos">
-          <label class="mb-1 block text-sm font-medium text-gray-500">Segmento (opcional)</label>
+          <label class="mb-1 block text-sm font-medium text-gray-500">Bloco lido</label>
           <select x-model="segmentoId" class="w-full rounded border border-gray-200 bg-white p-2">
-            <option value="">Nenhum em especial</option>
+            <option value="">O assunto inteiro (começa as revisões)</option>
             <template x-for="s in segmentos" :key="s.id">
-              <option :value="s.id" x-text="s.ordem + '. ' + s.arquivo"></option>
+              <option :value="s.id" x-text="rotuloSegmento(s)"></option>
             </template>
           </select>
+          <!-- D-54 -->
+          <p class="mt-1 text-xs text-gray-500">As revisões deste assunto começam depois que você ler o último bloco.</p>
         </div>
 
         <div x-show="tipo === 'questoes'">

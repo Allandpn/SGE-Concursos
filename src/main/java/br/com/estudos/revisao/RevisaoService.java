@@ -10,7 +10,9 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.estudos.segmento.SegmentoRepository;
 import br.com.estudos.sessao.Sessao;
+import br.com.estudos.sessao.SessaoRepository;
 import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.SituacaoRevisao;
 import br.com.estudos.shared.enums.TipoPeso;
@@ -29,11 +31,20 @@ public class RevisaoService {
 
     private final RevisaoRepository revisaoRepository;
     private final ParametroRepository parametroRepository;
+    private final SegmentoRepository segmentoRepository;
+    private final SessaoRepository sessaoRepository;
     private final Clock clock;
 
-    public RevisaoService(RevisaoRepository revisaoRepository, ParametroRepository parametroRepository, Clock clock) {
+    public RevisaoService(
+            RevisaoRepository revisaoRepository,
+            ParametroRepository parametroRepository,
+            SegmentoRepository segmentoRepository,
+            SessaoRepository sessaoRepository,
+            Clock clock) {
         this.revisaoRepository = revisaoRepository;
         this.parametroRepository = parametroRepository;
+        this.segmentoRepository = segmentoRepository;
+        this.sessaoRepository = sessaoRepository;
         this.clock = clock;
     }
 
@@ -109,6 +120,12 @@ public class RevisaoService {
         if (jaTemPendente) {
             return; // estudar de novo com revisão já agendada é uso legítimo (§3.1) — só não duplica.
         }
+        // D-54: num assunto com segmentos, a escada só começa quando a leitura
+        // termina. ESTUDO sem segmento é "o assunto inteiro" e começa já
+        // (docs/SPRINT-17-USO-REAL.md §1.1).
+        if (sessao.getSegmento() != null && !leituraCompleta(assunto.getId())) {
+            return;
+        }
 
         var revisao = new Revisao();
         revisao.setAssunto(assunto);
@@ -117,6 +134,13 @@ public class RevisaoService {
         revisao.setSessaoOrigem(sessao);
         revisao.setSituacao(SituacaoRevisao.PENDENTE);
         revisaoRepository.save(revisao);
+    }
+
+    /** D-54 — todo segmento do assunto tem alguma sessão ESTUDO (a desta transação inclusive). */
+    private boolean leituraCompleta(Long assuntoId) {
+        var estudados = sessaoRepository.segmentosEstudados(assuntoId);
+        return segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assuntoId).stream()
+            .allMatch(segmento -> estudados.contains(segmento.getId()));
     }
 
     private void processarRecuperacao(Sessao sessao) {

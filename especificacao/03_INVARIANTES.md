@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.8.0 |
-| Data | 2026-09-06 |
+| Versão | 1.9.0 |
+| Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 53 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 55 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 53 regras, classificadas
+## 3. As 55 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -165,8 +165,10 @@ conceitual — envelhecer por motivo errado.
 | D-51  | **Invariante** | **P** | Sessão apontando para um segmento de outro assunto é recusada pela escrita; e sessão fora de `ESTUDO` com segmento preenchido também |
 | D-52  | **Invariante** | **P** | Cadastrar assunto com chave externa duplicada é recusada                                              |
 | D-53  | **Invariante** | **P** | Segmento sem chave externa, ou com chave externa duplicada, é recusado pela escrita                   |
+| D-54  | Comportamento | S | Teste: estudar 2 de 3 segmentos não agenda revisão; o 3º agenda a partir da data dele; `ESTUDO` sem segmento agenda |
+| D-55  | Comportamento | S | Teste: com assunto em estudo e segmento não lido, o plano sugere o próximo segmento dele, mesmo com a frente no teto |
 
-**Contagem:** 17 invariantes · 5 derivações · 25 comportamentos · 7 políticas — 54 linhas para 53 regras.
+**Contagem:** 17 invariantes · 5 derivações · 27 comportamentos · 7 políticas — 56 linhas para 55 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -179,7 +181,8 @@ antes de o documento técnico da sprint ser escrito, não depois. D-53
 acrescentada logo em seguida (01_DOMINIO v1.18.0, chave externa obrigatória
 do próprio segmento) — desta vez sem lacuna: entrou em §3 no mesmo passo em
 que nasceu em `01_DOMINIO`, antes até de `docs/SPRINT-10-SEGMENTO.md` ser
-revisado.
+revisado. D-54/D-55 acrescentadas na Sprint 17 (01_DOMINIO v1.20.0, início da
+escada e continuação da leitura em assunto com segmentos), no mesmo passo.
 
 ### 3.1 As três reclassificações desta versão
 
@@ -340,7 +343,7 @@ movido — e a tabela vira ficção que ninguém confere.
 | O que se pergunta | Como se responde |
 |---|---|
 | Onde D-07 é implementada? | Varredura por `D-07` no código |
-| Alguma regra ficou sem implementação? | Varredura das 53 contra o resultado |
+| Alguma regra ficou sem implementação? | Varredura das 55 contra o resultado |
 | Esta restrição corresponde a quê? | O identificador está no nome dela |
 
 ### 9.1 Citação como metadado, não como comentário
@@ -350,7 +353,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 53 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 55 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -473,6 +476,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.9.0 | 2026-10-14 | **D-54 e D-55 adicionadas à tabela de §3**, no mesmo passo em que nasceram em `01_DOMINIO.md` v1.20.0. As duas são Comportamento/`S`: dependem de contar segmentos estudados e de ordenar assuntos em estudo, nada que a persistência expresse sem distorção. Contagem: 56 linhas para 55 regras; §0, §3 e §9 atualizados |
 | 1.8.0 | 2026-09-06 | **D-53 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.18.0 (chave externa obrigatória do próprio `Segmento`, para reimportação identificar um segmento já existente sem depender de `ordem`). Invariante, `P`, mesmo molde de D-52 — a diferença é que aqui a chave é obrigatória (`Segmento` só nasce por importação, nunca manualmente), não opcional. Diferente de D-50/51/52, esta entrou em §3 **no mesmo passo** em que nasceu em `01_DOMINIO`, sem lacuna — a "regra órfã" da revisão anterior não se repetiu. Contagem de §3 corrigida para 17 invariantes / 54 linhas / 53 regras |
 | 1.7.0 | 2026-09-06 | **D-50, D-51 e D-52 adicionadas à tabela de §3** — novas em `01_DOMINIO.md` v1.17.0 (entidade `Segmento`, §3.7, e `chaveExterna` de `Assunto`, §3.2, decididas na abertura da Sprint 10). As três são Invariante/`P`: D-50 (ordem do segmento única dentro do assunto) e D-52 (chave externa única entre assuntos) seguem o molde exato de D-47/D-48 — índice único, sem pré-checagem no serviço; D-51 (segmento pertence ao mesmo assunto da sessão que o referencia, e só sessão `ESTUDO` pode referenciar segmento) é caso novo — invariante entre duas tabelas, não uma coluna só, mecanismo de imposição a fechar no documento técnico da sprint (`docs/SPRINT-10-SEGMENTO.md`). Corrigida **antes** do documento técnico, não depois — mesma lacuna de "regra órfã" que a revisão 1.4.0-1.6.0 já tinha corrigido para D-47/48/49, desta vez pega antes de a sprint fechar. Contagem de §3 corrigida para 16 invariantes / 53 linhas / 52 regras. Achado no caminho: §0, §3 e §9.1 ainda diziam "46 regras" — número estava desatualizado desde D-47/48/49 (revisões 1.4.0-1.6.0 corrigiram a tabela, mas não o texto em prosa ao redor); corrigido para 52 nos quatro lugares |
 | 1.6.0 | 2026-09-01 | **D-49 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.15.0 (reativar cria revisão pendente nova, nunca restaura a cancelada). Comportamento, garantido por `S` (lógica de serviço, sem constraint — nada no banco impede reescrever uma `CANCELADA`, é disciplina de código). Contagem de §3 corrigida para 13 invariantes / 25 comportamentos / 50 linhas / 49 regras |

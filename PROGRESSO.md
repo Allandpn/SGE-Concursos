@@ -29,7 +29,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 14 | Frontend — Progresso | Sexta tela: M-1/M-3/M-4 globais; M-2 (por assunto) vira seção nova no detalhe de Assuntos (`04_FRONTEND.md §7D`) | **feito** — testada num navegador real, as quatro métricas conferidas contra Postgres real |
 | 15 | Frontend — Ajustes | Sétima e última tela do mapa: os 18 parâmetros, editáveis (`04_FRONTEND.md §7E`) — primeira sprint de frontend que também abre endpoint novo (`docs/SPRINT-15-AJUSTES.md`) | **feito** — testada num navegador real, edição/erro/reversão conferidos contra Postgres real; um bug real achado e corrigido no caminho |
 | 16 | Correções, multi-edital e app | Análise do código contra a especificação (2026-10-14): `PARCIAL` em manutenção desconsolidava; `FALHA` nunca voltava à fila de estudo (reestudo); fase calculada assunto a assunto; reimportação por `chaveExterna`; concurso-alvo ativo (ADR-039); frontend sem CDN e instalável como app no celular/tablet (ADR-038); prontidão multiusuário sem implementá-lo (ADR-040) — `docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` | **feito** — 132/132 testes verdes contra Postgres real; app conferido num Chromium emulando celular; importação ponta a ponta (exportador do planejamento → script → SGE) conferida com troca de concurso-alvo |
-| 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado | não começou |
+| 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado. Começa pelos atritos da jornada que contaminariam os primeiros dados (`docs/SPRINT-17-USO-REAL.md`) | **em andamento** — atrito 1 de 4 resolvido |
 | 18 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
 | 19 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
 | 20 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
@@ -930,7 +930,24 @@ usuário e não foi tomada nesta sprint.
 
 ---
 
-## 18. Como este arquivo se mantém honesto
+## 18. Sprint 17 · Uso real
+
+**Documento técnico:** `docs/SPRINT-17-USO-REAL.md` v1.0.0. Antes de pôr o Pi
+no ar, o usuário pediu para resolver, um por vez, os atritos da análise de
+jornada de 2026-10-14 que contaminariam os primeiros dados.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 17.1 | Atrito 1 — assunto com segmentos: escada só depois da leitura completa (D-54) e o turno continua a leitura (D-55) | Claude, a pedido do usuário | **feito** — 137/137 verdes; telas conferidas em navegador contra Postgres real |
+| 17.2 | Atrito 2 — tempo de estudo medido como tempo de tela | — | aberto |
+| 17.3 | Atrito 3 — conteúdo novo sugerido com revisões represadas | — | aberto |
+| 17.4 | Atrito 4 — sem rodízio entre disciplinas na sugestão | — | aberto |
+| 17.5 | Pi no ar com `tailscale serve`, app instalado, importação com `CONCURSO_ATIVO` | **você** | aberto |
+| 17.6 | 4–8 semanas de registro real | **você** | aberto |
+
+---
+
+## 19. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -944,10 +961,11 @@ usuário e não foi tomada nesta sprint.
 
 ---
 
-## 19. Changelog
+## 20. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.44.0 | 2026-10-14 | **Sprint 17 aberta** (§18): começa pelos atritos da jornada. Atrito 1 resolvido: D-54/D-55 (`01_DOMINIO` v1.20.0), 137/137 verdes. Seções 18–19 renumeradas para 19–20 |
 | 1.43.0 | 2026-10-14 | **Sprint 16 completa** (§17): correções da escada (`PARCIAL` em manutenção, intervalo agendado), reestudo (D-07/D-11), fases em lote, reimportação por `chaveExterna`, concurso-alvo ativo (ADR-039), app instalável sem CDN (ADR-038), prontidão multiusuário (ADR-040). 132/132 verdes. Mapa ganha as linhas 17–21 (uso real, diagnóstico de edital, modo reta final, peso por banca, registro de baixo atrito/prova real). Pendência da Sprint 10 sobre `chaveExternaSegmento` fechada. Seções 17–18 renumeradas para 18–19 |
 | 1.42.0 | 2026-09-07 | **Verificação pré-Pi** (`docs/03E_DEPLOYMENT.md` v1.0.1), a pedido do usuário ("deixe o sistema inteiro pronto para subir no raspberry pi"), logo depois de fechar as sete telas. `docker compose up -d --build` rodado de verdade nesta máquina (x86_64 — o Pi é ARM, isso continua não verificável daqui): build multi-estágio, as 9 migrações numa base limpa, health check, as duas linhas de segurança de rede conferidas. `backup.sh` de ponta a ponta (dump+sanidade); achado que o piso de 10 KB só se ultrapassa com uso real (~100+ sessões nesta verificação) — uma base recém-instalada acusa "backup suspeito" na primeira vez, esperado, não bug. `testar-restauracao.sh` restaurou com contagens corretas; só o `dropdb` final falhou por disco cheio do ambiente de teste local (confirmado via `df` dentro do contêiner — não é falha do Pi nem do script). `rclone` não testado, sem remoto configurado fora do Pi. `.gitattributes` ganhou `*.sql text eol=lf` (mesma proteção que `*.sh` já tinha) — um CRLF de cliente Windows produz o mesmo sintoma de uma migração divergente (checksum do Flyway), risco indireto que apareceu enquanto investigava um checksum mismatch que, na verdade, era só volume local desatualizado. Corrigidas também duas linhas do mapa (§1) que ainda diziam "sem execução verificada" pro backend de Simulado, já verde há tempos. Continuam pendentes, só testáveis no Pi real: build ARM, SSD por UUID, Tailscale, `rclone` de verdade, cron — checklist completo em `03E_DEPLOYMENT.md §8` |
 | 1.41.0 | 2026-09-07 | **Sprint 15 completa — as sete telas do mapa de `02_JORNADAS §4` fechadas.** Testada num Chrome real contra Postgres descartável: as 18 chaves nas três seções certas, edição gravando de verdade (conferido no Postgres). Um bug real achado e corrigido: campo usava `:value="p.valor"` direto, na ideia de que uma falha reverteria sozinha — não acontece, porque `p.valor` nunca muda numa falha, e o Alpine só reage a propriedade que muda de valor; o texto inválido ficava preso no campo mesmo com o estado (e o banco) corretos. Corrigido com `draft` — cópia editável por chave, via `x-model`, reatribuída explicitamente no erro. Reconferido depois da correção: reversão visual, erro só na linha certa, valor inválido nunca persistido; um terceiro campo editado com sucesso como checagem de regressão. Itens 15.3–15.4 promovidos a **feito** |

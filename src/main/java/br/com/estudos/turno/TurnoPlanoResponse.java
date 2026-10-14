@@ -13,6 +13,12 @@ public record TurnoPlanoResponse(
     @Schema(description = "Assuntos que FALHA devolveu à fila de estudo, falha mais antiga primeiro — sem teto, não ocupam vaga nova (D-07/D-11)")
     List<ReestudoItemResponse> reestudos,
 
-    @Schema(description = "Bloco de conteúdo novo sugerido para o turno — null se a frente estiver cheia")
-    AssuntoResponse blocoConteudo
+    @Schema(description = "Assunto do bloco de conteúdo do turno — null se não houver leitura a continuar nem vaga na frente")
+    AssuntoResponse blocoConteudo,
+
+    @Schema(description = "true quando o bloco continua a leitura de um assunto em estudo (D-55)")
+    boolean blocoContinuacao,
+
+    @Schema(description = "Segmento a ler no bloco — null se o assunto não tem segmentos (D-55)")
+    SegmentoSugeridoResponse segmentoSugerido
 ) {}

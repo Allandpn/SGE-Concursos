@@ -18,6 +18,7 @@ import br.com.estudos.disciplina.DisciplinaRepository;
 import br.com.estudos.revisao.RevisaoRepository;
 import br.com.estudos.revisao.EstadoConsolidacao;
 import br.com.estudos.revisao.ResultadoCumpridoLinha;
+import br.com.estudos.segmento.SegmentoRepository;
 import br.com.estudos.sessao.SessaoRepository;
 import br.com.estudos.shared.enums.FaseAssunto;
 import br.com.estudos.shared.enums.SituacaoRevisao;
@@ -36,6 +37,7 @@ public class FrenteService {
     private final SessaoRepository sessaoRepository;
     private final RevisaoRepository revisaoRepository;
     private final ParametroRepository parametroRepository;
+    private final SegmentoRepository segmentoRepository;
     private final Clock clock;
 
     public FrenteService(
@@ -44,12 +46,14 @@ public class FrenteService {
             SessaoRepository sessaoRepository,
             RevisaoRepository revisaoRepository,
             ParametroRepository parametroRepository,
+            SegmentoRepository segmentoRepository,
             Clock clock) {
         this.assuntoRepository = assuntoRepository;
         this.disciplinaRepository = disciplinaRepository;
         this.sessaoRepository = sessaoRepository;
         this.revisaoRepository = revisaoRepository;
         this.parametroRepository = parametroRepository;
+        this.segmentoRepository = segmentoRepository;
         this.clock = clock;
     }
 
@@ -151,6 +155,37 @@ public class FrenteService {
         for (var disciplina : disciplinaRepository.findByAtivoTrue()) {
             var sugestao = proximaVaga(porDisciplina.getOrDefault(disciplina.getId(), List.of()), fases, tetoDisciplina);
             if (sugestao.isPresent()) return sugestao;
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * O bloco de conteúdo do turno: continuar a leitura de um assunto em estudo
+     * (D-55) antes de abrir um do backlog (D-20/D-25). Continuar não abre vaga
+     * nova, então não passa pelo teto da frente. docs/SPRINT-17-USO-REAL.md §1.2.
+     */
+    @Transactional(readOnly = true)
+    public Optional<SugestaoConteudo> sugestaoDeConteudo() {
+        return proximaContinuacao().or(() -> proximaSugestaoDeConteudo().map(assunto -> {
+            var segmentos = segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assunto.getId());
+            return new SugestaoConteudo(assunto, segmentos.isEmpty() ? null : segmentos.get(0), segmentos.size(), false);
+        }));
+    }
+
+    /**
+     * D-55 — o assunto em estudo há mais tempo (01_DOMINIO §8: com sessão, sem
+     * revisão) que ainda tem segmento sem sessão ESTUDO; sugere o de menor ordem.
+     */
+    @Transactional(readOnly = true)
+    public Optional<SugestaoConteudo> proximaContinuacao() {
+        for (var assuntoId : sessaoRepository.assuntosEmEstudo()) {
+            var segmentos = segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assuntoId);
+            var estudados = sessaoRepository.segmentosEstudados(assuntoId);
+            var proximo = segmentos.stream().filter(s -> !estudados.contains(s.getId())).findFirst();
+            if (proximo.isPresent()) {
+                var assunto = assuntoRepository.findById(assuntoId).orElseThrow();
+                return Optional.of(new SugestaoConteudo(assunto, proximo.get(), segmentos.size(), true));
+            }
         }
         return Optional.empty();
     }
