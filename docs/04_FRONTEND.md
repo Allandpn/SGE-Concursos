@@ -15,10 +15,10 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.6.0 |
-| Data | 2026-09-07 |
+| Versão | 1.7.0 |
+| Data | 2026-10-14 |
 | Status | Vigente |
-| Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-028 (zero build, revisada nesta data), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
+| Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
 
 ---
 
@@ -57,16 +57,21 @@ pelo Maven, sem etapa de build própria (ADR-028). Nenhuma mudança no
 ```
 src/main/resources/static/
 ├── index.html            # casca única — carrega tudo, navegação por hash
+├── manifest.webmanifest  # app instalável (§7F, ADR-038)
+├── sw.js                 # service worker só da casca (§7F)
+├── icons/                # ícones do app
+├── vendor/               # Tailwind, Alpine e Open Sans locais, versão no nome (ADR-038)
 ├── css/
-│   └── styles.css        # só o que Tailwind (CDN) não cobre
+│   └── styles.css        # só o que o Tailwind não cobre
 └── js/
     ├── api.js             # wrapper de fetch (§5)
     ├── router.js           # roteamento por hash (§2)
     └── pages.js            # um componente Alpine por página (09_CODE_STYLE §8)
 ```
 
-Tailwind e Alpine.js carregados via CDN no `<head>` de `index.html`
-(ADR-028) — sem `npm`, sem `node_modules`, sem passo de build no Pi.
+Tailwind e Alpine.js carregados de `vendor/` no `<head>` de `index.html`
+(ADR-038, que substituiu o CDN da ADR-028) — sem `npm`, sem `node_modules`,
+sem passo de build no Pi.
 
 ---
 
@@ -579,6 +584,36 @@ pela própria especificação).
 
 ---
 
+## 7F. App instalável, dependências locais e reestudo (Sprint 16)
+
+`docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` §4 e ADR-038 (que substitui
+ADR-028).
+
+- **Sem CDN.** `static/vendor/` guarda Tailwind (runtime de navegador
+  3.4.16), Alpine 3.14.3 e a Open Sans (woff2, subconjunto latin), com a
+  versão no nome. A configuração da paleta (§8A) continua no `<script>` do
+  `index.html`, igual.
+- **PWA.** `manifest.webmanifest`, `icons/` e `sw.js`. O service worker
+  guarda só a casca, com rede primeiro; `/api/**` nunca passa por ele. Sem
+  rede, a tela abre e mostra o erro de §5 — nada de fila offline.
+- **Checklist de toda mudança em arquivo estático:** trocar `CASCA_VERSAO`
+  no topo de `sw.js`. Arquivo estático novo também entra na lista `CASCA`.
+- **`api.js`** distingue `REDE_INDISPONIVEL` (fetch não chegou ao servidor)
+  de `ERRO_SERVIDOR` (resposta de erro que não é `problem+json`). As telas
+  continuam mostrando `e.message`, agora sempre legível.
+- **Hoje** ganha a seção "Reestudar" entre Recuperar e Conteúdo novo: cada
+  item abre Registrar conteúdo (`ESTUDO`) daquele assunto — é o estudo de
+  correção que D-07/D-11 pedem.
+- **Toque (`02_JORNADAS` §1.2):** botão de ação com `min-h-11` (44 px). As
+  telas já existentes cumprem por padding; tela nova segue a regra.
+
+Verificado num Chromium emulando Pixel 7 contra Postgres real: nenhuma
+requisição fora do servidor, service worker ativo, casca abrindo sem rede
+com a mensagem de `REDE_INDISPONIVEL`, item de reestudo levando a
+`#/registrar/conteudo/<id>`.
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -669,6 +704,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.7.0 | 2026-10-14 | §7F, Sprint 16: dependências locais em `static/vendor/` (ADR-038 substitui ADR-028), app instalável (manifesto + service worker só da casca), `api.js` com `REDE_INDISPONIVEL`/`ERRO_SERVIDOR`, seção Reestudar na tela Hoje (D-07/D-11) |
 | 1.6.0 | 2026-09-07 | Sprint 15 aberta e fechada — nova **§7E, tela Ajustes**, a sétima e última do mapa de `02_JORNADAS §4`. Primeira sprint de frontend que também é sprint de backend: `docs/SPRINT-15-AJUSTES.md` abre `GET`/`PATCH /api/parametros` sobre a tabela `parametro` (Sprint 3), decisão de validação (número positivo, sem faixa por chave) fechada com o usuário antes do código. As 18 chaves em três seções (Tetos/Limiares/Escada, mesmo agrupamento do wireframe de referência); cada linha salva sozinha no `@change`, reverte pra trás sozinha em caso de erro via `:value` (não `x-model`). §9 perde a última entrada de tela pendente |
 | 1.5.0 | 2026-09-07 | Sprint 14 aberta — nova **§7D, tela Progresso** (M-1 com pílula de janela GLOBAL/POR_DISCIPLINA, M-3, M-4). Decisão de escopo: M-2 exige `assuntoId`, então vira seção nova ("Retenção") no detalhe de Assuntos em vez de morar em Progresso — §7B ganha esse parágrafo. Seta de tendência de M-1 (pedida por `00_PRODUTO §7`) fica de fora: `M1Response` não carrega um período anterior pra comparar, precisa de decisão de backend; registrado em §9. Nenhum endpoint novo: `/api/metricas/*` já existia da Sprint 7, testado (17/17 verdes contando Erro+Métrica) antes de escolher esta sprint. §4 ganha quatro linhas de endpoint |
 | 1.4.0 | 2026-09-07 | Sprint 13 aberta — nova **§7C, tela Erros**. Fecha o link inerte "+ registrar um erro" que a Sprint 9 deixou em Recuperar. Decisão de escopo: `02_JORNADAS §4.2` pede um atalho global de registrar erro em qualquer tela; esta sprint entrega só dois pontos de entrada contextuais (Recuperar pós-tentativa com `sessaoId`, detalhe de Assuntos sem `sessaoId`) — o atalho verdadeiramente global fica registrado em §9, exige um padrão de componente que a arquitetura ainda não tem. Nenhum endpoint novo: `GET`/`POST /api/erros` já existiam da Sprint 7 e passaram no teste completo (111/111) antes de abrir esta sprint. §4 ganha duas linhas de endpoint |

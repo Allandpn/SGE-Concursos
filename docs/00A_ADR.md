@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.7.0** |
+| Versão do documento | **2.8.0** |
 | Status | **Congelado** |
-| Data | 2026-09-04 |
-| Total | 37 ADRs — 26 vigentes, 10 substituídas, 1 revogada |
+| Data | 2026-10-14 |
+| Total | 40 ADRs — 28 vigentes, 11 substituídas, 1 revogada |
 
 ---
 
@@ -58,7 +58,6 @@ que custa e o que foi descartado.
 | [ADR-025](#adr-025--api-rest-orientada-a-recurso) | API REST orientada a recurso | v2 |
 | [ADR-026](#adr-026--erros-em-rfc-9457-problem-details) | Erros em RFC 9457 Problem Details | v2 |
 | [ADR-027](#adr-027--domínio-em-português-ponte-por-naming-strategy) | Domínio em português, ponte por naming strategy | v2 |
-| [ADR-028](#adr-028--maven-no-backend-zero-build-no-frontend) | Maven no backend, zero build no frontend | v2 |
 | [ADR-029](#adr-029--sem-cache-de-aplicação) | Sem cache de aplicação | v2 |
 | [ADR-030](#adr-030--spa-estática-servida-pelo-spring) | SPA estática servida pelo Spring | v2 |
 | [ADR-031](#adr-031--unicidade-por-tentativa-e-por-revisão-pendente) | Unicidade por tentativa e por revisão pendente | Sprint 1 |
@@ -68,6 +67,9 @@ que custa e o que foi descartado.
 | [ADR-035](#adr-035--bean-validation-para-forma-do-request-não-para-regra-de-domínio) | Bean Validation para forma do request, não para regra de domínio | v2 |
 | [ADR-036](#adr-036--openapiswagger-gerado-a-partir-do-código) | OpenAPI/Swagger gerado a partir do código | v2 |
 | [ADR-037](#adr-037--artefatos-do-planejamento-chegam-via-google-drive-e-rclone) | Artefatos do planejamento chegam via Google Drive e `rclone` | Sprint 10 |
+| [ADR-038](#adr-038--frontend-sem-build-com-dependências-locais-e-instalável-como-app) | Frontend sem build, com dependências locais e instalável como app | Sprint 16 |
+| [ADR-039](#adr-039--um-concurso-alvo-ativo-por-vez-na-importação-automática) | Um concurso-alvo ativo por vez na importação automática | Sprint 16 |
+| [ADR-040](#adr-040--prontidão-para-multiusuário-sem-implementá-lo) | Prontidão para multiusuário, sem implementá-lo | Sprint 16 |
 
 ### 1.2 Históricas
 
@@ -84,6 +86,7 @@ que custa e o que foi descartado.
 | ADR-010 | Sem etapa de build | Substituída por **ADR-028** |
 | ADR-012 | Cache por coleção, invalidado por escrita | Substituída por **ADR-029** |
 | ADR-013 | SPA servida por `doGet` | Substituída por **ADR-030** |
+| ADR-028 | Maven no backend, zero build no frontend (Tailwind/Alpine por CDN) | Substituída por **ADR-038** — texto integral mantido abaixo |
 
 O texto integral das históricas está em `docs/_apps-script-v1/00A_ADR.md`.
 Elas não são erros: foram decisões corretas para a plataforma da época, e a maior
@@ -710,7 +713,7 @@ onde o nome divergir, o que não deve acontecer.
 
 ## ADR-028 — Maven no backend, zero build no frontend
 
-**Status:** Aceita · 2026-08-15 · substitui ADR-010
+**Status:** Substituída por **ADR-038** (2026-10-14) · era Aceita · 2026-08-15 · substitui ADR-010
 
 ### Contexto
 A v1 proibia qualquer etapa de build, porque o Apps Script não a suporta. Java
@@ -964,6 +967,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.8.0 | 2026-10-14 | Sprint 16. **ADR-038** substitui ADR-028: frontend continua sem build, mas Tailwind/Alpine viram arquivos locais em `static/vendor/` e a SPA vira app instalável (PWA, service worker só da casca estática, nunca da API) — uso passa a ser celular/tablet além da web. **ADR-039**: importação automática lê só a pasta do concurso-alvo ativo (`CONCURSO_ATIVO`) — sistema passa a servir qualquer edital. **ADR-040**: prontidão para multiusuário sem implementá-lo — o que não fazer agora para não encarecer depois. ADR-028 movida para as históricas, texto integral mantido no lugar. Total 40, 28 vigentes |
 | 2.7.0 | 2026-09-04 | **ADR-037 escrita e aceita** (Sprint 10) — artefatos do planejamento (`Plano-de-Estudos-Automatizado`) chegam ao Pi via Google Drive + `rclone`, reaproveitando o mecanismo já aceito em ADR-018 (backup), em vez de API do Drive na aplicação (contradiria ADR-015/016) ou contato direto Tailscale PC→Pi (exigiria os dois sistemas online ao mesmo tempo). PDFs ficam só no Drive, referenciados por link — nunca chegam ao Pi. Total passa a 37 ADRs, 26 vigentes. No caminho: §1.1 (índice de vigentes) corrigida — ADR-034/035/036 nunca tinham sido adicionadas à lista, só ao total (mesma classe de lacuna que a 2.4.0 já tinha corrigido para a contagem) |
 | 2.6.0 | 2026-09-01 | **ADR-036 escrita e aceita** — OpenAPI/Swagger via `springdoc-openapi-starter-webmvc-ui`, gerado do código (`@Tag`/`@Operation`/`@Schema`). Aplicado a todo Controller e todo `*Request`/`*Response`, a pedido do usuário — escopo completo desde o início, diferente do piloto de ADR-035. Total passa a 36 ADRs, 25 vigentes |
 | 2.5.0 | 2026-09-01 | **ADR-035 escrita e aceita** — Bean Validation para forma do request (presença/faixa de campo), piloto em `AssuntoRequest`/`criar`. `@Valid` nunca em `atualizar` (PATCH): campo ausente lá é instrução, não erro. Constraint do banco continua como garantia final. Total passa a 35 ADRs, 24 vigentes |
@@ -1278,6 +1282,166 @@ arquivo entre o Pi e fora dele — hoje usado para backup.
 | Contato direto Tailscale PC→Pi no momento da exportação (planejamento chama um endpoint de import do SGE) | Exige os dois sistemas online ao mesmo tempo, mas o planejamento roda só ocasionalmente sob demanda enquanto o SGE é 24/7 — um requisito de disponibilidade simultânea que a própria natureza de uso já torna desnecessário |
 | Upload manual do CSV via tela/endpoint, como hoje | É exatamente a dependência de "subir na mão" que motivou esta decisão |
 | Sincronizar os PDFs pro Pi também, servidos pelo SGE | O SGE nunca exibe material (`02_JORNADAS.md §1.1`) — sincronizar um arquivo que a aplicação nunca vai ler é custo sem função |
+
+---
+
+## ADR-038 — Frontend sem build, com dependências locais e instalável como app
+
+**Status:** Aceita · 2026-10-14 · Sprint 16 · substitui ADR-028
+
+### Contexto
+
+A ADR-028 trouxe Tailwind e Alpine por CDN. Duas coisas mudaram desde então:
+
+1. O uso previsto passou a ser **app no celular e no tablet, além da web**
+   (decisão do usuário em 2026-10-14). App no celular abre em rede móvel ruim,
+   e uma página que depende de dois CDNs externos pra desenhar a primeira tela
+   quebra exatamente onde mais é usada.
+2. O SGE fica no Pi, atrás da Tailscale (ADR-015) — a página carregar script
+   de terceiros a cada abertura é dependência externa que a rede privada não
+   precisava ter.
+
+A razão central da ADR-028 continua de pé: nenhum passo de build no frontend,
+nenhum Node no pipeline.
+
+### Decisão
+
+- **Backend:** igual à ADR-028 — Maven, build multi-estágio no Dockerfile.
+- **Frontend:** continua **sem build**. Tailwind (runtime de navegador) e
+  Alpine passam a ser **arquivos locais versionados** em
+  `src/main/resources/static/vendor/`, com a versão no nome do arquivo.
+  Atualizar uma dependência é trocar o arquivo e o `<script>`, num commit.
+- **App instalável (PWA):** `manifest.webmanifest`, ícones e um service worker
+  que guarda **só a casca estática** (HTML, JS, CSS, ícones, vendor) para
+  abrir rápido e funcionar com rede instável. Chamadas `/api/**` **nunca** são
+  cacheadas nem enfileiradas — sem fila offline, decisão mantida de
+  `02_JORNADAS` §5.1. Sem rede, a tela abre e a falha de gravação segue o
+  caminho não destrutivo de sempre.
+- Service worker exige HTTPS fora de `localhost`. No Pi, isso vem do
+  `tailscale serve` (certificado do domínio `*.ts.net`), sem porta pública —
+  ADR-015 intacta.
+
+### Consequências
+
+- A tela abre sem internet externa; só a tailnet precisa estar de pé.
+- "Instalar app" no Android/iOS/desktop passa a ser a forma de uso no celular
+  e no tablet. Um único código serve web e app — nenhum projeto nativo.
+- O runtime do Tailwind continua pesado (~400 KB), agora servido do Pi e
+  guardado no cache do service worker: custo de primeira abertura, não de toda
+  abertura.
+- Toda mudança de arquivo estático precisa trocar a versão do cache no
+  service worker, senão o aparelho continua com a casca velha. Mitigação:
+  a constante de versão fica no topo de `sw.js`, e o checklist de
+  `04_FRONTEND.md` lembra disso.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Manter CDN (ADR-028) | Quebra o app em rede móvel ruim e mantém dependência externa sem função |
+| Tailwind compilado com Node | Mesmo motivo da ADR-028: passo de build que, esquecido, produz estilo faltando em produção |
+| App nativo (Kotlin/Swift) ou React Native/Flutter | Três bases de código para um usuário com 3–5 h/semana de construção; nada nas jornadas pede API nativa que o navegador não tenha |
+| Service worker com fila offline de gravações | Reconciliação automática é maquinaria real; `02_JORNADAS` §5.1 já a recusou até o uso mostrar necessidade |
+
+---
+
+## ADR-039 — Um concurso-alvo ativo por vez na importação automática
+
+**Status:** Aceita · 2026-10-14 · Sprint 16
+
+### Contexto
+
+O sistema passa a servir a **qualquer edital**, não a um concurso fixo. O
+planejamento mantém assuntos **canônicos** com identidade estável entre
+editais (UUID, que chega aqui como `chaveExterna`, D-52). O mesmo assunto
+canônico pode ter peso diferente em editais diferentes.
+
+`scripts/importar-segmentos.sh` (Sprint 10) importava **todas** as pastas de
+`SGE-Importacao/`. Com dois editais na pasta, o peso final de um assunto
+comum dependia de qual pasta o laço processasse por último — resultado
+silencioso e não determinístico.
+
+### Decisão
+
+- O SGE continua **sem entidade `Edital`/`Concurso`** no domínio
+  (`01_DOMINIO.md` §3 intacto). A base de estudo é uma só.
+- A importação automática lê **só a pasta do concurso-alvo ativo**, nomeada
+  pela variável `CONCURSO_ATIVO` (o slug da pasta). Sem a variável, o script
+  não importa nada e registra o motivo no log.
+- Trocar de concurso-alvo é trocar a variável. Os assuntos em comum (mesma
+  `chaveExterna`) são **atualizados** — peso e ordem do edital novo — e
+  **mantêm escada e histórico**. Assunto que não está no edital novo continua
+  como está até o usuário arquivar (D-18).
+- O `concurso.json` da pasta (`nome`, `dataProva`) viaja junto, mas o SGE
+  ainda não o lê: fica pronto para o diagnóstico de edital e o modo reta
+  final (`PROGRESSO.md`, mapa de evolução).
+
+### Consequências
+
+- Um concurso por vez define peso e ordem. Estudar para dois concursos com
+  pesos diferentes **ao mesmo tempo** não é suportado — se virar necessidade
+  real, a resposta é a entidade `Concurso` com peso por concurso, em ADR
+  própria.
+- Reaproveitar estudo entre editais passa a ser automático: é o que a
+  `chaveExterna` estável compra.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Entidade `Concurso` com peso por concurso já agora | Muda o domínio (nível-alvo deixa de ser função só do assunto), as métricas e todas as telas, para um caso de uso — dois concursos simultâneos — que ninguém pediu |
+| Importar todas as pastas, "a última vence" | Resultado depende da ordem do laço — exatamente o erro silencioso que motivou esta ADR |
+| Maior peso entre os editais | Inventa um peso que nenhum edital declarou |
+
+---
+
+## ADR-040 — Prontidão para multiusuário, sem implementá-lo
+
+**Status:** Aceita · 2026-10-14 · Sprint 16
+
+### Contexto
+
+O sistema é de um usuário (ADR-015, `00_PRODUTO.md` §1). O dono quer que ele
+**possa** servir a outras pessoas no futuro, sem pagar esse custo agora.
+Autenticação e isolamento por usuário hoje contrariam ADR-015 e não têm
+ameaça correspondente.
+
+### Decisão
+
+Nada de multiusuário é implementado. Em vez disso, **não se toma decisão que
+o torne caro depois**:
+
+1. **Nenhum estado de usuário fora do banco.** Sem sessão HTTP, sem arquivo
+   local com dado de uso, sem cache de aplicação (ADR-029) — o backend
+   continua sem estado entre requisições.
+2. **A API é o contrato.** Toda tela usa só `/api/**`; nada de lógica de
+   domínio no frontend. App, web e um cliente futuro falam com a mesma API.
+3. **Identidade externa vem de fora.** `chaveExterna` de assunto/segmento é
+   do planejamento; nenhum identificador do SGE é exposto como chave de
+   integração.
+4. **Material nunca é hospedado.** O SGE guarda ponteiros (links), nunca o
+   PDF — o que evita, de saída, o problema de direito autoral de redistribuir
+   apostilas a terceiros.
+5. **Escopo global explícito.** `parametro` é a única tabela "da instalação";
+   quando houver usuários, ela vira "por usuário" numa migração só, e é o
+   único lugar a mexer além da coluna de dono nas tabelas de evento.
+
+Quando multiusuário virar decisão, ela nasce como ADR que **substitui
+ADR-015**: autenticação, coluna de dono em `disciplina` (as demais herdam por
+FK) e filtro por dono na camada de serviço — nunca filtro global de leitura
+(D-18).
+
+### Consequências
+
+- Custo zero agora. O caminho de migração está escrito e é curto.
+- Enquanto isso, quem tiver acesso à tailnet tem acesso a tudo — igual a hoje.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Implementar usuário e login já | Contraria ADR-015, adiciona superfície de ataque sem ameaça e custa semanas de um orçamento de 3–5 h/semana |
+| Coluna `usuario_id` em todas as tabelas, sempre com o mesmo valor | Dado sem função hoje, e quase certamente com a forma errada quando a decisão real chegar |
 
 ---
 

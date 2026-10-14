@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.csv.CSVFormat;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
+import br.com.estudos.assunto.Assunto;
+import br.com.estudos.assunto.AssuntoRepository;
 import br.com.estudos.assunto.AssuntoRequest;
 import br.com.estudos.assunto.AssuntoService;
 import br.com.estudos.disciplina.Disciplina;
@@ -40,14 +43,17 @@ public class ImportacaoAssuntoService {
     private final DisciplinaRepository disciplinaRepository;
     private final DisciplinaService disciplinaService;
     private final AssuntoService assuntoService;
+    private final AssuntoRepository assuntoRepository;
 
     public ImportacaoAssuntoService(
             DisciplinaRepository disciplinaRepository,
             DisciplinaService disciplinaService,
-            AssuntoService assuntoService) {
+            AssuntoService assuntoService,
+            AssuntoRepository assuntoRepository) {
         this.disciplinaRepository = disciplinaRepository;
         this.disciplinaService = disciplinaService;
         this.assuntoService = assuntoService;
+        this.assuntoRepository = assuntoRepository;
     }
 
     /** Lê e resolve o arquivo, mas nunca grava — força rollback no final (§5.1). */
@@ -81,7 +87,10 @@ public class ImportacaoAssuntoService {
         int assuntosNovos = 0;
         int assuntosAtualizados = 0;
 
-        for (var linha : lerLinhas(arquivo)) {
+        var linhas = lerLinhas(arquivo);
+        liberarOrdensQueVaoMudar(linhas);
+
+        for (var linha : linhas) {
             int numeroLinha = (int) linha.getRecordNumber() + 1; // +1 pelo cabeçalho
 
             var nomeDisciplina = valor(linha, "disciplina");
@@ -117,7 +126,16 @@ public class ImportacaoAssuntoService {
             var idTexto = valor(linha, "id");
 
             try {
-                if (idTexto == null) {
+                // 02_JORNADAS J-1 (v1.6.0): sem id, a chaveExterna já conhecida
+                // identifica o registro — é a reimportação vinda do planejamento,
+                // que nunca conhece o id do SGE (docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §5.1).
+                var existentePorChave = idTexto == null && chaveExterna != null
+                    ? assuntoRepository.findByChaveExterna(chaveExterna)
+                    : Optional.<Assunto>empty();
+                if (existentePorChave.isPresent()) {
+                    assuntoService.atualizar(existentePorChave.get().getId(), request);
+                    assuntosAtualizados++;
+                } else if (idTexto == null) {
                     assuntoService.criar(request);
                     assuntosNovos++;
                 } else {
@@ -134,6 +152,50 @@ public class ImportacaoAssuntoService {
         }
 
         return new ResumoImportacao(disciplinasNovas.get(), assuntosNovos, assuntosAtualizados, recusadas);
+    }
+
+    /**
+     * D-48 (ordem única entre os ativos da disciplina) é verificada linha a
+     * linha, então reordenar assuntos já existentes — trocar 1↔2, o caso comum
+     * ao mudar de concurso-alvo (ADR-039) — colidiria no meio do arquivo.
+     * Antes de processar, todo assunto existente cuja ordem vai mudar recebe
+     * uma ordem provisória única (−id); a linha dele grava a definitiva logo
+     * depois. Recusa em qualquer linha desfaz tudo, provisórias inclusive
+     * (tudo ou nada, regra 1).
+     */
+    private void liberarOrdensQueVaoMudar(List<CSVRecord> linhas) {
+        var mudando = new ArrayList<Assunto>();
+        for (var linha : linhas) {
+            var ordemTexto = valor(linha, "ordem");
+            if (ordemTexto == null) continue;
+            Integer ordemNova;
+            try {
+                ordemNova = Integer.valueOf(ordemTexto);
+            } catch (NumberFormatException e) {
+                continue; // a passada principal recusa a linha
+            }
+            var existente = buscarExistente(linha);
+            if (existente.isPresent() && !ordemNova.equals(existente.get().getOrdem())) {
+                existente.get().setOrdem(Math.toIntExact(-existente.get().getId()));
+                mudando.add(existente.get());
+            }
+        }
+        if (!mudando.isEmpty()) {
+            assuntoRepository.saveAllAndFlush(mudando);
+        }
+    }
+
+    private Optional<Assunto> buscarExistente(CSVRecord linha) {
+        var idTexto = valor(linha, "id");
+        if (idTexto != null) {
+            try {
+                return assuntoRepository.findById(Long.valueOf(idTexto));
+            } catch (NumberFormatException e) {
+                return Optional.empty();
+            }
+        }
+        var chaveExterna = valor(linha, "chaveExterna");
+        return chaveExterna == null ? Optional.empty() : assuntoRepository.findByChaveExterna(chaveExterna);
     }
 
     private List<CSVRecord> lerLinhas(MultipartFile arquivo) {

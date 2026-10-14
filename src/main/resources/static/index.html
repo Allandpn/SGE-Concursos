@@ -4,10 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Estudos</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#0694a2">
+  <!-- App instalável (ADR-038): manifesto, ícones e service worker da casca. -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Estudos">
+  <!-- Dependências locais, versão no nome (ADR-038) — nada de CDN. -->
+  <link rel="stylesheet" href="vendor/fonts/open-sans.css">
+  <script src="vendor/tailwindcss-play-3.4.16.js"></script>
   <script>
     // Paleta (docs/04_FRONTEND.md §8A) — extraída do qconcursos.com, cor
     // por papel funcional, não um único "brand color". Trocar a paleta
@@ -28,10 +34,18 @@
     };
   </script>
   <link rel="stylesheet" href="css/styles.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+  <script defer src="vendor/alpinejs-3.14.3.min.js"></script>
   <script src="js/api.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/router.js"></script>
+  <script>
+    // ADR-038: registra o service worker da casca. Só funciona em contexto
+    // seguro (HTTPS via `tailscale serve`, ou localhost) — fora disso a
+    // página segue funcionando como web comum.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  </script>
 </head>
 <body class="bg-gray-50 text-gray-900">
 
@@ -77,6 +91,24 @@
                   @click="abrirRecuperacao(item)">
                   <span class="block font-medium" x-text="item.nome"></span>
                   <span class="text-sm text-gray-500" x-text="'Nível ' + item.nivel"></span>
+                </button>
+              </li>
+            </template>
+          </ul>
+        </div>
+
+        <!-- Reestudo (D-07/D-11): corrigir vem antes de abrir — 01_DOMINIO §7.4 -->
+        <div x-show="reestudos.length > 0">
+          <h2 class="mb-2 text-sm font-medium text-gray-500">Reestudar</h2>
+          <ul class="space-y-2">
+            <template x-for="item in reestudos" :key="item.assuntoId">
+              <li>
+                <button
+                  type="button"
+                  class="min-h-11 w-full rounded border border-alerta-600 bg-alerta-50 p-3 text-left hover:bg-white"
+                  @click="abrirReestudo(item)">
+                  <span class="block font-medium" x-text="item.nome"></span>
+                  <span class="text-sm text-gray-600" x-text="'Falhou em ' + item.dataFalha.split('-').reverse().join('/') + ' · nível ' + item.nivel"></span>
                 </button>
               </li>
             </template>

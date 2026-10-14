@@ -1,6 +1,9 @@
 # Instruções para o Claude neste repositório
 
-Sistema pessoal de gestão de estudos para concursos.
+Sistema pessoal de gestão de estudos para concursos — **qualquer edital**,
+usado como **app no celular e no tablet e como web** (uma SPA instalável,
+ADR-038). Um usuário hoje; decisões que encareceriam multiusuário depois são
+evitadas (ADR-040).
 Java 21 · Spring Boot · PostgreSQL · Docker no Raspberry Pi · Tailscale.
 
 ---
@@ -36,7 +39,7 @@ a próxima revisão.
 
 ## Onde o projeto está
 
-**Leia `PROGRESSO.md` primeiro, sempre.** Ele tem o mapa das 8 sprints, a sprint
+**Leia `PROGRESSO.md` primeiro, sempre.** Ele tem o mapa das sprints (16 feitas, as seguintes em uma linha cada), a sprint
 corrente detalhada item a item, e a *Definition of Done* dela.
 
 Se você não sabe qual é o próximo passo, a resposta está lá — não a invente.
@@ -51,7 +54,7 @@ E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
 | Documento | Responde |
 |---|---|
 | `especificacao/00_PRODUTO.md` | Para que serve, e como saberemos que funcionou |
-| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 46 regras D-xx** |
+| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 53 regras D-xx** |
 | `especificacao/02_JORNADAS.md` | Como é usado, e quanto pode custar em segundos |
 | `especificacao/03_INVARIANTES.md` | Quem garante cada regra e como se testa |
 
@@ -65,9 +68,10 @@ Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
-| `docs/00A_ADR.md` | 19 ADRs vigentes, **nenhum revogado**. Faltam ADR-031 a 033 |
+| `docs/00A_ADR.md` | 40 ADRs, 28 vigentes (até ADR-040) |
 | `docs/03C_LOGGING.md` | Intacto |
-| `docs/03E_DEPLOYMENT.md` | Intacto |
+| `docs/03E_DEPLOYMENT.md` | Congelado + adendo §8A (Sprint 16: HTTPS obrigatório, `CONCURSO_ATIVO`) |
+| `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |
 | `docs/09_CODE_STYLE.md` | Intacto |
 
 Tudo o mais é escrito quando a sprint que precisa dele começar.
@@ -94,7 +98,7 @@ desenhada para impedir.
 
 ## As regras D-xx
 
-`01_DOMINIO.md` §10 tem as 46. `03_INVARIANTES.md` §3 diz de cada uma: que
+`01_DOMINIO.md` §10 tem as 53. `03_INVARIANTES.md` §3 diz de cada uma: que
 natureza tem, em que camada mora, como se sabe que quebrou.
 
 **Todo código que implementa uma regra a cita pelo identificador**, e o

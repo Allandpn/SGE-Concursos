@@ -13,7 +13,7 @@ import br.com.estudos.revisao.RevisaoRepository;
 import br.com.estudos.shared.parametro.ParametroRepository;
 
 /**
- * D-27 — devolve **plano de turno** (fila + bloco), nunca "próximo assunto"
+ * D-27 — devolve **plano de turno** (fila + reestudo + bloco), nunca "próximo assunto"
  * sozinho. O plano é derivado e efêmero (D-28, 01_DOMINIO §7.4).
  * docs/SPRINT-6-TURNO.md §2.
  */
@@ -57,10 +57,20 @@ public class TurnoService {
                 ChronoUnit.DAYS.between(r.getDataPrevista(), hoje)))
             .toList();
 
+        // D-07/D-11: corrigir vem antes de abrir — a tela mostra esta lista
+        // antes do bloco de conteúdo novo (01_DOMINIO §7.4, v1.19.0).
+        var reestudos = revisaoRepository.listarEmReestudo().stream()
+            .map(r -> new ReestudoItemResponse(
+                r.getAssunto().getId(),
+                r.getAssunto().getNome(),
+                r.getNivel(),
+                r.getSessaoOrigem().getData()))
+            .toList();
+
         var blocoConteudo = frenteService.proximaSugestaoDeConteudo()
             .map(AssuntoMapper::toResponse)
             .orElse(null);
 
-        return new TurnoPlanoResponse(fila, blocoConteudo);
+        return new TurnoPlanoResponse(fila, reestudos, blocoConteudo);
     }
 }

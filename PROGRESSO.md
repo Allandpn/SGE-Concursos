@@ -22,18 +22,28 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 7 | Métricas e erros | M-1 a M-4 com as regras de `n`, banco de erros como camada explicativa | backend **feito** — 17/17 testes verdes (`ErroDominioTest`+`MetricaServiceTest`), confirmado de novo na Sprint 13; frontend de Erros feito na Sprint 13, Progresso (métricas) ainda sem tela |
 | 8 | Simulado e fechamento | Simulado por disciplina, backup testado, polimento | Simulado: backend **feito** — 10/10 testes verdes (`SimuladoDominioTest`+`SimuladoListagemTest`), confirmado na verificação pré-Pi de 2026-09-07; sem tela própria ainda (não é nenhuma das sete de `04_FRONTEND`). Backup: scripts verificados de ponta a ponta **localmente** (build, migração, health, segurança de rede, dump+sanidade, restauração com contagens corretas) — ainda não no Pi real; faltam ARM, SSD, `rclone` de verdade, Tailscale, cron (`03E_DEPLOYMENT.md` v1.0.1). Polimento: não começou |
 | 9 | Frontend — Hoje e Recuperar | SPA estática (Alpine.js/Tailwind, ADR-028/030), as duas primeiras telas | **feito** — testado num navegador real, fluxo completo (Hoje → Recuperar → gravação → escada avança) confirmado contra Postgres real |
-| 10 | Integração externa — planejamento | Referência de material por blocos (entidade `Segmento`, `Assunto` ganha `chaveExterna`), alimentada pelo projeto `Plano-de-Estudos-Automatizado` via Google Drive + `rclone` (ADR-037, `docs/requisitos-planejamento-blocos-de-conteudo.md`); `Edital`/import por UUID fica de fora por ora | **feito** — 111/111 testes verdes contra Postgres real, export e automação do disparo incluídos. Restam só duas coisas fora do alcance deste repositório: testar `scripts/importar-segmentos.sh` num Pi real, e a resposta do repositório de planejamento sobre gerar `chaveExternaSegmento` |
+| 10 | Integração externa — planejamento | Referência de material por blocos (entidade `Segmento`, `Assunto` ganha `chaveExterna`), alimentada pelo projeto `Plano-de-Estudos-Automatizado` via Google Drive + `rclone` (ADR-037, `docs/requisitos-planejamento-blocos-de-conteudo.md`); `Edital`/import por UUID fica de fora por ora | **feito** — 111/111 testes verdes contra Postgres real, export e automação do disparo incluídos. Resta só testar `scripts/importar-segmentos.sh` num Pi real. (A pendência "o planejamento gera `chaveExternaSegmento`?" fechou: já gerava desde `dias/montar_bloco.py`, conferido no código deles em 2026-10-14; o que faltava era o formato do arquivo, corrigido na Sprint 16) |
 | 11 | Frontend — Registrar sessão | Terceira tela: Conteúdo/Questões/Flashcards (`04_FRONTEND.md §7A`) — não confundir com a Sprint 3 (o backend do mesmo evento) | **feito** — testada num navegador real, os três tipos gravam certo no Postgres real |
 | 12 | Frontend — Assuntos | Quarta tela: lista por disciplina + detalhe, fecha a pendência de entrada pra Questões/Flashcards que a Sprint 11 deixou (`04_FRONTEND.md §7B`) | **feito** — testada num navegador real, lista/detalhe/entrada pra Registrar conferidos contra Postgres real |
 | 13 | Frontend — Erros | Quinta tela: formulário + consulta por assunto, fecha o link inerte que a Sprint 9 deixou em Recuperar (`04_FRONTEND.md §7C`) | **feito** — testada num navegador real, os dois pontos de entrada e o registro conferidos contra Postgres real |
 | 14 | Frontend — Progresso | Sexta tela: M-1/M-3/M-4 globais; M-2 (por assunto) vira seção nova no detalhe de Assuntos (`04_FRONTEND.md §7D`) | **feito** — testada num navegador real, as quatro métricas conferidas contra Postgres real |
 | 15 | Frontend — Ajustes | Sétima e última tela do mapa: os 18 parâmetros, editáveis (`04_FRONTEND.md §7E`) — primeira sprint de frontend que também abre endpoint novo (`docs/SPRINT-15-AJUSTES.md`) | **feito** — testada num navegador real, edição/erro/reversão conferidos contra Postgres real; um bug real achado e corrigido no caminho |
+| 16 | Correções, multi-edital e app | Análise do código contra a especificação (2026-10-14): `PARCIAL` em manutenção desconsolidava; `FALHA` nunca voltava à fila de estudo (reestudo); fase calculada assunto a assunto; reimportação por `chaveExterna`; concurso-alvo ativo (ADR-039); frontend sem CDN e instalável como app no celular/tablet (ADR-038); prontidão multiusuário sem implementá-lo (ADR-040) — `docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` | **feito** — 132/132 testes verdes contra Postgres real; app conferido num Chromium emulando celular; importação ponta a ponta (exportador do planejamento → script → SGE) conferida com troca de concurso-alvo |
+| 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado | não começou |
+| 18 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
+| 19 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
+| 20 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
+| 21 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; simulado no formato da prova, com nota de corte | não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
 > funciona — nenhuma delas é pré-requisito para começar a usar. A Sprint 9
 > abre a frente de frontend — o mapa original tinha 8, mas "o mapa pode
 > mudar" (linha abaixo) sempre incluiu crescer.
+
+As linhas 17–21 nasceram da análise crítica de 2026-10-14 (o que falta para
+o sistema servir a qualquer concurso de TI). São uma linha cada, de
+propósito — documento técnico só quando a sprint começar.
 
 O mapa **pode mudar**. Mudar uma linha aqui é grátis; é justamente por isso que
 ele existe em vez do plano detalhado das oito.
@@ -875,7 +885,52 @@ mudança de verdade (`"abc"` → `"10"`), e o Alpine reage. `docs/04_FRONTEND.md
 
 ---
 
-## 17. Como este arquivo se mantém honesto
+## 17. Sprint 16 · Correções, multi-edital e app
+
+**Documento técnico:** `docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` v1.0.0.
+
+**Contexto.** O concurso para o qual o sistema foi pensado (SEFAZ SC) saiu
+do horizonte; o sistema passa a servir **qualquer edital** e a ser usado
+**como app no celular e no tablet, além da web**, por um usuário — mas sem
+fechar a porta a outros no futuro (ADR-040). Uma análise do código contra a
+especificação achou dois defeitos de regra, um de integração e um de
+desempenho; as soluções foram propostas e **aprovadas pelo usuário antes de
+qualquer código**. Documento primeiro em todos os casos: `01_DOMINIO`
+v1.19.0, `02_JORNADAS` v1.6.0, ADR-038/039/040, `03E_DEPLOYMENT` §8A,
+`04_FRONTEND` §7F.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 16.0 | Documentos (especificação, ADRs, doc técnico) | Claude, aprovado pelo usuário | **feito** |
+| 16.1 | `EstadoConsolidacao` — consolidado como sequência no nível-alvo; `PARCIAL` em manutenção mantém (§1.1) | Claude | **feito** — confirmado antes por teste temporário: `PARCIAL` levava a fase a `FRENTE` e o `SUCESSO` seguinte agendava +7 em vez de +150 |
+| 16.2 | Intervalo da pendente = intervalo de fato agendado (janela e D-49) (§1.2) | Claude | **feito** |
+| 16.3 | Reestudo derivado (D-07/D-11) no plano do turno (§2) | Claude | **feito** |
+| 16.4 | Fases em lote — duas consultas por conjunto (§3) | Claude | **feito** |
+| 16.5 | Reimportação por `chaveExterna` + reordenação no mesmo arquivo (§5.1) | Claude | **feito** — achado no caminho: trocar ordens 1↔2 colidia em D-48 linha a linha; ordem provisória resolve |
+| 16.6 | `scripts/importar-segmentos.sh` só com `CONCURSO_ATIVO` (§5.2, ADR-039) | Claude | **feito** — testado com `rclone` simulado, não em Pi real |
+| 16.7 | Frontend: `vendor/`, PWA, `api.js`, seção Reestudar (§4, ADR-038) | Claude | **feito** |
+| 16.8 | `CLAUDE.md` atualizado (53 regras, 16 sprints, ADRs até 040) | Claude | **feito** |
+
+### Definition of Done
+
+- [x] `PARCIAL` em manutenção mantém consolidado e o `SUCESSO` seguinte volta à manutenção
+- [x] Janela de tolerância usa o intervalo agendado (teste com a metade da manutenção)
+- [x] `FALHA` — inclusive em manutenção — põe o assunto em reestudo; `ESTUDO` depois tira
+- [x] Fase em lote igual à fase individual, para as quatro situações
+- [x] Reimportar sem `id`, por `chaveExterna`, atualiza e reordena sem recusa
+- [x] Nenhuma coluna nem tabela nova (D-16) — reestudo e consolidado são derivados
+- [x] Nenhuma requisição a CDN; casca abre sem rede; `/api/**` nunca no cache
+- [x] 132/132 testes verdes contra Postgres real
+- [ ] `scripts/importar-segmentos.sh` e o app instalado testados no Pi real, via `tailscale serve` — só o usuário pode, exige o hardware (Sprint 17)
+
+**Sobre a mentoria.** Como nas sprints anteriores, todo o código foi escrito
+por Claude a pedido do usuário. A regra do `CLAUDE.md` ("não escreva o
+código dele") continua escrita; a decisão de mantê-la ou mudá-la é do
+usuário e não foi tomada nesta sprint.
+
+---
+
+## 18. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -889,10 +944,11 @@ mudança de verdade (`"abc"` → `"10"`), e o Alpine reage. `docs/04_FRONTEND.md
 
 ---
 
-## 18. Changelog
+## 19. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.43.0 | 2026-10-14 | **Sprint 16 completa** (§17): correções da escada (`PARCIAL` em manutenção, intervalo agendado), reestudo (D-07/D-11), fases em lote, reimportação por `chaveExterna`, concurso-alvo ativo (ADR-039), app instalável sem CDN (ADR-038), prontidão multiusuário (ADR-040). 132/132 verdes. Mapa ganha as linhas 17–21 (uso real, diagnóstico de edital, modo reta final, peso por banca, registro de baixo atrito/prova real). Pendência da Sprint 10 sobre `chaveExternaSegmento` fechada. Seções 17–18 renumeradas para 18–19 |
 | 1.42.0 | 2026-09-07 | **Verificação pré-Pi** (`docs/03E_DEPLOYMENT.md` v1.0.1), a pedido do usuário ("deixe o sistema inteiro pronto para subir no raspberry pi"), logo depois de fechar as sete telas. `docker compose up -d --build` rodado de verdade nesta máquina (x86_64 — o Pi é ARM, isso continua não verificável daqui): build multi-estágio, as 9 migrações numa base limpa, health check, as duas linhas de segurança de rede conferidas. `backup.sh` de ponta a ponta (dump+sanidade); achado que o piso de 10 KB só se ultrapassa com uso real (~100+ sessões nesta verificação) — uma base recém-instalada acusa "backup suspeito" na primeira vez, esperado, não bug. `testar-restauracao.sh` restaurou com contagens corretas; só o `dropdb` final falhou por disco cheio do ambiente de teste local (confirmado via `df` dentro do contêiner — não é falha do Pi nem do script). `rclone` não testado, sem remoto configurado fora do Pi. `.gitattributes` ganhou `*.sql text eol=lf` (mesma proteção que `*.sh` já tinha) — um CRLF de cliente Windows produz o mesmo sintoma de uma migração divergente (checksum do Flyway), risco indireto que apareceu enquanto investigava um checksum mismatch que, na verdade, era só volume local desatualizado. Corrigidas também duas linhas do mapa (§1) que ainda diziam "sem execução verificada" pro backend de Simulado, já verde há tempos. Continuam pendentes, só testáveis no Pi real: build ARM, SSD por UUID, Tailscale, `rclone` de verdade, cron — checklist completo em `03E_DEPLOYMENT.md §8` |
 | 1.41.0 | 2026-09-07 | **Sprint 15 completa — as sete telas do mapa de `02_JORNADAS §4` fechadas.** Testada num Chrome real contra Postgres descartável: as 18 chaves nas três seções certas, edição gravando de verdade (conferido no Postgres). Um bug real achado e corrigido: campo usava `:value="p.valor"` direto, na ideia de que uma falha reverteria sozinha — não acontece, porque `p.valor` nunca muda numa falha, e o Alpine só reage a propriedade que muda de valor; o texto inválido ficava preso no campo mesmo com o estado (e o banco) corretos. Corrigido com `draft` — cópia editável por chave, via `x-model`, reatribuída explicitamente no erro. Reconferido depois da correção: reversão visual, erro só na linha certa, valor inválido nunca persistido; um terceiro campo editado com sucesso como checagem de regressão. Itens 15.3–15.4 promovidos a **feito** |
 | 1.40.0 | 2026-09-07 | **Sprint 15 aberta (Frontend — Ajustes)**, a última do mapa de sete telas. Diferente de todas as sprints de frontend anteriores: não havia endpoint pra consumir, então esta sprint também é sprint de backend. Antes de qualquer código, pergunta explícita ao usuário sobre o tamanho da validação do `PATCH` — os 18 valores já rodam de verdade no Pi — decidido "só número positivo, sem faixa por chave"; `Parametro` continua fora da numeração `D-xx` (`01_DOMINIO §3` já declara "configuração, não domínio"). `docs/SPRINT-15-AJUSTES.md` criado (v1.0.0): `GET`/`PATCH /api/parametros`. `ParametroController`/`Service`/`Mapper`/DTOs escritos, mais três arquivos de teste — suíte completa em 118/118 (111 anteriores + 7 novos). `docs/04_FRONTEND.md` v1.6.0, nova §7E. `PROGRESSO.md` §16 criado (Sprint 15), seções seguintes renumeradas. Código de tela ainda não escrito |

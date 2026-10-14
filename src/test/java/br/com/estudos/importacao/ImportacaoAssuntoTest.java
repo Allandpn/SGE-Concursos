@@ -1,5 +1,6 @@
 package br.com.estudos.importacao;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 
+import br.com.estudos.assunto.AssuntoRepository;
 import br.com.estudos.disciplina.DisciplinaRepository;
 import br.com.estudos.shared.IntegracaoTestBase;
+import br.com.estudos.shared.enums.TipoPeso;
 
 /**
  * Importação CSV — tudo-ou-nada e validar nunca grava (`02_JORNADAS.md` §J-1
@@ -27,6 +30,9 @@ class ImportacaoAssuntoTest extends IntegracaoTestBase {
 
     @Autowired
     private DisciplinaRepository disciplinaRepository;
+
+    @Autowired
+    private AssuntoRepository assuntoRepository;
 
     @Test
     void validar_resolveMasNaoGrava() throws Exception {
@@ -79,6 +85,40 @@ class ImportacaoAssuntoTest extends IntegracaoTestBase {
 
         assertTrue(disciplinaRepository.findByNomeIgnoreCase("Disciplina Importada Confirma").isPresent(),
             "confirmar sem linha recusada tem que gravar de verdade");
+    }
+
+    private void confirmarSemRecusa(String conteudo) throws Exception {
+        mockMvc.perform(multipart("/api/assuntos/importacoes/confirmar").file(csv(conteudo)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.recusadas").isEmpty());
+    }
+
+    @Test
+    void reimportarPorChaveExterna_atualizaEReordena() throws Exception {
+        confirmarSemRecusa("""
+            disciplina,assunto,peso,ordem,chaveExterna
+            Disciplina Chave Externa,Assunto A,ALTO,1,uuid-teste-a
+            Disciplina Chave Externa,Assunto B,MEDIO,2,uuid-teste-b
+            """);
+
+        // Mesmo arquivo de outro edital: sem id, peso e ordem trocados (1<->2),
+        // e um nome corrigido — 02_JORNADAS J-1 v1.6.0.
+        mockMvc.perform(multipart("/api/assuntos/importacoes/confirmar").file(csv("""
+            disciplina,assunto,peso,ordem,chaveExterna
+            Disciplina Chave Externa,Assunto A,BAIXO,2,uuid-teste-a
+            Disciplina Chave Externa,Assunto B Corrigido,ALTO,1,uuid-teste-b
+            """)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.recusadas").isEmpty())
+            .andExpect(jsonPath("$.assuntosNovos").value(0))
+            .andExpect(jsonPath("$.assuntosAtualizados").value(2));
+
+        var a = assuntoRepository.findByChaveExterna("uuid-teste-a").orElseThrow();
+        var b = assuntoRepository.findByChaveExterna("uuid-teste-b").orElseThrow();
+        assertEquals(TipoPeso.BAIXO, a.getPeso());
+        assertEquals(2, a.getOrdem());
+        assertEquals("Assunto B Corrigido", b.getNome());
+        assertEquals(1, b.getOrdem());
     }
 
     private MockMultipartFile csv(String conteudo) {

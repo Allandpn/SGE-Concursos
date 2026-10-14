@@ -1,6 +1,7 @@
 package br.com.estudos.turno;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -126,5 +127,50 @@ class TurnoServiceTest extends IntegracaoTestBase {
         var plano = turnoService.plano();
 
         assertNull(plano.blocoConteudo(), "frente já no teto global (1) — não sugere assunto novo");
+    }
+    private void registrarQuestoes(Long assuntoId, LocalDate data, int corretas) throws Exception {
+        mockMvc.perform(post("/api/sessoes").contentType(MediaType.APPLICATION_JSON).content("""
+            {"assuntoId": %d, "tipo": "QUESTOES", "data": "%s", "tempoMinutos": 20,
+             "questoesCorretas": %d, "questoesTotal": 10, "formato": "MULTIPLA_ESCOLHA",
+             "previsaoPercentual": 50, "tentativaId": "%s"}
+            """.formatted(assuntoId, data, corretas, UUID.randomUUID())))
+            .andExpect(status().isCreated());
+    }
+
+    private boolean emReestudo(Long assuntoId) {
+        return turnoService.plano().reestudos().stream().anyMatch(r -> r.assuntoId().equals(assuntoId));
+    }
+
+    @Test
+    void falha_colocaEmReestudo_estudoTira() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Reestudo D07", TipoPeso.MEDIO));
+        var assunto = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Falhou", TipoPeso.BAIXO, (short) 3, 1, null));
+        registrarEstudo(assunto.getId(), HOJE.minusDays(10));
+        assertFalse(emReestudo(assunto.getId()), "estudo sem falha não é reestudo");
+
+        registrarQuestoes(assunto.getId(), HOJE.minusDays(9), 3); // 30% -> FALHA
+        var item = turnoService.plano().reestudos().stream()
+            .filter(r -> r.assuntoId().equals(assunto.getId())).findFirst().orElseThrow(
+                () -> new AssertionError("D-07: FALHA devolve o assunto à fila de estudo"));
+        assertEquals(HOJE.minusDays(9), item.dataFalha());
+
+        registrarEstudo(assunto.getId(), HOJE);
+        assertFalse(emReestudo(assunto.getId()), "registrar o estudo de correção tira o assunto do reestudo");
+    }
+
+    @Test
+    void falhaConsolidado_colocaEmReestudo() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Reestudo D11", TipoPeso.MEDIO));
+        var assunto = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Falhou Consolidado", TipoPeso.BAIXO, (short) 3, 1, null));
+        var inicio = HOJE.minusYears(1);
+        registrarEstudo(assunto.getId(), inicio);
+        registrarQuestoes(assunto.getId(), inicio.plusDays(1), 9);
+        registrarQuestoes(assunto.getId(), inicio.plusDays(4), 9);
+        registrarQuestoes(assunto.getId(), inicio.plusDays(11), 9);
+        registrarQuestoes(assunto.getId(), inicio.plusDays(18), 9); // consolida
+        assertFalse(emReestudo(assunto.getId()));
+
+        registrarQuestoes(assunto.getId(), inicio.plusDays(168), 3); // FALHA na manutenção (+150)
+        assertTrue(emReestudo(assunto.getId()), "D-11: FALHA em manutenção também volta para a fila de estudo");
     }
 }

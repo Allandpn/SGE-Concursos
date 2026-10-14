@@ -1,6 +1,7 @@
 package br.com.estudos.revisao;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import br.com.estudos.shared.enums.ResultadoSessao;
 import br.com.estudos.shared.enums.SituacaoRevisao;
 
 public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
@@ -44,14 +46,49 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
         """)
     List<Revisao> listarVencidasPorAtraso(@Param("hoje") LocalDate hoje);
 
-    // "Os dois últimos resultados [no nível-alvo]" (01_DOMINIO §6.4/D-10) —
-    // filtra por nível: "escada concluída" é precondição, e as duas tentativas
-    // contadas para consolidar têm que ser NO nível-alvo, não em qualquer
-    // degrau anterior que tenha rendido SUCESSO no caminho até ali. Ordenado
-    // por id porque a revisão nasce PENDENTE e vira CUMPRIDA na mesma linha,
-    // então a ordem de criação já é a ordem de progressão na escada.
-    List<Revisao> findTop2ByAssuntoIdAndSituacaoAndNivelOrderByIdDesc(
-        Long assuntoId, SituacaoRevisao situacao, Integer nivel);
+    // D-10/D-11 (01_DOMINIO §5.5): resultados cumpridos no nível-alvo, da
+    // mais antiga à mais nova — EstadoConsolidacao percorre a sequência.
+    // Ordenado por id porque a revisão nasce PENDENTE e vira CUMPRIDA na
+    // mesma linha, então a ordem de criação já é a ordem de progressão.
+    @Query("""
+        select s.resultado from Revisao r
+        join r.sessaoCumpriu s
+        where r.assunto.id = :assuntoId
+          and r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.CUMPRIDA
+          and r.nivel = :nivel
+        order by r.id asc
+        """)
+    List<ResultadoSessao> listarResultadosCumpridos(@Param("assuntoId") Long assuntoId, @Param("nivel") Integer nivel);
+
+    // Fase em lote (docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §3): as cumpridas
+    // de um conjunto de assuntos numa consulta só, em vez de uma por assunto.
+    @Query("""
+        select r.assunto.id as assuntoId, r.nivel as nivel, s.resultado as resultado
+        from Revisao r
+        join r.sessaoCumpriu s
+        where r.assunto.id in :assuntoIds
+          and r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.CUMPRIDA
+        order by r.id asc
+        """)
+    List<ResultadoCumpridoLinha> listarCumpridasDosAssuntos(@Param("assuntoIds") Collection<Long> assuntoIds);
+
+    // Reestudo (D-07/D-11, 01_DOMINIO §5.1 v1.19.0): pendente nascida de uma
+    // FALHA sem ESTUDO registrado depois dela. "Depois" é ordem de registro
+    // (id), não de data — docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §2.1.
+    @Query("""
+        select r from Revisao r
+        join fetch r.assunto a
+        join fetch r.sessaoOrigem o
+        where r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.PENDENTE
+          and o.resultado = br.com.estudos.shared.enums.ResultadoSessao.FALHA
+          and not exists (
+              select 1 from Sessao e
+              where e.assunto = a
+                and e.tipo = br.com.estudos.shared.enums.TipoSessao.ESTUDO
+                and e.id > o.id)
+        order by o.data asc, o.id asc
+        """)
+    List<Revisao> listarEmReestudo();
 
     // D-17 (docs/SPRINT-4-ESCADA.md §3.4): cancela sem tocar em CUMPRIDA (D-18).
     // flushAutomatically: AssuntoService/DisciplinaService.arquivar chamam isto

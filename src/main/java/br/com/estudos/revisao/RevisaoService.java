@@ -2,6 +2,8 @@ package br.com.estudos.revisao;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -91,16 +93,6 @@ public class RevisaoService {
     }
 
     /**
-     * D-10 — mesma regra de consolidação usada no roteamento (§3.3),
-     * exposta para o FrenteService não duplicá-la (docs/SPRINT-5-FRENTE.md §2,
-     * ADR-033).
-     */
-    @Transactional(readOnly = true)
-    public boolean estaConsolidado(Long assuntoId, TipoPeso peso) {
-        return doisUltimosNoAlvoForamSucesso(assuntoId, nivelAlvo(peso));
-    }
-
-    /**
      * Checagem prévia de propósito — foge do padrão D-05/D-45 do resto do
      * sistema (nunca checar antes, deixar o banco recusar e traduzir). Aqui
      * uma falha de flush no INSERT deixaria a sessão do Hibernate inutilizável
@@ -149,11 +141,20 @@ public class RevisaoService {
 
         var alvo = nivelAlvo(assunto.getPeso());
         var nivelCumprido = pendente.getNivel();
-        var jaConsolidado = nivelCumprido.equals(alvo) && doisUltimosNoAlvoForamSucesso(assunto.getId(), alvo);
-        var consolidaAgora = !jaConsolidado
-            && nivelCumprido.equals(alvo)
-            && sessao.getResultado() == ResultadoSessao.SUCESSO
-            && umUltimoNoAlvoFoiSucesso(assunto.getId(), alvo);
+        // 01_DOMINIO §5.5 (v1.19.0): o estado antes desta sessão decide a linha
+        // da tabela de roteamento; consolidar agora só acontece com SUCESSO no
+        // alvo completando dois seguidos (docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §1.1).
+        var jaConsolidado = false;
+        var consolidaAgora = false;
+        if (nivelCumprido.equals(alvo)) {
+            var anteriores = resultadosNoAlvo(assunto.getId(), alvo);
+            jaConsolidado = EstadoConsolidacao.consolidado(anteriores);
+            if (!jaConsolidado) {
+                var comEsta = new ArrayList<>(anteriores);
+                comEsta.add(sessao.getResultado());
+                consolidaAgora = EstadoConsolidacao.consolidado(comEsta);
+            }
+        }
 
         pendente.setSituacao(SituacaoRevisao.CUMPRIDA);
         pendente.setSessaoCumpriu(sessao);
@@ -224,41 +225,25 @@ public class RevisaoService {
         return !dataSessao.isBefore(inicioJanela);
     }
 
-    private long intervaloDaPendente(Revisao pendente) {
-        var alvo = nivelAlvo(pendente.getAssunto().getPeso());
-        if (pendente.getNivel().equals(alvo) && doisUltimosNoAlvoForamSucesso(pendente.getAssunto().getId(), alvo)) {
-            return intervaloManutencao();
-        }
-        return intervaloNivel(pendente.getNivel());
-    }
-
     /**
-     * "Escada concluída E os dois últimos resultados SUCESSO" (D-10,
-     * `01_DOMINIO` §6.4) — as duas tentativas contadas têm que ser NO
-     * nível-alvo, não em qualquer degrau anterior que tenha rendido SUCESSO
-     * no caminho até ali (por isso o filtro por nível na consulta, não só
-     * pelas duas últimas linhas cumpridas de qualquer nível).
+     * O intervalo que foi de fato agendado para esta revisão — não
+     * reconstruído do estado atual, que errava depois de um PARCIAL em
+     * manutenção (agendado na metade). docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §1.2.
      */
-    private boolean doisUltimosNoAlvoForamSucesso(Long assuntoId, int alvo) {
-        var ultimasDuas = revisaoRepository.findTop2ByAssuntoIdAndSituacaoAndNivelOrderByIdDesc(
-            assuntoId, SituacaoRevisao.CUMPRIDA, alvo);
-        return ultimasDuas.size() == 2
-            && ultimasDuas.stream().allMatch(r -> r.getSessaoCumpriu().getResultado() == ResultadoSessao.SUCESSO);
+    private long intervaloDaPendente(Revisao pendente) {
+        var origem = pendente.getSessaoOrigem();
+        if (origem == null) {
+            return intervaloNivel(pendente.getNivel()); // coluna admite nulo; o código nunca deixa
+        }
+        return ChronoUnit.DAYS.between(origem.getData(), pendente.getDataPrevista());
     }
 
-    private boolean umUltimoNoAlvoFoiSucesso(Long assuntoId, int alvo) {
-        var ultimas = revisaoRepository.findTop2ByAssuntoIdAndSituacaoAndNivelOrderByIdDesc(
-            assuntoId, SituacaoRevisao.CUMPRIDA, alvo);
-        return !ultimas.isEmpty() && ultimas.get(0).getSessaoCumpriu().getResultado() == ResultadoSessao.SUCESSO;
+    private List<ResultadoSessao> resultadosNoAlvo(Long assuntoId, int alvo) {
+        return revisaoRepository.listarResultadosCumpridos(assuntoId, alvo);
     }
 
-    /** D-23 (01_DOMINIO §6.7) — sem coluna própria, mapeamento fixo. */
     private int nivelAlvo(TipoPeso peso) {
-        return switch (peso) {
-            case ALTO -> 6;
-            case MEDIO -> 4;
-            case BAIXO -> 3;
-        };
+        return EstadoConsolidacao.nivelAlvo(peso);
     }
 
     /** D-08 — o intervalo de um nível é sempre o mesmo parâmetro, nunca recalculado a partir do histórico. */

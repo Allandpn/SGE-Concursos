@@ -5,9 +5,9 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.0.1** |
+| Versão do documento | **1.1.0** |
 | Status | **Congelado** |
-| Data | 2026-09-07 |
+| Data | 2026-10-14 |
 
 ---
 
@@ -445,9 +445,37 @@ prática de ADR-015. Faça os dois.
 
 ---
 
+## 8A. Adendo — Sprint 16 (app instalável e concurso-alvo ativo)
+
+Acrescentado sem mudar o desenho congelado acima — só o que a Sprint 16
+(`docs/SPRINT-16-CORRECOES-MULTIEDITAL.md`) passou a exigir da operação.
+
+1. **HTTPS deixa de ser opcional.** O app instalável (ADR-038) precisa de
+   contexto seguro: service worker e `crypto.randomUUID()` (o `tentativaId`
+   de D-45, gerado ao abrir a tela de registro) **não existem** em
+   `http://<ip-tailscale>:8080`. Use só `tailscale serve` (§4.4); a
+   "alternativa mais simples" do fim de §4.4 deixa de servir para celular e
+   tablet.
+2. **Instalar no aparelho:** abrir `https://raspberrypi.<tailnet>.ts.net` no
+   navegador do celular/tablet (Tailscale ligado) → "Adicionar à tela
+   inicial" / "Instalar app".
+3. **Importação automática por concurso-alvo (ADR-039).** O cron do
+   `scripts/importar-segmentos.sh` passa a levar o slug do concurso ativo:
+
+   ```
+   */30 * * * * cd /opt/estudos && CONCURSO_ATIVO=<slug-da-pasta> ./scripts/importar-segmentos.sh
+   ```
+
+   Sem a variável, o script não importa nada e registra o motivo em
+   `/var/log/estudos/importacao-planejamento.log`. Trocar de concurso é
+   trocar o slug nessa linha.
+
+---
+
 ## 9. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-10-14 | §8A, adendo da Sprint 16: HTTPS via `tailscale serve` passa a ser obrigatório (service worker e `crypto.randomUUID()` exigem contexto seguro — ADR-038); instalação do app no celular/tablet; cron da importação com `CONCURSO_ATIVO` (ADR-039). Desenho das seções 0–8 intacto |
 | 1.0.1 | 2026-09-07 | Verificação pré-Pi, não mudança de desenho (continua **Congelado**). `docker compose up -d --build` rodado de verdade nesta máquina (x86_64, não ARM): build multi-estágio, as 9 migrações do Flyway aplicadas numa base limpa, `/actuator/health` respondendo `UP`, as duas linhas de segurança conferidas (`postgres` sem porta publicada, `app` só em `127.0.0.1:8080`). `backup.sh` testado de ponta a ponta: dump+gzip+sanidade funcionam; o piso de 10 KB só é ultrapassado com uso real (~100+ sessões nesta verificação — uma base recém-instalada, vazia, vai acusar "backup suspeito" na primeira vez, e isso é esperado, não bug). `testar-restauracao.sh` restaurou com sucesso e as contagens bateram; só o `dropdb` final falhou, por disco cheio do ambiente de teste desta máquina (não do Pi — confirmado via `df` dentro do contêiner). `rclone` não testado (sem remoto configurado fora do Pi). `.gitattributes` ganhou `*.sql text eol=lf`, mesma proteção que `*.sh` já tinha — um CRLF introduzido por `autocrlf` de cliente Windows produz o mesmo sintoma que uma migração divergente (checksum do Flyway diverge), achado indiretamente nesta verificação. Continuam genuinamente pendentes, só testáveis no hardware real: build ARM, SSD por UUID, Tailscale, `rclone` de verdade, cron — checklist §8 |
 | 1.0.0 | 2026-08-15 | Documento novo. Docker Compose, Dockerfile ARM multi-estágio, montagem do SSD, exposição pela Tailscale, backup com verificação de sanidade e teste de restauração trimestral |

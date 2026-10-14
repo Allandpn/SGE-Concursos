@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,6 +25,11 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
 
     // D-24 (docs/SPRINT-5-FRENTE.md §2.1): assunto sem nenhuma sessão está no backlog.
     boolean existsByAssuntoId(Long assuntoId);
+
+    // D-24 em lote (docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §3): quais
+    // assuntos do conjunto têm alguma sessão, numa consulta só.
+    @Query("select distinct s.assunto.id from Sessao s where s.assunto.id in :assuntoIds")
+    Set<Long> assuntosComSessao(@Param("assuntoIds") Collection<Long> assuntoIds);
 
     // M-2 (docs/SPRINT-7-METRICAS.md §4.2): primeira exposição = data mais
     // antiga; ordenado, o service só pega head/tail da lista, por tipo.

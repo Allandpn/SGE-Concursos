@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.5.0 |
-| Data | 2026-09-06 |
+| Versão | 1.6.0 |
+| Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -56,6 +56,13 @@ Web de computador é o alvo. Celular fica para depois — e o documento de
 interface deve evitar decisões que **impeçam** o celular mais tarde (largura
 fixa, dependência de teclado, alvo de clique minúsculo), sem pagar hoje o custo
 de otimizar para ele.
+
+**Atualização (2026-10-14):** o uso passa a ser **app no celular e no
+tablet, além da web**. A mesma SPA vira app instalável (`docs/00A_ADR.md`
+ADR-038) — um código só, sem projeto nativo. Consequência para as telas:
+alvo de toque de no mínimo 44 px, nenhuma ação que dependa de passar o mouse,
+e layout que funciona em largura de celular. O registro de sessão no
+celular passa a ser caminho de primeira classe, não de exceção.
 
 ---
 
@@ -137,7 +144,7 @@ Banco de Dados,Normalização e Dependências Funcionais,ALTO,4
 | `peso` | não | `ALTO` · `MEDIO` · `BAIXO`. Ausente → `MEDIO` |
 | `ordem` | não | Inteiro. Ausente → ordem de aparição no arquivo |
 | `dificuldadePercebida` | não | Inteiro 1..5. Ausente → `3` (meio da escala). Ajustável depois pela interface |
-| `chaveExterna` | não | Opcional, única entre todos os assuntos (`01_DOMINIO` D-52). Identificador dado por um sistema de planejamento de estudos externo — o SGE guarda sem interpretar. Só é necessária se for importar segmentos de material depois (ver abaixo) |
+| `chaveExterna` | não | Opcional, única entre todos os assuntos (`01_DOMINIO` D-52). Identificador dado por um sistema de planejamento de estudos externo — o SGE guarda sem interpretar. É a chave de reimportação quando a linha não tem `id` (tabela acima), e é por ela que `segmentos.csv` acha o assunto (ver abaixo) |
 
 #### Por que existe a coluna `id`
 
@@ -157,6 +164,8 @@ qualquer alteração, **inclusive renomear**.
 | Linha sem `id` | Cria. Se já existir assunto com o mesmo nome na disciplina, recusa a linha |
 | Linha com `id` conhecido | Atualiza nome, peso, ordem e dificuldadePercebida daquele registro |
 | Linha com `id` inexistente | **Recusa o arquivo inteiro** — sinal de arquivo corrompido ou de outra base |
+| Linha sem `id`, com `chaveExterna` de assunto já existente | **Atualiza** aquele registro — mesmos campos da linha com `id` (nome, peso, ordem, dificuldadePercebida); a disciplina não muda. Reordenar assuntos existentes no mesmo arquivo (trocar 1↔2) é aceito: a unicidade de ordem (`01_DOMINIO` D-48) vale para o resultado do arquivo, não para cada linha no meio do caminho. É o caminho da reimportação vinda do sistema de planejamento, que nunca conhece o `id` do SGE |
+| Linha com `id` **e** `chaveExterna` | O `id` decide qual registro; a `chaveExterna` é gravada nele |
 
 E, independentemente disso: **renomear assunto e disciplina tem que existir na
 interface.** Corrigir um typo não pode exigir exportar, editar e reimportar.
@@ -521,6 +530,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.6.0 | 2026-10-14 | Sprint 16. (1) J-1: linha sem `id` mas com `chaveExterna` já conhecida **atualiza** em vez de tentar criar — sem isso, a reimportação automática vinda do planejamento (ADR-037) recusava toda linha já importada por nome duplicado, e o arquivo inteiro deixava de ser confirmado a partir da segunda sincronização. (2) §1.2: uso passa a ser app no celular e no tablet além da web (ADR-038); requisitos mínimos de toque e largura. Aprovado pelo usuário |
 | 1.5.0 | 2026-09-06 | `segmentos.csv` (J-1, §"Segunda importação") ganha coluna obrigatória `chaveExternaSegmento` — identidade própria do segmento, dada pelo sistema de planejamento (`01_DOMINIO` D-53, nova). Reimportação passa a identificar o segmento por essa chave, não por `ordem`: `ordem` é posição, e reordenar o material depois de importado não pode confundir, em silêncio, um segmento antigo (já referenciado por sessões passadas, D-51) com um novo na mesma posição. §6 ganha D-53 em J-1. Decidido com o usuário ao discutir o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md`, antes do documento técnico fechar — mesma ordem que D-46 e D-52 já seguiram |
 | 1.4.0 | 2026-09-05 | J-1 ganha coluna opcional `chaveExterna` no CSV de assuntos e uma **segunda importação**, `segmentos.csv` (uma linha por segmento, `01_DOMINIO` §3.7), chegando via Google Drive + `rclone` (`docs/00A_ADR.md` ADR-037), não upload manual. Referencia o assunto pela chave externa em vez do `id` do SGE, porque o sistema de planejamento nunca saberia esse `id` sem uma chamada de volta que reabriria o acoplamento que a topologia via Drive evita. §6 ganha D-50 a D-52 nas jornadas J-1/J-2. Decidido com o usuário na abertura da Sprint 10 |
 | 1.3.0 | 2026-09-01 | §2: removido o passo "declara a próxima sessão pretendida" do fluxo de turno. §4.1 (J-2): removida a linha "Encerrar" do orçamento — `00_PRODUTO` v1.7.0 tira a intenção de implementação como substituto da terceira dor (§8.2 de lá); campo nunca era lido de volta por nada. Soma do orçamento total não muda — essa linha nunca entrava na conta |

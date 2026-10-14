@@ -10,6 +10,10 @@
 
 server:
   port: 8080
+  # ADR-038: o manifesto do app instalável precisa do tipo certo, senão
+  # o navegador ignora o arquivo e não oferece "instalar".
+  mime-mappings:
+    webmanifest: application/manifest+json
   # BIND_ADDRESS=0.0.0.0 dentro do container é obrigatório para o Docker
   # mapear a porta; o confinamento real vem do "127.0.0.1:" do host no
   # docker-compose.yml. Não "corrigir" para um valor fixo.

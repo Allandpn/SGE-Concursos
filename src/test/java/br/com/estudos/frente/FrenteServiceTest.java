@@ -212,4 +212,32 @@ class FrenteServiceTest extends IntegracaoTestBase {
 
         assertTrue(sugestao.isEmpty(), "disciplina já no teto — sem sugestão mesmo havendo backlog");
     }
+    @Test
+    void fasesEmLote_igualAFaseIndividual() throws Exception {
+        var disciplina = novaDisciplina("Lote");
+        var backlog = novoAssunto(disciplina.getId(), "Lote Backlog", 1);
+        var frente = novoAssunto(disciplina.getId(), "Lote Frente", 2);
+        var consolidado = novoAssunto(disciplina.getId(), "Lote Consolidado", 3);
+        registrarEstudo(frente.getId(), HOJE);
+        consolidar(consolidado.getId());
+
+        var inativa = novaDisciplina("Lote Inativa");
+        var deInativa = novoAssunto(inativa.getId(), "Lote De Inativa", 1);
+        registrarEstudo(deInativa.getId(), HOJE);
+        disciplinaService.arquivar(inativa.getId());
+
+        var assuntos = java.util.List.of(
+            assuntoService.buscar(backlog.getId()), assuntoService.buscar(frente.getId()),
+            assuntoService.buscar(consolidado.getId()), assuntoService.buscar(deInativa.getId()));
+        var lote = frenteService.fasesDe(assuntos);
+
+        for (var assunto : assuntos) {
+            assertEquals(frenteService.fase(assunto.getId()), lote.get(assunto.getId()),
+                "o lote tem que dar exatamente a fase individual de " + assunto.getNome());
+        }
+        assertEquals(FaseAssunto.BACKLOG, lote.get(backlog.getId()));
+        assertEquals(FaseAssunto.FRENTE, lote.get(frente.getId()));
+        assertEquals(FaseAssunto.CONSOLIDADO, lote.get(consolidado.getId()));
+        assertEquals(FaseAssunto.BACKLOG, lote.get(deInativa.getId()));
+    }
 }

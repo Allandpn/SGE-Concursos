@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.18.0 |
-| Data | 2026-09-06 |
+| Versão | 1.19.0 |
+| Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -488,6 +488,16 @@ diferença importa, porque é o que mantém o sistema explicável.
 Isso é o que `00_PRODUTO` §3.5 exige: recuperação malsucedida sem correção é
 desgaste, então o sistema pede a correção, não só o próximo intervalo.
 
+**Como se reconhece o assunto que voltou para a fila de estudo (reestudo).**
+Derivado, sem atributo novo (D-16): o assunto está em **reestudo** quando a
+revisão pendente dele nasceu de uma sessão com resultado `FALHA` e nenhuma
+sessão `ESTUDO` desse assunto foi registrada depois dela. Registrar o estudo
+de correção é o que tira o assunto do reestudo — a revisão pendente não muda,
+a escada segue em paralelo. Reestudo **não é fase** (§8): é uma marca sobre
+um assunto que continua na frente, e por isso não ocupa vaga nova nem conta
+duas vezes no teto (§6.7). O plano do turno o oferece numa lista própria,
+antes do bloco de conteúdo novo (§7.4) — corrigir vem antes de abrir.
+
 ### 5.2 Por que regride um nível, e não recomeça do zero
 
 Foi simulado antes de ser decidido. Com 20.000 execuções por cenário, contando
@@ -583,6 +593,13 @@ Assunto consolidado é recuperado a cada 120–180 dias, indefinidamente
 | `SUCESSO` | Continua consolidado; agenda a próxima manutenção |
 | `PARCIAL` | Continua consolidado; **antecipa** a próxima para metade do intervalo |
 | `FALHA` | **Sai de consolidado**, volta à escada no último nível, e vai para a fila de estudo |
+
+**Quando o assunto está consolidado**, contando só as revisões cumpridas no
+nível-alvo, em ordem: dois `SUCESSO` seguidos consolidam; antes de
+consolidar, `PARCIAL` ou `FALHA` zeram a sequência ("seguidos" é sem nada no
+meio); depois de consolidado, `SUCESSO` e `PARCIAL` mantêm, e só `FALHA`
+desfaz (D-11). Reconsolidar depois de uma `FALHA` exige de novo dois
+`SUCESSO` seguidos no alvo.
 
 Consolidado não é porta de mão única. Ao longo de 24 meses, tratá-lo como
 permanente seria a própria ilusão de fluência codificada no modelo.
@@ -905,6 +922,10 @@ Bloco de conteúdo (53 min)
   · Engenharia de Software → Padrões de projeto → TEORIA
 ```
 
+Quando há assunto em **reestudo** (§5.1), ele aparece numa lista própria
+entre a fila de recuperação e o bloco de conteúdo novo — é estudo de
+correção de assunto que já está na frente, não abertura de assunto novo.
+
 O plano é **derivado e efêmero**. Não se guarda, não vira entidade: é recalculado
 a cada pedido, a partir da fila de revisões vencidas, da frente e dos tetos. Se
 o usuário fizer outra coisa, nada quebra — ele nunca prometeu nada
@@ -1169,6 +1190,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.19.0 | 2026-10-14 | Duas lacunas achadas em análise do código contra este documento (Sprint 16). (1) **§5.5**: explicitado quando o assunto está consolidado, como sequência de resultados no nível-alvo — `PARCIAL` em manutenção **mantém** consolidado (a tabela já dizia; a implementação o desconsolidava porque só olhava "os dois últimos"). (2) **§5.1**: definido como se reconhece, sem atributo novo, o assunto que `FALHA` devolveu à fila de estudo (*reestudo*) — D-07 e D-11 diziam "volta para a fila de estudo", mas nada dizia como a fila o reconhecia, e a implementação nunca o oferecia. §7.4 ganha a lista de reestudo no plano do turno. Nenhuma regra D-xx nova: as duas são leitura precisa de D-07, D-10 e D-11. Aprovado pelo usuário |
 | 1.18.0 | 2026-09-06 | **§3.7 revisada**: `Segmento` ganha atributo **chave externa obrigatória** (diferente da de `Assunto`, que é opcional) — todo segmento nasce de importação, então sempre tem uma. Existe para a reimportação identificar um segmento já existente pela chave, não por `ordem`: reordenar o material depois de importado não pode fazer o SGE confundir um segmento antigo (já referenciado por sessões passadas) com um novo que ocupa a mesma posição. Nova **D-53** (§10) e linha de decisão em §11 explicando por que aqui a chave é obrigatória, ao contrário do caso de `Assunto`. Decidido com o usuário ao revisar o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md` (ainda não fechado) — acrescentado antes do documento técnico, seguindo a regra central do `CLAUDE.md` |
 | 1.17.0 | 2026-09-05 | Nova **§3.7, entidade Segmento**: pedaço de material de leitura dentro de um assunto, ordenado, nascido só por importação de um sistema de planejamento externo (`docs/00A_ADR.md` ADR-037). Sessão de `ESTUDO` pode apontar, opcionalmente, para um segmento do mesmo assunto — os outros três tipos continuam apontando só para o assunto (D-01 intacto). `Assunto` ganha atributo opcional **chave externa** (§3.2), que o SGE guarda sem interpretar, para o sistema de planejamento referenciar o assunto certo ao importar segmentos sem depender do `id` que o SGE decide (evita o mesmo risco que a coluna `id` do J-1 já resolve para o próprio assunto). §9 ganha as duas relações novas. D-50 a D-52. Decidido com o usuário na abertura da Sprint 10 (referência de material por blocos), sequenciada antes da Sprint 9 (frontend pausado) |
 | 1.16.0 | 2026-09-01 | §3.3: removida a **próxima sessão pretendida** — campo nunca lido de volta por nada, `00_PRODUTO` v1.7.0 retira a intenção de implementação como substituto da terceira dor (§8.2 de lá). §11: removida a linha de decisão correspondente ("Intenção de próxima sessão como atributo") — a alternativa que ela recusava (entidade "plano") também deixou de fazer sentido, o conceito inteiro saiu, não só a forma dele. Decisão do usuário, testando o fluxo de sessão |

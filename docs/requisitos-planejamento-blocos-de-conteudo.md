@@ -297,3 +297,43 @@ D-29, D-50, D-51, D-53 (§8); `02_JORNADAS.md §1.1`, `§7.3`;
 `00_PRODUTO.md §8.5` (sem tela de calendário, §9). Decisão de
 infraestrutura: `docs/00A_ADR.md` ADR-037 (artefatos via Google Drive +
 `rclone`).
+
+## 11. Requisito novo (2026-10-14): formato dos arquivos de importação e concurso-alvo ativo
+
+**Achado** numa análise dos dois repositórios: o exportador de vocês
+(`integracao/exportar_sge.py`) gerava **um** CSV
+(`uuid,disciplina,assunto,edital,peso,ordem,referencia_material`, segmentos
+como JSON dentro de uma célula). O SGE lê **dois** CSVs com outros nomes de
+coluna (`especificacao/02_JORNADAS.md` J-1). Importado como estava, o assunto
+entrava **sem** `chaveExterna` e todo `segmentos.csv` seria recusado. Também:
+peso `"não determinado"` é recusado pelo SGE (vazio vira `MEDIO`).
+
+**O contrato é do lado que consome** (o SGE). Pasta do concurso no Drive,
+`SGE-Importacao/<slug>/`:
+
+| Arquivo | Colunas |
+|---|---|
+| `assuntos.csv` | `disciplina,assunto,peso,ordem,chaveExterna` — `chaveExterna` = uuid canônico; peso `ALTO`/`MEDIO`/`BAIXO` ou vazio; **sem** `id` |
+| `segmentos.csv` | `chaveExternaSegmento,chaveExternaAssunto,ordem,arquivo,paginaInicial,paginaFinal,tempoEstimadoMin` — `arquivo` é o link do Drive |
+| `concurso.json` | `{"slug", "nome", "dataProva"}` — §9 deixa de ser especulativo do lado de cá: o SGE guarda para o diagnóstico de edital (Sprint 18 do mapa), ainda não lê |
+
+**Mudanças do lado do SGE, já feitas (Sprint 16):**
+
+- Linha de `assuntos.csv` sem `id` com `chaveExterna` já conhecida
+  **atualiza** (nome, peso, ordem) em vez de criar — a ressincronização
+  automática deixa de ser recusada a partir da segunda vez, e reordenar
+  assuntos existentes no mesmo arquivo é aceito.
+- **Concurso-alvo ativo** (`docs/00A_ADR.md` ADR-039): a importação automática
+  lê só a pasta nomeada em `CONCURSO_ATIVO`. Assunto canônico comum a dois
+  editais mantém escada e histórico ao trocar de concurso; peso e ordem
+  passam a ser os do concurso ativo.
+
+**Pedido a vocês:** gerar os três arquivos acima. Verificado de ponta a ponta
+em 2026-10-14 com uma versão do exportador escrita nesta mesma análise (no
+repositório de vocês, na branch de trabalho desta sessão): exportação →
+`scripts/importar-segmentos.sh` → SGE, com ressincronização e troca de
+concurso-alvo.
+
+**Fechada também a pendência** "o planejamento vai gerar
+`chaveExternaSegmento`?" (§8): já gerava, em `dias/montar_bloco.py` —
+faltava só sair no arquivo certo.

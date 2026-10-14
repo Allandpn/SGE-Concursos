@@ -211,6 +211,49 @@ class RevisaoEscadaTest extends IntegracaoTestBase {
         assertEquals(manutencao.getDataPrevista().plusDays(7), proxima.getDataPrevista(), "volta ao intervalo de escada do nível-alvo");
     }
 
+    /** Sobe até o alvo (BAIXO = 3) e consolida; devolve a pendente de manutenção. */
+    private Revisao consolidar(Long assuntoId) throws Exception {
+        registrar(estudo(assuntoId, LocalDate.of(2026, 1, 1)));
+        registrar(questoes(assuntoId, LocalDate.of(2026, 1, 2), 9, 10));
+        registrar(questoes(assuntoId, LocalDate.of(2026, 1, 5), 9, 10));
+        registrar(questoes(assuntoId, LocalDate.of(2026, 1, 12), 9, 10));
+        registrar(questoes(assuntoId, LocalDate.of(2026, 1, 19), 9, 10)); // consolida
+        return pendente(assuntoId);
+    }
+
+    @Test
+    void parcialEmManutencao_mantemConsolidado() throws Exception {
+        var assunto = novoAssunto("Parcial Manutencao");
+        var manutencao = consolidar(assunto.getId());
+
+        registrar(questoes(assunto.getId(), manutencao.getDataPrevista(), 7, 10)); // 70% -> PARCIAL
+        var antecipada = pendente(assunto.getId());
+        assertEquals(3, antecipada.getNivel());
+        assertEquals(manutencao.getDataPrevista().plusDays(75), antecipada.getDataPrevista(),
+            "01_DOMINIO §5.5: PARCIAL antecipa para metade do intervalo de manutenção");
+
+        registrar(questoes(assunto.getId(), antecipada.getDataPrevista(), 9, 10)); // SUCESSO
+        var proxima = pendente(assunto.getId());
+        assertEquals(antecipada.getDataPrevista().plusDays(150), proxima.getDataPrevista(),
+            "PARCIAL manteve consolidado: o SUCESSO seguinte volta à manutenção, não ao intervalo de escada");
+    }
+
+    @Test
+    void janela_usaIntervaloAgendado() throws Exception {
+        var assunto = novoAssunto("Janela Agendada");
+        var manutencao = consolidar(assunto.getId());
+        registrar(questoes(assunto.getId(), manutencao.getDataPrevista(), 7, 10)); // PARCIAL -> +75
+        var antecipada = pendente(assunto.getId());
+
+        // 20% de 75 = 15 dias de tolerância. 20 dias antes fica fora — com o
+        // intervalo reconstruído como 150 (defeito antigo), seriam 30 e caberia.
+        registrar(questoes(assunto.getId(), antecipada.getDataPrevista().minusDays(20), 9, 10));
+
+        var aindaPendente = pendente(assunto.getId());
+        assertEquals(antecipada.getId(), aindaPendente.getId(),
+            "fora da janela do intervalo realmente agendado, a pendente não muda");
+    }
+
     @Test
     void arquivarAssunto_cancelaRevisaoPendente() throws Exception {
         var assunto = novoAssunto("Arquivar Assunto");

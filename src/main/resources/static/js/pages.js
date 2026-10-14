@@ -76,6 +76,7 @@ document.addEventListener('alpine:init', () => {
     carregando: true,
     erro: null,
     fila: [],
+    reestudos: [],
     blocoConteudo: null,
 
     async init() {
@@ -84,6 +85,7 @@ document.addEventListener('alpine:init', () => {
       try {
         const plano = await api('/turno/plano');
         this.fila = plano.filaRecuperacao;
+        this.reestudos = plano.reestudos;
         this.blocoConteudo = plano.blocoConteudo;
       } catch (e) {
         this.erro = e.message;
@@ -93,7 +95,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     get vazio() {
-      return this.fila.length === 0 && !this.blocoConteudo;
+      return this.fila.length === 0 && this.reestudos.length === 0 && !this.blocoConteudo;
     },
 
     abrirRecuperacao(item) {
@@ -104,6 +106,12 @@ document.addEventListener('alpine:init', () => {
     abrirRegistroConteudo(assunto) {
       Alpine.store('registrar').selecionar(assunto);
       window.location.hash = `#/registrar/conteudo/${assunto.id}`;
+    },
+
+    // D-07/D-11: reestudo é uma sessão ESTUDO do mesmo assunto — mesma tela
+    // de Registrar conteúdo (docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §4).
+    abrirReestudo(item) {
+      this.abrirRegistroConteudo({ id: item.assuntoId, nome: item.nome });
     },
   }));
 
