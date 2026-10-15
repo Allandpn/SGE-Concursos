@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.11.0 |
+| Versão | 1.12.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -794,6 +794,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.12.0 | 2026-10-15 | O app passa a se chamar **eAgora** (decisão do usuário): título, cabeçalho, manifesto e nome ao instalar. `CASCA_VERSAO` trocada |
 | 1.11.0 | 2026-10-15 | §7J, Sprint 18: linha do concurso-alvo em Hoje, Assuntos por disciplina com resumo, telas Concursos e Novo edital (análise por IA com revisão antes de confirmar) |
 | 1.10.0 | 2026-10-15 | §7I, Sprint 17 lacunas 5–8: mensagem de retorno e "quer adiantar?" em Hoje (J-4, §4.3); Progresso reorganizado como balanço semanal, com a frente da semana e as sugestões de divisão (J-3, D-35) |
 | 1.9.0 | 2026-10-14 | §7A corrigida e §7H, Sprint 17 atritos 2–4: tempo visível em Registrar (conteúdo preenchido com `duracao_bloco_min` ou a estimativa do segmento), nota de represamento em Hoje (D-56), seção Turno em Ajustes |

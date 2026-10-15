@@ -1,6 +1,6 @@
 {
-  "name": "Estudos — gestão de estudos para concursos",
-  "short_name": "Estudos",
+  "name": "eAgora — gestão de estudos para concursos",
+  "short_name": "eAgora",
   "description": "Plano do dia, recuperação espaçada e progresso por assunto.",
   "lang": "pt-BR",
   "start_url": "./#/hoje",

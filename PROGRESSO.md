@@ -997,6 +997,7 @@ próprio uso real fica confuso.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.49.0 | 2026-10-15 | O app (web e Android) passa a se chamar **eAgora**, decisão do usuário. `04_FRONTEND` v1.12.0; app Android em `github.com/Allandpn/-eAgora` |
 | 1.48.0 | 2026-10-15 | **Sprint 18 aberta** (§19), antecipada a pedido do usuário: concurso-alvo com histórico, disciplinas, edital novo por IA (OpenRouter). Especificação primeiro (item 18.1). Mapa: linhas 18–21 viram 19–22. Seções 19–20 renumeradas para 20–21 |
 | 1.47.0 | 2026-10-15 | ADR-041 (app Android como segundo cliente) e `02_JORNADAS` v1.8.0 (§2.2, lembrete do turno). Nota no mapa apontando o repositório do app |
 | 1.46.0 | 2026-10-15 | **Sprint 17: lacunas 5–8** (itens 17.7–17.10) — comportamentos que a especificação já definia e o código nunca implementou: D-35, balanço semanal (J-3), mensagem de retorno (J-4), "quer adiantar?" (§4.3). `01_DOMINIO` v1.22.0, `SPRINT-17` v1.2.0, `04_FRONTEND` v1.10.0, migração V11 (`parciais_seguidos_dividir`) |
