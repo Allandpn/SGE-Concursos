@@ -65,6 +65,10 @@ services:
       BIND_ADDRESS: 0.0.0.0
       LOG_LEVEL: INFO
       TZ: America/Sao_Paulo
+      # ADR-043: análise de edital por IA. Sem a chave, a funcionalidade
+      # aparece como indisponível e o resto do sistema segue normal.
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-5.5}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

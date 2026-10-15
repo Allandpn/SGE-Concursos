@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.9.0** |
+| Versão do documento | **2.10.0** |
 | Status | **Congelado** |
-| Data | 2026-10-14 |
-| Total | 41 ADRs — 29 vigentes, 11 substituídas, 1 revogada |
+| Data | 2026-10-15 |
+| Total | 43 ADRs — 30 vigentes, 12 substituídas, 1 revogada |
 
 ---
 
@@ -68,9 +68,10 @@ que custa e o que foi descartado.
 | [ADR-036](#adr-036--openapiswagger-gerado-a-partir-do-código) | OpenAPI/Swagger gerado a partir do código | v2 |
 | [ADR-037](#adr-037--artefatos-do-planejamento-chegam-via-google-drive-e-rclone) | Artefatos do planejamento chegam via Google Drive e `rclone` | Sprint 10 |
 | [ADR-038](#adr-038--frontend-sem-build-com-dependências-locais-e-instalável-como-app) | Frontend sem build, com dependências locais e instalável como app | Sprint 16 |
-| [ADR-039](#adr-039--um-concurso-alvo-ativo-por-vez-na-importação-automática) | Um concurso-alvo ativo por vez na importação automática | Sprint 16 |
 | [ADR-040](#adr-040--prontidão-para-multiusuário-sem-implementá-lo) | Prontidão para multiusuário, sem implementá-lo | Sprint 16 |
 | [ADR-041](#adr-041--app-android-nativo-como-segundo-cliente-da-mesma-api) | App Android nativo como segundo cliente da mesma API | 2026-10-15 |
+| [ADR-042](#adr-042--concurso-alvo-registrado-com-histórico) | Concurso-alvo registrado, com histórico | Sprint 18 |
+| [ADR-043](#adr-043--análise-de-edital-por-ia-via-openrouter) | Análise de edital por IA, via OpenRouter | Sprint 18 |
 
 ### 1.2 Históricas
 
@@ -88,6 +89,7 @@ que custa e o que foi descartado.
 | ADR-012 | Cache por coleção, invalidado por escrita | Substituída por **ADR-029** |
 | ADR-013 | SPA servida por `doGet` | Substituída por **ADR-030** |
 | ADR-028 | Maven no backend, zero build no frontend (Tailwind/Alpine por CDN) | Substituída por **ADR-038** — texto integral mantido abaixo |
+| ADR-039 | Um concurso-alvo ativo por vez na importação automática | Substituída por **ADR-042** — texto integral mantido abaixo |
 
 O texto integral das históricas está em `docs/_apps-script-v1/00A_ADR.md`.
 Elas não são erros: foram decisões corretas para a plataforma da época, e a maior
@@ -968,6 +970,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.10.0 | 2026-10-15 | Sprint 18, pedido do usuário. **ADR-042** substitui ADR-039: `Concurso` passa a existir no domínio, com cobertura do edital e histórico; um ativo por vez e peso único por assunto continuam. **ADR-043**: análise de edital por IA via OpenRouter — a IA extrai, o sistema decide o peso, nada é gravado sem revisão. Total 43, 30 vigentes |
 | 2.9.0 | 2026-10-15 | **ADR-041**: app Android nativo como segundo cliente da mesma API, em repositório próprio, sem regra de domínio. Revisita a recusa de app nativo da ADR-038 diante de dois fatos novos: o pedido explícito do usuário e necessidades que o navegador atende mal (lembrete sem servidor de push, rascunho persistente). ADR-038 continua vigente para a SPA. Total 41, 29 vigentes |
 | 2.8.0 | 2026-10-14 | Sprint 16. **ADR-038** substitui ADR-028: frontend continua sem build, mas Tailwind/Alpine viram arquivos locais em `static/vendor/` e a SPA vira app instalável (PWA, service worker só da casca estática, nunca da API) — uso passa a ser celular/tablet além da web. **ADR-039**: importação automática lê só a pasta do concurso-alvo ativo (`CONCURSO_ATIVO`) — sistema passa a servir qualquer edital. **ADR-040**: prontidão para multiusuário sem implementá-lo — o que não fazer agora para não encarecer depois. ADR-028 movida para as históricas, texto integral mantido no lugar. Total 40, 28 vigentes |
 | 2.7.0 | 2026-09-04 | **ADR-037 escrita e aceita** (Sprint 10) — artefatos do planejamento (`Plano-de-Estudos-Automatizado`) chegam ao Pi via Google Drive + `rclone`, reaproveitando o mecanismo já aceito em ADR-018 (backup), em vez de API do Drive na aplicação (contradiria ADR-015/016) ou contato direto Tailscale PC→Pi (exigiria os dois sistemas online ao mesmo tempo). PDFs ficam só no Drive, referenciados por link — nunca chegam ao Pi. Total passa a 37 ADRs, 26 vigentes. No caminho: §1.1 (índice de vigentes) corrigida — ADR-034/035/036 nunca tinham sido adicionadas à lista, só ao total (mesma classe de lacuna que a 2.4.0 já tinha corrigido para a contagem) |
@@ -1349,7 +1352,7 @@ nenhum Node no pipeline.
 
 ## ADR-039 — Um concurso-alvo ativo por vez na importação automática
 
-**Status:** Aceita · 2026-10-14 · Sprint 16
+**Status:** Substituída por **ADR-042** (2026-10-15) · era Aceita · 2026-10-14 · Sprint 16
 
 ### Contexto
 
@@ -1497,6 +1500,136 @@ que o navegador não tenha". Duas coisas mudaram:
 | Empacotar a SPA (TWA/Capacitor) | Entrega um ícone, não o que faltava: lembrete sem servidor de push e rascunho persistente continuariam fora |
 | Kotlin Multiplatform / Flutter | Prepara iOS, que ninguém pediu, ao custo de uma camada a mais para um desenvolvedor só |
 | Lógica de domínio replicada no app (offline completo) | Duas implementações da escada divergem; viola ADR-040 item 2 |
+
+---
+
+## ADR-042 — Concurso-alvo registrado, com histórico
+
+**Status:** Aceita · 2026-10-15 · Sprint 18 · substitui ADR-039
+
+### Contexto
+
+A ADR-039 deixou o SGE sem entidade de concurso: o concurso-alvo era só uma
+variável do script de importação (`CONCURSO_ATIVO`). Duas consequências
+apareceram assim que o sistema ganhou telas para celular:
+
+- O usuário não vê **para qual concurso** está estudando, nem quantos dias
+  faltam para a prova — o `concurso.json` com `nome` e `dataProva` chegava e
+  era ignorado.
+- Trocar de edital não deixa rastro. O estudo não se perde (os assuntos em
+  comum mantêm escada e histórico), mas não há como ver **quais editais já
+  foram alvo**, quando, e quanto um tinha em comum com o outro.
+
+E o pedido do usuário (2026-10-15) de subir um edital novo pelo próprio
+sistema (ADR-043) precisa de um lugar onde o resultado vire "o concurso-alvo".
+
+### Decisão
+
+- **`Concurso` passa a existir no domínio** (`01_DOMINIO` §3.8): nome, cargo,
+  banca, data da prova, origem (análise por IA ou planejamento) e o período
+  em que foi alvo. **No máximo um ativo** (D-58), garantido na persistência.
+- Cada concurso guarda **a cobertura do edital**: quais assuntos ele cobre,
+  com o peso, a disciplina e a ordem que o edital deu a cada um. É isso que
+  permite o histórico ("tinha 42 assuntos, 30 em comum com o atual") e
+  **reativar** um concurso antigo aplicando de novo os pesos dele.
+- **Continua valendo da ADR-039:** um concurso por vez define peso e ordem; o
+  peso continua **um só por assunto** (a escada não muda); ativar um edital
+  atualiza peso e ordem do que ele cobre e **nunca toca escada, sessões ou
+  revisões**; assunto fora do edital fica como está até o usuário arquivar
+  (D-60). O script continua lendo só a pasta de `CONCURSO_ATIVO`.
+- A importação vinda do planejamento passa a registrar o concurso: o script
+  envia o `concurso.json` junto do `assuntos.csv`, e a confirmação ativa o
+  concurso daquele `slug` (cria na primeira vez, reativa nas seguintes).
+
+### Consequências
+
+- `Concurso` ↔ `Assunto` é a primeira relação N:N do domínio (`01_DOMINIO` §9).
+  Aceito: é a cobertura de um documento externo, não estado de estudo.
+- Hoje mostra o concurso-alvo e os dias até a prova; a tela **Concursos**
+  mostra o atual e o histórico (`02_JORNADAS` J-5).
+- Prepara o diagnóstico de edital e o modo reta final (mapa de sprints), que
+  precisam exatamente de "concurso ativo + data da prova + cobertura".
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Continuar sem entidade, só mostrar o `concurso.json` | Mostra o atual, mas não guarda histórico nem permite reativar; e a análise por IA (ADR-043) não teria onde gravar o resultado |
+| Peso por concurso no assunto (estudar dois editais ao mesmo tempo) | Mudaria o nível-alvo da escada, as métricas e todas as telas para um caso que ninguém pediu. Continua sendo a resposta, em ADR própria, se um dia for pedido |
+| Guardar a cobertura como texto (lista de nomes) | Nome muda; a relação por identidade do assunto sobrevive a renomear |
+
+---
+
+## ADR-043 — Análise de edital por IA, via OpenRouter
+
+**Status:** Aceita · 2026-10-15 · Sprint 18
+
+### Contexto
+
+Até aqui, edital novo só entrava pelo projeto de planejamento: alguém lê o
+PDF no PC, monta o mapa de assuntos, gera o CSV e o Drive leva até o Pi
+(ADR-037). Para quem só tem o celular, um edital novo não tinha caminho. O
+usuário pediu (2026-10-15) que o próprio sistema leia o edital com uma IA,
+**separe e classifique os assuntos conforme o cargo escolhido**, usando o
+OpenRouter.
+
+### Decisão
+
+- **O SGE chama o OpenRouter** (API compatível com chat completions) para
+  duas tarefas de extração: (1) do edital inteiro, o nome do concurso, a
+  banca, a data da prova e a lista de cargos; (2) para o cargo escolhido, as
+  disciplinas e os assuntos do conteúdo programático, na ordem do edital, com
+  o número de questões de cada disciplina quando o edital traz o quadro, e a
+  correspondência de cada assunto com um assunto que já existe na base.
+- **A IA extrai; o sistema decide** (D-61). O peso de cada disciplina é
+  calculado pelo SGE a partir do número de questões (tercis); sem quadro de
+  questões, o peso fica `MEDIO` e marcado como "não determinado" — nunca é
+  estimado pela IA. Correspondência que aponta para assunto inexistente ou
+  arquivado é descartada (D-63).
+- **Nada da IA é gravado sem revisão** (D-62): a análise produz uma
+  **proposta**; o usuário revisa (desmarca assunto, troca peso, desfaz
+  correspondência, corrige nome e data) e confirma. Só a confirmação cria
+  disciplinas e assuntos e ativa o concurso (ADR-042).
+- **Configuração:** `OPENROUTER_API_KEY` (segredo, no `.env` do Pi, nunca no
+  repositório) e `OPENROUTER_MODEL` (padrão `anthropic/claude-sonnet-5.5`,
+  trocável sem recompilar). Sem chave, a funcionalidade aparece como
+  indisponível, com o motivo; o resto do sistema não depende dela.
+- **O PDF não é guardado.** O texto é extraído no servidor (Apache PDFBox) e
+  guardado com a análise, para repetir uma etapa sem reenviar o arquivo. PDF
+  sem texto (escaneado) é recusado com mensagem clara.
+- **Assíncrono:** a análise roda em segundo plano, uma por vez; a tela
+  consulta o estado. Reiniciar o servidor no meio marca a análise como falha,
+  com "tentar de novo".
+- O que sai do Pi é o texto do edital (documento público) e a lista de nomes
+  de disciplinas e assuntos do usuário — nenhum dado de desempenho.
+
+### Consequências
+
+- **Primeira chamada de saída para a internet feita pela aplicação.** O Pi
+  já tinha internet (rclone, Tailscale); a novidade é a JVM depender de um
+  serviço externo — só nesta funcionalidade, nunca no turno.
+- Custo por edital: duas chamadas com o texto do edital (dezenas de milhares
+  de tokens cada) — centavos de dólar no modelo padrão, pagos na conta
+  OpenRouter do usuário.
+- Assunto criado pela análise **não tem chave externa** nem material
+  (segmentos): material continua vindo do planejamento. Para os dois
+  caminhos convergirem, a importação passa a **adotar** um assunto já
+  existente sem chave externa quando o planejamento envia o mesmo nome na
+  mesma disciplina (`02_JORNADAS` J-1) — em vez de recusar por nome
+  duplicado.
+- A extração pode errar (assunto partido de outro jeito, correspondência
+  errada). A revisão humana antes de confirmar é a defesa, e ela é
+  obrigatória, não opcional.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Fazer a análise no projeto de planejamento | Exige o PC ligado e uma sessão de IA lá; o pedido é subir edital pelo celular |
+| API direta de um fornecedor de IA | Prende a um modelo; o OpenRouter troca de modelo por configuração — escolha do usuário |
+| Enviar o PDF inteiro como arquivo ao modelo | Suporte varia por modelo e custa mais; o texto extraído serve a qualquer modelo |
+| A IA decidir o peso | Inventaria peso que o edital não declarou — a regra do planejamento já proibia ("nunca estimar peso") |
+| Gravar direto o que a IA devolveu | Erro silencioso no mapa de assuntos é caro (vira meses de estudo no lugar errado) |
 
 ---
 

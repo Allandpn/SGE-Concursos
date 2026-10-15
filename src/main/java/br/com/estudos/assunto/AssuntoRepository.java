@@ -8,6 +8,10 @@ import java.util.Optional;
 
 public interface AssuntoRepository extends JpaRepository<Assunto, Long> {
     List<Assunto> findByDisciplinaIdAndAtivoTrue(Long disciplinaId);
+
+    // Sprint 18: confirmação da análise de edital procura homônimo arquivado
+    // (o nome é único mesmo arquivado — ux_assunto_j1_nome_por_disciplina).
+    List<Assunto> findByDisciplinaId(Long disciplinaId);
     Optional<Assunto> findByDisciplinaIdAndNomeIgnoreCase(Long disciplinaId, String nome);
 
     // Sprint 10 (docs/SPRINT-10-SEGMENTO.md §3.1): resolve chaveExternaAssunto

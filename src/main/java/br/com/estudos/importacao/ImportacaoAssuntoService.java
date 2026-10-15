@@ -3,6 +3,10 @@ package br.com.estudos.importacao;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.LinkedHashSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,10 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
+import tools.jackson.databind.json.JsonMapper;
+
 import br.com.estudos.assunto.Assunto;
 import br.com.estudos.assunto.AssuntoRepository;
 import br.com.estudos.assunto.AssuntoRequest;
 import br.com.estudos.assunto.AssuntoService;
+import br.com.estudos.concurso.ConcursoService;
+import br.com.estudos.concurso.ItemCobertura;
 import br.com.estudos.disciplina.Disciplina;
 import br.com.estudos.disciplina.DisciplinaRepository;
 import br.com.estudos.disciplina.DisciplinaRequest;
@@ -44,22 +52,28 @@ public class ImportacaoAssuntoService {
     private final DisciplinaService disciplinaService;
     private final AssuntoService assuntoService;
     private final AssuntoRepository assuntoRepository;
+    private final ConcursoService concursoService;
+    private final JsonMapper jsonMapper;
 
     public ImportacaoAssuntoService(
             DisciplinaRepository disciplinaRepository,
             DisciplinaService disciplinaService,
             AssuntoService assuntoService,
-            AssuntoRepository assuntoRepository) {
+            AssuntoRepository assuntoRepository,
+            ConcursoService concursoService,
+            JsonMapper jsonMapper) {
         this.disciplinaRepository = disciplinaRepository;
         this.disciplinaService = disciplinaService;
         this.assuntoService = assuntoService;
         this.assuntoRepository = assuntoRepository;
+        this.concursoService = concursoService;
+        this.jsonMapper = jsonMapper;
     }
 
     /** Lê e resolve o arquivo, mas nunca grava — força rollback no final (§5.1). */
     @Transactional
     public ResumoImportacao validar(MultipartFile arquivo) {
-        var resumo = processar(arquivo);
+        var resumo = processar(arquivo).resumo();
         TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         return resumo;
     }
@@ -72,23 +86,77 @@ public class ImportacaoAssuntoService {
      */
     @Transactional
     public ResumoImportacao confirmar(MultipartFile arquivo) {
-        var resumo = processar(arquivo);
-        if (!resumo.recusadas().isEmpty()) {
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-        }
-        return resumo;
+        return confirmar(arquivo, null);
     }
 
-    private ResumoImportacao processar(MultipartFile arquivo) {
+    /**
+     * Com o `concurso.json` da pasta do planejamento (docs/SPRINT-18-CONCURSOS.md §5,
+     * ADR-042): sem linha recusada, registra (ou reencontra pelo slug) o
+     * concurso, grava a cobertura com os assuntos do arquivo e o ativa.
+     * concurso.json inválido desfaz o arquivo inteiro — tudo ou nada (regra 1).
+     */
+    @Transactional
+    public ResumoImportacao confirmar(MultipartFile arquivo, MultipartFile concursoJson) {
+        var resultado = processar(arquivo);
+        if (!resultado.resumo().recusadas().isEmpty()) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return resultado.resumo();
+        }
+        if (concursoJson != null && !concursoJson.isEmpty()) {
+            var concurso = lerConcurso(concursoJson);
+            var itens = resultado.tocados().stream()
+                .filter(Assunto::isAtivo)
+                .map(a -> new ItemCobertura(a, a.getDisciplina(), a.getPeso(), a.getOrdem()))
+                .toList();
+            concursoService.registrarDoPlanejamento(concurso.slug(), concurso.nome(), concurso.dataProva(), itens);
+        }
+        return resultado.resumo();
+    }
+
+    private record ConcursoPlanejamento(String slug, String nome, LocalDate dataProva) {}
+
+    private ConcursoPlanejamento lerConcurso(MultipartFile arquivo) {
+        try {
+            var json = jsonMapper.readTree(arquivo.getBytes());
+            var slug = texto(json.get("slug"));
+            var nome = texto(json.get("nome"));
+            if (slug == null || nome == null) {
+                throw new ValidationException("concurso.json precisa de slug e nome.", "CONCURSO_JSON_INVALIDO", "concurso");
+            }
+            var dataTexto = texto(json.get("dataProva"));
+            LocalDate dataProva = null;
+            if (dataTexto != null) {
+                try {
+                    dataProva = LocalDate.parse(dataTexto);
+                } catch (DateTimeParseException e) {
+                    throw new ValidationException("dataProva inválida no concurso.json: " + dataTexto, "CONCURSO_JSON_INVALIDO", "dataProva");
+                }
+            }
+            return new ConcursoPlanejamento(slug, nome, dataProva);
+        } catch (IOException | tools.jackson.core.JacksonException e) {
+            throw new ValidationException("Não foi possível ler o concurso.json.", "CONCURSO_JSON_INVALIDO", "concurso");
+        }
+    }
+
+    private static String texto(tools.jackson.databind.JsonNode no) {
+        if (no == null || no.isNull()) return null;
+        var valor = no.asString().trim();
+        return valor.isEmpty() ? null : valor;
+    }
+
+    private record Resultado(ResumoImportacao resumo, List<Assunto> tocados) {}
+
+    private Resultado processar(MultipartFile arquivo) {
         var disciplinasPorNome = new HashMap<String, Disciplina>();
         var proximaOrdemPorDisciplina = new HashMap<Long, Integer>();
         var disciplinasNovas = new AtomicInteger();
         var recusadas = new ArrayList<LinhaRecusada>();
+        var tocados = new LinkedHashSet<Assunto>();
         int assuntosNovos = 0;
         int assuntosAtualizados = 0;
 
         var linhas = lerLinhas(arquivo);
-        liberarOrdensQueVaoMudar(linhas);
+        var deslocados = liberarOrdensQueVaoMudar(linhas);
 
         for (var linha : linhas) {
             int numeroLinha = (int) linha.getRecordNumber() + 1; // +1 pelo cabeçalho
@@ -132,26 +200,39 @@ public class ImportacaoAssuntoService {
                 var existentePorChave = idTexto == null && chaveExterna != null
                     ? assuntoRepository.findByChaveExterna(chaveExterna)
                     : Optional.<Assunto>empty();
+                // 02_JORNADAS J-1 (v1.9.0): chave ainda desconhecida, mas o assunto
+                // já existe na disciplina sem chave e com o mesmo nome — criado pela
+                // análise de edital (J-5). Adota em vez de recusar por nome duplicado.
+                var adotavel = existentePorChave.isEmpty() && idTexto == null && chaveExterna != null
+                    ? buscarAdotavel(disciplina.getId(), nomeAssunto)
+                    : Optional.<Assunto>empty();
                 if (existentePorChave.isPresent()) {
-                    assuntoService.atualizar(existentePorChave.get().getId(), request);
+                    tocados.add(assuntoService.atualizar(existentePorChave.get().getId(), request));
+                    assuntosAtualizados++;
+                } else if (adotavel.isPresent()) {
+                    tocados.add(assuntoService.atualizar(adotavel.get().getId(), request));
                     assuntosAtualizados++;
                 } else if (idTexto == null) {
-                    assuntoService.criar(request);
+                    tocados.add(assuntoService.criar(request));
                     assuntosNovos++;
                 } else {
-                    assuntoService.atualizar(parseId(idTexto, numeroLinha), request);
+                    tocados.add(assuntoService.atualizar(parseId(idTexto, numeroLinha), request));
                     assuntosAtualizados++;
                 }
             } catch (NotFoundException e) {
                 // id de assunto inexistente é sinal de arquivo corrompido — recusa
                 // o arquivo inteiro na hora, sem processar o resto (§5.1).
-                return new ResumoImportacao(0, 0, 0, List.of(new LinhaRecusada(numeroLinha, e.getMessage())));
+                return new Resultado(
+                    new ResumoImportacao(0, 0, 0, List.of(new LinhaRecusada(numeroLinha, e.getMessage()))), List.of());
             } catch (DominioException e) {
                 recusadas.add(new LinhaRecusada(numeroLinha, e.getMessage()));
             }
         }
 
-        return new ResumoImportacao(disciplinasNovas.get(), assuntosNovos, assuntosAtualizados, recusadas);
+        reposicionarDeslocados(deslocados);
+        return new Resultado(
+            new ResumoImportacao(disciplinasNovas.get(), assuntosNovos, assuntosAtualizados, recusadas),
+            List.copyOf(tocados));
     }
 
     /**
@@ -163,10 +244,14 @@ public class ImportacaoAssuntoService {
      * depois. Recusa em qualquer linha desfaz tudo, provisórias inclusive
      * (tudo ou nada, regra 1).
      */
-    private void liberarOrdensQueVaoMudar(List<CSVRecord> linhas) {
+    private List<Assunto> liberarOrdensQueVaoMudar(List<CSVRecord> linhas) {
         var mudando = new ArrayList<Assunto>();
+        var referenciados = new java.util.HashSet<Long>();
+        var ordensPedidas = new java.util.HashMap<Long, java.util.Set<Integer>>();
         for (var linha : linhas) {
             var ordemTexto = valor(linha, "ordem");
+            var existente = buscarExistente(linha);
+            existente.ifPresent(a -> referenciados.add(a.getId()));
             if (ordemTexto == null) continue;
             Integer ordemNova;
             try {
@@ -174,14 +259,45 @@ public class ImportacaoAssuntoService {
             } catch (NumberFormatException e) {
                 continue; // a passada principal recusa a linha
             }
-            var existente = buscarExistente(linha);
+            var nomeDisciplina = valor(linha, "disciplina");
+            if (nomeDisciplina != null) {
+                disciplinaRepository.findByNomeIgnoreCase(nomeDisciplina)
+                    .ifPresent(d -> ordensPedidas.computeIfAbsent(d.getId(), k -> new java.util.HashSet<>()).add(ordemNova));
+            }
             if (existente.isPresent() && !ordemNova.equals(existente.get().getOrdem())) {
                 existente.get().setOrdem(Math.toIntExact(-existente.get().getId()));
                 mudando.add(existente.get());
             }
         }
+        // Sprint 18 (02_JORNADAS J-1 v1.9.0): assunto que NÃO está no arquivo mas
+        // ocupa a ordem que uma linha pede — o caso comum ao trocar de edital —
+        // sai do caminho agora e vai para o fim da disciplina depois.
+        var deslocados = new ArrayList<Assunto>();
+        ordensPedidas.forEach((disciplinaId, ordens) ->
+            assuntoRepository.findByDisciplinaIdAndAtivoTrue(disciplinaId).stream()
+                .filter(a -> !referenciados.contains(a.getId()) && a.getOrdem() != null && ordens.contains(a.getOrdem()))
+                .sorted(java.util.Comparator.comparing(Assunto::getOrdem))
+                .forEach(a -> {
+                    a.setOrdem(Math.toIntExact(-a.getId()));
+                    mudando.add(a);
+                    deslocados.add(a);
+                }));
         if (!mudando.isEmpty()) {
             assuntoRepository.saveAllAndFlush(mudando);
+        }
+        return deslocados;
+    }
+
+    /** Os deslocados por {@link #liberarOrdensQueVaoMudar} vão para depois do último da disciplina, na ordem em que estavam. */
+    private void reposicionarDeslocados(List<Assunto> deslocados) {
+        for (var assunto : deslocados) {
+            int maior = assuntoRepository.findByDisciplinaIdAndAtivoTrue(assunto.getDisciplina().getId()).stream()
+                .map(Assunto::getOrdem)
+                .filter(o -> o != null && o > 0)
+                .max(Integer::compare)
+                .orElse(0);
+            assunto.setOrdem(maior + 1);
+            assuntoRepository.saveAndFlush(assunto);
         }
     }
 
@@ -195,7 +311,30 @@ public class ImportacaoAssuntoService {
             }
         }
         var chaveExterna = valor(linha, "chaveExterna");
-        return chaveExterna == null ? Optional.empty() : assuntoRepository.findByChaveExterna(chaveExterna);
+        if (chaveExterna == null) return Optional.empty();
+        var porChave = assuntoRepository.findByChaveExterna(chaveExterna);
+        if (porChave.isPresent()) return porChave;
+        var nomeDisciplina = valor(linha, "disciplina");
+        var nomeAssunto = valor(linha, "assunto");
+        if (nomeDisciplina == null || nomeAssunto == null) return Optional.empty();
+        return disciplinaRepository.findByNomeIgnoreCase(nomeDisciplina)
+            .flatMap(d -> buscarAdotavel(d.getId(), nomeAssunto));
+    }
+
+    /** Assunto ativo da disciplina, sem chave externa, de mesmo nome sem acento e sem caixa (J-1 v1.9.0). */
+    private Optional<Assunto> buscarAdotavel(Long disciplinaId, String nomeAssunto) {
+        var alvo = normalizar(nomeAssunto);
+        return assuntoRepository.findByDisciplinaIdAndAtivoTrue(disciplinaId).stream()
+            .filter(a -> a.getChaveExterna() == null && normalizar(a.getNome()).equals(alvo))
+            .findFirst();
+    }
+
+    /** Mesma comparação de ux_assunto_j1_nome_por_disciplina: sem acento, sem caixa. */
+    static String normalizar(String texto) {
+        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "")
+            .toLowerCase()
+            .trim();
     }
 
     private List<CSVRecord> lerLinhas(MultipartFile arquivo) {

@@ -30,6 +30,12 @@ public class FrenteController {
         return new AssuntoFaseResponse(id, frenteService.fase(id));
     }
 
+    @GetMapping("/api/disciplinas/resumo")
+    @Operation(summary = "Resumo por disciplina", description = "Peso e contagem de assuntos em backlog, na frente e consolidados, por disciplina ativa (02_JORNADAS §4.5).")
+    public List<DisciplinaResumoResponse> resumoPorDisciplina() {
+        return frenteService.resumoPorDisciplina();
+    }
+
     @GetMapping("/api/frente")
     @Operation(summary = "Resumo da frente de estudo", description = "Frente atual, teto, backlog, consolidados e represamento.")
     public FrenteResumoResponse resumo() {

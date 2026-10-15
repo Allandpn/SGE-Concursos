@@ -30,10 +30,11 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 15 | Frontend — Ajustes | Sétima e última tela do mapa: os 18 parâmetros, editáveis (`04_FRONTEND.md §7E`) — primeira sprint de frontend que também abre endpoint novo (`docs/SPRINT-15-AJUSTES.md`) | **feito** — testada num navegador real, edição/erro/reversão conferidos contra Postgres real; um bug real achado e corrigido no caminho |
 | 16 | Correções, multi-edital e app | Análise do código contra a especificação (2026-10-14): `PARCIAL` em manutenção desconsolidava; `FALHA` nunca voltava à fila de estudo (reestudo); fase calculada assunto a assunto; reimportação por `chaveExterna`; concurso-alvo ativo (ADR-039); frontend sem CDN e instalável como app no celular/tablet (ADR-038); prontidão multiusuário sem implementá-lo (ADR-040) — `docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` | **feito** — 132/132 testes verdes contra Postgres real; app conferido num Chromium emulando celular; importação ponta a ponta (exportador do planejamento → script → SGE) conferida com troca de concurso-alvo |
 | 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado. Começa pelos atritos da jornada que contaminariam os primeiros dados (`docs/SPRINT-17-USO-REAL.md`) | **em andamento** — os 4 atritos e as 4 lacunas da especificação resolvidos; falta o Pi no ar e o uso real |
-| 18 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
-| 19 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
-| 20 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
-| 21 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; simulado no formato da prova, com nota de corte | não começou |
+| 18 | Concurso-alvo e edital por IA | `Concurso` com cobertura e histórico (ADR-042), resumo por disciplina, edital novo lido por IA via OpenRouter com revisão antes de gravar (ADR-043) — `docs/SPRINT-18-CONCURSOS.md`. Antecipada a pedido do usuário depois dos wireframes do app | **em andamento** — ver §19 |
+| 19 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
+| 20 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
+| 21 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
+| 22 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; simulado no formato da prova, com nota de corte | não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -41,7 +42,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 > abre a frente de frontend — o mapa original tinha 8, mas "o mapa pode
 > mudar" (linha abaixo) sempre incluiu crescer.
 
-As linhas 17–21 nasceram da análise crítica de 2026-10-14 (o que falta para
+As linhas 17 e 19–22 nasceram da análise crítica de 2026-10-14 (o que falta para
 o sistema servir a qualquer concurso de TI). São uma linha cada, de
 propósito — documento técnico só quando a sprint começar.
 
@@ -957,7 +958,28 @@ jornada de 2026-10-14 que contaminariam os primeiros dados.
 
 ---
 
-## 19. Como este arquivo se mantém honesto
+## 19. Sprint 18 · Concurso-alvo e edital por IA
+
+**Documento técnico:** `docs/SPRINT-18-CONCURSOS.md` v1.0.0. Pedido do usuário
+em 2026-10-15, olhando os wireframes do app: "não tem a visualização das
+disciplinas, nem do concurso/edital que estou estudando, nem do histórico de
+outros editais; não tem opção de subir novo edital" — e, para o edital, IA
+via OpenRouter, separando e classificando os assuntos conforme o cargo.
+Antecipada em relação ao uso real (17.5–17.6): sem ver o concurso-alvo, o
+próprio uso real fica confuso.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 18.1 | Especificação: ADR-042/043, `01_DOMINIO` v1.23.0 (§3.8, §3.9, D-58–D-63), `02_JORNADAS` v1.9.0 (J-5), `03_INVARIANTES` v1.11.0 | Claude, a pedido do usuário | **feito** |
+| 18.2 | Backend: `Concurso` + cobertura + histórico + reativação; resumo por disciplina; registro pelo `concurso.json`; adoção na importação | Claude | aberto |
+| 18.3 | Backend: análise de edital (PDFBox, OpenRouter, estados, proposta, confirmação) | Claude | aberto |
+| 18.4 | SPA: cabeçalho em Hoje, disciplinas em Assuntos, Concursos, Novo edital | Claude | aberto |
+| 18.5 | App Android: as mesmas telas | Claude | aberto |
+| 18.6 | `OPENROUTER_API_KEY` no `.env` do Pi; primeiro edital real analisado e revisado | **você** | aberto |
+
+---
+
+## 20. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -971,10 +993,11 @@ jornada de 2026-10-14 que contaminariam os primeiros dados.
 
 ---
 
-## 20. Changelog
+## 21. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.48.0 | 2026-10-15 | **Sprint 18 aberta** (§19), antecipada a pedido do usuário: concurso-alvo com histórico, disciplinas, edital novo por IA (OpenRouter). Especificação primeiro (item 18.1). Mapa: linhas 18–21 viram 19–22. Seções 19–20 renumeradas para 20–21 |
 | 1.47.0 | 2026-10-15 | ADR-041 (app Android como segundo cliente) e `02_JORNADAS` v1.8.0 (§2.2, lembrete do turno). Nota no mapa apontando o repositório do app |
 | 1.46.0 | 2026-10-15 | **Sprint 17: lacunas 5–8** (itens 17.7–17.10) — comportamentos que a especificação já definia e o código nunca implementou: D-35, balanço semanal (J-3), mensagem de retorno (J-4), "quer adiantar?" (§4.3). `01_DOMINIO` v1.22.0, `SPRINT-17` v1.2.0, `04_FRONTEND` v1.10.0, migração V11 (`parciais_seguidos_dividir`) |
 | 1.45.0 | 2026-10-14 | **Sprint 17: atritos 2–4 resolvidos** (§18), cada um decidido pelo usuário entre opções. `01_DOMINIO` v1.21.0 (D-56, D-57, §7.7), `02_JORNADAS` v1.7.0, `03_INVARIANTES` v1.10.0, `04_FRONTEND` v1.9.0, migração V10 (`duracao_bloco_min`). Suíte local 137/137 conferida antes de começar; 143/143 depois. Um teste antigo dependente de dados de outros testes tornado autocontido |

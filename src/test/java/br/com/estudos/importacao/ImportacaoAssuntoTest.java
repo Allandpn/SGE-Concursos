@@ -124,4 +124,29 @@ class ImportacaoAssuntoTest extends IntegracaoTestBase {
     private MockMultipartFile csv(String conteudo) {
         return new MockMultipartFile("arquivo", "assuntos.csv", "text/csv", conteudo.getBytes(StandardCharsets.UTF_8));
     }
+
+    /** J-1 v1.9.0: assunto sem chave (criado pela análise de edital) é adotado pela linha de mesmo nome. */
+    @Test
+    void confirmar_adotaAssuntoSemChaveDeMesmoNome() throws Exception {
+        var semChave = """
+            disciplina,assunto,peso,ordem
+            Disciplina Adocao,Normalização de Dados,MEDIO,1
+            """;
+        mockMvc.perform(multipart("/api/assuntos/importacoes/confirmar").file(csv(semChave)))
+            .andExpect(jsonPath("$.assuntosNovos").value(1));
+
+        var doPlanejamento = """
+            disciplina,assunto,peso,ordem,chaveExterna
+            Disciplina Adocao,normalizacao de dados,ALTO,1,uuid-adocao-1
+            """;
+        mockMvc.perform(multipart("/api/assuntos/importacoes/confirmar").file(csv(doPlanejamento)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.recusadas").isEmpty())
+            .andExpect(jsonPath("$.assuntosNovos").value(0))
+            .andExpect(jsonPath("$.assuntosAtualizados").value(1));
+
+        var adotado = assuntoRepository.findByChaveExterna("uuid-adocao-1").orElseThrow();
+        assertEquals(TipoPeso.ALTO, adotado.getPeso());
+        assertEquals(1, assuntoRepository.findByDisciplinaIdAndAtivoTrue(adotado.getDisciplina().getId()).size());
+    }
 }

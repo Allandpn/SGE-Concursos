@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.8.0 |
-| Data | 2026-10-14 |
+| Versão | 1.9.0 |
+| Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -191,6 +191,8 @@ qualquer alteração, **inclusive renomear**.
 | Linha com `id` inexistente | **Recusa o arquivo inteiro** — sinal de arquivo corrompido ou de outra base |
 | Linha sem `id`, com `chaveExterna` de assunto já existente | **Atualiza** aquele registro — mesmos campos da linha com `id` (nome, peso, ordem, dificuldadePercebida); a disciplina não muda. Reordenar assuntos existentes no mesmo arquivo (trocar 1↔2) é aceito: a unicidade de ordem (`01_DOMINIO` D-48) vale para o resultado do arquivo, não para cada linha no meio do caminho. É o caminho da reimportação vinda do sistema de planejamento, que nunca conhece o `id` do SGE |
 | Linha com `id` **e** `chaveExterna` | O `id` decide qual registro; a `chaveExterna` é gravada nele |
+| Linha sem `id`, com `chaveExterna` ainda desconhecida, e já existe na disciplina um assunto **sem** chave externa com o mesmo nome (sem acento e sem caixa) | **Adota** aquele assunto: grava a `chaveExterna` nele e atualiza como acima, em vez de recusar por nome duplicado. É o caminho de convergência de um assunto criado pela análise de edital (J-5) quando o planejamento passa a mandar material para ele |
+| Assunto que **não está no arquivo** ocupa a `ordem` que uma linha pede (o caso comum ao trocar de edital) | Vai para o fim da disciplina, na ordem em que estava, em vez de o arquivo ser recusado por ordem duplicada (`01_DOMINIO` D-48). Com o `concurso.json`, a cobertura do edital ainda o coloca depois dos assuntos cobertos (D-60) |
 
 E, independentemente disso: **renomear assunto e disciplina tem que existir na
 interface.** Corrigir um typo não pode exigir exportar, editar e reimportar.
@@ -362,19 +364,67 @@ sozinho porque o dia anterior rendeu.
 
 ---
 
+### J-5 · Edital novo, e os editais de antes
+
+Raro — algumas vezes por ano —, mas é quando o sistema decide para onde vão
+os próximos meses. Não tem orçamento de segundos; tem orçamento de
+**atenção**: a revisão da proposta é o momento em que um erro de leitura
+ainda custa um toque, e não meses.
+
+**Edital novo, pelo próprio sistema** (`01_DOMINIO` §3.9, ADR-043):
+
+1. Em **Concursos**, toca "Novo edital" e escolhe o PDF.
+2. O sistema lê o texto e mostra o que achou: nome do concurso, banca, data
+   da prova (se o edital já fixou) e **a lista de cargos**. Leva até um ou
+   dois minutos; dá para sair da tela e voltar — a análise fica guardada e
+   continua de onde parou.
+3. Escolhe o **cargo**.
+4. O sistema separa disciplinas e assuntos daquele cargo e mostra a
+   **proposta**, por disciplina:
+   - o número de questões e o **peso** calculado (D-61) — ou "peso não
+     determinado", quando o edital não traz o quadro;
+   - cada assunto, na ordem do edital, marcado **novo** ou **já existe:
+     <nome>** — o que já existe mantém escada e histórico;
+   - no topo, o resumo: quantos novos, quantos em comum, quantos assuntos
+     atuais ficam fora do edital (continuam como estão).
+5. Revisa: desmarca o que não quer, troca o peso de uma disciplina, desfaz
+   uma correspondência errada ("tratar como novo"), corrige nome e data da
+   prova.
+6. **Confirma.** Só aqui algo é gravado (D-62): disciplinas e assuntos novos
+   nascem, os em comum recebem peso e ordem do edital, e o concurso vira o
+   alvo (D-60).
+
+Falhas, com o que fazer em cada uma: PDF sem texto (escaneado) → "este PDF
+é imagem; envie a versão com texto"; IA indisponível ou sem chave
+configurada → "Análise por IA indisponível: <motivo>", o resto do sistema
+segue normal; resposta que não deu para entender → "Tentar de novo", sem
+reenviar o arquivo.
+
+**Os editais de antes.** A tela **Concursos** mostra o concurso-alvo (nome,
+cargo, banca, data da prova, desde quando é o alvo) e, abaixo, o
+**histórico**: cada concurso que já foi alvo, com o período, quantos
+assuntos o edital cobria e quantos tem em comum com o atual. Qualquer um
+pode ser **reativado** — a cobertura dele volta a valer (D-60), com
+confirmação, porque muda peso e ordem.
+
+**Edital vindo do planejamento** continua chegando pelo Drive (J-1); a
+importação registra o concurso a partir do `concurso.json` que viaja junto
+e o ativa — aparece no mesmo histórico.
+
 ## 4. As telas
 
-Sete. Cada uma justificada por uma jornada — tela sem jornada não entra.
+Oito. Cada uma justificada por uma jornada — tela sem jornada não entra.
 
 | Tela | Serve a | Existe porque |
 |---|---|---|
-| **Hoje** | J-2, J-4 | A porta de entrada. O plano do turno como lista, e o gatilho de puxar mais (§4.3) |
+| **Hoje** | J-2, J-4 | A porta de entrada. O plano do turno como lista, e o gatilho de puxar mais (§4.3). No topo, o concurso-alvo e os dias até a prova (§4.4) |
 | **Recuperar** | J-2 | As duas etapas da §5.2.1. É a tela mais usada do sistema |
 | **Registrar sessão** | J-2 | Conteúdo, questões ou flashcards |
-| **Assuntos** | J-1, J-3 | Cadastro em lote, peso, frente × backlog |
+| **Assuntos** | J-1, J-3 | Cadastro em lote, peso, frente × backlog — agrupado por disciplina, cada uma com seu resumo (§4.5) |
 | **Erros** | J-2, J-3 | Registro com causa e confiança; consulta por assunto |
 | **Progresso** | J-3 | As quatro métricas, com as regras de n de `00_PRODUTO` §7 |
 | **Ajustes** | J-1, J-3 | Tetos, limiares, intervalos |
+| **Concursos** | J-5 | O concurso-alvo, o histórico de editais e a entrada de edital novo |
 
 **Não existe tela de calendário.** O sistema diz o que fazer hoje; planejar a
 semana é decisão que ele não toma (`00_PRODUTO` §8.5).
@@ -482,6 +532,23 @@ Três regras:
 
 ---
 
+### 4.4 O concurso-alvo no topo de Hoje
+
+Uma linha, discreta, acima do plano: **nome do concurso · cargo**, e abaixo
+"prova em N dias" — ou "sem data de prova" quando o edital ainda não a
+fixou; "prova hoje" no dia. Tocar abre **Concursos**. Sem concurso-alvo, a
+linha convida: "Nenhum concurso-alvo — adicionar edital". Nunca contagem
+regressiva em vermelho, nunca cobrança: é contexto, não alarme (mesmo tom
+de J-4). Os dias vêm calculados pelo servidor.
+
+### 4.5 Disciplinas em Assuntos
+
+A lista de Assuntos abre **pelas disciplinas**: cada disciplina é um cartão
+com o peso, quantos assuntos estão em backlog, na frente e consolidados.
+Tocar no cartão mostra os assuntos dela, como antes. É a visão que J-3 pede
+("a frente está saudável?") olhada por disciplina — sem métrica nova, só
+contagem do que a fase já deriva (`01_DOMINIO` §8).
+
 ## 5. Os orçamentos de tempo
 
 Requisitos, não metas. Medidos com cronômetro, no aparelho real.
@@ -529,6 +596,7 @@ O documento de interface é quem amarra isso.
 | J-2 Turno de estudo | Hoje, Recuperar, Registrar, Erros | D-01 a D-09, D-26 a D-29, D-36, D-51 |
 | J-3 Balanço semanal | Progresso, Assuntos | M-1 a M-4, D-35 |
 | J-4 Retorno | Hoje | D-15, D-20, §5.1 |
+| J-5 Edital novo e histórico | Concursos, Hoje, Assuntos | D-58 a D-63 |
 
 ---
 
@@ -555,6 +623,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.9.0 | 2026-10-15 | Pedido do usuário. Nova **J-5**: edital novo lido por IA no próprio sistema (PDF → cargos → proposta revisável → confirmação) e histórico de editais com reativação. Oitava tela, **Concursos**. §4.4: concurso-alvo e dias até a prova no topo de Hoje. §4.5: Assuntos abre por disciplina, com resumo de peso e fases. J-1: importação **adota** assunto sem chave externa de mesmo nome, e o `concurso.json` passa a registrar o concurso (`01_DOMINIO` v1.23.0, ADR-042, ADR-043) |
 | 1.8.0 | 2026-10-15 | §1.2: app Android nativo como segundo cliente (ADR-041), implementando as mesmas telas e regras. Nova §2.2, **lembrete do turno**: opcional, uma notificação por dia no máximo, diz o que há para hoje, nunca cobra, não lembra quem já estudou no dia. Pedido pelo usuário |
 | 1.7.0 | 2026-10-14 | Sprint 17, atrito 2 (`01_DOMINIO` v1.21.0 §7.7). O campo **tempo** de conteúdo, que a §5 sempre listou, passa a existir de fato — a tela media tempo de tela e gravava um minuto para uma hora de leitura. Vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. Questões ganham o mesmo campo, vazio (6 campos, orçamento de 25 s mantido). Recuperação continua medida pela tela. Decidido pelo usuário |
 | 1.6.0 | 2026-10-14 | Sprint 16. (1) J-1: linha sem `id` mas com `chaveExterna` já conhecida **atualiza** em vez de tentar criar — sem isso, a reimportação automática vinda do planejamento (ADR-037) recusava toda linha já importada por nome duplicado, e o arquivo inteiro deixava de ser confirmado a partir da segunda sincronização. (2) §1.2: uso passa a ser app no celular e no tablet além da web (ADR-038); requisitos mínimos de toque e largura. Aprovado pelo usuário |

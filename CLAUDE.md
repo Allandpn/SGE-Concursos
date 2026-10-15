@@ -54,7 +54,7 @@ E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
 | Documento | Responde |
 |---|---|
 | `especificacao/00_PRODUTO.md` | Para que serve, e como saberemos que funcionou |
-| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 57 regras D-xx** |
+| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 63 regras D-xx** |
 | `especificacao/02_JORNADAS.md` | Como é usado, e quanto pode custar em segundos |
 | `especificacao/03_INVARIANTES.md` | Quem garante cada regra e como se testa |
 
@@ -68,7 +68,7 @@ Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
-| `docs/00A_ADR.md` | 41 ADRs, 29 vigentes (até ADR-041 — app Android como segundo cliente) |
+| `docs/00A_ADR.md` | 43 ADRs, 30 vigentes (até ADR-043 — análise de edital por IA) |
 | `docs/03C_LOGGING.md` | Intacto |
 | `docs/03E_DEPLOYMENT.md` | Congelado + adendo §8A (Sprint 16: HTTPS obrigatório, `CONCURSO_ATIVO`) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |
@@ -98,7 +98,7 @@ desenhada para impedir.
 
 ## As regras D-xx
 
-`01_DOMINIO.md` §10 tem as 57. `03_INVARIANTES.md` §3 diz de cada uma: que
+`01_DOMINIO.md` §10 tem as 63. `03_INVARIANTES.md` §3 diz de cada uma: que
 natureza tem, em que camada mora, como se sabe que quebrou.
 
 **Todo código que implementa uma regra a cita pelo identificador**, e o

@@ -35,9 +35,12 @@ public class ImportacaoController {
     }
 
     @PostMapping("/importacoes/confirmar")
-    @Operation(summary = "Importa um CSV de assuntos", description = "Tudo ou nada: qualquer linha recusada rejeita o arquivo inteiro, nada é gravado.")
-    public ResumoImportacao confirmar(@RequestParam("arquivo") MultipartFile arquivo) {
-        return importacaoAssuntoService.confirmar(arquivo);
+    @Operation(summary = "Importa um CSV de assuntos", description = "Tudo ou nada: qualquer linha recusada rejeita o arquivo inteiro, nada é gravado. "
+        + "Com a parte opcional `concurso` (concurso.json do planejamento), registra o concurso e o ativa com a cobertura do arquivo (ADR-042).")
+    public ResumoImportacao confirmar(
+            @RequestParam("arquivo") MultipartFile arquivo,
+            @RequestParam(value = "concurso", required = false) MultipartFile concurso) {
+        return importacaoAssuntoService.confirmar(arquivo, concurso);
     }
 
     @GetMapping(value = "/exportacao", produces = "text/csv")

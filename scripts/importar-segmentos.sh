@@ -14,11 +14,16 @@ log() { echo "$(date -Iseconds) $*" | tee -a "$LOG"; }
 rclone sync remoto:SGE-Importacao "$BASE" --create-empty-src-dirs
 
 importar() {
-  local endpoint="$1" arquivo="$2"
+  local endpoint="$1" arquivo="$2" extra=()
+  # ADR-042: o concurso.json viaja na confirmação dos assuntos e registra o
+  # concurso-alvo com a cobertura do arquivo (docs/SPRINT-18-CONCURSOS.md §5).
+  if [ "$endpoint" = assuntos ] && [ -f "$(dirname "$arquivo")/concurso.json" ]; then
+    extra=(-F "concurso=@$(dirname "$arquivo")/concurso.json;type=application/json")
+  fi
   local resumo
   resumo=$(curl -sf -F "arquivo=@${arquivo}" "$APP/api/${endpoint}/importacoes/validar")
   if echo "$resumo" | grep -q '"recusadas":\[\]'; then
-    curl -sf -F "arquivo=@${arquivo}" "$APP/api/${endpoint}/importacoes/confirmar" > /dev/null
+    curl -sf -F "arquivo=@${arquivo}" "${extra[@]}" "$APP/api/${endpoint}/importacoes/confirmar" > /dev/null
     log "OK: $arquivo confirmado"
   else
     log "RECUSADO: $arquivo — $resumo"

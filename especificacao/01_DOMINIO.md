@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.22.0 |
-| Data | 2026-10-14 |
+| Versão | 1.23.0 |
+| Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -73,8 +73,9 @@ Todo evento de recuperação carrega, obrigatoriamente:
 
 ## 3. As entidades
 
-Seis. Um sétimo conceito — parâmetro de negócio — é configuração, não domínio,
-e aparece só onde uma regra depende dele.
+Oito, mais a análise de edital (§3.9), que é um processo e não estado de
+estudo. Um outro conceito — parâmetro de negócio — é configuração, não
+domínio, e aparece só onde uma regra depende dele.
 
 ### 3.1 Disciplina
 
@@ -373,6 +374,70 @@ existente (o link do material mudou) sem depender de `ordem` como
 identidade — se o material for reordenado depois de importado, a posição de
 um segmento pode mudar sem que o segmento deixe de ser "o mesmo", e uma
 reimportação por posição confundiria conteúdo antigo com novo.
+
+### 3.8 Concurso
+
+O concurso para o qual o usuário está estudando — o **concurso-alvo** —
+e os que já foram alvo antes. Tem nome, cargo, banca, data da prova (se o
+edital já a fixou), a origem (lido por IA no próprio sistema, ou importado
+do sistema de planejamento) e o **período em que foi alvo**.
+
+**No máximo um concurso é o alvo por vez** (D-58). Ativar outro encerra o
+período do anterior, que fica no histórico; nada é apagado (D-18).
+
+Cada concurso guarda **a cobertura do seu edital**: quais assuntos ele cobre,
+e para cada um o peso, a disciplina e a ordem que aquele edital deu. A
+cobertura é o que o edital *disse*; o assunto continua sendo um só, com um
+só peso vigente — o do concurso ativo.
+
+**Ativar um concurso aplica a cobertura dele à base** (D-60): os assuntos
+cobertos recebem o peso, a disciplina e a ordem do edital; os assuntos
+ativos dessas disciplinas que o edital não cita passam para depois, na
+ordem em que já estavam; nada mais muda. Escada, sessões, revisões e erros
+nunca são tocados — é por isso que trocar de edital não custa o estudo já
+feito: o que é comum segue de onde estava. Assunto fora do edital continua
+como está até o usuário decidir arquivá-lo.
+
+Reativar um concurso antigo é o mesmo gesto: a cobertura dele é aplicada de
+novo.
+
+**Por que existe agora, e não antes.** A base de estudo era uma só e o
+edital só entrava como CSV; o concurso era configuração do script de
+importação. Passou a ser entidade quando três coisas precisaram dele ao
+mesmo tempo: mostrar para que prova se estuda e quanto falta, guardar o
+histórico de editais, e dar destino à análise de edital (§3.9)
+(`docs/00A_ADR.md` ADR-042).
+
+### 3.9 A análise de edital
+
+Um edital novo pode entrar pelo próprio sistema: o usuário envia o PDF, e
+uma IA lê o texto em duas etapas — primeiro identifica o concurso e os
+cargos; depois, para o cargo escolhido, separa as disciplinas e os assuntos
+do conteúdo programático, na ordem do edital, e aponta qual assunto já
+existente na base é o mesmo conteúdo (`docs/00A_ADR.md` ADR-043).
+
+O resultado é uma **proposta**, não um cadastro. Três regras impedem que
+um erro de leitura vire meses de estudo no lugar errado:
+
+- **A IA extrai, o sistema decide** (D-61). A IA informa quantas questões o
+  edital dá a cada disciplina; o **peso** sai dessa contagem por regra fixa:
+  ordenadas as disciplinas com contagem declarada da maior para a menor, a
+  posição de cada uma é quantas têm mais questões que ela; posição no
+  primeiro terço é `ALTO`, no segundo `MEDIO`, no último `BAIXO` — empate
+  recebe o mesmo peso. Disciplina sem contagem no edital fica `MEDIO`,
+  marcada como **peso não determinado**. O peso de cada assunto é o da sua
+  disciplina. A IA nunca estima peso.
+- **Nada é gravado sem confirmação** (D-62). O usuário revisa a proposta
+  inteira — pode tirar assuntos, trocar o peso de uma disciplina, desfazer
+  uma correspondência, corrigir o nome do concurso e a data da prova — e só
+  a confirmação cria disciplinas e assuntos e ativa o concurso (§3.8).
+- **Correspondência só com o que existe** (D-63). Se a IA aponta um assunto
+  que não existe ou está arquivado, a correspondência é descartada e o
+  assunto entra como novo.
+
+Assunto criado pela análise nasce sem chave externa e sem material (§3.7):
+material continua vindo do sistema de planejamento, que pode adotar o
+assunto depois (`02_JORNADAS` J-1).
 
 ---
 
@@ -1112,10 +1177,13 @@ Revisão    N ──── 1 Sessão (origem)   qual estudo iniciou a escada
 Revisão    1 ──── 1 Sessão (cumpriu)  onde vive o resultado
 Sessão     1 ──── N Erro              opcional
 Disciplina 1 ──── N ResultadoSimulado
+Concurso   N ──── N Assunto           cobertura do edital: peso, disciplina e ordem que ele deu
 ```
 
-**Não existe relação n:n em lugar nenhum.** Registrar quatro assuntos irmãos de
-uma vez grava quatro sessões (`00_PRODUTO` §6.2) — é tela, não modelo.
+**A única relação n:n é a cobertura do edital** (§3.8) — e ela descreve um
+documento externo, não estado de estudo. No estudo não há nenhuma: registrar
+quatro assuntos irmãos de uma vez grava quatro sessões (`00_PRODUTO` §6.2) —
+é tela, não modelo.
 
 ---
 
@@ -1182,6 +1250,12 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-55 | O bloco de conteúdo do turno continua o assunto em estudo (próximo segmento não lido) antes de abrir assunto do backlog | §7.4 |
 | D-56 | Com o alerta de represamento ligado, o plano não sugere assunto novo do backlog; continuar a leitura (D-55) segue sugerido | §5.3 |
 | D-57 | Assunto novo sugerido vem da disciplina ativa com vaga que tem menos assuntos na frente; empate pela ordem estável das disciplinas | §7.4 |
+| D-58 | No máximo um concurso é o alvo por vez | §3.8 |
+| D-59 | Ativar um concurso encerra o período do anterior; concurso nunca é apagado | §3.8 |
+| D-60 | Ativar um concurso aplica a cobertura dele (peso, disciplina e ordem do edital) e nunca toca escada, sessões, revisões nem erros; assunto fora do edital fica como está, depois dos cobertos | §3.8 |
+| D-61 | O peso vindo da análise de edital sai do número de questões por regra fixa (tercis); sem contagem no edital, `MEDIO` com peso não determinado — nunca estimado pela IA | §3.9 |
+| D-62 | Nada da análise de edital é gravado sem o usuário confirmar a proposta revisada | §3.9 |
+| D-63 | Correspondência proposta pela análise só vale para assunto existente e ativo; senão o assunto entra como novo | §3.9 |
 
 ---
 
@@ -1206,6 +1280,9 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Segmento só referenciado por sessão `ESTUDO` | Generalizar para os quatro tipos | Fragmentaria a escada por segmento em vez de por assunto; duplicaria o mecanismo que já existe para granularidade fina (§3.2.1) |
 | Chave externa opcional em Assunto, gerada pelo sistema de planejamento | Sistema de planejamento referenciar o assunto pelo nome | Nome pode ser corrigido depois de importado — mesmo risco que a coluna `id` do J-1 já existe para evitar (`02_JORNADAS` §"Por que existe a coluna id"). Chave gerada fora do SGE não muda com a correção |
 | Chave externa **obrigatória** em Segmento (diferente da de Assunto, que é opcional) | Reimportação identificada por `(assuntoId, ordem)` | Segmento só nasce por importação — não existe caminho manual sem a chave, então torná-la opcional só adiaria um `NOT NULL` que sempre valeria na prática. E `ordem` é posição, não identidade: reordenar depois de importado confundiria, em silêncio, o segmento antigo com um novo na mesma posição — acharia que uma sessão antiga aponta pro material certo quando o conteúdo já mudou |
+| Concurso como entidade, com cobertura do edital | Concurso só como configuração do script (ADR-039) | Sem entidade não há histórico, nem dias até a prova, nem destino para a análise por IA. A cobertura guarda o que o edital disse sem duplicar o assunto |
+| Peso único por assunto, o do concurso ativo | Peso por concurso | Peso por concurso mudaria o nível-alvo da escada e todas as métricas para servir a dois editais simultâneos, que ninguém pediu |
+| Peso da análise calculado pelo sistema a partir do número de questões | Peso decidido pela IA | A IA inventaria um peso que o edital não declarou; contagem de questões é fato do edital, a regra de tercis é auditável |
 
 ---
 
@@ -1251,6 +1328,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.23.0 | 2026-10-15 | Pedido do usuário. Nova **§3.8, Concurso**: o concurso-alvo e o histórico, com a cobertura do edital (peso, disciplina e ordem que ele dá a cada assunto); ativar aplica a cobertura e nunca toca o estudo feito. Nova **§3.9, análise de edital**: IA lê o PDF e propõe disciplinas e assuntos para o cargo escolhido; peso calculado pelo sistema a partir do número de questões; nada gravado sem confirmação. §9 ganha a primeira relação n:n (cobertura). D-58 a D-63. 63 regras (`docs/00A_ADR.md` ADR-042 e ADR-043) |
 | 1.22.0 | 2026-10-15 | §3.2.1: D-35 ganha definição operacional (quais resultados contam, lote abaixo do mínimo fora, N parametrizado, onde a sugestão aparece). A regra existia desde a v1.7.0 sem nenhum código — era regra órfã no sentido de `03_INVARIANTES` §9. Achado ao revisar o que falta antes do uso real |
 | 1.21.0 | 2026-10-14 | Atritos 2, 3 e 4 da análise de jornada, decididos pelo usuário. (2) §7.7: tempo de bloco de conteúdo e de lote de questões é **declarado** no registro — tempo de tela gravava um minuto para uma hora de leitura e anulava o "o sistema mede a real" de D-29; conteúdo vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. (3) Nova **D-56** (§5.3): com o alerta de represamento ligado, o plano para de sugerir assunto novo, mas continua a leitura em curso. (4) Nova **D-57** (§7.4): o assunto novo vem da disciplina com menos assuntos na frente, em vez de encher uma disciplina por vez. 57 regras |
 | 1.20.0 | 2026-10-14 | Atrito 1 da análise de jornada: num assunto com vários segmentos, o primeiro `ESTUDO` agendava a revisão para o dia seguinte (recuperar um assunto lido em 20% fazia a escada regredir por motivo falso), e o turno nunca mais sugeria os segmentos seguintes, embora `docs/requisitos-planejamento-blocos-de-conteudo.md` §3 dissesse que o SGE decide qual segmento é o próximo. Nova **D-54** (§3.7): a escada começa quando a leitura termina. Nova **D-55** (§7.4): o bloco do turno continua o assunto em estudo antes de abrir outro. §8: "em estudo" passa a ter definição operacional (tem sessão, nenhuma revisão). 55 regras. Pedido pelo usuário |

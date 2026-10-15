@@ -35,6 +35,11 @@ public class GlobalExceptionHandler {
         return montar(HttpStatus.UNPROCESSABLE_ENTITY, e);
     }
 
+    @ExceptionHandler(IndisponivelException.class)
+    public ProblemDetail tratarIndisponivel(IndisponivelException e) {
+        return montar(HttpStatus.SERVICE_UNAVAILABLE, e);
+    }
+
     @ExceptionHandler(BusinessRuleException.class)
     public ProblemDetail tratarRegraDeNegocio(BusinessRuleException e) {
         return montar(HttpStatus.CONFLICT, e);

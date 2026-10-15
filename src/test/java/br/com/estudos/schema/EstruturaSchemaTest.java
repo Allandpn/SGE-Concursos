@@ -34,7 +34,10 @@ class EstruturaSchemaTest extends RestricaoTestBase {
     void d28_semTabelaDeTurno() throws SQLException {
         Set<String> esperado = Set.of(
                 "disciplina", "assunto", "sessao", "revisao", "erro", "parametro",
-                "simulado", "resultado_simulado", "segmento");
+                "simulado", "resultado_simulado", "segmento",
+                // Sprint 18 (ADR-042/043): concurso-alvo, cobertura do edital e
+                // análise de edital. Nenhuma guarda fase, turno ou plano.
+                "concurso", "concurso_assunto", "analise_edital");
         assertEquals(esperado, tabelasDoSchema());
     }
 

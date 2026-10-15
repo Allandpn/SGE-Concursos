@@ -91,6 +91,14 @@
             <version>1.12.0</version>
         </dependency>
 
+        <!-- PDFBox: extrai o texto do PDF do edital para a análise por IA
+             (ADR-043). Só leitura de texto; o PDF não é guardado. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.8</version>
+        </dependency>
+
         <!-- Lombok: permitido em entidade JPA com escopo restrito desde
              09_CODE_STYLE.md v2.1.0 §3.2.1 (@Getter/@Setter exceto id,
              @EqualsAndHashCode só no id). Versão vem do BOM do

@@ -70,6 +70,31 @@ public class FrenteService {
         return fasesDe(List.of(assunto)).get(assunto.getId());
     }
 
+    /**
+     * Resumo por disciplina ativa (02_JORNADAS §4.5, docs/SPRINT-18-CONCURSOS.md §2):
+     * a mesma derivação de fase em lote de {@link #fasesDe}, contada por disciplina.
+     */
+    @Transactional(readOnly = true)
+    public List<DisciplinaResumoResponse> resumoPorDisciplina() {
+        var assuntos = assuntoRepository.listarAtivosDeDisciplinasAtivas();
+        var fases = fasesDe(assuntos);
+        var porDisciplina = assuntos.stream()
+            .collect(Collectors.groupingBy(a -> a.getDisciplina().getId()));
+        return disciplinaRepository.findByAtivoTrue().stream()
+            .sorted(Comparator.comparing(d -> d.getNome().toLowerCase()))
+            .map(d -> {
+                var deste = porDisciplina.getOrDefault(d.getId(), List.of());
+                var contagem = deste.stream().collect(Collectors.groupingBy(a -> fases.get(a.getId()), Collectors.counting()));
+                return new DisciplinaResumoResponse(
+                    d.getId(), d.getNome(), d.getPeso(),
+                    contagem.getOrDefault(FaseAssunto.BACKLOG, 0L),
+                    contagem.getOrDefault(FaseAssunto.FRENTE, 0L),
+                    contagem.getOrDefault(FaseAssunto.CONSOLIDADO, 0L),
+                    deste.size());
+            })
+            .toList();
+    }
+
     /** D-19 (contagens de FRENTE/BACKLOG/CONSOLIDADO, teto global) — docs/SPRINT-5-FRENTE.md §2.2. */
     @Transactional(readOnly = true)
     public FrenteResumoResponse resumo() {
