@@ -5,7 +5,7 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.1.0** |
+| Versão do documento | **1.2.0** |
 | Status | **Congelado** |
 | Data | 2026-10-14 |
 
@@ -472,10 +472,76 @@ Acrescentado sem mudar o desenho congelado acima — só o que a Sprint 16
 
 ---
 
+## 8B. Adendo — Sprint 18 e beta (eAgora)
+
+Acrescentado sem mudar o desenho congelado — só o que a Sprint 18
+(`docs/SPRINT-18-CONCURSOS.md`) e a subida do beta passam a exigir.
+
+1. **Edital novo por IA (ADR-043).** Acrescente ao `.env` (mesmo arquivo de
+   `DB_PASSWORD`, `chmod 600`, fora do Git):
+
+   ```
+   OPENROUTER_API_KEY=sk-or-...
+   # opcional — padrão anthropic/claude-sonnet-5.5
+   OPENROUTER_MODEL=anthropic/claude-sonnet-5.5
+   ```
+
+   e `docker compose up -d --build`. Sem a chave, "Novo edital" aparece como
+   indisponível com o motivo, e **nada mais** no sistema depende dela. O
+   contêiner precisa de saída para a internet (`openrouter.ai`, HTTPS).
+   Custo: duas chamadas por edital (centavos de dólar no modelo padrão), na
+   conta OpenRouter de quem criou a chave — defina um limite de gasto lá.
+2. **Envio de PDF.** O limite é 30 MB (`spring.servlet.multipart`). Se houver
+   proxy na frente, ele precisa aceitar o mesmo tamanho; `tailscale serve`
+   aceita.
+3. **Importação do planejamento** agora leva o `concurso.json` junto
+   (`scripts/importar-segmentos.sh` faz isso sozinho) e registra o concurso
+   no histórico. `CONCURSO_ATIVO` continua escolhendo a pasta importada.
+4. **Nome do app: eAgora.** Quem instalou a versão antiga na tela inicial
+   continua vendo o nome antigo até reinstalar.
+
+### 8B.1 Checklist do beta
+
+Na ordem; cada item é verificável.
+
+- [ ] `docker compose up -d --build` termina sem erro; `curl -f
+      http://localhost:8080/actuator/health` responde `UP`.
+- [ ] As 12 migrações aplicaram (`V12` = concurso e análise de edital):
+      `docker compose logs app | grep -i flyway`.
+- [ ] `tailscale serve --bg 8080` ativo; `https://raspberrypi.<tailnet>.ts.net`
+      abre a tela Hoje no celular.
+- [ ] Web instalada na tela inicial; app Android instalado (APK do GitHub
+      Actions de `Allandpn/-eAgora`) e apontado para o mesmo endereço
+      `https://`.
+- [ ] Importação inicial feita (`assuntos.csv` + `concurso.json`, depois
+      `segmentos.csv`); Concursos mostra o concurso-alvo e Hoje mostra os dias
+      até a prova.
+- [ ] `OPENROUTER_API_KEY` no `.env`; "Novo edital" disponível; um edital real
+      analisado e **revisado** antes de confirmar (D-62).
+- [ ] Backup rodou uma vez à mão (`scripts/backup.sh`) e o teste de restauração
+      (§6.4) passou.
+- [ ] Primeira sessão real registrada pelo celular; a notificação do lembrete
+      testada (ligar para 2 minutos à frente em Ajustes).
+- [ ] Um registro com o servidor fora do ar: falha não destrutiva, "Reenviar"
+      funciona, nada duplica (D-45).
+
+### 8B.2 O que o beta mede
+
+Antes de qualquer funcionalidade nova (`PROGRESSO.md` Sprint 17, itens
+17.5–17.6; 4 a 8 semanas): (1) **constância do registro** — dias em que você
+estudou × dias com sessão registrada; (2) **calibração** — com que frequência
+"reconstruí" é seguido de questões abaixo do limiar no mesmo assunto (M-3,
+tela Progresso). Se (1) cair, o problema é atrito de registro; se (2) for
+alto, a autoavaliação da recuperação não é confiável e a resposta é
+recuperar por questões.
+
+---
+
 ## 9. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.0 | 2026-10-15 | §8B, adendo da Sprint 18 e do beta: `OPENROUTER_API_KEY`/`OPENROUTER_MODEL` no `.env`, limite de 30 MB no envio de PDF, `concurso.json` na importação, nome eAgora; checklist do beta (8B.1) e o que o beta mede (8B.2). Desenho das seções 0–8 intacto |
 | 1.1.0 | 2026-10-14 | §8A, adendo da Sprint 16: HTTPS via `tailscale serve` passa a ser obrigatório (service worker e `crypto.randomUUID()` exigem contexto seguro — ADR-038); instalação do app no celular/tablet; cron da importação com `CONCURSO_ATIVO` (ADR-039). Desenho das seções 0–8 intacto |
 | 1.0.1 | 2026-09-07 | Verificação pré-Pi, não mudança de desenho (continua **Congelado**). `docker compose up -d --build` rodado de verdade nesta máquina (x86_64, não ARM): build multi-estágio, as 9 migrações do Flyway aplicadas numa base limpa, `/actuator/health` respondendo `UP`, as duas linhas de segurança conferidas (`postgres` sem porta publicada, `app` só em `127.0.0.1:8080`). `backup.sh` testado de ponta a ponta: dump+gzip+sanidade funcionam; o piso de 10 KB só é ultrapassado com uso real (~100+ sessões nesta verificação — uma base recém-instalada, vazia, vai acusar "backup suspeito" na primeira vez, e isso é esperado, não bug). `testar-restauracao.sh` restaurou com sucesso e as contagens bateram; só o `dropdb` final falhou, por disco cheio do ambiente de teste desta máquina (não do Pi — confirmado via `df` dentro do contêiner). `rclone` não testado (sem remoto configurado fora do Pi). `.gitattributes` ganhou `*.sql text eol=lf`, mesma proteção que `*.sh` já tinha — um CRLF introduzido por `autocrlf` de cliente Windows produz o mesmo sintoma que uma migração divergente (checksum do Flyway diverge), achado indiretamente nesta verificação. Continuam genuinamente pendentes, só testáveis no hardware real: build ARM, SSD por UUID, Tailscale, `rclone` de verdade, cron — checklist §8 |
 | 1.0.0 | 2026-08-15 | Documento novo. Docker Compose, Dockerfile ARM multi-estágio, montagem do SSD, exposição pela Tailscale, backup com verificação de sanidade e teste de restauração trimestral |

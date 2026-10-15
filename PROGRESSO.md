@@ -949,7 +949,7 @@ jornada de 2026-10-14 que contaminariam os primeiros dados.
 | 17.2 | Atrito 2 — tempo declarado em conteúdo/questões, pré-preenchido por `duracao_bloco_min` (D-29, `01_DOMINIO` §7.7) | Claude, decisão do usuário | **feito** — 143/143 verdes; conferido em Chrome real (50 sugerido → 70 gravado) |
 | 17.3 | Atrito 3 — represamento corta assunto novo, não a leitura em curso (D-56) | Claude, decisão do usuário | **feito** — idem; nota em Hoje conferida |
 | 17.4 | Atrito 4 — assunto novo da disciplina com menos na frente (D-57) | Claude, decisão do usuário | **feito** — idem; rodízio conferido contra Postgres real |
-| 17.5 | Pi no ar com `tailscale serve`, app instalado, importação com `CONCURSO_ATIVO` | **você** | aberto |
+| 17.5 | Pi no ar com `tailscale serve`, app instalado, importação com `CONCURSO_ATIVO` — roteiro em `03E_DEPLOYMENT.md` §8B.1 (checklist do beta) | **você** | aberto — **pronto para subir**: pilha validada em banco limpo (12 migrações, health UP, IA disponível com chave) |
 | 17.6 | 4–8 semanas de registro real | **você** | aberto |
 | 17.7 | Lacuna 5 — D-35, sugestão de dividir assunto com parciais seguidos (regra órfã desde a v1.7.0 de `01_DOMINIO`) | Claude, a pedido do usuário ("faça o que conseguir daqui") | **feito** |
 | 17.8 | Lacuna 6 — Progresso como balanço semanal de J-3 (ordem das perguntas, frente da semana) | idem | **feito** |
@@ -997,6 +997,7 @@ próprio uso real fica confuso.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.50.0 | 2026-10-15 | **Preparação do beta.** `03E_DEPLOYMENT` v1.2.0, §8B: `OPENROUTER_API_KEY` no `.env`, limite de 30 MB no envio de PDF, checklist do beta (8B.1) e o que o beta mede (8B.2: constância do registro e calibração). Pilha conferida em banco limpo (12 migrações, health UP). Ressalva: o `docker compose --build` completo não rodou neste ambiente (o contêiner de build não confia no proxy de TLS e o Docker Hub devolveu 429) — rode-o no Pi como primeiro passo do checklist |
 | 1.49.0 | 2026-10-15 | O app (web e Android) passa a se chamar **eAgora**, decisão do usuário. `04_FRONTEND` v1.12.0; app Android em `github.com/Allandpn/-eAgora` |
 | 1.48.0 | 2026-10-15 | **Sprint 18 aberta** (§19), antecipada a pedido do usuário: concurso-alvo com histórico, disciplinas, edital novo por IA (OpenRouter). Especificação primeiro (item 18.1). Mapa: linhas 18–21 viram 19–22. Seções 19–20 renumeradas para 20–21 |
 | 1.47.0 | 2026-10-15 | ADR-041 (app Android como segundo cliente) e `02_JORNADAS` v1.8.0 (§2.2, lembrete do turno). Nota no mapa apontando o repositório do app |
