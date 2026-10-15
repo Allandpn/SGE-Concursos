@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.shared.IntegracaoTestBase;
 
-/** Validação única pras 19 chaves — número positivo (docs/SPRINT-15-AJUSTES.md §0). */
+/** Validação única pras 20 chaves — número positivo (docs/SPRINT-15-AJUSTES.md §0). */
 @Transactional
 class ParametroErroDominioTest extends IntegracaoTestBase {
 

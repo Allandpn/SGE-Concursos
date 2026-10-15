@@ -82,18 +82,47 @@ document.addEventListener('alpine:init', () => {
     blocoContinuacao: false,
     segmentoSugerido: null,
     alertaRepresamento: false,
+    diasSemEstudar: null,
+    represado: 0,
+    estimativaDiasParaNormalizar: 0,
+    vencidasAlemDoTeto: 0,
+    proximoBloco: null,
+    antecipaveis: [],
+    mostrarAntecipaveis: false,
+    // "Drenar mais" (02_JORNADAS §4.3): cada pedido soma um teto diário à fila,
+    // só nesta tela; voltar para Hoje recomeça do teto normal (D-40).
+    extraRecuperacoes: 0,
+    passoDrenar: 0,
 
     async init() {
+      this.extraRecuperacoes = 0;
+      this.mostrarAntecipaveis = false;
+      await this.carregar();
+    },
+
+    async drenarMais() {
+      this.extraRecuperacoes += this.passoDrenar;
+      await this.carregar();
+    },
+
+    async carregar() {
       this.carregando = true;
       this.erro = null;
       try {
-        const plano = await api('/turno/plano');
+        const plano = await api(`/turno/plano?extraRecuperacoes=${this.extraRecuperacoes}`);
         this.fila = plano.filaRecuperacao;
         this.reestudos = plano.reestudos;
         this.blocoConteudo = plano.blocoConteudo;
         this.blocoContinuacao = plano.blocoContinuacao;
         this.segmentoSugerido = plano.segmentoSugerido;
         this.alertaRepresamento = plano.alertaRepresamento;
+        this.diasSemEstudar = plano.diasSemEstudar;
+        this.represado = plano.represado;
+        this.estimativaDiasParaNormalizar = plano.estimativaDiasParaNormalizar;
+        this.vencidasAlemDoTeto = plano.vencidasAlemDoTeto;
+        this.proximoBloco = plano.proximoBloco;
+        this.antecipaveis = plano.antecipaveis;
+        if (this.extraRecuperacoes === 0) this.passoDrenar = this.fila.length; // a fila sem pedido = o teto diário
       } catch (e) {
         this.erro = e.message;
       } finally {
@@ -103,6 +132,24 @@ document.addEventListener('alpine:init', () => {
 
     get vazio() {
       return this.fila.length === 0 && this.reestudos.length === 0 && !this.blocoConteudo;
+    },
+
+    // J-4: dois dias ou mais sem nenhuma sessão — limiar desta implementação
+    // (docs/SPRINT-17-USO-REAL.md §6.3). Some sozinha no primeiro registro do dia.
+    get mostrarRetorno() {
+      return this.diasSemEstudar !== null && this.diasSemEstudar >= 2;
+    },
+
+    get temAdiantar() {
+      return this.vencidasAlemDoTeto > 0 || !!this.proximoBloco || this.antecipaveis.length > 0;
+    },
+
+    get descricaoProximoBloco() {
+      return descreverSegmento(this.proximoBloco);
+    },
+
+    abrirOutroBloco() {
+      this.abrirRegistroConteudo({ ...this.blocoConteudo, segmentoSugeridoId: this.proximoBloco.id });
     },
 
     abrirRecuperacao(item) {
@@ -559,6 +606,8 @@ document.addEventListener('alpine:init', () => {
     m1: null,
     m3: null,
     m4: null,
+    frente: null,
+    divisoes: [],
 
     async init() {
       this.carregando = true;
@@ -569,6 +618,9 @@ document.addEventListener('alpine:init', () => {
         await this.carregarM1();
         this.m3 = await api('/metricas/m3');
         this.m4 = await api('/metricas/m4');
+        // 02_JORNADAS J-3: a frente da semana e as sugestões de divisão (D-35).
+        this.frente = await api('/frente');
+        this.divisoes = await api('/frente/sugestoes-divisao');
       } catch (e) {
         this.erro = e.message;
       } finally {

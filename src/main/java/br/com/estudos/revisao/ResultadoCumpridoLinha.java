@@ -1,5 +1,7 @@
 package br.com.estudos.revisao;
 
+import java.time.LocalDate;
+
 import br.com.estudos.shared.enums.ResultadoSessao;
 
 /**
@@ -10,4 +12,5 @@ public interface ResultadoCumpridoLinha {
     Long getAssuntoId();
     Integer getNivel();
     ResultadoSessao getResultado();
+    LocalDate getData();
 }

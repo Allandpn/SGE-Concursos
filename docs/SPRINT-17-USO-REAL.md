@@ -2,10 +2,10 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.1.0 |
+| Versão | 1.2.0 |
 | Data | 2026-10-14 |
 | Status | Vigente — em andamento |
-| Especificação conceitual | `01_DOMINIO.md` v1.21.0, `02_JORNADAS.md` v1.7.0, `03_INVARIANTES.md` v1.10.0 |
+| Especificação conceitual | `01_DOMINIO.md` v1.22.0, `02_JORNADAS.md` v1.7.0, `03_INVARIANTES.md` v1.10.0 |
 
 A Sprint 17 é colocar o sistema no Pi e usá-lo de verdade por 4–8 semanas. Antes
 disso, uma análise da jornada do usuário (2026-10-14) achou atritos que
@@ -21,6 +21,17 @@ antes do uso real. Cada um ganha uma seção aqui quando é resolvido.
 
 Os atritos 2–4 foram decididos pelo usuário em 2026-10-14, entre opções
 apresentadas, antes de qualquer documento ou código.
+
+Em 2026-10-15, revisando o que faltava, apareceram quatro comportamentos que a
+especificação conceitual já define e o código nunca implementou. Entram nesta
+sprint porque afetam as primeiras semanas de uso (§6):
+
+| # | Lacuna | Especificação | Estado |
+|---|---|---|---|
+| 5 | Sugestão de dividir assunto com parciais seguidos | `01_DOMINIO` D-35 (regra órfã) | **resolvido** (§6.1) |
+| 6 | Balanço semanal: ordem das perguntas e "a frente está saudável?" | `02_JORNADAS` J-3 | **resolvido** (§6.2) |
+| 7 | Mensagem de retorno depois de dias sem estudar | `02_JORNADAS` J-4 | **resolvido** (§6.3) |
+| 8 | "Quer adiantar?" no fim da tela Hoje | `02_JORNADAS` §4.3, `01_DOMINIO` D-40/§5.4 | **resolvido** (§6.4) |
 
 ---
 
@@ -146,9 +157,79 @@ em Hoje sem bloco de conteúdo; seção Turno em Ajustes.
 
 ---
 
+## 6. Lacunas da especificação (2026-10-15)
+
+### 6.1 Sugestão de divisão (D-35)
+
+- Parâmetro novo `parciais_seguidos_dividir`, partida 4 (migração `V11`). A lista
+  de parâmetros de Ajustes passa de 19 para 20 chaves; cai no grupo "Escada".
+- `FrenteService.sugestoesDeDivisao()`: para cada assunto ativo de disciplina
+  ativa, os resultados das sessões `QUESTOES`/`FLASHCARDS`/`RECUPERACAO` em
+  ordem de data (lote abaixo de `lote_minimo_questoes` fora, `01_DOMINIO`
+  §3.2.1), contando os `PARCIAL` seguidos a partir do mais recente. Com N ou
+  mais, entra na lista. Uma consulta de projeção, resto em memória.
+- `GET /api/frente/sugestoes-divisao` → `[{assuntoId, nome, disciplinaId,
+  disciplina, parciaisSeguidos}]`. Só leitura: nunca divide nada.
+
+### 6.2 Balanço semanal (J-3)
+
+- Tela Progresso na ordem de J-3: **Eu me conheço?** (M-3), **Estou
+  melhorando?** (M-1, com a regra de `n`), **A frente está saudável?**, sugestões
+  de divisão, e **Estou em dia?** (M-4) pequeno no rodapé. **Estou retendo?**
+  (M-2) continua no detalhe de cada assunto (decisão de `04_FRONTEND` §7D); a
+  tela diz isso numa linha.
+- "A frente está saudável?" usa `GET /api/frente`, que ganha dois campos
+  derivados dos últimos 7 dias (hoje incluído): `entraramNaSemana` (assuntos
+  cuja primeira sessão caiu na janela) e `consolidaramNaSemana` (assuntos
+  consolidados hoje cuja consolidação aconteceu na janela). A data de
+  consolidação vem de `EstadoConsolidacao.consolidadoDesde`, a mesma regra de
+  sequência de `01_DOMINIO` §5.5, agora com a data de cada resultado.
+
+### 6.3 Mensagem de retorno (J-4)
+
+- O plano ganha `diasSemEstudar` (dias desde a sessão mais recente de qualquer
+  tipo; nulo se nunca houve sessão), `represado` e `estimativaDiasParaNormalizar`
+  (os mesmos números de `GET /api/frente`).
+- Hoje mostra a mensagem quando `diasSemEstudar ≥ 2` — limiar desta
+  implementação, não da especificação: um dia sem estudo é rotina, dois já é
+  "esteve fora". Texto de J-4, sem vermelho e sem lista: "Você esteve fora N
+  dias. Sem problema — a escada não reinicia." Com represado acima do teto,
+  acrescenta o acumulado e a estimativa; com o alerta de D-56, diz que nenhum
+  assunto novo é sugerido enquanto drena (e a nota separada de D-56 não aparece,
+  para não repetir).
+- "Informado uma vez" sem estado guardado: depois do primeiro registro do dia, a
+  sessão mais recente é de hoje e a mensagem some sozinha.
+
+### 6.4 "Quer adiantar?" (§4.3)
+
+No fim da tela Hoje, só quando há algo a oferecer:
+
+| Opção | Dado do plano | Ação |
+|---|---|---|
+| Drenar mais represado (N) | `vencidasAlemDoTeto` | Recarrega o plano com `?extraRecuperacoes=<teto diário>` — pedido explícito; o teto continua limitando só o que é oferecido sem pedido (D-40) |
+| Outro bloco de conteúdo | `proximoBloco` — o segmento não lido seguinte ao sugerido, no mesmo assunto | Abre Registrar com esse segmento |
+| Antecipar revisão futura ⚠ encurta o espaçamento | `antecipaveis` — pendentes ainda não vencidas cuja janela de tolerância já abriu (`01_DOMINIO` §5.4), até 5, as mais próximas primeiro | Abre Recuperar; o aviso fica junto da opção, não atrás de confirmação |
+
+Revisão fora da janela não é oferecida: estudar continua livre, mas ela não
+seria cumprida, e oferecê-la como "antecipar" enganaria.
+
+### 6.5 Testes
+
+| Teste | Prova |
+|---|---|
+| `BalancoSemanalTest.quatroParciaisSeguidosSugeremDivisao` | D-35 com o parâmetro de partida |
+| `BalancoSemanalTest.sucessoNoMeioZeraASequencia` | só conta seguidos, a partir do mais recente |
+| `BalancoSemanalTest.loteAbaixoDoMinimoNaoConta` | §3.2.1 |
+| `BalancoSemanalTest.frenteDaSemana` | `entraramNaSemana` e `consolidaramNaSemana` |
+| `EstadoConsolidacaoTest.consolidadoDesde*` | data da consolidação pela mesma regra de sequência |
+| `RetornoEAdiantarTest.*` | `diasSemEstudar`, `extraRecuperacoes`, `antecipaveis` só dentro da janela, `proximoBloco` |
+
+---
+
 ## Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.0 | 2026-10-15 | §6: quatro lacunas da especificação implementadas antes do uso real — D-35, balanço semanal (J-3), mensagem de retorno (J-4), "quer adiantar?" (§4.3) |
 | 1.1.0 | 2026-10-14 | Atritos 2, 3 e 4 resolvidos (§2–§5): tempo declarado com `duracao_bloco_min`, D-56, D-57 |
 | 1.0.0 | 2026-10-14 | Criado com o atrito 1 resolvido |

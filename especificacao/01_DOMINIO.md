@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.21.0 |
+| Versão | 1.22.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -167,6 +167,12 @@ Não é preciso acertar a granularidade de antemão.
 
 É diagnóstico barato e é o próprio dado do usuário corrigindo uma decisão que
 ele tomou antes de ter dado nenhum.
+
+**O que conta como resultado aqui:** o resultado de cada sessão de
+`QUESTOES`, `FLASHCARDS` ou `RECUPERACAO` do assunto, em ordem de data; lote
+abaixo do mínimo (§4.3) não conta, porque não chega a classificar. N é
+parâmetro. A sugestão aparece no balanço semanal (`02_JORNADAS` J-3), com o
+número de parciais seguidos e o motivo.
 
 ### 3.2.2 Dividir um assunto é migração de dados, não edição de tela
 
@@ -1245,6 +1251,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.22.0 | 2026-10-15 | §3.2.1: D-35 ganha definição operacional (quais resultados contam, lote abaixo do mínimo fora, N parametrizado, onde a sugestão aparece). A regra existia desde a v1.7.0 sem nenhum código — era regra órfã no sentido de `03_INVARIANTES` §9. Achado ao revisar o que falta antes do uso real |
 | 1.21.0 | 2026-10-14 | Atritos 2, 3 e 4 da análise de jornada, decididos pelo usuário. (2) §7.7: tempo de bloco de conteúdo e de lote de questões é **declarado** no registro — tempo de tela gravava um minuto para uma hora de leitura e anulava o "o sistema mede a real" de D-29; conteúdo vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. (3) Nova **D-56** (§5.3): com o alerta de represamento ligado, o plano para de sugerir assunto novo, mas continua a leitura em curso. (4) Nova **D-57** (§7.4): o assunto novo vem da disciplina com menos assuntos na frente, em vez de encher uma disciplina por vez. 57 regras |
 | 1.20.0 | 2026-10-14 | Atrito 1 da análise de jornada: num assunto com vários segmentos, o primeiro `ESTUDO` agendava a revisão para o dia seguinte (recuperar um assunto lido em 20% fazia a escada regredir por motivo falso), e o turno nunca mais sugeria os segmentos seguintes, embora `docs/requisitos-planejamento-blocos-de-conteudo.md` §3 dissesse que o SGE decide qual segmento é o próximo. Nova **D-54** (§3.7): a escada começa quando a leitura termina. Nova **D-55** (§7.4): o bloco do turno continua o assunto em estudo antes de abrir outro. §8: "em estudo" passa a ter definição operacional (tem sessão, nenhuma revisão). 55 regras. Pedido pelo usuário |
 | 1.19.0 | 2026-10-14 | Duas lacunas achadas em análise do código contra este documento (Sprint 16). (1) **§5.5**: explicitado quando o assunto está consolidado, como sequência de resultados no nível-alvo — `PARCIAL` em manutenção **mantém** consolidado (a tabela já dizia; a implementação o desconsolidava porque só olhava "os dois últimos"). (2) **§5.1**: definido como se reconhece, sem atributo novo, o assunto que `FALHA` devolveu à fila de estudo (*reestudo*) — D-07 e D-11 diziam "volta para a fila de estudo", mas nada dizia como a fila o reconhecia, e a implementação nunca o oferecia. §7.4 ganha a lista de reestudo no plano do turno. Nenhuma regra D-xx nova: as duas são leitura precisa de D-07, D-10 e D-11. Aprovado pelo usuário |

@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.9.0 |
+| Versão | 1.10.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -650,6 +650,34 @@ documento da sprint).
 
 ---
 
+## 7I. Retorno, "quer adiantar?" e balanço semanal (Sprint 17, lacunas 5–8)
+
+`docs/SPRINT-17-USO-REAL.md` §6.
+
+- **Hoje — mensagem de retorno (J-4):** com `diasSemEstudar ≥ 2`, um quadro
+  neutro (cor primária clara, nunca vermelho) no topo: "Você esteve fora N
+  dias. Sem problema — a escada não reinicia.", quantas recuperações hoje, o
+  acumulado e a estimativa quando há vencidas além do teto, e a frase do
+  represamento (D-56) quando o alerta está ligado — nesse caso a nota separada
+  de D-56 não aparece. "Nada para hoje" passou para dentro do mesmo bloco, para
+  a mensagem e o "quer adiantar?" aparecerem mesmo sem itens.
+- **Hoje — "Quer adiantar?" (§4.3):** no fim, separado por linha tracejada,
+  só quando há algo: drenar mais revisões atrasadas (cada toque recarrega o
+  plano com mais um teto diário em `?extraRecuperacoes=`; voltar para Hoje
+  recomeça do teto normal), outro bloco de conteúdo (abre Registrar com o
+  segmento seguinte marcado), antecipar revisão futura com o aviso
+  "⚠ encurta o espaçamento" na própria opção; a lista de antecipáveis abre
+  Recuperar.
+- **Progresso como balanço semanal (J-3):** ordem das perguntas — Eu me conheço?
+  (M-3), Estou melhorando? (M-1, com a nota de que é número lento), A frente
+  está saudável? (`GET /api/frente`: em estudo/teto, revisões atrasadas,
+  entraram e consolidaram na semana, avisos), assuntos que podem estar grandes
+  demais (`GET /api/frente/sugestoes-divisao`, D-35, só aparece com algum), e
+  Estou em dia? (M-4) no fim. Uma linha lembra que M-2 fica no detalhe de cada
+  assunto (§7D continua valendo).
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -740,6 +768,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.10.0 | 2026-10-15 | §7I, Sprint 17 lacunas 5–8: mensagem de retorno e "quer adiantar?" em Hoje (J-4, §4.3); Progresso reorganizado como balanço semanal, com a frente da semana e as sugestões de divisão (J-3, D-35) |
 | 1.9.0 | 2026-10-14 | §7A corrigida e §7H, Sprint 17 atritos 2–4: tempo visível em Registrar (conteúdo preenchido com `duracao_bloco_min` ou a estimativa do segmento), nota de represamento em Hoje (D-56), seção Turno em Ajustes |
 | 1.8.0 | 2026-10-14 | §7G, Sprint 17: card de continuação de leitura em Hoje, link para o material do bloco, segmento sugerido já marcado em Registrar, opção "o assunto inteiro" (D-54/D-55) |
 | 1.7.0 | 2026-10-14 | §7F, Sprint 16: dependências locais em `static/vendor/` (ADR-038 substitui ADR-028), app instalável (manifesto + service worker só da casca), `api.js` com `REDE_INDISPONIVEL`/`ERRO_SERVIDOR`, seção Reestudar na tela Hoje (D-07/D-11) |

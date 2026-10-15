@@ -2,6 +2,7 @@ package br.com.estudos.turno;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,8 +21,9 @@ public class TurnoController {
     }
 
     @GetMapping("/plano")
-    @Operation(summary = "Monta o plano do turno de hoje", description = "Fila de recuperação (respeitando o teto diário) mais um bloco de conteúdo novo, se houver vaga na frente.")
-    public TurnoPlanoResponse plano() {
-        return turnoService.plano();
+    @Operation(summary = "Monta o plano do turno de hoje", description = "Fila de recuperação (respeitando o teto diário) mais um bloco de conteúdo novo, se houver vaga na frente. "
+        + "extraRecuperacoes > 0 é o \"drenar mais represado\" pedido pelo usuário (02_JORNADAS §4.3): soma ao teto só nesta chamada.")
+    public TurnoPlanoResponse plano(@RequestParam(defaultValue = "0") int extraRecuperacoes) {
+        return turnoService.plano(extraRecuperacoes);
     }
 }

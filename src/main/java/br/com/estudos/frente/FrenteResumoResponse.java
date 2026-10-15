@@ -12,5 +12,7 @@ public record FrenteResumoResponse(
     @Schema(description = "Teto diário de recuperações oferecidas") int tetoDiario,
     @Schema(description = "Se o represamento passou do limiar de alerta") boolean alertaRepresamento,
     @Schema(description = "Estimativa de dias para zerar o represado, no teto diário atual") long estimativaDiasParaNormalizar,
-    @Schema(description = "D-31 — se o teto diário não sustenta a frente nem no melhor caso") boolean avisoTetoInsuficiente
+    @Schema(description = "D-31 — se o teto diário não sustenta a frente nem no melhor caso") boolean avisoTetoInsuficiente,
+    @Schema(description = "Assuntos cuja primeira sessão caiu nos últimos 7 dias, hoje incluído (02_JORNADAS J-3)") int entraramNaSemana,
+    @Schema(description = "Assuntos consolidados hoje cuja consolidação aconteceu nos últimos 7 dias (02_JORNADAS J-3)") int consolidaramNaSemana
 ) {}

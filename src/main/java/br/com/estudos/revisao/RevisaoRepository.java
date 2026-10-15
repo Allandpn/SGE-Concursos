@@ -63,7 +63,7 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
     // Fase em lote (docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §3): as cumpridas
     // de um conjunto de assuntos numa consulta só, em vez de uma por assunto.
     @Query("""
-        select r.assunto.id as assuntoId, r.nivel as nivel, s.resultado as resultado
+        select r.assunto.id as assuntoId, r.nivel as nivel, s.resultado as resultado, s.data as data
         from Revisao r
         join r.sessaoCumpriu s
         where r.assunto.id in :assuntoIds
@@ -89,6 +89,19 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
         order by o.data asc, o.id asc
         """)
     List<Revisao> listarEmReestudo();
+
+    // "Quer adiantar?" (02_JORNADAS §4.3, docs/SPRINT-17-USO-REAL.md §6.4):
+    // pendentes ainda não vencidas, a mais próxima primeiro — quem decide se
+    // a janela de tolerância já abriu é o RevisaoService (§5.4).
+    @Query("""
+        select r from Revisao r
+        join fetch r.assunto a
+        join fetch r.sessaoOrigem o
+        where r.situacao = br.com.estudos.shared.enums.SituacaoRevisao.PENDENTE
+          and r.dataPrevista > :hoje
+        order by r.dataPrevista asc, r.id asc
+        """)
+    List<Revisao> listarFuturas(@Param("hoje") LocalDate hoje);
 
     // D-17 (docs/SPRINT-4-ESCADA.md §3.4): cancela sem tocar em CUMPRIDA (D-18).
     // flushAutomatically: AssuntoService/DisciplinaService.arquivar chamam isto

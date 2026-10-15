@@ -54,6 +54,33 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
         """)
     List<Long> assuntosEmEstudo();
 
+    // D-35 (docs/SPRINT-17-USO-REAL.md §6.1): resultados de cada assunto ativo,
+    // do mais recente pro mais antigo — o serviço conta os PARCIAL seguidos.
+    @Query("""
+        select s.assunto.id as assuntoId, s.tipo as tipo, s.resultado as resultado,
+               s.questoesTotal as questoesTotal
+        from Sessao s
+        where s.resultado is not null
+          and s.assunto.ativo = true
+          and s.assunto.disciplina.ativo = true
+        order by s.assunto.id, s.data desc, s.id desc
+        """)
+    List<ResultadoSessaoLinha> listarResultadosDosAtivos();
+
+    // Balanço semanal (02_JORNADAS J-3): primeira sessão de cada assunto ativo.
+    @Query("""
+        select s.assunto.id as assuntoId, min(s.data) as primeira
+        from Sessao s
+        where s.assunto.ativo = true
+          and s.assunto.disciplina.ativo = true
+        group by s.assunto.id
+        """)
+    List<PrimeiraSessaoLinha> primeiraSessaoDosAtivos();
+
+    // Mensagem de retorno (02_JORNADAS J-4): data da sessão mais recente, nula se nunca houve.
+    @Query("select max(s.data) from Sessao s")
+    LocalDate dataDaUltimaSessao();
+
     // M-2 (docs/SPRINT-7-METRICAS.md §4.2): primeira exposição = data mais
     // antiga; ordenado, o service só pega head/tail da lista, por tipo.
     // Desempate por id: duas sessões do mesmo tipo no mesmo dia (ex.: duas

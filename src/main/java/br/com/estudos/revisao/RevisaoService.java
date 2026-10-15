@@ -136,6 +136,20 @@ public class RevisaoService {
         revisaoRepository.save(revisao);
     }
 
+    /**
+     * 01_DOMINIO §5.4 / 02_JORNADAS §4.3 — pendentes ainda não vencidas cuja
+     * janela de tolerância já abriu hoje: antecipá-las cumpre a revisão, mas
+     * encurta o espaçamento (a tela diz isso junto da opção). Fora da janela
+     * não entra: estudar continua livre, mas a revisão não seria cumprida.
+     */
+    @Transactional(readOnly = true)
+    public List<Revisao> antecipaveis(LocalDate hoje, int limite) {
+        return revisaoRepository.listarFuturas(hoje).stream()
+            .filter(pendente -> dentroDaJanela(pendente, hoje))
+            .limit(limite)
+            .toList();
+    }
+
     /** D-54 — todo segmento do assunto tem alguma sessão ESTUDO (a desta transação inclusive). */
     private boolean leituraCompleta(Long assuntoId) {
         var estudados = sessaoRepository.segmentosEstudados(assuntoId);

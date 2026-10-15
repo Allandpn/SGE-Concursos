@@ -3,6 +3,7 @@ package br.com.estudos.revisao;
 import static br.com.estudos.shared.enums.ResultadoSessao.FALHA;
 import static br.com.estudos.shared.enums.ResultadoSessao.PARCIAL;
 import static br.com.estudos.shared.enums.ResultadoSessao.SUCESSO;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -57,5 +58,27 @@ class EstadoConsolidacaoTest {
     void reconsolidarDepoisDeFalha_exigeDoisSucessosSeguidos() {
         assertFalse(EstadoConsolidacao.consolidado(List.of(SUCESSO, SUCESSO, FALHA, SUCESSO)));
         assertTrue(EstadoConsolidacao.consolidado(List.of(SUCESSO, SUCESSO, FALHA, SUCESSO, SUCESSO)));
+    }
+
+    private static EstadoConsolidacao.ResultadoNaData em(br.com.estudos.shared.enums.ResultadoSessao r, int dia) {
+        return new EstadoConsolidacao.ResultadoNaData(r, java.time.LocalDate.of(2026, 1, dia));
+    }
+
+    @Test
+    void consolidadoDesde_dataDoSegundoSucesso() {
+        assertEquals(java.util.Optional.of(java.time.LocalDate.of(2026, 1, 9)),
+            EstadoConsolidacao.consolidadoDesde(List.of(em(SUCESSO, 2), em(SUCESSO, 9), em(PARCIAL, 20))),
+            "PARCIAL depois não muda a data da consolidação vigente");
+    }
+
+    @Test
+    void consolidadoDesde_reconsolidacaoTrocaAData() {
+        assertEquals(java.util.Optional.of(java.time.LocalDate.of(2026, 1, 28)),
+            EstadoConsolidacao.consolidadoDesde(List.of(em(SUCESSO, 2), em(SUCESSO, 9), em(FALHA, 15), em(SUCESSO, 21), em(SUCESSO, 28))));
+    }
+
+    @Test
+    void consolidadoDesde_vazioSemConsolidacao() {
+        assertTrue(EstadoConsolidacao.consolidadoDesde(List.of(em(SUCESSO, 2), em(PARCIAL, 9))).isEmpty());
     }
 }

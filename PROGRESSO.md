@@ -29,7 +29,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 14 | Frontend — Progresso | Sexta tela: M-1/M-3/M-4 globais; M-2 (por assunto) vira seção nova no detalhe de Assuntos (`04_FRONTEND.md §7D`) | **feito** — testada num navegador real, as quatro métricas conferidas contra Postgres real |
 | 15 | Frontend — Ajustes | Sétima e última tela do mapa: os 18 parâmetros, editáveis (`04_FRONTEND.md §7E`) — primeira sprint de frontend que também abre endpoint novo (`docs/SPRINT-15-AJUSTES.md`) | **feito** — testada num navegador real, edição/erro/reversão conferidos contra Postgres real; um bug real achado e corrigido no caminho |
 | 16 | Correções, multi-edital e app | Análise do código contra a especificação (2026-10-14): `PARCIAL` em manutenção desconsolidava; `FALHA` nunca voltava à fila de estudo (reestudo); fase calculada assunto a assunto; reimportação por `chaveExterna`; concurso-alvo ativo (ADR-039); frontend sem CDN e instalável como app no celular/tablet (ADR-038); prontidão multiusuário sem implementá-lo (ADR-040) — `docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` | **feito** — 132/132 testes verdes contra Postgres real; app conferido num Chromium emulando celular; importação ponta a ponta (exportador do planejamento → script → SGE) conferida com troca de concurso-alvo |
-| 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado. Começa pelos atritos da jornada que contaminariam os primeiros dados (`docs/SPRINT-17-USO-REAL.md`) | **em andamento** — os 4 atritos resolvidos (143/143 verdes); falta o Pi no ar e o uso real |
+| 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado. Começa pelos atritos da jornada que contaminariam os primeiros dados (`docs/SPRINT-17-USO-REAL.md`) | **em andamento** — os 4 atritos e as 4 lacunas da especificação resolvidos; falta o Pi no ar e o uso real |
 | 18 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
 | 19 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
 | 20 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
@@ -945,6 +945,10 @@ jornada de 2026-10-14 que contaminariam os primeiros dados.
 | 17.4 | Atrito 4 — assunto novo da disciplina com menos na frente (D-57) | Claude, decisão do usuário | **feito** — idem; rodízio conferido contra Postgres real |
 | 17.5 | Pi no ar com `tailscale serve`, app instalado, importação com `CONCURSO_ATIVO` | **você** | aberto |
 | 17.6 | 4–8 semanas de registro real | **você** | aberto |
+| 17.7 | Lacuna 5 — D-35, sugestão de dividir assunto com parciais seguidos (regra órfã desde a v1.7.0 de `01_DOMINIO`) | Claude, a pedido do usuário ("faça o que conseguir daqui") | **feito** |
+| 17.8 | Lacuna 6 — Progresso como balanço semanal de J-3 (ordem das perguntas, frente da semana) | idem | **feito** |
+| 17.9 | Lacuna 7 — mensagem de retorno de J-4 em Hoje | idem | **feito** |
+| 17.10 | Lacuna 8 — "Quer adiantar?" de §4.3 no fim de Hoje | idem | **feito** |
 
 ---
 
@@ -966,6 +970,7 @@ jornada de 2026-10-14 que contaminariam os primeiros dados.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.46.0 | 2026-10-15 | **Sprint 17: lacunas 5–8** (itens 17.7–17.10) — comportamentos que a especificação já definia e o código nunca implementou: D-35, balanço semanal (J-3), mensagem de retorno (J-4), "quer adiantar?" (§4.3). `01_DOMINIO` v1.22.0, `SPRINT-17` v1.2.0, `04_FRONTEND` v1.10.0, migração V11 (`parciais_seguidos_dividir`) |
 | 1.45.0 | 2026-10-14 | **Sprint 17: atritos 2–4 resolvidos** (§18), cada um decidido pelo usuário entre opções. `01_DOMINIO` v1.21.0 (D-56, D-57, §7.7), `02_JORNADAS` v1.7.0, `03_INVARIANTES` v1.10.0, `04_FRONTEND` v1.9.0, migração V10 (`duracao_bloco_min`). Suíte local 137/137 conferida antes de começar; 143/143 depois. Um teste antigo dependente de dados de outros testes tornado autocontido |
 | 1.44.0 | 2026-10-14 | **Sprint 17 aberta** (§18): começa pelos atritos da jornada. Atrito 1 resolvido: D-54/D-55 (`01_DOMINIO` v1.20.0), 137/137 verdes. Seções 18–19 renumeradas para 19–20 |
 | 1.43.0 | 2026-10-14 | **Sprint 16 completa** (§17): correções da escada (`PARCIAL` em manutenção, intervalo agendado), reestudo (D-07/D-11), fases em lote, reimportação por `chaveExterna`, concurso-alvo ativo (ADR-039), app instalável sem CDN (ADR-038), prontidão multiusuário (ADR-040). 132/132 verdes. Mapa ganha as linhas 17–21 (uso real, diagnóstico de edital, modo reta final, peso por banca, registro de baixo atrito/prova real). Pendência da Sprint 10 sobre `chaveExternaSegmento` fechada. Seções 17–18 renumeradas para 18–19 |

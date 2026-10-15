@@ -74,14 +74,20 @@
       </div>
     </template>
 
-    <template x-if="!carregando && !erro && vazio">
-      <p class="text-gray-500">Nada para hoje. Volte amanhã.</p>
-    </template>
-
-    <template x-if="!carregando && !erro && !vazio">
+    <template x-if="!carregando && !erro">
       <div class="space-y-6">
-        <!-- D-56 / 01_DOMINIO §5.3: o alerta diz por que não há assunto novo -->
-        <p x-show="alertaRepresamento" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
+        <!-- J-4 (02_JORNADAS): a volta depois de dias sem estudar — sem vermelho, sem lista, sem cobrança -->
+        <div x-show="mostrarRetorno" class="space-y-1 rounded border border-primary-100 bg-primary-50 p-3 text-sm text-gray-800">
+          <p class="font-medium" x-text="'Você esteve fora ' + diasSemEstudar + ' dias. Sem problema — a escada não reinicia.'"></p>
+          <p x-show="fila.length > 0" x-text="'Hoje: ' + fila.length + (fila.length === 1 ? ' recuperação.' : ' recuperações.')"></p>
+          <p x-show="vencidasAlemDoTeto > 0" x-text="'Acumulado: ' + represado + (estimativaDiasParaNormalizar > 0 ? ' · normaliza em cerca de ' + estimativaDiasParaNormalizar + (estimativaDiasParaNormalizar === 1 ? ' dia.' : ' dias.') : '.')"></p>
+          <p x-show="alertaRepresamento">Enquanto drena, nenhum assunto novo é sugerido.</p>
+        </div>
+
+        <p x-show="vazio" class="text-gray-500">Nada para hoje. Volte amanhã.</p>
+
+        <!-- D-56 / 01_DOMINIO §5.3: o alerta diz por que não há assunto novo (dentro da mensagem de J-4 quando ela aparece) -->
+        <p x-show="alertaRepresamento && !mostrarRetorno" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
           Revisões acumuladas. Drene a fila antes de abrir assunto novo — por isso nenhum é sugerido hoje.
         </p>
 
@@ -134,6 +140,42 @@
             <a x-show="linkMaterial" :href="linkMaterial" target="_blank" rel="noopener"
               class="flex min-h-11 items-center border-t border-gray-200 px-3 text-sm font-medium text-primary-700 underline">Abrir material</a>
           </div>
+        </div>
+
+        <!-- 02_JORNADAS §4.3: "puxar mais" fica no fim, só com algo a oferecer, sempre por pedido explícito -->
+        <div x-show="temAdiantar" class="space-y-2 border-t border-dashed border-gray-300 pt-4">
+          <h2 class="text-sm font-medium text-gray-500">Quer adiantar?</h2>
+          <ul class="space-y-2">
+            <li x-show="vencidasAlemDoTeto > 0">
+              <button type="button" class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm hover:bg-gray-50"
+                @click="drenarMais()" x-text="'Drenar mais revisões atrasadas (' + vencidasAlemDoTeto + ')'"></button>
+            </li>
+            <li x-show="proximoBloco">
+              <button type="button" class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm hover:bg-gray-50"
+                @click="abrirOutroBloco()">
+                <span class="block">Outro bloco de conteúdo</span>
+                <span class="text-gray-500" x-text="blocoConteudo?.nome + ' · ' + descricaoProximoBloco"></span>
+              </button>
+            </li>
+            <li x-show="antecipaveis.length > 0">
+              <button type="button" class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm hover:bg-gray-50"
+                @click="mostrarAntecipaveis = !mostrarAntecipaveis">
+                <span class="block">Antecipar revisão futura</span>
+                <span class="text-alerta-700">⚠ encurta o espaçamento</span>
+              </button>
+              <ul x-show="mostrarAntecipaveis" class="mt-2 space-y-2 pl-3">
+                <template x-for="item in antecipaveis" :key="item.assuntoId">
+                  <li>
+                    <button type="button" class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50"
+                      @click="abrirRecuperacao(item)">
+                      <span class="block font-medium" x-text="item.nome"></span>
+                      <span class="text-sm text-gray-500" x-text="'Prevista para ' + item.dataPrevista.split('-').reverse().join('/') + ' (' + (-item.diasAtraso) + (item.diasAtraso === -1 ? ' dia antes)' : ' dias antes)')"></span>
+                    </button>
+                  </li>
+                </template>
+              </ul>
+            </li>
+          </ul>
         </div>
       </div>
     </template>
@@ -511,13 +553,27 @@
     <template x-if="!carregando && !erro">
       <div class="space-y-6">
         <div class="space-y-2">
+          <p class="text-xs text-gray-500">A retenção (M-2) de cada assunto fica no detalhe dele, em Assuntos.</p>
+          <h2 class="text-sm font-medium text-gray-500">Eu me conheço? <span class="font-normal">· calibração (M-3)</span></h2>
+          <div class="rounded border border-gray-200 bg-white p-3">
+            <p class="text-sm text-gray-500">Objetiva (questões/flashcards)</p>
+            <p class="font-semibold" x-text="m3.objetiva.n === 0 ? 'sem dados ainda' : (Math.round(Math.abs(m3.objetiva.mediaDesvio)) + ' pts — ' + (m3.objetiva.mediaDesvio > 0 ? 'superestimou' : m3.objetiva.mediaDesvio < 0 ? 'subestimou' : 'sem desvio'))"></p>
+          </div>
+          <div class="rounded border border-gray-200 bg-white p-3">
+            <p class="text-sm text-gray-500">Subjetiva (recuperação)</p>
+            <p class="font-semibold" x-text="m3.subjetiva.n === 0 ? 'sem dados ainda' : (m3.subjetiva.superestimou + ' superestimou · ' + m3.subjetiva.subestimou + ' subestimou · ' + m3.subjetiva.acertouPrevisao + ' acertou')"></p>
+          </div>
+        </div>
+
+        <div class="space-y-2 border-t border-gray-200 pt-4">
           <div class="flex items-center justify-between">
-            <h2 class="text-sm font-medium text-gray-500">M-1 · Aderência ao objetivo</h2>
+            <h2 class="text-sm font-medium text-gray-500">Estou melhorando? <span class="font-normal">· acerto em questões (M-1)</span></h2>
             <div class="flex gap-2">
               <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'GLOBAL' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('GLOBAL')">Global</button>
               <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'POR_DISCIPLINA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('POR_DISCIPLINA')">Por disciplina</button>
             </div>
           </div>
+          <p class="text-xs text-gray-500">Número lento: com pouca amostra o percentual fica em "—". Compare trimestre a trimestre, não semana a semana.</p>
           <ul class="space-y-2">
             <template x-for="linha in m1.linhas" :key="(linha.disciplinaId ?? 'global') + '-' + linha.formato">
               <li class="rounded border border-gray-200 bg-white p-3">
@@ -534,20 +590,51 @@
           </ul>
         </div>
 
+        <!-- 02_JORNADAS J-3: a pergunta operacional da semana -->
         <div class="space-y-2 border-t border-gray-200 pt-4">
-          <h2 class="text-sm font-medium text-gray-500">M-3 · Calibração</h2>
-          <div class="rounded border border-gray-200 bg-white p-3">
-            <p class="text-sm text-gray-500">Objetiva (questões/flashcards)</p>
-            <p class="font-semibold" x-text="m3.objetiva.n === 0 ? 'sem dados ainda' : (Math.round(Math.abs(m3.objetiva.mediaDesvio)) + ' pts — ' + (m3.objetiva.mediaDesvio > 0 ? 'superestimou' : m3.objetiva.mediaDesvio < 0 ? 'subestimou' : 'sem desvio'))"></p>
+          <h2 class="text-sm font-medium text-gray-500">A frente está saudável?</h2>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="rounded border border-gray-200 bg-white p-3">
+              <p class="text-gray-500">Em estudo</p>
+              <p class="text-lg font-semibold" x-text="frente.frenteAtual + ' de ' + frente.tetoGlobalFrente"></p>
+            </div>
+            <div class="rounded border border-gray-200 bg-white p-3">
+              <p class="text-gray-500">Revisões atrasadas</p>
+              <p class="text-lg font-semibold" x-text="frente.represado"></p>
+            </div>
+            <div class="rounded border border-gray-200 bg-white p-3">
+              <p class="text-gray-500">Entraram na semana</p>
+              <p class="text-lg font-semibold" x-text="frente.entraramNaSemana"></p>
+            </div>
+            <div class="rounded border border-gray-200 bg-white p-3">
+              <p class="text-gray-500">Consolidaram na semana</p>
+              <p class="text-lg font-semibold" x-text="frente.consolidaramNaSemana"></p>
+            </div>
           </div>
-          <div class="rounded border border-gray-200 bg-white p-3">
-            <p class="text-sm text-gray-500">Subjetiva (recuperação)</p>
-            <p class="font-semibold" x-text="m3.subjetiva.n === 0 ? 'sem dados ainda' : (m3.subjetiva.superestimou + ' superestimou · ' + m3.subjetiva.subestimou + ' subestimou · ' + m3.subjetiva.acertouPrevisao + ' acertou')"></p>
-          </div>
+          <p class="text-sm text-gray-500" x-text="frente.consolidados + ' consolidados no total · ' + frente.backlog + ' na fila para começar'"></p>
+          <p x-show="frente.alertaRepresamento" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800"
+            x-text="'Atraso acima de um dia de revisões: drenando no ritmo atual, normaliza em cerca de ' + frente.estimativaDiasParaNormalizar + (frente.estimativaDiasParaNormalizar === 1 ? ' dia' : ' dias') + '. Enquanto isso, nenhum assunto novo é sugerido.'"></p>
+          <p x-show="frente.avisoTetoInsuficiente" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
+            O limite diário de recuperações não sustenta o tamanho da frente nem no melhor caso. Reduza a frente ou aumente o limite em Ajustes.
+          </p>
+        </div>
+
+        <!-- D-35 (01_DOMINIO §3.2.1): só sugere, nunca divide -->
+        <div x-show="divisoes.length > 0" class="space-y-2 border-t border-gray-200 pt-4">
+          <h2 class="text-sm font-medium text-gray-500">Assuntos que podem estar grandes demais</h2>
+          <p class="text-xs text-gray-500">Parcial seguido costuma ser assunto grande: você sabe uma parte e erra outra, e a escada não sobe. Dividir em assuntos menores costuma destravar.</p>
+          <ul class="space-y-2">
+            <template x-for="d in divisoes" :key="d.assuntoId">
+              <li class="rounded border border-gray-200 bg-white p-3">
+                <span class="block font-medium" x-text="d.nome"></span>
+                <span class="text-sm text-gray-500" x-text="d.disciplina + ' · ' + d.parciaisSeguidos + ' parciais seguidos'"></span>
+              </li>
+            </template>
+          </ul>
         </div>
 
         <div class="space-y-2 border-t border-gray-200 pt-4">
-          <h2 class="text-sm font-medium text-gray-500">M-4 · Aderência ao prazo</h2>
+          <h2 class="text-sm font-medium text-gray-500">Estou em dia? <span class="font-normal">· aderência ao prazo (M-4)</span></h2>
           <div class="rounded border border-gray-200 bg-white p-3">
             <p class="font-semibold" x-text="(m4.percentual === null ? '—' : Math.round(m4.percentual) + '%') + ' em até 3 dias do previsto'"></p>
             <p class="text-sm text-gray-500" x-text="m4.dentroDoPrazo + '/' + m4.totalCumpridas"></p>

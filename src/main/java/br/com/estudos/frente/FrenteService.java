@@ -4,6 +4,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,7 +20,10 @@ import br.com.estudos.disciplina.DisciplinaRepository;
 import br.com.estudos.revisao.RevisaoRepository;
 import br.com.estudos.revisao.EstadoConsolidacao;
 import br.com.estudos.revisao.ResultadoCumpridoLinha;
+import br.com.estudos.segmento.Segmento;
 import br.com.estudos.segmento.SegmentoRepository;
+import br.com.estudos.shared.enums.ResultadoSessao;
+import br.com.estudos.shared.enums.TipoSessao;
 import br.com.estudos.sessao.SessaoRepository;
 import br.com.estudos.shared.enums.FaseAssunto;
 import br.com.estudos.shared.enums.SituacaoRevisao;
@@ -69,9 +74,117 @@ public class FrenteService {
     @Transactional(readOnly = true)
     public FrenteResumoResponse resumo() {
         var assuntos = assuntoRepository.listarAtivosDeDisciplinasAtivas();
-        return resumo(fasesDe(assuntos));
+        var base = resumo(fasesDe(assuntos));
+        // Balanço semanal (02_JORNADAS J-3): o que entrou e o que consolidou na
+        // semana — só aqui, não no plano do turno, que não precisa disso.
+        var hoje = LocalDate.now(clock);
+        var inicioSemana = hoje.minusDays(6);
+        return new FrenteResumoResponse(
+            base.frenteAtual(), base.tetoGlobalFrente(), base.backlog(), base.consolidados(),
+            base.represado(), base.tetoDiario(), base.alertaRepresamento(),
+            base.estimativaDiasParaNormalizar(), base.avisoTetoInsuficiente(),
+            entraramNaJanela(inicioSemana, hoje), consolidaramNaJanela(assuntos, inicioSemana, hoje));
     }
 
+    private int entraramNaJanela(LocalDate inicio, LocalDate fim) {
+        return (int) sessaoRepository.primeiraSessaoDosAtivos().stream()
+            .filter(linha -> naJanela(linha.getPrimeira(), inicio, fim))
+            .count();
+    }
+
+    private static boolean naJanela(LocalDate data, LocalDate inicio, LocalDate fim) {
+        return !data.isBefore(inicio) && !data.isAfter(fim);
+    }
+
+    /** Consolidação vigente com data na janela — mesma regra de sequência (EstadoConsolidacao, ADR-033). */
+    private int consolidaramNaJanela(List<Assunto> assuntos, LocalDate inicio, LocalDate fim) {
+        if (assuntos.isEmpty()) {
+            return 0;
+        }
+        var cumpridas = revisaoRepository.listarCumpridasDosAssuntos(assuntos.stream().map(Assunto::getId).toList())
+            .stream()
+            .collect(Collectors.groupingBy(ResultadoCumpridoLinha::getAssuntoId));
+        var total = 0;
+        for (var assunto : assuntos) {
+            var alvo = EstadoConsolidacao.nivelAlvo(assunto.getPeso());
+            var noAlvo = cumpridas.getOrDefault(assunto.getId(), List.of()).stream()
+                .filter(linha -> linha.getNivel() == alvo)
+                .map(linha -> new EstadoConsolidacao.ResultadoNaData(linha.getResultado(), linha.getData()))
+                .toList();
+            var desde = EstadoConsolidacao.consolidadoDesde(noAlvo);
+            if (desde.isPresent() && naJanela(desde.get(), inicio, fim)) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    /**
+     * D-35 (01_DOMINIO §3.2.1): assuntos ativos cujos últimos N resultados são
+     * todos PARCIAL. Lote abaixo do mínimo não conta (não chega a classificar).
+     * Só sugere — nunca divide (docs/SPRINT-17-USO-REAL.md §6.1).
+     */
+    @Transactional(readOnly = true)
+    public List<SugestaoDivisaoResponse> sugestoesDeDivisao() {
+        var minimoParciais = valorParametroInt("parciais_seguidos_dividir");
+        var loteMinimo = valorParametroInt("lote_minimo_questoes");
+        var parciaisPorAssunto = new LinkedHashMap<Long, Integer>();
+        var encerrados = new HashSet<Long>();
+        for (var linha : sessaoRepository.listarResultadosDosAtivos()) { // mais recente primeiro, por assunto
+            var assuntoId = linha.getAssuntoId();
+            if (encerrados.contains(assuntoId)) continue;
+            var lote = linha.getTipo() == TipoSessao.QUESTOES || linha.getTipo() == TipoSessao.FLASHCARDS;
+            if (lote && linha.getQuestoesTotal() != null && linha.getQuestoesTotal() < loteMinimo) continue;
+            if (linha.getResultado() == ResultadoSessao.PARCIAL) {
+                parciaisPorAssunto.merge(assuntoId, 1, Integer::sum);
+            } else {
+                encerrados.add(assuntoId);
+            }
+        }
+        var candidatos = parciaisPorAssunto.entrySet().stream()
+            .filter(e -> e.getValue() >= minimoParciais)
+            .toList();
+        if (candidatos.isEmpty()) {
+            return List.of();
+        }
+        var assuntos = assuntoRepository.findAllById(candidatos.stream().map(Map.Entry::getKey).toList()).stream()
+            .collect(Collectors.toMap(Assunto::getId, a -> a));
+        return candidatos.stream()
+            .map(e -> {
+                var assunto = assuntos.get(e.getKey());
+                return new SugestaoDivisaoResponse(assunto.getId(), assunto.getNome(),
+                    assunto.getDisciplina().getId(), assunto.getDisciplina().getNome(), e.getValue());
+            })
+            .sorted(Comparator.comparingInt(SugestaoDivisaoResponse::parciaisSeguidos).reversed()
+                .thenComparing(SugestaoDivisaoResponse::assuntoId))
+            .toList();
+    }
+
+    /** Represado, alerta e estimativa juntos, pra mensagem de retorno do turno (02_JORNADAS J-4). */
+    @Transactional(readOnly = true)
+    public SituacaoRepresamento situacaoRepresamento() {
+        var represado = represado();
+        var tetoDiario = valorParametroInt("teto_diario_recuperacoes");
+        var alerta = alertaRepresamento(represado, tetoDiario);
+        return new SituacaoRepresamento(represado, alerta, alerta ? represado / tetoDiario : 0);
+    }
+
+    public record SituacaoRepresamento(long represado, boolean alerta, long estimativaDiasParaNormalizar) {}
+
+    /**
+     * "Outro bloco de conteúdo" (02_JORNADAS §4.3): o segmento não lido seguinte
+     * ao sugerido, no mesmo assunto, pela ordem (D-55).
+     */
+    @Transactional(readOnly = true)
+    public Optional<Segmento> proximoSegmentoApos(Long assuntoId, int ordemSugerida) {
+        var estudados = sessaoRepository.segmentosEstudados(assuntoId);
+        return segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assuntoId).stream()
+            .filter(s -> s.getOrdem() > ordemSugerida && !estudados.contains(s.getId()))
+            .findFirst();
+    }
+
+    // Contagens de fase e represamento — o que o plano do turno também usa;
+    // os números da semana ficam no resumo público (J-3).
     private FrenteResumoResponse resumo(Map<Long, FaseAssunto> fases) {
         var frente = 0;
         var backlog = 0;
@@ -94,19 +207,14 @@ public class FrenteService {
 
         return new FrenteResumoResponse(
             frente, tetoGlobalFrente, backlog, consolidados,
-            represado, tetoDiario, alerta, estimativaDias, avisoTeto);
+            represado, tetoDiario, alerta, estimativaDias, avisoTeto, 0, 0);
     }
 
     /**
      * 01_DOMINIO §5.3, freio 2 — o atraso acumulado passou do limiar
-     * (`represado > teto diário`, fechado na Sprint 5). Usado pelo resumo e
-     * pelo plano do turno (D-56), uma regra só.
+     * (`represado > teto diário`, fechado na Sprint 5). Usado pelo resumo e,
+     * via situacaoRepresamento, pelo plano do turno (D-56, J-4): uma regra só.
      */
-    @Transactional(readOnly = true)
-    public boolean alertaRepresamento() {
-        return alertaRepresamento(represado(), valorParametroInt("teto_diario_recuperacoes"));
-    }
-
     private static boolean alertaRepresamento(long represado, int tetoDiario) {
         return represado > tetoDiario;
     }

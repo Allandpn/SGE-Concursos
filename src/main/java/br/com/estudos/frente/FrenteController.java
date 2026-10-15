@@ -1,5 +1,7 @@
 package br.com.estudos.frente;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +34,13 @@ public class FrenteController {
     @Operation(summary = "Resumo da frente de estudo", description = "Frente atual, teto, backlog, consolidados e represamento.")
     public FrenteResumoResponse resumo() {
         return frenteService.resumo();
+    }
+
+    @GetMapping("/api/frente/sugestoes-divisao")
+    @Operation(summary = "Assuntos que o balanço semanal sugere dividir",
+        description = "D-35: últimos N resultados PARCIAL seguidos (N = parciais_seguidos_dividir). Só sugestão, nunca divide.")
+    public List<SugestaoDivisaoResponse> sugestoesDeDivisao() {
+        return frenteService.sugestoesDeDivisao();
     }
 
     @GetMapping("/api/frente/proxima-vaga")

@@ -23,5 +23,23 @@ public record TurnoPlanoResponse(
     SegmentoSugeridoResponse segmentoSugerido,
 
     @Schema(description = "Represamento acima do limiar: o plano não sugere assunto novo, só continuação (D-56, 01_DOMINIO §5.3)")
-    boolean alertaRepresamento
+    boolean alertaRepresamento,
+
+    @Schema(description = "Dias desde a sessão mais recente, de qualquer tipo — null se nunca houve sessão (02_JORNADAS J-4)")
+    Long diasSemEstudar,
+
+    @Schema(description = "Revisões pendentes já vencidas (02_JORNADAS J-4)")
+    long represado,
+
+    @Schema(description = "Dias para zerar o represado no teto diário — 0 sem alerta (02_JORNADAS J-4)")
+    long estimativaDiasParaNormalizar,
+
+    @Schema(description = "Vencidas que ficaram fora da fila por causa do teto — o \"drenar mais\" de 02_JORNADAS §4.3")
+    long vencidasAlemDoTeto,
+
+    @Schema(description = "Segmento não lido seguinte ao sugerido, no mesmo assunto — o \"outro bloco de conteúdo\" de 02_JORNADAS §4.3")
+    SegmentoSugeridoResponse proximoBloco,
+
+    @Schema(description = "Revisões futuras cuja janela de tolerância já abriu — antecipar cumpre, mas encurta o espaçamento (01_DOMINIO §5.4, 02_JORNADAS §4.3)")
+    List<FilaRecuperacaoItemResponse> antecipaveis
 ) {}
