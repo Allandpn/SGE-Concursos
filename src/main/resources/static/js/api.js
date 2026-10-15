@@ -55,3 +55,19 @@ function descreverSegmento(s) {
   if (s.tempoEstimadoMin) partes.push(`~${s.tempoEstimadoMin} min`);
   return partes.join(' · ');
 }
+
+// Envio de arquivo (multipart) — sem o Content-Type JSON de api(): o navegador
+// monta o boundary sozinho. Usado pelo PDF do edital (04_FRONTEND §7J).
+async function apiEnviarArquivo(caminho, campo, arquivo) {
+  const dados = new FormData();
+  dados.append(campo, arquivo);
+  return api(caminho, { method: 'POST', body: dados, headers: {} });
+}
+
+// "2026-12-07" → "07/12/2026"; instante ISO → data local.
+function dataBR(iso) {
+  return iso ? iso.split('-').reverse().join('/') : '';
+}
+function dataInstante(instante) {
+  return instante ? new Date(instante).toLocaleDateString('pt-BR') : '';
+}

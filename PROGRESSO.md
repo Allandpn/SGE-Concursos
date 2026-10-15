@@ -971,9 +971,9 @@ próprio uso real fica confuso.
 | | Item | Quem escreve | Estado |
 |---|---|---|---|
 | 18.1 | Especificação: ADR-042/043, `01_DOMINIO` v1.23.0 (§3.8, §3.9, D-58–D-63), `02_JORNADAS` v1.9.0 (J-5), `03_INVARIANTES` v1.11.0 | Claude, a pedido do usuário | **feito** |
-| 18.2 | Backend: `Concurso` + cobertura + histórico + reativação; resumo por disciplina; registro pelo `concurso.json`; adoção na importação | Claude | aberto |
-| 18.3 | Backend: análise de edital (PDFBox, OpenRouter, estados, proposta, confirmação) | Claude | aberto |
-| 18.4 | SPA: cabeçalho em Hoje, disciplinas em Assuntos, Concursos, Novo edital | Claude | aberto |
+| 18.2 | Backend: `Concurso` + cobertura + histórico + reativação; resumo por disciplina; registro pelo `concurso.json`; adoção na importação | Claude | **feito** — 169/169 verdes |
+| 18.3 | Backend: análise de edital (PDFBox, OpenRouter, estados, proposta, confirmação) | Claude | **feito** — idem, com servidor falso no lugar do OpenRouter |
+| 18.4 | SPA: cabeçalho em Hoje, disciplinas em Assuntos, Concursos, Novo edital | Claude | **feito** — fluxo completo conferido em Chromium (celular 390 px) contra Postgres real e um OpenRouter falso local: PDF → cargo → revisão (desmarcar, desfazer correspondência, trocar peso) → confirmar → histórico → reativar; sem erro de console |
 | 18.5 | App Android: as mesmas telas | Claude | aberto |
 | 18.6 | `OPENROUTER_API_KEY` no `.env` do Pi; primeiro edital real analisado e revisado | **você** | aberto |
 

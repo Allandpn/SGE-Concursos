@@ -93,11 +93,30 @@ document.addEventListener('alpine:init', () => {
     // só nesta tela; voltar para Hoje recomeça do teto normal (D-40).
     extraRecuperacoes: 0,
     passoDrenar: 0,
+    // 02_JORNADAS §4.4: o concurso-alvo no topo. Falhar aqui não esconde o plano.
+    concurso: null,
+    concursoCarregado: false,
 
     async init() {
       this.extraRecuperacoes = 0;
       this.mostrarAntecipaveis = false;
+      this.carregarConcurso();
       await this.carregar();
+    },
+
+    carregarConcurso() {
+      api('/concursos/ativo')
+        .then((c) => { this.concurso = c; this.concursoCarregado = true; })
+        .catch(() => { this.concursoCarregado = false; });
+    },
+
+    // Os dias vêm do servidor (derivado lá, 02_JORNADAS §4.4).
+    get textoProva() {
+      const dias = this.concurso?.diasParaProva;
+      if (dias === null || dias === undefined) return 'sem data de prova';
+      if (dias === 0) return 'prova hoje';
+      if (dias < 0) return 'a prova já passou';
+      return dias === 1 ? 'prova amanhã' : `prova em ${dias} dias`;
     },
 
     async drenarMais() {
@@ -424,20 +443,22 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('paginaAssuntos', () => ({
     carregando: true,
     erro: null,
-    grupos: [], // [{ disciplina, assuntos: [{...AssuntoResponse, fase}] }]
+    grupos: [], // [{ disciplina, resumo, assuntos: [{...AssuntoResponse, fase}] }]
+    abertas: {}, // disciplinaId → expandida (02_JORNADAS §4.5)
 
     async init() {
       this.carregando = true;
       this.erro = null;
       try {
-        const disciplinas = await api('/disciplinas');
+        const [disciplinas, resumos] = await Promise.all([api('/disciplinas'), api('/disciplinas/resumo')]);
+        const resumoPorId = Object.fromEntries(resumos.map((r) => [r.id, r]));
         this.grupos = await Promise.all(disciplinas.map(async (disciplina) => {
           const assuntos = await api(`/assuntos?disciplinaId=${disciplina.id}`);
           const comFase = await Promise.all(assuntos.map(async (assunto) => {
             const { fase } = await api(`/assuntos/${assunto.id}/fase`);
             return { ...assunto, fase };
           }));
-          return { disciplina, assuntos: comFase };
+          return { disciplina, resumo: resumoPorId[disciplina.id] ?? null, assuntos: comFase };
         }));
       } catch (e) {
         this.erro = e.message;
@@ -447,7 +468,17 @@ document.addEventListener('alpine:init', () => {
     },
 
     get vazio() {
-      return this.grupos.every((g) => g.assuntos.length === 0);
+      return this.grupos.length === 0;
+    },
+
+    alternar(disciplinaId) {
+      this.abertas = { ...this.abertas, [disciplinaId]: !this.abertas[disciplinaId] };
+    },
+
+    contagem(grupo) {
+      const r = grupo.resumo;
+      if (!r) return `${grupo.assuntos.length} assuntos`;
+      return `${r.backlog} no backlog · ${r.frente} na frente · ${r.consolidados} ${r.consolidados === 1 ? 'consolidado' : 'consolidados'}`;
     },
 
     abrirDetalhe(disciplina, assuntoComFase) {
@@ -712,6 +743,254 @@ document.addEventListener('alpine:init', () => {
         this.draft[parametro.chave] = parametro.valor;
       } finally {
         this.salvando[parametro.chave] = false;
+      }
+    },
+  }));
+
+  // Concursos — concurso-alvo, histórico, edital novo (02_JORNADAS J-5, 04_FRONTEND §7J).
+  Alpine.data('paginaConcursos', () => ({
+    carregando: true,
+    erro: null,
+    erroAcao: null,
+    concursos: [],
+    ia: null,
+    analises: [],
+    reativando: null,
+
+    async init() {
+      this.carregando = true;
+      this.erro = null;
+      this.erroAcao = null;
+      try {
+        const [concursos, ia, analises] = await Promise.all([
+          api('/concursos'), api('/editais/ia'), api('/editais/analises'),
+        ]);
+        this.concursos = concursos;
+        this.ia = ia;
+        // Só as que ainda pedem algo do usuário; confirmada já está no histórico.
+        this.analises = analises.filter((a) => a.status !== 'CONFIRMADA');
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    get ativo() {
+      return this.concursos.find((c) => c.ativo) ?? null;
+    },
+
+    get anteriores() {
+      return this.concursos.filter((c) => !c.ativo);
+    },
+
+    detalhes(c) {
+      const prova = c.dataProva ? 'prova em ' + dataBR(c.dataProva) : 'sem data de prova';
+      return [c.banca, prova].filter(Boolean).join(' · ');
+    },
+
+    periodo(c) {
+      return dataInstante(c.ativadoEm) + ' – ' + (c.desativadoEm ? dataInstante(c.desativadoEm) : 'hoje');
+    },
+
+    rotuloStatus(status) {
+      return {
+        LENDO_EDITAL: 'Lendo o edital…',
+        ESCOLHER_CARGO: 'Escolha o cargo',
+        SEPARANDO_ASSUNTOS: 'Separando os assuntos…',
+        PRONTA: 'Pronta para revisar',
+        FALHOU: 'Falhou — toque para tentar de novo',
+      }[status] ?? status;
+    },
+
+    // D-60: reativar muda peso e ordem — pede confirmação, nunca toca o estudo.
+    async reativar(c) {
+      if (!window.confirm(`Reativar ${c.nome}? Peso e ordem dos assuntos voltam a ser os deste edital; o estudo feito não muda.`)) return;
+      this.reativando = c.id;
+      this.erroAcao = null;
+      try {
+        await api(`/concursos/${c.id}/ativar`, { method: 'POST' });
+        await this.init();
+      } catch (e) {
+        this.erroAcao = e.message;
+      } finally {
+        this.reativando = null;
+      }
+    },
+  }));
+
+  // Novo edital — análise por IA em etapas; nada gravado até confirmar (D-62).
+  Alpine.data('paginaEdital', () => ({
+    modo: 'novo', // novo | analise
+    id: null,
+    analise: null,
+    carregando: false,
+    erro: null,
+    erroAcao: null,
+    enviando: false,
+    arquivo: null,
+    cargo: null,
+    rev: null, // proposta em revisão — criada uma vez, nunca sobrescrita pela consulta
+    timer: null,
+
+    abrirNovo() {
+      this.parar();
+      this.modo = 'novo';
+      this.analise = null;
+      this.id = null;
+      this.arquivo = null;
+      this.erroAcao = null;
+      this.enviando = false;
+    },
+
+    async abrir(id) {
+      this.parar();
+      this.modo = 'analise';
+      if (this.id !== id) {
+        this.analise = null;
+        this.rev = null;
+        this.cargo = null;
+      }
+      this.id = id;
+      this.erroAcao = null;
+      await this.carregar();
+    },
+
+    parar() {
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = null;
+    },
+
+    async carregar() {
+      this.carregando = !this.analise;
+      this.erro = null;
+      try {
+        this.aplicar(await api(`/editais/analises/${this.id}`));
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    // Enquanto a IA trabalha, consulta a cada 3 s — só se a tela ainda é esta.
+    aplicar(analise) {
+      this.analise = analise;
+      if (analise.status === 'PRONTA' && !this.rev) this.rev = this.montarRevisao(analise);
+      if (analise.cargos?.length === 1 && !this.cargo) this.cargo = analise.cargos[0];
+      this.parar();
+      if (['LENDO_EDITAL', 'SEPARANDO_ASSUNTOS'].includes(analise.status)
+          && window.location.hash === `#/concursos/analise/${analise.id}`) {
+        this.timer = setTimeout(() => this.carregar(), 3000);
+      }
+    },
+
+    escolherArquivo(evento) {
+      this.arquivo = evento.target.files[0] ?? null;
+    },
+
+    async enviar() {
+      if (!this.arquivo) {
+        this.erroAcao = 'Escolha o PDF do edital.';
+        return;
+      }
+      this.enviando = true;
+      this.erroAcao = null;
+      try {
+        const analise = await apiEnviarArquivo('/editais/analises', 'arquivo', this.arquivo);
+        window.location.hash = `#/concursos/analise/${analise.id}`;
+      } catch (e) {
+        this.erroAcao = e.message;
+      } finally {
+        this.enviando = false;
+      }
+    },
+
+    async escolherCargo() {
+      this.enviando = true;
+      this.erroAcao = null;
+      try {
+        this.aplicar(await api(`/editais/analises/${this.id}/cargo`, {
+          method: 'POST', body: JSON.stringify({ cargo: this.cargo }),
+        }));
+      } catch (e) {
+        this.erroAcao = e.message;
+      } finally {
+        this.enviando = false;
+      }
+    },
+
+    async tentarDeNovo() {
+      this.enviando = true;
+      this.erroAcao = null;
+      try {
+        this.aplicar(await api(`/editais/analises/${this.id}/tentar-de-novo`, { method: 'POST' }));
+      } catch (e) {
+        this.erroAcao = e.message;
+      } finally {
+        this.enviando = false;
+      }
+    },
+
+    montarRevisao(a) {
+      return {
+        nome: a.concursoNome ?? '',
+        cargo: a.cargoEscolhido ?? '',
+        banca: a.banca ?? '',
+        dataProva: a.dataProva ?? '',
+        disciplinas: a.proposta.map((d) => ({
+          ...d,
+          assuntos: d.assuntos.map((s) => ({ ...s, incluir: true })),
+        })),
+      };
+    },
+
+    // Resumo da revisão: recalculado na tela conforme o usuário desmarca.
+    get textoResumo() {
+      if (!this.rev || !this.analise?.resumo) return '';
+      let novos = 0;
+      let emComum = 0;
+      for (const d of this.rev.disciplinas) {
+        for (const s of d.assuntos) {
+          if (!s.incluir) continue;
+          if (s.assuntoExistenteId) emComum++; else novos++;
+        }
+      }
+      const fora = this.analise.resumo.foraDoEdital + (this.analise.resumo.emComum - emComum);
+      return `${novos} ${novos === 1 ? 'assunto novo' : 'assuntos novos'} · ${emComum} em comum (mantêm escada e histórico) · `
+        + `${fora} fora do edital (continuam como estão)`;
+    },
+
+    tratarComoNovo(assunto) {
+      assunto.assuntoExistenteId = null;
+      assunto.assuntoExistenteNome = null;
+    },
+
+    async confirmar() {
+      this.enviando = true;
+      this.erroAcao = null;
+      const corpo = {
+        nome: this.rev.nome,
+        cargo: this.rev.cargo || null,
+        banca: this.rev.banca || null,
+        dataProva: this.rev.dataProva || null,
+        disciplinas: this.rev.disciplinas.map((d) => ({
+          nome: d.nome,
+          disciplinaExistenteId: d.disciplinaExistenteId,
+          peso: d.peso,
+          assuntos: d.assuntos.filter((s) => s.incluir)
+            .map((s) => ({ nome: s.nome, assuntoExistenteId: s.assuntoExistenteId })),
+        })),
+      };
+      try {
+        await api(`/editais/analises/${this.id}/confirmar`, { method: 'POST', body: JSON.stringify(corpo) });
+        this.rev = null;
+        window.location.hash = '#/concursos';
+      } catch (e) {
+        this.erroAcao = e.message;
+        window.scrollTo(0, 0);
+      } finally {
+        this.enviando = false;
       }
     },
   }));

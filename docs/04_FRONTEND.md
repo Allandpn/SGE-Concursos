@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.10.0 |
+| Versão | 1.11.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -678,6 +678,32 @@ documento da sprint).
 
 ---
 
+## 7J. Concursos, disciplinas e edital novo (Sprint 18)
+
+`docs/SPRINT-18-CONCURSOS.md` §6, `02_JORNADAS` J-5, §4.4, §4.5.
+
+- **Hoje:** `paginaHoje.carregarConcurso()` busca `/concursos/ativo` em
+  paralelo ao plano, sem `await` — falhar ali não esconde o plano. A linha
+  mostra nome · cargo e `textoProva` a partir de `diasParaProva` do servidor
+  (nenhum cálculo de data na tela). Sem concurso (204), convida a adicionar
+  edital. Toque abre `#/concursos`.
+- **Assuntos:** `/disciplinas/resumo` junto de `/disciplinas`; cada disciplina
+  vira um cartão (peso, backlog/frente/consolidados) que expande os assuntos
+  (`abertas`, por disciplina). Disciplina sem assunto também aparece.
+- **`#/concursos`** (`paginaConcursos`): concurso-alvo, botão "Novo edital"
+  (ou o motivo de `/editais/ia` quando indisponível), análises ainda não
+  confirmadas (para retomar) e o histórico com "Reativar" — com
+  `window.confirm`, porque muda peso e ordem (D-60).
+- **`#/concursos/novo`** e **`#/concursos/analise/{id}`** (`paginaEdital`):
+  envio por `apiEnviarArquivo` (multipart, sem o `Content-Type` JSON de
+  `api()`); consulta a cada 3 s enquanto a IA trabalha, só com a rota ativa
+  (o router chama `parar()` em toda navegação). A revisão (`rev`) nasce uma
+  vez da proposta e nunca é sobrescrita por consulta; o resumo é recalculado
+  na tela conforme o usuário desmarca ou desfaz correspondência. "Confirmar e
+  ativar" envia só os assuntos marcados (D-62); erro mantém tudo preenchido.
+- Ajustes ganha o atalho "Concursos e editais" no topo. `CASCA_VERSAO`
+  trocada.
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -768,6 +794,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.11.0 | 2026-10-15 | §7J, Sprint 18: linha do concurso-alvo em Hoje, Assuntos por disciplina com resumo, telas Concursos e Novo edital (análise por IA com revisão antes de confirmar) |
 | 1.10.0 | 2026-10-15 | §7I, Sprint 17 lacunas 5–8: mensagem de retorno e "quer adiantar?" em Hoje (J-4, §4.3); Progresso reorganizado como balanço semanal, com a frente da semana e as sugestões de divisão (J-3, D-35) |
 | 1.9.0 | 2026-10-14 | §7A corrigida e §7H, Sprint 17 atritos 2–4: tempo visível em Registrar (conteúdo preenchido com `duracao_bloco_min` ou a estimativa do segmento), nota de represamento em Hoje (D-56), seção Turno em Ajustes |
 | 1.8.0 | 2026-10-14 | §7G, Sprint 17: card de continuação de leitura em Hoje, link para o material do bloco, segmento sugerido já marcado em Registrar, opção "o assunto inteiro" (D-54/D-55) |

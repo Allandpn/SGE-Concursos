@@ -11,6 +11,8 @@ function renderizarRotaAtual() {
   const elErros = document.getElementById('pagina-erros');
   const elProgresso = document.getElementById('pagina-progresso');
   const elAjustes = document.getElementById('pagina-ajustes');
+  const elConcursos = document.getElementById('pagina-concursos');
+  const elEdital = document.getElementById('pagina-edital');
   const matchRecuperar = hash.match(/^#\/recuperar\/(\d+)$/);
   const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards)\/(\d+)$/);
   const matchAssuntoDetalhe = hash.match(/^#\/assuntos\/(\d+)$/);
@@ -18,6 +20,9 @@ function renderizarRotaAtual() {
   const matchErros = hash.match(/^#\/erros\/(\d+)$/);
   const matchProgresso = hash === '#/progresso';
   const matchAjustes = hash === '#/ajustes';
+  const matchConcursos = hash === '#/concursos';
+  const matchEditalNovo = hash === '#/concursos/novo';
+  const matchAnalise = hash.match(/^#\/concursos\/analise\/(\d+)$/);
 
   elHoje.hidden = true;
   elRecuperar.hidden = true;
@@ -27,6 +32,9 @@ function renderizarRotaAtual() {
   elErros.hidden = true;
   elProgresso.hidden = true;
   elAjustes.hidden = true;
+  elConcursos.hidden = true;
+  elEdital.hidden = true;
+  Alpine.$data(elEdital).parar(); // a consulta periódica da análise só vive na tela dela
 
   if (matchRecuperar) {
     elRecuperar.hidden = false;
@@ -49,6 +57,15 @@ function renderizarRotaAtual() {
   } else if (matchAjustes) {
     elAjustes.hidden = false;
     Alpine.$data(elAjustes).init();
+  } else if (matchConcursos) {
+    elConcursos.hidden = false;
+    Alpine.$data(elConcursos).init();
+  } else if (matchEditalNovo) {
+    elEdital.hidden = false;
+    Alpine.$data(elEdital).abrirNovo();
+  } else if (matchAnalise) {
+    elEdital.hidden = false;
+    Alpine.$data(elEdital).abrir(Number(matchAnalise[1]));
   } else {
     elHoje.hidden = false;
     Alpine.$data(elHoje).init();
