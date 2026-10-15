@@ -361,3 +361,21 @@ segmento é o próximo"), com duas regras novas (`01_DOMINIO.md` v1.20.0):
    primeiro estudo.
 
 Nada muda no formato dos arquivos (§11).
+
+## 13. Requisito novo (2026-10-14): `tempoEstimadoMin` passa a ser usado
+
+Até aqui `tempoEstimadoMin` era informativo: o SGE só o mostrava no card do
+bloco. A partir da Sprint 17 (`01_DOMINIO.md` v1.21.0, §7.7), ele **preenche o
+campo de tempo** na tela de registro do estudo daquele segmento. O usuário
+confirma ou corrige, e o valor confirmado é o que entra no histórico de
+duração real (D-29).
+
+**O que isso pede de vocês:**
+
+1. **Estimar o tempo de leitura de verdade**, não um valor fixo por bloco. Uma
+   estimativa sistematicamente errada vira um campo que o usuário corrige toda
+   vez, ou, pior, confirma sem olhar.
+2. **Deixar vazio quando não houver base para estimar.** Vazio é aceito: o SGE
+   cai na duração de bloco parametrizada.
+
+Nada muda no formato dos arquivos (§11).

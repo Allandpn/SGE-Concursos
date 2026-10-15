@@ -560,10 +560,11 @@ inexistente no pipeline deles (nomeiam só por posição).
 - [x] Automação do disparo pós-`rclone`: `scripts/importar-segmentos.sh`
       escrito — **não testado em Pi real**, mesma ressalva que
       `scripts/backup.sh` recebeu no Sprint 8
-- [ ] Resposta do repositório `Plano-de-Estudos-Automatizado` sobre o
-      requisito de `chaveExternaSegmento` — bloqueia a importação real de
-      `segmentos.csv` em produção, não o código do SGE em si. **Fora do
-      controle deste repositório** — depende de outra equipe/sessão
+- [x] Resposta do repositório `Plano-de-Estudos-Automatizado` sobre o
+      requisito de `chaveExternaSegmento` — **fechada em 2026-10-14**: já
+      gerava em `dias/montar_bloco.py`; o que faltava era o formato do
+      arquivo (`docs/requisitos-planejamento-blocos-de-conteudo.md` §11),
+      pedido que continua aberto do lado de lá
 
 **Itens 10.0 a 10.10 completos** — 111/111 testes verdes contra Postgres real
 (Testcontainers, Docker do usuário). Só resta o script de automação testado
