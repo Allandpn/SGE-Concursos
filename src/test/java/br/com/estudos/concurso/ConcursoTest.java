@@ -129,6 +129,35 @@ class ConcursoTest extends IntegracaoTestBase {
     }
 
     @Test
+    void entregaAoPlanejamento_devolveACoberturaNaOrdemDoEditalSemTocarNada() throws Exception {
+        var s = Long.toString(System.nanoTime());
+        var disciplina = "Entrega Teste " + s;
+        importar("""
+            disciplina,assunto,peso,ordem,chaveExterna
+            %1$s,Segundo %2$s,BAIXO,2,e2-%2$s
+            %1$s,Primeiro %2$s,ALTO,1,e1-%2$s
+            """.formatted(disciplina, s), "entrega-" + s, "Entrega " + s, "2027-03-01");
+        Integer id = JsonPath.read(mockMvc.perform(get("/api/concursos/ativo")).andReturn()
+            .getResponse().getContentAsString(), "$.id");
+        var antes = assuntoRepository.findByChaveExterna("e1-" + s).orElseThrow().getOrdem();
+
+        mockMvc.perform(get("/api/concursos/{id}/planejamento", id))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.slug").value("entrega-" + s))
+            .andExpect(jsonPath("$.nome").value("Entrega " + s))
+            .andExpect(jsonPath("$.dataProva").value("2027-03-01"))
+            .andExpect(jsonPath("$.assuntos.length()").value(2))
+            .andExpect(jsonPath("$.assuntos[0].assunto").value("Primeiro " + s))
+            .andExpect(jsonPath("$.assuntos[0].peso").value("ALTO"))
+            .andExpect(jsonPath("$.assuntos[0].chaveExterna").value("e1-" + s))
+            .andExpect(jsonPath("$.assuntos[1].ordem").value(2));
+        assertEquals(antes, assuntoRepository.findByChaveExterna("e1-" + s).orElseThrow().getOrdem(), "só leitura");
+        mockMvc.perform(get("/api/concursos/{id}/planejamento", 999999999))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.codigo").value("CONCURSO_INEXISTENTE"));
+    }
+
+    @Test
     void concursoJsonInvalido_desfazOArquivoInteiro() throws Exception {
         var s = Long.toString(System.nanoTime());
         mockMvc.perform(multipart("/api/assuntos/importacoes/confirmar")

@@ -39,6 +39,12 @@ public class ConcursoController {
             .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
+    @GetMapping("/{id}/planejamento")
+    @Operation(summary = "Cobertura do concurso para o planejamento", description = "Nome, slug, data da prova e os assuntos do edital na ordem dele, com peso e chave externa. Só leitura; é a entrada da triagem no projeto de planejamento.")
+    public PlanejamentoConcursoResponse paraPlanejamento(@PathVariable Long id) {
+        return concursoService.paraPlanejamento(id);
+    }
+
     @PostMapping("/{id}/ativar")
     @Operation(summary = "Reativa um concurso do histórico", description = "Aplica de novo a cobertura do edital dele (D-60) e encerra o período do atual (D-59).")
     public ConcursoResponse ativar(@PathVariable Long id) {

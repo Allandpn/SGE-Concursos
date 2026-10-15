@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.9.0 |
+| Versão | 1.10.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -623,6 +623,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.10.0 | 2026-10-15 | Pedido do usuário. J-5: o concurso confirmado pode ser lido pelo planejamento (`GET /api/concursos/{id}/planejamento`, `docs/SPRINT-18-CONCURSOS.md` §10) — o SGE é o sistema principal e o planejamento parte dos assuntos confirmados aqui |
 | 1.9.0 | 2026-10-15 | Pedido do usuário. Nova **J-5**: edital novo lido por IA no próprio sistema (PDF → cargos → proposta revisável → confirmação) e histórico de editais com reativação. Oitava tela, **Concursos**. §4.4: concurso-alvo e dias até a prova no topo de Hoje. §4.5: Assuntos abre por disciplina, com resumo de peso e fases. J-1: importação **adota** assunto sem chave externa de mesmo nome, e o `concurso.json` passa a registrar o concurso (`01_DOMINIO` v1.23.0, ADR-042, ADR-043) |
 | 1.8.0 | 2026-10-15 | §1.2: app Android nativo como segundo cliente (ADR-041), implementando as mesmas telas e regras. Nova §2.2, **lembrete do turno**: opcional, uma notificação por dia no máximo, diz o que há para hoje, nunca cobra, não lembra quem já estudou no dia. Pedido pelo usuário |
 | 1.7.0 | 2026-10-14 | Sprint 17, atrito 2 (`01_DOMINIO` v1.21.0 §7.7). O campo **tempo** de conteúdo, que a §5 sempre listou, passa a existir de fato — a tela media tempo de tela e gravava um minuto para uma hora de leitura. Vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. Questões ganham o mesmo campo, vazio (6 campos, orçamento de 25 s mantido). Recuperação continua medida pela tela. Decidido pelo usuário |

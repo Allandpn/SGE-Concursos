@@ -976,6 +976,7 @@ próprio uso real fica confuso.
 | 18.4 | SPA: cabeçalho em Hoje, disciplinas em Assuntos, Concursos, Novo edital | Claude | **feito** — fluxo completo conferido em Chromium (celular 390 px) contra Postgres real e um OpenRouter falso local: PDF → cargo → revisão (desmarcar, desfazer correspondência, trocar peso) → confirmar → histórico → reativar; sem erro de console |
 | 18.5 | App Android: as mesmas telas | Claude | **feito** no repositório do app (local; 34 testes) |
 | 18.6 | `OPENROUTER_API_KEY` no `.env` do Pi; primeiro edital real analisado e revisado | **você** | aberto |
+| 18.7 | Entrega ao planejamento: `GET /api/concursos/{id}/planejamento` (`docs/SPRINT-18-CONCURSOS.md` §10, `02_JORNADAS` v1.10.0) | Claude, a pedido do usuário | **escrito, teste não executado** — compila (JDK 21); `ConcursoTest` exige Docker/Testcontainers, indisponível no PC onde foi escrito. Rodar a suíte antes de mesclar |
 
 ---
 

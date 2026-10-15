@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.1.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Especificação | `01_DOMINIO` v1.23.0 (§3.8, §3.9, D-58 a D-63) · `02_JORNADAS` v1.9.0 (J-5, §4.4, §4.5, J-1) · `03_INVARIANTES` v1.11.0 · `00A_ADR` ADR-042, ADR-043 |
@@ -63,6 +63,7 @@ serializado pelo Jackson — não há consulta dentro dele.
 |---|---|---|
 | GET | `/api/concursos` | Histórico, ativo primeiro, depois por `ativadoEm` decrescente. Cada um com `totalAssuntos` e `emComumComAtivo` |
 | GET | `/api/concursos/ativo` | O concurso-alvo, com `diasParaProva` (calculado no servidor, data de hoje do servidor); **204** sem concurso ativo |
+| GET | `/api/concursos/{id}/planejamento` | Entrega ao planejamento: `{slug, nome, cargo, banca, dataProva, assuntos:[{disciplina, assunto, peso, ordem, chaveExterna}]}` — a cobertura do edital na ordem dele (disciplina, depois `ordem`), sem assunto arquivado. Só leitura. `chaveExterna` vazia no assunto criado pela análise por IA. **404** `CONCURSO_INEXISTENTE` |
 | POST | `/api/concursos/{id}/ativar` | Reativa um concurso do histórico — aplica a cobertura dele (D-59, D-60) |
 | GET | `/api/disciplinas/resumo` | Por disciplina ativa: `id, nome, peso, backlog, frente, consolidados, total` (contagem das fases derivadas, §4.5) |
 | GET | `/api/editais/ia` | `{disponivel, motivo, modelo}` — sem chave configurada, `disponivel=false` com o motivo |
@@ -244,3 +245,24 @@ correspondência cita — continuam como estão).
   fora do formato → `FALHOU` → tentar de novo; sem chave → `IA_INDISPONIVEL`.
 - `ImportacaoAssuntoTest`: adoção; `concurso.json` registra e ativa.
 - `DisciplinaResumoTest`: contagem por fase.
+
+---
+
+## 10. Entrega ao planejamento (v1.1.0, 2026-10-15)
+
+Decidido com o usuário: o SGE é o sistema principal — o edital é lido aqui
+(ADR-043) e o projeto de planejamento parte dos assuntos já confirmados para
+triar o acervo e fatiar o material. Faltava entregar esses assuntos: a
+exportação de assuntos existente (`/api/assuntos/exportacao`) é o round-trip
+do cadastro, sem `chaveExterna`, sem separar por concurso e sem os dados dele.
+
+`GET /api/concursos/{id}/planejamento` (§2) devolve a cobertura daquele
+concurso. O planejamento mantém os nomes exatamente como vieram, atribui o
+UUID canônico e exporta de volta pelo caminho de sempre; a importação **adota**
+por nome o assunto sem chave (J-1). Número de questões por disciplina e
+correspondência com assunto existente não são guardados depois da confirmação,
+então não saem aqui. Os pesos sim — já calculados (D-61) ou escolhidos na
+revisão.
+
+Teste: `ConcursoTest.entregaAoPlanejamento_…` (ordem do edital, chave externa,
+só leitura, 404).

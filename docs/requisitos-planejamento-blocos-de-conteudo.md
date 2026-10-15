@@ -404,3 +404,11 @@ mudanças que afetam quem exporta para cá:
 Nada muda no formato dos arquivos (§11). Ação sugerida do lado de vocês:
 nenhuma obrigatória; vale conferir que todo `concurso.json` exportado tem
 `slug` e `nome`.
+
+## 15. Resposta (2026-10-15): entrega do concurso ao planejamento
+
+Pedido do planejamento (`requisitos-sge-integracao.md` §10 de lá) atendido na branch
+`exportacao-planejamento`: `GET /api/concursos/{id}/planejamento` devolve `slug, nome, cargo,
+banca, dataProva` e os assuntos do edital em ordem (`disciplina, assunto, peso, ordem,
+chaveExterna`). Fora, por não serem guardados após a confirmação: número de questões por
+disciplina e correspondência com assunto existente. Ver `docs/SPRINT-18-CONCURSOS.md` §10.

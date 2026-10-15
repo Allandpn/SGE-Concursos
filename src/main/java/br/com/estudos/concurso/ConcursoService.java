@@ -101,6 +101,25 @@ public class ConcursoService {
             diasParaProva(concurso), c.totalAssuntos(), c.emComumComAtivo());
     }
 
+    /**
+     * Cobertura do concurso na forma que o planejamento lê (docs/SPRINT-18-CONCURSOS.md §2).
+     * Só leitura: não ativa nem aplica nada. Assunto arquivado depois do edital fica de fora.
+     */
+    @Transactional(readOnly = true)
+    public PlanejamentoConcursoResponse paraPlanejamento(Long id) {
+        var concurso = concursoRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Concurso não encontrado.", "CONCURSO_INEXISTENTE"));
+        var assuntos = coberturaRepository.listarDoConcurso(id).stream()
+            .filter(c -> c.getAssunto().isAtivo())
+            .map(c -> new PlanejamentoConcursoResponse.Assunto(
+                c.getDisciplina().getNome(), c.getAssunto().getNome(), c.getPeso(), c.getOrdem(),
+                c.getAssunto().getChaveExterna()))
+            .toList();
+        return new PlanejamentoConcursoResponse(
+            concurso.getSlug(), concurso.getNome(), concurso.getCargo(), concurso.getBanca(),
+            concurso.getDataProva(), assuntos);
+    }
+
     /** Reativa um concurso do histórico aplicando de novo a cobertura dele (D-59, D-60). */
     @Transactional
     public Concurso reativar(Long id) {
