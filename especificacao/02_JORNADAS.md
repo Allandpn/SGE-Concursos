@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.7.0 |
+| Versão | 1.8.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -64,6 +64,12 @@ alvo de toque de no mínimo 44 px, nenhuma ação que dependa de passar o mouse,
 e layout que funciona em largura de celular. O registro de sessão no
 celular passa a ser caminho de primeira classe, não de exceção.
 
+**Atualização (2026-10-15):** além da SPA, existe um **app Android nativo**
+(`docs/00A_ADR.md` ADR-041). Ele implementa as mesmas sete telas e as mesmas
+regras vinculantes deste documento — esta especificação continua sendo a
+única definição das jornadas. O que só o app faz: o lembrete diário (§2.2) e
+guardar o rascunho de um registro mesmo se o sistema fechar o app.
+
 ---
 
 ## 2. A rotina real
@@ -101,6 +107,25 @@ recuperação precisa ser julgado logo após a tentativa, senão vira lembrança
 julgamento e apodrece (`00_PRODUTO` §5.2.1). Isso vale qualquer que seja a ordem
 em que os itens foram feitos. O bloco de conteúdo é só tempo e tipo — espera sem
 perder nada.
+
+---
+
+### 2.2 O lembrete do turno (app Android)
+
+Constância é a terceira dor (`00_PRODUTO` §4), e um sistema que só existe
+quando você lembra de abri-lo não ataca essa dor. O lembrete é o mínimo que
+ataca sem virar cobrança:
+
+1. **Opcional e desligado por padrão.** O usuário liga e escolhe o horário.
+2. **Uma notificação por dia, no máximo.** Nunca uma segunda "porque você não
+   abriu".
+3. **Diz o que há para hoje, não o que falta:** "Hoje: 6 recuperações e 1
+   bloco de leitura." Sem número de dias seguidos, sem "você está atrasado",
+   sem vermelho (`00_PRODUTO` §8.2: nada de *streak*).
+4. **Não lembra quem já estudou hoje:** se já existe sessão no dia, não há
+   notificação.
+5. **Servidor fora do alcance não vira alarme:** sem resposta do servidor, a
+   notificação diz só que é a hora do turno, sem números.
 
 ---
 
@@ -530,6 +555,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.8.0 | 2026-10-15 | §1.2: app Android nativo como segundo cliente (ADR-041), implementando as mesmas telas e regras. Nova §2.2, **lembrete do turno**: opcional, uma notificação por dia no máximo, diz o que há para hoje, nunca cobra, não lembra quem já estudou no dia. Pedido pelo usuário |
 | 1.7.0 | 2026-10-14 | Sprint 17, atrito 2 (`01_DOMINIO` v1.21.0 §7.7). O campo **tempo** de conteúdo, que a §5 sempre listou, passa a existir de fato — a tela media tempo de tela e gravava um minuto para uma hora de leitura. Vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. Questões ganham o mesmo campo, vazio (6 campos, orçamento de 25 s mantido). Recuperação continua medida pela tela. Decidido pelo usuário |
 | 1.6.0 | 2026-10-14 | Sprint 16. (1) J-1: linha sem `id` mas com `chaveExterna` já conhecida **atualiza** em vez de tentar criar — sem isso, a reimportação automática vinda do planejamento (ADR-037) recusava toda linha já importada por nome duplicado, e o arquivo inteiro deixava de ser confirmado a partir da segunda sincronização. (2) §1.2: uso passa a ser app no celular e no tablet além da web (ADR-038); requisitos mínimos de toque e largura. Aprovado pelo usuário |
 | 1.5.0 | 2026-09-06 | `segmentos.csv` (J-1, §"Segunda importação") ganha coluna obrigatória `chaveExternaSegmento` — identidade própria do segmento, dada pelo sistema de planejamento (`01_DOMINIO` D-53, nova). Reimportação passa a identificar o segmento por essa chave, não por `ordem`: `ordem` é posição, e reordenar o material depois de importado não pode confundir, em silêncio, um segmento antigo (já referenciado por sessões passadas, D-51) com um novo na mesma posição. §6 ganha D-53 em J-1. Decidido com o usuário ao discutir o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md`, antes do documento técnico fechar — mesma ordem que D-46 e D-52 já seguiram |

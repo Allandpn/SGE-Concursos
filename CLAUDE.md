@@ -68,7 +68,7 @@ Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
-| `docs/00A_ADR.md` | 40 ADRs, 28 vigentes (até ADR-040) |
+| `docs/00A_ADR.md` | 41 ADRs, 29 vigentes (até ADR-041 — app Android como segundo cliente) |
 | `docs/03C_LOGGING.md` | Intacto |
 | `docs/03E_DEPLOYMENT.md` | Congelado + adendo §8A (Sprint 16: HTTPS obrigatório, `CONCURSO_ATIVO`) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |

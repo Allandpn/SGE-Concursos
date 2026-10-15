@@ -45,6 +45,11 @@ As linhas 17–21 nasceram da análise crítica de 2026-10-14 (o que falta para
 o sistema servir a qualquer concurso de TI). São uma linha cada, de
 propósito — documento técnico só quando a sprint começar.
 
+**App Android (2026-10-15, ADR-041):** segundo cliente da mesma API, em
+repositório próprio (`SGE-Concursos-Android`), com especificação e progresso
+lá. Não é sprint deste repositório: daqui só saem a API e as jornadas
+(`02_JORNADAS` §1.2 e §2.2).
+
 O mapa **pode mudar**. Mudar uma linha aqui é grátis; é justamente por isso que
 ele existe em vez do plano detalhado das oito.
 
@@ -970,6 +975,7 @@ jornada de 2026-10-14 que contaminariam os primeiros dados.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.47.0 | 2026-10-15 | ADR-041 (app Android como segundo cliente) e `02_JORNADAS` v1.8.0 (§2.2, lembrete do turno). Nota no mapa apontando o repositório do app |
 | 1.46.0 | 2026-10-15 | **Sprint 17: lacunas 5–8** (itens 17.7–17.10) — comportamentos que a especificação já definia e o código nunca implementou: D-35, balanço semanal (J-3), mensagem de retorno (J-4), "quer adiantar?" (§4.3). `01_DOMINIO` v1.22.0, `SPRINT-17` v1.2.0, `04_FRONTEND` v1.10.0, migração V11 (`parciais_seguidos_dividir`) |
 | 1.45.0 | 2026-10-14 | **Sprint 17: atritos 2–4 resolvidos** (§18), cada um decidido pelo usuário entre opções. `01_DOMINIO` v1.21.0 (D-56, D-57, §7.7), `02_JORNADAS` v1.7.0, `03_INVARIANTES` v1.10.0, `04_FRONTEND` v1.9.0, migração V10 (`duracao_bloco_min`). Suíte local 137/137 conferida antes de começar; 143/143 depois. Um teste antigo dependente de dados de outros testes tornado autocontido |
 | 1.44.0 | 2026-10-14 | **Sprint 17 aberta** (§18): começa pelos atritos da jornada. Atrito 1 resolvido: D-54/D-55 (`01_DOMINIO` v1.20.0), 137/137 verdes. Seções 18–19 renumeradas para 19–20 |

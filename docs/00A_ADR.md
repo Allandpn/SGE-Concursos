@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.8.0** |
+| Versão do documento | **2.9.0** |
 | Status | **Congelado** |
 | Data | 2026-10-14 |
-| Total | 40 ADRs — 28 vigentes, 11 substituídas, 1 revogada |
+| Total | 41 ADRs — 29 vigentes, 11 substituídas, 1 revogada |
 
 ---
 
@@ -70,6 +70,7 @@ que custa e o que foi descartado.
 | [ADR-038](#adr-038--frontend-sem-build-com-dependências-locais-e-instalável-como-app) | Frontend sem build, com dependências locais e instalável como app | Sprint 16 |
 | [ADR-039](#adr-039--um-concurso-alvo-ativo-por-vez-na-importação-automática) | Um concurso-alvo ativo por vez na importação automática | Sprint 16 |
 | [ADR-040](#adr-040--prontidão-para-multiusuário-sem-implementá-lo) | Prontidão para multiusuário, sem implementá-lo | Sprint 16 |
+| [ADR-041](#adr-041--app-android-nativo-como-segundo-cliente-da-mesma-api) | App Android nativo como segundo cliente da mesma API | 2026-10-15 |
 
 ### 1.2 Históricas
 
@@ -967,6 +968,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.9.0 | 2026-10-15 | **ADR-041**: app Android nativo como segundo cliente da mesma API, em repositório próprio, sem regra de domínio. Revisita a recusa de app nativo da ADR-038 diante de dois fatos novos: o pedido explícito do usuário e necessidades que o navegador atende mal (lembrete sem servidor de push, rascunho persistente). ADR-038 continua vigente para a SPA. Total 41, 29 vigentes |
 | 2.8.0 | 2026-10-14 | Sprint 16. **ADR-038** substitui ADR-028: frontend continua sem build, mas Tailwind/Alpine viram arquivos locais em `static/vendor/` e a SPA vira app instalável (PWA, service worker só da casca estática, nunca da API) — uso passa a ser celular/tablet além da web. **ADR-039**: importação automática lê só a pasta do concurso-alvo ativo (`CONCURSO_ATIVO`) — sistema passa a servir qualquer edital. **ADR-040**: prontidão para multiusuário sem implementá-lo — o que não fazer agora para não encarecer depois. ADR-028 movida para as históricas, texto integral mantido no lugar. Total 40, 28 vigentes |
 | 2.7.0 | 2026-09-04 | **ADR-037 escrita e aceita** (Sprint 10) — artefatos do planejamento (`Plano-de-Estudos-Automatizado`) chegam ao Pi via Google Drive + `rclone`, reaproveitando o mecanismo já aceito em ADR-018 (backup), em vez de API do Drive na aplicação (contradiria ADR-015/016) ou contato direto Tailscale PC→Pi (exigiria os dois sistemas online ao mesmo tempo). PDFs ficam só no Drive, referenciados por link — nunca chegam ao Pi. Total passa a 37 ADRs, 26 vigentes. No caminho: §1.1 (índice de vigentes) corrigida — ADR-034/035/036 nunca tinham sido adicionadas à lista, só ao total (mesma classe de lacuna que a 2.4.0 já tinha corrigido para a contagem) |
 | 2.6.0 | 2026-09-01 | **ADR-036 escrita e aceita** — OpenAPI/Swagger via `springdoc-openapi-starter-webmvc-ui`, gerado do código (`@Tag`/`@Operation`/`@Schema`). Aplicado a todo Controller e todo `*Request`/`*Response`, a pedido do usuário — escopo completo desde o início, diferente do piloto de ADR-035. Total passa a 36 ADRs, 25 vigentes |
@@ -1442,6 +1444,59 @@ FK) e filtro por dono na camada de serviço — nunca filtro global de leitura
 |---|---|
 | Implementar usuário e login já | Contraria ADR-015, adiciona superfície de ataque sem ameaça e custa semanas de um orçamento de 3–5 h/semana |
 | Coluna `usuario_id` em todas as tabelas, sempre com o mesmo valor | Dado sem função hoje, e quase certamente com a forma errada quando a decisão real chegar |
+
+---
+
+## ADR-041 — App Android nativo como segundo cliente da mesma API
+
+**Status:** Aceita · 2026-10-15 · pedido do usuário
+
+### Contexto
+
+A ADR-038 fez da SPA um app instalável e recusou app nativo: "três bases de
+código para um usuário com 3–5 h/semana; nada nas jornadas pede API nativa
+que o navegador não tenha". Duas coisas mudaram:
+
+1. O usuário pediu explicitamente um **app Android**, para uso diário no
+   celular e no tablet.
+2. A análise de jornada (`docs/SPRINT-17-USO-REAL.md`) achou necessidades que
+   o navegador atende mal sem servidor de push nem armazenamento confiável:
+   um **lembrete diário** do turno (a terceira dor de `00_PRODUTO` §4,
+   constância), **rascunho que sobrevive** ao sistema matar o app no meio de
+   um registro, e abrir o material direto no app do Google Drive.
+
+### Decisão
+
+- Existe um **segundo cliente**, nativo Android (Kotlin + Jetpack Compose), em
+  repositório próprio (`SGE-Concursos-Android`). A SPA continua existindo e
+  sendo o cliente web (ADR-038 vigente).
+- **A API REST é o contrato** (ADR-040, item 2). O app não tem regra de
+  domínio: tudo o que é decisão (fase, escada, plano, resultado) vem do
+  servidor. O app só apresenta, coleta e envia.
+- **Esta especificação continua sendo a fonte de verdade das jornadas e das
+  telas** (`02_JORNADAS`). O app implementa as mesmas sete telas e as mesmas
+  regras vinculantes (ex.: resultado ausente na etapa 1 de Recuperar). O que é
+  só do Android (navegação, notificação, rascunho local) vive na especificação
+  do repositório do app.
+- Mudança de API que quebre clientes exige versão nova do app no mesmo passo.
+  Campo novo em resposta não quebra: o app ignora campo desconhecido.
+- Mesma rede e mesma autenticação: Tailscale + HTTPS de `tailscale serve`
+  (ADR-015, §8A de `03E_DEPLOYMENT.md`). Sem login.
+
+### Consequências
+
+- Duas interfaces para manter. Mitigação: o app não duplica regra, só tela; e
+  as jornadas continuam definidas num lugar só.
+- O lembrete diário passa a existir (`02_JORNADAS` §2.2), no app.
+- Distribuição por APK instalado manualmente (sideload), sem loja.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Empacotar a SPA (TWA/Capacitor) | Entrega um ícone, não o que faltava: lembrete sem servidor de push e rascunho persistente continuariam fora |
+| Kotlin Multiplatform / Flutter | Prepara iOS, que ninguém pediu, ao custo de uma camada a mais para um desenvolvedor só |
+| Lógica de domínio replicada no app (offline completo) | Duas implementações da escada divergem; viola ADR-040 item 2 |
 
 ---
 
