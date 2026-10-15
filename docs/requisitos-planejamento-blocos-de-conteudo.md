@@ -379,3 +379,28 @@ duração real (D-29).
    cai na duração de bloco parametrizada.
 
 Nada muda no formato dos arquivos (§11).
+
+## 14. Requisito novo (2026-10-15): o SGE passa a ler o `concurso.json` e a criar assuntos por conta própria
+
+Sprint 18 do SGE (`docs/SPRINT-18-CONCURSOS.md`, ADR-042, ADR-043). Três
+mudanças que afetam quem exporta para cá:
+
+1. **O `concurso.json` agora é lido.** A confirmação de `assuntos.csv` recebe o
+   `concurso.json` da mesma pasta e registra o concurso pelo `slug`: cria na
+   primeira vez, reativa e atualiza nome e `dataProva` nas seguintes. `slug` e
+   `nome` são obrigatórios; `dataProva` (`AAAA-MM-DD`) é opcional. Arquivo
+   inválido recusa a importação inteira — tudo ou nada, como o CSV.
+2. **Assuntos podem nascer no SGE sem `chaveExterna`.** O usuário pode subir um
+   edital pelo próprio SGE (análise por IA). Quando o planejamento exportar
+   depois uma linha com `chaveExterna` ainda desconhecida e **o mesmo nome**
+   (sem acento, sem caixa) de um assunto dessa disciplina **sem** chave, o SGE
+   **adota** o assunto: grava a chave nele e atualiza, em vez de recusar por
+   nome duplicado. Nome diferente cria um assunto novo — então vale manter o
+   nome fiel ao edital, como já é a regra de vocês.
+3. **Ordem ocupada por assunto fora do arquivo não recusa mais o arquivo.** Ao
+   trocar de edital, o assunto do edital anterior que estava na ordem pedida
+   vai para o fim da disciplina. Antes, D-48 recusava o arquivo inteiro.
+
+Nada muda no formato dos arquivos (§11). Ação sugerida do lado de vocês:
+nenhuma obrigatória; vale conferir que todo `concurso.json` exportado tem
+`slug` e `nome`.
