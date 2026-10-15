@@ -204,6 +204,11 @@ qualquer coisa envolvendo o projeto de planejamento).
 - Se algo que eles relatam como implementado precisar embasar uma decisão
   real daqui, confira o commit real do lado deles antes de tratar como
   fato — relato não é o mesmo que verificado.
+- **Exceção registrada (2026-10-14), pedida pelo usuário:** esta sessão
+  trabalhou no repositório do planejamento (clone local em
+  `G:\Git\Panejamento_Estudos`, branch `integracao-sge`), seguindo o
+  `CLAUDE.md` de lá. A regra acima continua valendo; outra exceção precisa
+  de novo pedido explícito.
 
 ---
 
