@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.estudos.shared.exception.NotFoundException;
 import br.com.estudos.shared.exception.ValidationException;
 
-/** Leitura/edição dos 18 parâmetros já existentes (docs/SPRINT-15-AJUSTES.md §2). */
+/** Leitura/edição dos 19 parâmetros já existentes (docs/SPRINT-15-AJUSTES.md §2). */
 @Service
 public class ParametroService {
 
@@ -24,7 +24,7 @@ public class ParametroService {
     }
 
     /**
-     * Validação única pras 18 chaves — número positivo, sem faixa por
+     * Validação única pras 19 chaves — número positivo, sem faixa por
      * chave (docs/SPRINT-15-AJUSTES.md §0, decisão explícita do usuário).
      * `Parametro` não é entidade de domínio (01_DOMINIO §3), então isto
      * não é regra D-xx — mesmo princípio de checagem eager que

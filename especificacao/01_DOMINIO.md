@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.20.0 |
+| Versão | 1.21.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -572,6 +572,13 @@ Dois freios, ambos obrigatórios:
 
 Nenhum dos dois bloqueia nada (`00_PRODUTO` §6.6).
 
+**O plano do turno obedece ao próprio alerta (D-56).** Com o alerta ligado, o
+bloco de conteúdo deixa de sugerir assunto novo do backlog — seria o sistema
+dizendo "pare de abrir" e, na linha de baixo, abrindo. Continuar a leitura de
+um assunto já em estudo (D-55) segue sendo sugerido: não abre vaga na frente,
+e terminar o que começou é o que tira o assunto do meio do caminho. Abrir
+assunto novo à mão continua livre; o plano só deixa de pedir.
+
 ### 5.4 Antecipar: o que pode e o que a escada não aceita
 
 Num dia de folga o usuário quer adiantar. São **três coisas diferentes**, e só
@@ -949,6 +956,16 @@ estudo há mais tempo primeiro. Só sem leitura pendente o bloco abre um assunto
 do backlog (D-20, D-25), e então já indica o primeiro segmento dele, se houver.
 Continuar não abre vaga nova na frente, então não depende do teto.
 
+**Entre disciplinas, o assunto novo vai para a que tem menos assuntos na
+frente (D-57).** Percorrer as disciplinas sempre na mesma ordem enche a
+primeira até o teto dela antes de tocar a segunda — semanas seguidas de Redes
+antes do primeiro assunto de Português. Escolher a disciplina com menos
+assuntos na frente alterna sozinho, sem estado novo, e respeita tudo o que já
+vale: dentro da disciplina, a menor ordem do backlog (D-41); o teto dela
+(D-25); o teto global (D-20). Empate fica com a ordem estável das disciplinas.
+O ganho é o da §7.8 — variedade e espaçamento dentro da semana, não
+interleaving.
+
 O plano é **derivado e efêmero**. Não se guarda, não vira entidade: é recalculado
 a cada pedido, a partir da fila de revisões vencidas, da frente e dos tetos. Se
 o usuário fizer outra coisa, nada quebra — ele nunca prometeu nada
@@ -1020,6 +1037,17 @@ Consequência de projeto: **não cravar duração no domínio.** Os blocos são
 sugestão parametrizada, e o próprio sistema mede a duração real — toda sessão
 registra tempo. Depois de alguns meses o dado dele vale mais que qualquer
 convenção.
+
+**Como o tempo chega ao sistema.** Numa recuperação, o tempo é o da própria
+tela: a reconstrução acontece com ela aberta, entre a previsão e o resultado.
+Num bloco de conteúdo ou num lote de questões, **não** — a leitura e as
+questões acontecem antes de abrir o registro, e tempo de tela gravaria um
+minuto para uma hora de estudo, exatamente o dado que este parágrafo diz valer
+mais que a convenção. Nesses tipos o tempo é **declarado** no registro. Em
+conteúdo, o campo já vem preenchido com a estimativa do segmento ou, sem
+segmento, com a duração de bloco parametrizada — confirmar custa zero, corrigir
+custa um toque. Em questões e flashcards vem vazio: não há estimativa honesta
+para um lote de tamanho livre.
 
 ### 7.8 Uma correção sobre interleaving — a terceira
 
@@ -1146,6 +1174,8 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-53 | Todo segmento tem chave externa, obrigatória e única entre todos os segmentos | §3.7 |
 | D-54 | Assunto com segmentos só entra na escada quando todos os segmentos foram estudados, ou com estudo do assunto inteiro (sem segmento); sem segmentos, no primeiro estudo | §3.7 |
 | D-55 | O bloco de conteúdo do turno continua o assunto em estudo (próximo segmento não lido) antes de abrir assunto do backlog | §7.4 |
+| D-56 | Com o alerta de represamento ligado, o plano não sugere assunto novo do backlog; continuar a leitura (D-55) segue sugerido | §5.3 |
+| D-57 | Assunto novo sugerido vem da disciplina ativa com vaga que tem menos assuntos na frente; empate pela ordem estável das disciplinas | §7.4 |
 
 ---
 
@@ -1215,6 +1245,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.21.0 | 2026-10-14 | Atritos 2, 3 e 4 da análise de jornada, decididos pelo usuário. (2) §7.7: tempo de bloco de conteúdo e de lote de questões é **declarado** no registro — tempo de tela gravava um minuto para uma hora de leitura e anulava o "o sistema mede a real" de D-29; conteúdo vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. (3) Nova **D-56** (§5.3): com o alerta de represamento ligado, o plano para de sugerir assunto novo, mas continua a leitura em curso. (4) Nova **D-57** (§7.4): o assunto novo vem da disciplina com menos assuntos na frente, em vez de encher uma disciplina por vez. 57 regras |
 | 1.20.0 | 2026-10-14 | Atrito 1 da análise de jornada: num assunto com vários segmentos, o primeiro `ESTUDO` agendava a revisão para o dia seguinte (recuperar um assunto lido em 20% fazia a escada regredir por motivo falso), e o turno nunca mais sugeria os segmentos seguintes, embora `docs/requisitos-planejamento-blocos-de-conteudo.md` §3 dissesse que o SGE decide qual segmento é o próximo. Nova **D-54** (§3.7): a escada começa quando a leitura termina. Nova **D-55** (§7.4): o bloco do turno continua o assunto em estudo antes de abrir outro. §8: "em estudo" passa a ter definição operacional (tem sessão, nenhuma revisão). 55 regras. Pedido pelo usuário |
 | 1.19.0 | 2026-10-14 | Duas lacunas achadas em análise do código contra este documento (Sprint 16). (1) **§5.5**: explicitado quando o assunto está consolidado, como sequência de resultados no nível-alvo — `PARCIAL` em manutenção **mantém** consolidado (a tabela já dizia; a implementação o desconsolidava porque só olhava "os dois últimos"). (2) **§5.1**: definido como se reconhece, sem atributo novo, o assunto que `FALHA` devolveu à fila de estudo (*reestudo*) — D-07 e D-11 diziam "volta para a fila de estudo", mas nada dizia como a fila o reconhecia, e a implementação nunca o oferecia. §7.4 ganha a lista de reestudo no plano do turno. Nenhuma regra D-xx nova: as duas são leitura precisa de D-07, D-10 e D-11. Aprovado pelo usuário |
 | 1.18.0 | 2026-09-06 | **§3.7 revisada**: `Segmento` ganha atributo **chave externa obrigatória** (diferente da de `Assunto`, que é opcional) — todo segmento nasce de importação, então sempre tem uma. Existe para a reimportação identificar um segmento já existente pela chave, não por `ordem`: reordenar o material depois de importado não pode fazer o SGE confundir um segmento antigo (já referenciado por sessões passadas) com um novo que ocupa a mesma posição. Nova **D-53** (§10) e linha de decisão em §11 explicando por que aqui a chave é obrigatória, ao contrário do caso de `Assunto`. Decidido com o usuário ao revisar o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md` (ainda não fechado) — acrescentado antes do documento técnico, seguindo a regra central do `CLAUDE.md` |

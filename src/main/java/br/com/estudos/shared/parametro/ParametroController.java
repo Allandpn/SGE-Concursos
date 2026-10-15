@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 /** Endpoints de parâmetro (docs/SPRINT-15-AJUSTES.md §2). Nenhuma exceção é tratada aqui — GlobalExceptionHandler cuida disso. */
 @RestController
 @RequestMapping("/api/parametros")
-@Tag(name = "Parâmetros", description = "Configuração, não domínio (01_DOMINIO §3) — lista fechada de 18 chaves, sem POST/DELETE")
+@Tag(name = "Parâmetros", description = "Configuração, não domínio (01_DOMINIO §3) — lista fechada de 19 chaves, sem POST/DELETE")
 public class ParametroController {
 
     private final ParametroService parametroService;

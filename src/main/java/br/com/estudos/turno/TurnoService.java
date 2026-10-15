@@ -79,6 +79,9 @@ public class TurnoService {
             .orElse(null);
         var continuacao = sugestao.map(SugestaoConteudo::continuacao).orElse(false);
 
-        return new TurnoPlanoResponse(fila, reestudos, blocoConteudo, continuacao, segmento);
+        // D-56: a tela explica por que não há assunto novo (01_DOMINIO §5.3).
+        var alerta = frenteService.alertaRepresamento();
+
+        return new TurnoPlanoResponse(fila, reestudos, blocoConteudo, continuacao, segmento, alerta);
     }
 }

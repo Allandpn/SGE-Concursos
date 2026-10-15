@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.8.0 |
+| Versão | 1.9.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -269,13 +269,13 @@ troca é um método nomeado (`selecionarTipo(tipo)`), nunca expressão inline.
 
 | Tipo | Campos | Orçamento |
 |---|---|---|
-| Conteúdo (`ESTUDO`) | Assunto, Segmento (opcional) | ≤ 20 s |
-| Questões (`QUESTOES`) | Assunto, Formato da banca, Feitas, Certas, Previsão | ≤ 25 s |
-| Flashcards (`FLASHCARDS`) | Assunto, Feitas, Certas, Previsão | sem linha própria no orçamento — mesmo molde de Questões, sem formato (D-36 só exige formato em `QUESTOES`) |
+| Conteúdo (`ESTUDO`) | Assunto, Segmento (opcional), Tempo (preenchido) | ≤ 20 s |
+| Questões (`QUESTOES`) | Assunto, Formato da banca, Feitas, Certas, Previsão, Tempo | ≤ 25 s |
+| Flashcards (`FLASHCARDS`) | Assunto, Feitas, Certas, Previsão, Tempo | sem linha própria no orçamento — mesmo molde de Questões, sem formato (D-36 só exige formato em `QUESTOES`) |
 
-`tempoMinutos` não é campo visível em nenhuma variante — medido (tempo de
-tela, `init()`→confirmar), mesmo padrão já usado em Recuperar (D-29: nunca
-constante, sempre medido).
+`tempoMinutos` é **campo visível** nas três variantes (§7H). Até a v1.8.0
+era o tempo de tela, o que divergia de `02_JORNADAS` §5 e gravava um minuto
+para uma hora de leitura. Só Recuperar continua medindo tempo de tela.
 
 ### Segmento (só em Conteúdo)
 
@@ -630,6 +630,26 @@ Registrar abre com o bloco 2 selecionado.
 
 ---
 
+## 7H. Tempo declarado, represamento e Turno (Sprint 17, atritos 2–4)
+
+`docs/SPRINT-17-USO-REAL.md` §2–§4.
+
+- **Registrar:** campo "Tempo de estudo (min)" em Conteúdo, "Tempo gasto
+  (min)" em Questões/Flashcards. Conteúdo vem com `sugerirTempo()` —
+  `tempoEstimadoMin` do segmento escolhido, senão `duracao_bloco_min` (lido de
+  `GET /api/parametros` a cada abertura, então mudar em Ajustes vale sem
+  recarregar). `@input` marca `tempoEditado` e, dali em diante, trocar o
+  segmento não sobrescreve. Trocar o tipo zera a marca. Tempo inválido mostra
+  erro sem navegar.
+- **Hoje:** com `alertaRepresamento` no plano, nota no topo explicando por que
+  não há assunto novo (D-56).
+- **Ajustes:** seção "Turno" para chaves `duracao_*`, entre Tetos e Limiares.
+
+Verificado num Chrome real contra Postgres descartável (detalhe na §5 do
+documento da sprint).
+
+---
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -720,6 +740,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.9.0 | 2026-10-14 | §7A corrigida e §7H, Sprint 17 atritos 2–4: tempo visível em Registrar (conteúdo preenchido com `duracao_bloco_min` ou a estimativa do segmento), nota de represamento em Hoje (D-56), seção Turno em Ajustes |
 | 1.8.0 | 2026-10-14 | §7G, Sprint 17: card de continuação de leitura em Hoje, link para o material do bloco, segmento sugerido já marcado em Registrar, opção "o assunto inteiro" (D-54/D-55) |
 | 1.7.0 | 2026-10-14 | §7F, Sprint 16: dependências locais em `static/vendor/` (ADR-038 substitui ADR-028), app instalável (manifesto + service worker só da casca), `api.js` com `REDE_INDISPONIVEL`/`ERRO_SERVIDOR`, seção Reestudar na tela Hoje (D-07/D-11) |
 | 1.6.0 | 2026-09-07 | Sprint 15 aberta e fechada — nova **§7E, tela Ajustes**, a sétima e última do mapa de `02_JORNADAS §4`. Primeira sprint de frontend que também é sprint de backend: `docs/SPRINT-15-AJUSTES.md` abre `GET`/`PATCH /api/parametros` sobre a tabela `parametro` (Sprint 3), decisão de validação (número positivo, sem faixa por chave) fechada com o usuário antes do código. As 18 chaves em três seções (Tetos/Limiares/Escada, mesmo agrupamento do wireframe de referência); cada linha salva sozinha no `@change`, reverte pra trás sozinha em caso de erro via `:value` (não `x-model`). §9 perde a última entrada de tela pendente |

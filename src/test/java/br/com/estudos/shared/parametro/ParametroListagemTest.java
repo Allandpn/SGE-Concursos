@@ -9,14 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.shared.IntegracaoTestBase;
 
-/** As 18 chaves já inseridas pelas migrações V4/V5/V6 (docs/SPRINT-15-AJUSTES.md §2). */
+/** As 19 chaves inseridas pelas migrações V4/V5/V6/V10 (docs/SPRINT-15-AJUSTES.md §2, docs/SPRINT-17-USO-REAL.md §2). */
 @Transactional
 class ParametroListagemTest extends IntegracaoTestBase {
 
     @Test
-    void listar_devolveAs18Chaves() throws Exception {
+    void listar_devolveAs19Chaves() throws Exception {
         mockMvc.perform(get("/api/parametros"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(18));
+            .andExpect(jsonPath("$.length()").value(19));
     }
 }

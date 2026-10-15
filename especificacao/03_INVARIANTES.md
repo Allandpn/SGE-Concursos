@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.9.0 |
+| Versão | 1.10.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 55 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 57 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 55 regras, classificadas
+## 3. As 57 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -140,7 +140,7 @@ conceitual — envelhecer por motivo errado.
 | D-26  | Política | **H** | Regra de dimensionamento, não de escrita                                                              |
 | D-27  | Comportamento | S | Teste: a recomendação devolve plano, não item                                                         |
 | D-28  | Derivação | S + **P** | O plano é recalculado; **e não existe entidade de turno** (§4.2)                                      |
-| D-29  | Comportamento | S | Teste: alterar o parâmetro muda a duração sugerida sem reinício                                       |
+| D-29  | Comportamento | S + I | Teste: alterar o parâmetro muda a duração sugerida sem reinício; conteúdo e questões gravam o tempo declarado, não o de tela |
 | D-30  | Política | **H** | Regra sobre o que **não** vira parâmetro                                                              |
 | D-31  | Comportamento | S | Teste: teto abaixo da taxa da frente → aviso emitido                                                  |
 | D-32  | Política | **H** | Padrão de apresentação. Sem parâmetro, sem teste                                                      |
@@ -167,8 +167,10 @@ conceitual — envelhecer por motivo errado.
 | D-53  | **Invariante** | **P** | Segmento sem chave externa, ou com chave externa duplicada, é recusado pela escrita                   |
 | D-54  | Comportamento | S | Teste: estudar 2 de 3 segmentos não agenda revisão; o 3º agenda a partir da data dele; `ESTUDO` sem segmento agenda |
 | D-55  | Comportamento | S | Teste: com assunto em estudo e segmento não lido, o plano sugere o próximo segmento dele, mesmo com a frente no teto |
+| D-56  | Comportamento | S | Teste: represado acima do teto diário → nenhum assunto novo no plano; leitura em curso continua sugerida |
+| D-57  | Comportamento | S | Teste: com uma disciplina mais cheia na frente, o assunto novo vem da menos cheia, ainda que ela venha depois na ordem |
 
-**Contagem:** 17 invariantes · 5 derivações · 27 comportamentos · 7 políticas — 56 linhas para 55 regras.
+**Contagem:** 17 invariantes · 5 derivações · 29 comportamentos · 7 políticas — 58 linhas para 57 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -183,6 +185,8 @@ do próprio segmento) — desta vez sem lacuna: entrou em §3 no mesmo passo em
 que nasceu em `01_DOMINIO`, antes até de `docs/SPRINT-10-SEGMENTO.md` ser
 revisado. D-54/D-55 acrescentadas na Sprint 17 (01_DOMINIO v1.20.0, início da
 escada e continuação da leitura em assunto com segmentos), no mesmo passo.
+D-56/D-57 acrescentadas na Sprint 17 (01_DOMINIO v1.21.0, plano sob represamento
+e rodízio entre disciplinas), no mesmo passo.
 
 ### 3.1 As três reclassificações desta versão
 
@@ -259,7 +263,7 @@ requisições. **Os dois, ou nenhum.**
 |---|---|
 | D-07, D-10, D-11, D-43 | Dependem de **histórico** — os dois últimos resultados, o nível anterior. Restrição olha o dado, não a série |
 | D-08, D-23, D-29, D-38 | Dependem de **parâmetro configurável**. Restrição fixa invalidaria linhas antigas quando o valor mudasse |
-| D-15, D-19, D-20, D-25, D-27 | São sobre o que é **sugerido**, não sobre o que está gravado. Não há dado errado a impedir |
+| D-15, D-19, D-20, D-25, D-27, D-56, D-57 | São sobre o que é **sugerido**, não sobre o que está gravado. Não há dado errado a impedir |
 | D-24 | "Na frente" é derivado; impor exigiria gatilho ou visão materializada (§3.1) |
 | D-03 | **Nenhuma camada consegue.** Ver §6 |
 
@@ -343,7 +347,7 @@ movido — e a tabela vira ficção que ninguém confere.
 | O que se pergunta | Como se responde |
 |---|---|
 | Onde D-07 é implementada? | Varredura por `D-07` no código |
-| Alguma regra ficou sem implementação? | Varredura das 55 contra o resultado |
+| Alguma regra ficou sem implementação? | Varredura das 57 contra o resultado |
 | Esta restrição corresponde a quê? | O identificador está no nome dela |
 
 ### 9.1 Citação como metadado, não como comentário
@@ -353,7 +357,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 55 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 57 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -476,6 +480,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.10.0 | 2026-10-14 | **D-56 e D-57 adicionadas à tabela de §3** no mesmo passo de `01_DOMINIO.md` v1.21.0 — ambas Comportamento/`S`, sobre o que é sugerido (§5: nada gravado a impedir). D-29 passa a `S + I`: o parâmetro de duração existe no serviço, e a declaração do tempo mora na tela de registro. Contagem: 58 linhas para 57 regras |
 | 1.9.0 | 2026-10-14 | **D-54 e D-55 adicionadas à tabela de §3**, no mesmo passo em que nasceram em `01_DOMINIO.md` v1.20.0. As duas são Comportamento/`S`: dependem de contar segmentos estudados e de ordenar assuntos em estudo, nada que a persistência expresse sem distorção. Contagem: 56 linhas para 55 regras; §0, §3 e §9 atualizados |
 | 1.8.0 | 2026-09-06 | **D-53 adicionada à tabela de §3** — nova em `01_DOMINIO.md` v1.18.0 (chave externa obrigatória do próprio `Segmento`, para reimportação identificar um segmento já existente sem depender de `ordem`). Invariante, `P`, mesmo molde de D-52 — a diferença é que aqui a chave é obrigatória (`Segmento` só nasce por importação, nunca manualmente), não opcional. Diferente de D-50/51/52, esta entrou em §3 **no mesmo passo** em que nasceu em `01_DOMINIO`, sem lacuna — a "regra órfã" da revisão anterior não se repetiu. Contagem de §3 corrigida para 17 invariantes / 54 linhas / 53 regras |
 | 1.7.0 | 2026-09-06 | **D-50, D-51 e D-52 adicionadas à tabela de §3** — novas em `01_DOMINIO.md` v1.17.0 (entidade `Segmento`, §3.7, e `chaveExterna` de `Assunto`, §3.2, decididas na abertura da Sprint 10). As três são Invariante/`P`: D-50 (ordem do segmento única dentro do assunto) e D-52 (chave externa única entre assuntos) seguem o molde exato de D-47/D-48 — índice único, sem pré-checagem no serviço; D-51 (segmento pertence ao mesmo assunto da sessão que o referencia, e só sessão `ESTUDO` pode referenciar segmento) é caso novo — invariante entre duas tabelas, não uma coluna só, mecanismo de imposição a fechar no documento técnico da sprint (`docs/SPRINT-10-SEGMENTO.md`). Corrigida **antes** do documento técnico, não depois — mesma lacuna de "regra órfã" que a revisão 1.4.0-1.6.0 já tinha corrigido para D-47/48/49, desta vez pega antes de a sprint fechar. Contagem de §3 corrigida para 16 invariantes / 53 linhas / 52 regras. Achado no caminho: §0, §3 e §9.1 ainda diziam "46 regras" — número estava desatualizado desde D-47/48/49 (revisões 1.4.0-1.6.0 corrigiram a tabela, mas não o texto em prosa ao redor); corrigido para 52 nos quatro lugares |

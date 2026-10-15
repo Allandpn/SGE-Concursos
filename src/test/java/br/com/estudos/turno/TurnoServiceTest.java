@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.assunto.AssuntoRequest;
 import br.com.estudos.assunto.AssuntoService;
+import br.com.estudos.disciplina.DisciplinaRepository;
 import br.com.estudos.disciplina.DisciplinaRequest;
 import br.com.estudos.disciplina.DisciplinaService;
 import br.com.estudos.frente.FrenteService;
@@ -65,6 +66,9 @@ class TurnoServiceTest extends IntegracaoTestBase {
     @Autowired
     private FrenteService frenteService;
 
+    @Autowired
+    private DisciplinaRepository disciplinaRepository;
+
     private void registrarEstudo(Long assuntoId, LocalDate data) throws Exception {
         mockMvc.perform(post("/api/sessoes").contentType(MediaType.APPLICATION_JSON).content("""
             {"assuntoId": %d, "tipo": "ESTUDO", "data": "%s", "tempoMinutos": 20, "tentativaId": "%s"}
@@ -98,13 +102,15 @@ class TurnoServiceTest extends IntegracaoTestBase {
 
     @Test
     void blocoDeConteudoSugeridoQuandoHaVaga() throws Exception {
-        // Não assume que este é o ÚNICO candidato: outros testes não-transacionais
-        // (ImportacaoAssuntoTest etc.) commitam disciplina/assunto de verdade, e
-        // continuam no banco durante a suíte inteira — qualquer um deles com
-        // backlog é um candidato tão válido quanto o daqui. O que se testa é a
-        // fiação TurnoService -> FrenteService, não qual candidato específico
-        // vence (isso já é coberto, determinístico, em FrenteServiceTest).
-        disciplinaService.criar(new DisciplinaRequest("Vaga", TipoPeso.MEDIO));
+        // Outros testes não-transacionais commitam disciplinas, assuntos e
+        // revisões vencidas de verdade. Antes este teste contava com o backlog
+        // deles; com D-56, as vencidas deles ligam o alerta de represamento e
+        // cortam a sugestão. Arquivar as ativas (D-17 cancela as pendentes)
+        // dentro da transação deixa só o cenário daqui. O que se testa é a
+        // fiação TurnoService -> FrenteService.
+        disciplinaRepository.findByAtivoTrue().forEach(d -> disciplinaService.arquivar(d.getId()));
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Vaga", TipoPeso.MEDIO));
+        assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Vaga Backlog", TipoPeso.MEDIO, (short) 3, 1, null));
 
         var plano = turnoService.plano();
 

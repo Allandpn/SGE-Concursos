@@ -84,10 +84,9 @@ public class FrenteService {
             }
         }
 
-        var hoje = LocalDate.now(clock);
-        var represado = revisaoRepository.countBySituacaoAndDataPrevistaBefore(SituacaoRevisao.PENDENTE, hoje);
+        var represado = represado();
         var tetoDiario = valorParametroInt("teto_diario_recuperacoes");
-        var alerta = represado > tetoDiario;
+        var alerta = alertaRepresamento(represado, tetoDiario);
         var estimativaDias = alerta ? represado / tetoDiario : 0;
 
         var tetoGlobalFrente = valorParametroInt("teto_global_frente");
@@ -96,6 +95,24 @@ public class FrenteService {
         return new FrenteResumoResponse(
             frente, tetoGlobalFrente, backlog, consolidados,
             represado, tetoDiario, alerta, estimativaDias, avisoTeto);
+    }
+
+    /**
+     * 01_DOMINIO §5.3, freio 2 — o atraso acumulado passou do limiar
+     * (`represado > teto diário`, fechado na Sprint 5). Usado pelo resumo e
+     * pelo plano do turno (D-56), uma regra só.
+     */
+    @Transactional(readOnly = true)
+    public boolean alertaRepresamento() {
+        return alertaRepresamento(represado(), valorParametroInt("teto_diario_recuperacoes"));
+    }
+
+    private static boolean alertaRepresamento(long represado, int tetoDiario) {
+        return represado > tetoDiario;
+    }
+
+    private long represado() {
+        return revisaoRepository.countBySituacaoAndDataPrevistaBefore(SituacaoRevisao.PENDENTE, LocalDate.now(clock));
     }
 
     /**
@@ -131,12 +148,14 @@ public class FrenteService {
     /**
      * D-19 — a frente é `{em estudo} ∪ {em escada}`, derivada, com teto
      * global e teto por disciplina (este método aplica o global; o de
-     * disciplina vive em {@link #proximaVaga}). D-20 — primeira disciplina
-     * ativa, em ordem estável, que ainda tem vaga e backlog — reaproveita
-     * {@link #proximaVaga} (docs/SPRINT-6-TURNO.md §1). Frente já no teto
-     * global: vazio, sem nem percorrer disciplina nenhuma (01_DOMINIO §6.7
-     * regra 4 — frente cheia não sugere assunto novo, mas não bloqueia
-     * abertura manual — não há endpoint de bloqueio nenhum a impedir).
+     * disciplina vive em {@link #proximaVaga}). Frente já no teto global:
+     * vazio, sem nem percorrer disciplina nenhuma (D-20 — frente cheia não
+     * sugere assunto novo, mas não bloqueia abertura manual — não há endpoint
+     * de bloqueio nenhum a impedir). D-56 — alerta de represamento ligado:
+     * vazio também, o plano não contradiz o próprio alerta. D-57 — entre as
+     * disciplinas ativas, a com menos assuntos na frente vem primeiro (empate
+     * pelo id); a primeira que tiver vaga e backlog dá a sugestão
+     * (docs/SPRINT-17-USO-REAL.md §3 e §4).
      */
     @Transactional(readOnly = true)
     public Optional<Assunto> proximaSugestaoDeConteudo() {
@@ -146,14 +165,22 @@ public class FrenteService {
         var assuntos = assuntoRepository.listarAtivosDeDisciplinasAtivas();
         var fases = fasesDe(assuntos);
         var resumo = resumo(fases);
-        if (resumo.frenteAtual() >= resumo.tetoGlobalFrente()) {
+        if (resumo.frenteAtual() >= resumo.tetoGlobalFrente() || resumo.alertaRepresamento()) {
             return Optional.empty();
         }
         var porDisciplina = assuntos.stream()
             .collect(Collectors.groupingBy(a -> a.getDisciplina().getId()));
         var tetoDisciplina = valorParametroInt("teto_disciplina_frente");
-        for (var disciplina : disciplinaRepository.findByAtivoTrue()) {
-            var sugestao = proximaVaga(porDisciplina.getOrDefault(disciplina.getId(), List.of()), fases, tetoDisciplina);
+        Comparator<Long> menosNaFrente = Comparator.comparingLong(disciplinaId ->
+            porDisciplina.getOrDefault(disciplinaId, List.of()).stream()
+                .filter(a -> fases.get(a.getId()) == FaseAssunto.FRENTE)
+                .count());
+        var disciplinas = disciplinaRepository.findByAtivoTrue().stream()
+            .map(d -> d.getId())
+            .sorted(menosNaFrente.thenComparing(Comparator.naturalOrder()))
+            .toList();
+        for (var disciplinaId : disciplinas) {
+            var sugestao = proximaVaga(porDisciplina.getOrDefault(disciplinaId, List.of()), fases, tetoDisciplina);
             if (sugestao.isPresent()) return sugestao;
         }
         return Optional.empty();

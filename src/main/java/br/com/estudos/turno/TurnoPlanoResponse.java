@@ -20,5 +20,8 @@ public record TurnoPlanoResponse(
     boolean blocoContinuacao,
 
     @Schema(description = "Segmento a ler no bloco — null se o assunto não tem segmentos (D-55)")
-    SegmentoSugeridoResponse segmentoSugerido
+    SegmentoSugeridoResponse segmentoSugerido,
+
+    @Schema(description = "Represamento acima do limiar: o plano não sugere assunto novo, só continuação (D-56, 01_DOMINIO §5.3)")
+    boolean alertaRepresamento
 ) {}

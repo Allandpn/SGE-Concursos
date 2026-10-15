@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.6.0 |
+| Versão | 1.7.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -237,8 +237,8 @@ apaga** (`01_DOMINIO` D-18).
 |---|---|---|
 | Abrir | O plano do turno, pronto, sem cliques | < 2 s de carga |
 | Cada recuperação | Duas etapas, sem campo de resultado na primeira | **≤ 15 s** de registro |
-| Bloco de conteúdo | Assunto já preenchido pelo plano; tempo e tipo | **≤ 20 s** |
-| Lote de questões | Assunto, formato, feitas, certas, previsão | **≤ 25 s** |
+| Bloco de conteúdo | Assunto já preenchido pelo plano; tempo (já preenchido com a estimativa) e tipo | **≤ 20 s** |
+| Lote de questões | Assunto, formato, feitas, certas, previsão, tempo | **≤ 25 s** |
 
 O orçamento total de registro num turno de 1 h 30: **5 × 15 s + 20 s ≈ 1 min
 35 s.** Menos de 2% do turno. Acima disso, o sistema começa a competir com o
@@ -464,8 +464,8 @@ Requisitos, não metas. Medidos com cronômetro, no aparelho real.
 | Operação | Orçamento | Campos visíveis |
 |---|---|---|
 | Registrar recuperação | 15 s | 2 (previsão, resultado) |
-| Registrar bloco de conteúdo | 20 s | 3 (assunto, tipo, tempo) |
-| Registrar lote de questões | 25 s | 5 (assunto, formato, feitas, certas, previsão) |
+| Registrar bloco de conteúdo | 20 s | 3 (assunto, tipo, tempo) — tempo já preenchido (`01_DOMINIO` §7.7) |
+| Registrar lote de questões | 25 s | 6 (assunto, formato, feitas, certas, previsão, tempo) |
 | Registrar erro | 30 s | 3 (descrição, causa, confiança) |
 | Cadastrar uma disciplina inteira | 2 min | lista colada + peso em bloco |
 
@@ -530,6 +530,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.7.0 | 2026-10-14 | Sprint 17, atrito 2 (`01_DOMINIO` v1.21.0 §7.7). O campo **tempo** de conteúdo, que a §5 sempre listou, passa a existir de fato — a tela media tempo de tela e gravava um minuto para uma hora de leitura. Vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. Questões ganham o mesmo campo, vazio (6 campos, orçamento de 25 s mantido). Recuperação continua medida pela tela. Decidido pelo usuário |
 | 1.6.0 | 2026-10-14 | Sprint 16. (1) J-1: linha sem `id` mas com `chaveExterna` já conhecida **atualiza** em vez de tentar criar — sem isso, a reimportação automática vinda do planejamento (ADR-037) recusava toda linha já importada por nome duplicado, e o arquivo inteiro deixava de ser confirmado a partir da segunda sincronização. (2) §1.2: uso passa a ser app no celular e no tablet além da web (ADR-038); requisitos mínimos de toque e largura. Aprovado pelo usuário |
 | 1.5.0 | 2026-09-06 | `segmentos.csv` (J-1, §"Segunda importação") ganha coluna obrigatória `chaveExternaSegmento` — identidade própria do segmento, dada pelo sistema de planejamento (`01_DOMINIO` D-53, nova). Reimportação passa a identificar o segmento por essa chave, não por `ordem`: `ordem` é posição, e reordenar o material depois de importado não pode confundir, em silêncio, um segmento antigo (já referenciado por sessões passadas, D-51) com um novo na mesma posição. §6 ganha D-53 em J-1. Decidido com o usuário ao discutir o mecanismo de reimportação de `docs/SPRINT-10-SEGMENTO.md`, antes do documento técnico fechar — mesma ordem que D-46 e D-52 já seguiram |
 | 1.4.0 | 2026-09-05 | J-1 ganha coluna opcional `chaveExterna` no CSV de assuntos e uma **segunda importação**, `segmentos.csv` (uma linha por segmento, `01_DOMINIO` §3.7), chegando via Google Drive + `rclone` (`docs/00A_ADR.md` ADR-037), não upload manual. Referencia o assunto pela chave externa em vez do `id` do SGE, porque o sistema de planejamento nunca saberia esse `id` sem uma chamada de volta que reabriria o acoplamento que a topologia via Drive evita. §6 ganha D-50 a D-52 nas jornadas J-1/J-2. Decidido com o usuário na abertura da Sprint 10 |

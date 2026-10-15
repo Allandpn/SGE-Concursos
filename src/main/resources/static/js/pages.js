@@ -23,6 +23,7 @@ const ROTULOS_PARAMETRO = {
   intervalo_manutencao_dias: 'Manutenção (consolidado)',
   janela_tolerancia_percentual: 'Janela de tolerância',
   lote_minimo_questoes: 'Lote mínimo de questões',
+  duracao_bloco_min: 'Duração sugerida do bloco (min)',
 };
 
 document.addEventListener('alpine:init', () => {
@@ -80,6 +81,7 @@ document.addEventListener('alpine:init', () => {
     blocoConteudo: null,
     blocoContinuacao: false,
     segmentoSugerido: null,
+    alertaRepresamento: false,
 
     async init() {
       this.carregando = true;
@@ -91,6 +93,7 @@ document.addEventListener('alpine:init', () => {
         this.blocoConteudo = plano.blocoConteudo;
         this.blocoContinuacao = plano.blocoContinuacao;
         this.segmentoSugerido = plano.segmentoSugerido;
+        this.alertaRepresamento = plano.alertaRepresamento;
       } catch (e) {
         this.erro = e.message;
       } finally {
@@ -234,8 +237,10 @@ document.addEventListener('alpine:init', () => {
     feitas: null,
     certas: null,
     previsao: null,
+    tempo: null,
+    tempoEditado: false,
+    duracaoBloco: null,
     tentativaId: null,
-    inicioEm: null,
     enviando: false,
     erro: null,
     semDados: false,
@@ -258,11 +263,21 @@ document.addEventListener('alpine:init', () => {
       this.feitas = null;
       this.certas = null;
       this.previsao = null;
+      this.tempo = null;
+      this.tempoEditado = false;
       this.erro = null;
       this.tentativaId = crypto.randomUUID(); // D-45: gerado ao abrir a tela
-      this.inicioEm = Date.now();
 
       if (!this.semDados) {
+        // D-29: a duração de bloco é parâmetro — lida a cada abertura, então
+        // mudar em Ajustes vale na próxima vez, sem recarregar o app.
+        api('/parametros')
+          .then((ps) => {
+            const p = ps.find((x) => x.chave === 'duracao_bloco_min');
+            this.duracaoBloco = p ? Number(p.valor) : null;
+            this.sugerirTempo();
+          })
+          .catch(() => { this.duracaoBloco = null; });
         try {
           this.segmentos = await api(`/assuntos/${assuntoId}/segmentos`);
           // D-55: vindo do card de Hoje, o segmento sugerido já vem marcado.
@@ -274,7 +289,22 @@ document.addEventListener('alpine:init', () => {
           // falhar, o campo de segmento simplesmente não aparece (§7A).
           this.segmentos = [];
         }
+        this.sugerirTempo();
       }
+    },
+
+    // D-29 / 01_DOMINIO §7.7: em conteúdo, o tempo vem preenchido com a
+    // estimativa do bloco escolhido ou, sem ela, com a duração parametrizada.
+    // Depois que o usuário mexe no campo, nada mais o sobrescreve. Questões e
+    // flashcards ficam vazios — não há estimativa honesta para um lote livre.
+    sugerirTempo() {
+      if (this.tempoEditado) return;
+      if (this.tipo !== 'conteudo') {
+        this.tempo = null;
+        return;
+      }
+      const segmento = this.segmentos.find((s) => String(s.id) === this.segmentoId);
+      this.tempo = segmento?.tempoEstimadoMin ?? this.duracaoBloco;
     },
 
     rotuloSegmento(s) {
@@ -287,6 +317,8 @@ document.addEventListener('alpine:init', () => {
       this.feitas = null;
       this.certas = null;
       this.previsao = null;
+      this.tempoEditado = false;
+      this.sugerirTempo();
     },
 
     get temSegmentos() {
@@ -295,9 +327,16 @@ document.addEventListener('alpine:init', () => {
 
     async registrar() {
       this.erro = null;
-      this.enviando = true;
 
-      const tempoMinutos = Math.max(1, Math.round((Date.now() - this.inicioEm) / 60000));
+      // 01_DOMINIO §7.7: o tempo de bloco e de lote é declarado, não o de tela
+      // — a leitura e as questões aconteceram antes de abrir esta tela.
+      const tempoMinutos = Number(this.tempo);
+      if (!Number.isInteger(tempoMinutos) || tempoMinutos < 1) {
+        this.erro = 'Informe o tempo em minutos.';
+        return;
+      }
+
+      this.enviando = true;
       const corpoBase = {
         assuntoId: this.assuntoId,
         data: hojeISO(),
@@ -578,12 +617,13 @@ document.addEventListener('alpine:init', () => {
       return ROTULOS_PARAMETRO[chave] ?? chave;
     },
 
-    // Três seções por prefixo de chave, mesmo agrupamento do wireframe de
-    // referência (04_FRONTEND §7E).
+    // Seções por prefixo de chave, mesmo agrupamento do wireframe de
+    // referência (04_FRONTEND §7E); 'Turno' nasceu com duracao_bloco_min (§7H).
     get grupos() {
       const nomeDoGrupo = (chave) => {
         if (chave.startsWith('teto_')) return 'Tetos';
         if (chave.startsWith('limiar_')) return 'Limiares de resultado';
+        if (chave.startsWith('duracao_')) return 'Turno';
         return 'Escada';
       };
       const porGrupo = {};
@@ -591,7 +631,7 @@ document.addEventListener('alpine:init', () => {
         const grupo = nomeDoGrupo(p.chave);
         (porGrupo[grupo] ??= []).push(p);
       }
-      return ['Tetos', 'Limiares de resultado', 'Escada']
+      return ['Tetos', 'Turno', 'Limiares de resultado', 'Escada']
         .filter((nome) => porGrupo[nome])
         .map((nome) => ({ nome, itens: porGrupo[nome] }));
     },
