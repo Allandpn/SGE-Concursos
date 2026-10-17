@@ -31,7 +31,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 16 | Correções, multi-edital e app | Análise do código contra a especificação (2026-10-14): `PARCIAL` em manutenção desconsolidava; `FALHA` nunca voltava à fila de estudo (reestudo); fase calculada assunto a assunto; reimportação por `chaveExterna`; concurso-alvo ativo (ADR-039); frontend sem CDN e instalável como app no celular/tablet (ADR-038); prontidão multiusuário sem implementá-lo (ADR-040) — `docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` | **feito** — 132/132 testes verdes contra Postgres real; app conferido num Chromium emulando celular; importação ponta a ponta (exportador do planejamento → script → SGE) conferida com troca de concurso-alvo |
 | 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado. Começa pelos atritos da jornada que contaminariam os primeiros dados (`docs/SPRINT-17-USO-REAL.md`) | **em andamento** — os 4 atritos e as 4 lacunas da especificação resolvidos; falta o Pi no ar e o uso real |
 | 18 | Concurso-alvo e edital por IA | `Concurso` com cobertura e histórico (ADR-042), resumo por disciplina, edital novo lido por IA via OpenRouter com revisão antes de gravar (ADR-043) — `docs/SPRINT-18-CONCURSOS.md`. Antecipada a pedido do usuário depois dos wireframes do app | **em andamento** — ver §19 |
-| 19 | Material preparado pelo sistema | Edital → cargo → revisão e o resto sozinho: o planejamento roda no Pi ao lado do SGE, prepara o material com IA via OpenRouter e o SGE serve os PDFs; identidade dada na confirmação (D-64), lacuna visível (D-65), chave e modelo em Ajustes (ADR-044) — `docs/SPRINT-19-MATERIAL-AUTOMATICO.md`. Antecipada a pedido do usuário | **em andamento** — Fase A (SGE) feita; ver §20 |
+| 19 | Material preparado pelo sistema | Edital → cargo → revisão e o resto sozinho: o planejamento roda no Pi ao lado do SGE, prepara o material com IA via OpenRouter e o SGE serve os PDFs; identidade dada na confirmação (D-64), lacuna visível (D-65), chave e modelo em Ajustes (ADR-044) — `docs/SPRINT-19-MATERIAL-AUTOMATICO.md`. Antecipada a pedido do usuário | **em andamento** — código das três fases feito; falta o Pi com o acervo (19.5) |
 | 20 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
 | 21 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
 | 22 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
@@ -994,12 +994,22 @@ o SGE dá a identidade; tudo no Pi 4B 4 GB com SSD de 480 GB, sem Drive no camin
 | | Item | Quem escreve | Estado |
 |---|---|---|---|
 | 19.1 | Especificação: `01_DOMINIO` v1.24.0 (§3.10, D-64, D-65), `02_JORNADAS` v1.11.0, `03_INVARIANTES` v1.12.0, ADR-044 | Claude, a pedido do usuário | **feito** |
-| 19.2 | Fase A — SGE: identidade na confirmação (V13), Ajustes → IA, rotas internas com token, lacuna, estado do material, `/material/**`, telas | Claude | **feito** — ver o resultado da suíte no changelog |
-| 19.3 | Fase B — repositório do planejamento: worker (busca no índice, IA pelo proxy, `montar_bloco`, importação de segmentos, lacunas) | Claude, com exceção explícita da regra de escrita | aberto |
-| 19.4 | Fase C — compose com o serviço do planejamento, volumes, limites de memória do Pi 4 4 GB, `INTERNAL_TOKEN`, adendo `03E_DEPLOYMENT` §8C | Claude | aberto |
-| 19.5 | Indexar o acervo no PC e copiar apostilas + `indice.db` para o SSD do Pi; cadastrar a chave em Ajustes; primeiro edital real ponta a ponta | **você** | aberto |
+| 19.2 | Fase A — SGE: identidade na confirmação (V13), Ajustes → IA, rotas internas com token, lacuna, estado do material, `/material/**`, telas | Claude | **feito** — 182/182 verdes; Ajustes → IA conferida em Chrome contra Postgres real, `/material` servindo e `/internal` recusando sem token |
+| 19.3 | Fase B — repositório do planejamento: worker (busca no índice, IA pelo proxy, `montar_bloco`, importação de segmentos, lacunas) | Claude, com exceção explícita da regra de escrita | **feito** na branch `material-automatico` de lá — 32/32 + 25/25 verdes; imagem construída e conferida |
+| 19.4 | Fase C — compose com o serviço do planejamento, volumes, limites de memória do Pi 4 4 GB, `INTERNAL_TOKEN`, adendo `03E_DEPLOYMENT` §8C | Claude | **feito** — `docker compose config` válido; o compose completo só roda no Pi (precisa do SSD e do acervo) |
+| 19.5 | Indexar o acervo no PC e copiar apostilas + `indice.db` para o SSD do Pi; cadastrar a chave em Ajustes; primeiro edital real ponta a ponta (`03E_DEPLOYMENT` §8C.1) | **você** | aberto |
 
 `docs/DIAGRAMA-ER.md` v2.4.0 também ganhou as tabelas da Sprint 18, que tinham ficado de fora.
+
+**Verificado de ponta a ponta nesta máquina (2026-10-17):** SGE real (Postgres
+descartável) + worker real + um OpenRouter falso local que responde às três etapas.
+PDF do edital → cargo → confirmar pela API; um ciclo do worker: o assunto que o
+acervo sintético ensina ganhou 1 segmento (p. 3–20, ~72 min), o que não ensina virou
+lacuna com motivo. No Chrome: Concursos mostrou "Material: 1 de 2 prontos · 1 sem
+material no acervo"; Hoje mostrou o bloco e "Abrir material" abriu o PDF de
+`/material/...` (200, `application/pdf`). O que **não** foi verificado: o compose
+completo no Pi, o acervo real (2600 apostilas) e a qualidade da escolha de páginas
+por um modelo de verdade — é o item 19.5.
 
 ---
 
@@ -1021,6 +1031,7 @@ o SGE dá a identidade; tudo no Pi 4B 4 GB com SSD de 480 GB, sem Drive no camin
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.51.0 | 2026-10-17 | **Sprint 19 aberta e com o código das três fases feito** (§20), a pedido do usuário: edital → cargo → o resto sozinho. Especificação primeiro (`01_DOMINIO` v1.24.0, D-64/D-65, ADR-044 substitui ADR-037). SGE: identidade na confirmação (corrige o concurso duplicado), Ajustes → IA, rotas internas, `/material/**`, 182/182. Planejamento: worker na branch `material-automatico`, 32/32 + 25/25. Compose com o serviço `planejamento` e tetos de memória do Pi 4B 4 GB (`03E_DEPLOYMENT` §8C). Falta o Pi com o acervo |
 | 1.50.0 | 2026-10-15 | **Preparação do beta.** `03E_DEPLOYMENT` v1.2.0, §8B: `OPENROUTER_API_KEY` no `.env`, limite de 30 MB no envio de PDF, checklist do beta (8B.1) e o que o beta mede (8B.2: constância do registro e calibração). Pilha conferida em banco limpo (12 migrações, health UP). Ressalva: o `docker compose --build` completo não rodou neste ambiente (o contêiner de build não confia no proxy de TLS e o Docker Hub devolveu 429) — rode-o no Pi como primeiro passo do checklist |
 | 1.49.0 | 2026-10-15 | O app (web e Android) passa a se chamar **eAgora**, decisão do usuário. `04_FRONTEND` v1.12.0; app Android em `github.com/Allandpn/-eAgora` |
 | 1.48.0 | 2026-10-15 | **Sprint 18 aberta** (§19), antecipada a pedido do usuário: concurso-alvo com histórico, disciplinas, edital novo por IA (OpenRouter). Especificação primeiro (item 18.1). Mapa: linhas 18–21 viram 19–22. Seções 19–20 renumeradas para 20–21 |

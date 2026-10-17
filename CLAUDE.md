@@ -70,7 +70,7 @@ Herdados da v2 e ainda válidos:
 |---|---|
 | `docs/00A_ADR.md` | 44 ADRs, 30 vigentes (até ADR-044 — material preparado no próprio servidor) |
 | `docs/03C_LOGGING.md` | Intacto |
-| `docs/03E_DEPLOYMENT.md` | Congelado + adendo §8A (Sprint 16: HTTPS obrigatório, `CONCURSO_ATIVO`) |
+| `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta) e §8C (Sprint 19: worker do material, tetos de memória do Pi 4) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |
 | `docs/09_CODE_STYLE.md` | Intacto |
 
@@ -209,6 +209,9 @@ qualquer coisa envolvendo o projeto de planejamento).
   `G:\Git\Panejamento_Estudos`, branch `integracao-sge`), seguindo o
   `CLAUDE.md` de lá. A regra acima continua valendo; outra exceção precisa
   de novo pedido explícito.
+- **Outra exceção (2026-10-17), pedida pelo usuário:** a Sprint 19 escreveu o
+  worker do material no repositório do planejamento (branch
+  `material-automatico`). Também vale só para aquele pedido.
 
 ---
 

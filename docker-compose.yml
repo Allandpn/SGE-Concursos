@@ -16,6 +16,10 @@
 #     obrigatório para o Docker conseguir mapear a porta. O confinamento é
 #     feito pelo `127.0.0.1:` do lado do host. É a confusão mais comum de
 #     Docker + Spring.
+#
+# PI 4B DE 4 GB (ADR-044, 03E_DEPLOYMENT.md §8C): cada serviço tem teto de
+# memória. Somados ficam em ~2,3 GB, deixando o resto para o sistema e o cache
+# de disco. O worker do planejamento roda com prioridade baixa.
 # =============================================================================
 
 services:
@@ -23,6 +27,7 @@ services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    mem_limit: 640m
     environment:
       POSTGRES_DB: estudos
       POSTGRES_USER: estudos
@@ -55,6 +60,9 @@ services:
   app:
     build: .
     restart: unless-stopped
+    # JAVA_OPTS do Dockerfile já limita o heap a 512 MB; o resto é metaspace,
+    # threads e buffers.
+    mem_limit: 900m
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,13 +77,44 @@ services:
       # aparece como indisponível e o resto do sistema segue normal.
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-5.5}
+      # ADR-044: rotas /internal/** para o worker do planejamento (proxy de IA,
+      # lacunas). Sem o token, ficam desligadas.
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?defina INTERNAL_TOKEN no arquivo .env}
+      # PDFs do material, servidos em /material/** — o worker escreve, o app só lê.
+      MATERIAL_DIR: /dados/material
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - /var/log/estudos:/var/log/estudos
+      - /mnt/ssd/material:/dados/material:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 60s
+
+  # ADR-044 — o worker do projeto de planejamento prepara sozinho o material do
+  # concurso-alvo (03E_DEPLOYMENT.md §8C). Sem porta: só fala com o app pela rede
+  # interna do Compose. O repositório do planejamento fica clonado ao lado deste.
+  planejamento:
+    build: ${PLANEJAMENTO_DIR:-../Plano-de-Estudos-Automatizado}
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    mem_limit: 768m
+    cpus: 1.5
+    environment:
+      SGE_URL: http://app:8080
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?defina INTERNAL_TOKEN no arquivo .env}
+      ACERVO_DIR: /acervo/apostilas
+      INDICE_DB: /acervo/indice.db
+      MATERIAL_DIR: /dados/material
+      INTERVALO_SEG: "300"
+      TZ: America/Sao_Paulo
+    volumes:
+      # Apostilas e índice copiados do PC (indexar no Pi levaria horas). Só leitura.
+      - /mnt/ssd/acervo:/acervo:ro
+      # Único lugar onde o worker escreve; precisa pertencer ao uid 1000.
+      - /mnt/ssd/material:/dados/material
