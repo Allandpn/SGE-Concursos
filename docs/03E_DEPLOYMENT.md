@@ -5,7 +5,7 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.3.1** |
+| Versão do documento | **1.3.2** |
 | Status | **Congelado** |
 | Data | 2026-10-14 |
 
@@ -573,6 +573,16 @@ material) e um teto de memória por serviço.
    O índice funciona no Pi sem conversão (o caminho é refeito a partir da pasta
    e do nome do arquivo). Apostila nova: indexe no PC e copie de novo — o
    `rsync` só manda o que mudou.
+
+   **Nomes com acento (achado na primeira instalação, 2026-10-17).** O `pscp`
+   do PuTTY no Windows grava os nomes na codificação do Windows (cp1252), e o
+   Linux espera UTF-8: "Área Fiscal" vira `Área Fiscal` e o worker não acha
+   a apostila. Confira depois de copiar — `find /mnt/ssd/acervo/apostilas -name
+   '*[! -~]*' | head` deve mostrar acentos legíveis — e, se vierem quebrados,
+   converta os nomes de cp1252 para UTF-8 no próprio Pi (o conteúdo dos PDFs não
+   é afetado). Depois, confira que todo caminho do índice existe:
+   `docker compose exec planejamento python` com `Acervo(...).caminho()` sobre
+   a tabela `arquivos`.
 5. **Pasta do material.** `sudo mkdir -p /mnt/ssd/material && sudo chown
    1000:1000 /mnt/ssd/material` — o worker roda sem root, com uid 1000.
 6. **Memória (Pi 4B, 4 GB).** Tetos: Postgres 640 MB, app 1,2 GB (heap 512 MB +
@@ -609,6 +619,7 @@ material) e um teto de memória por serviço.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.2 | 2026-10-17 | §8C item 4: nomes com acento chegam em cp1252 quando copiados com `pscp` do Windows; como conferir e corrigir. Achado na primeira instalação real |
 | 1.3.1 | 2026-10-17 | §8C: IA pela assinatura do Claude (ADR-045) — `claude setup-token`, Claude Code na imagem do app, teto do app em 1,2 GB, custo em cota; checklist atualizado |
 | 1.3.0 | 2026-10-17 | §8C, adendo da Sprint 19 (ADR-044): `INTERNAL_TOKEN`, chave e modelo em Ajustes, serviço `planejamento` no compose, acervo e índice copiados do PC para o SSD, pasta do material com uid 1000, tetos de memória do Pi 4B 4 GB; checklist 8C.1. Desenho das seções 0–8 intacto |
 | 1.2.0 | 2026-10-15 | §8B, adendo da Sprint 18 e do beta: `OPENROUTER_API_KEY`/`OPENROUTER_MODEL` no `.env`, limite de 30 MB no envio de PDF, `concurso.json` na importação, nome eAgora; checklist do beta (8B.1) e o que o beta mede (8B.2). Desenho das seções 0–8 intacto |
