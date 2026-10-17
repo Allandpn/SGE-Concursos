@@ -1,10 +1,12 @@
 package br.com.estudos.segmento;
 
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +23,13 @@ public class LacunaController {
 
     public LacunaController(MaterialService materialService) {
         this.materialService = materialService;
+    }
+
+    @PostMapping("/api/assuntos/{assuntoId}/material/refazer")
+    @Operation(summary = "Refazer o material do assunto (D-66)", description = "Arquiva os segmentos e descarta a lacuna; o planejamento prepara de novo. Nada é apagado. 204.")
+    public ResponseEntity<Void> refazer(@PathVariable Long assuntoId) {
+        materialService.refazer(List.of(assuntoId));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/api/assuntos/{assuntoId}/lacuna")

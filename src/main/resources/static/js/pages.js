@@ -534,6 +534,9 @@ document.addEventListener('alpine:init', () => {
     fase: null,
     segmentos: [],
     lacuna: null,
+    refazendo: false,
+    refeito: false,
+    erroRefazer: null,
     retencao: [],
     carregando: false,
     semDados: false,
@@ -553,6 +556,8 @@ document.addEventListener('alpine:init', () => {
       this.peso = item.assunto.peso;
       this.fase = item.assunto.fase;
       this.lacuna = null;
+      this.refeito = false;
+      this.erroRefazer = null;
       this.carregando = true;
       try {
         this.segmentos = await api(`/assuntos/${assuntoId}/segmentos`);
@@ -587,6 +592,24 @@ document.addEventListener('alpine:init', () => {
 
     get temSegmentos() {
       return this.segmentos.length > 0;
+    },
+
+    // D-66: arquiva os segmentos (e descarta a lacuna) para o material ser preparado
+    // de novo. Nada é apagado; o progresso de leitura deste assunto recomeça.
+    async refazerMaterial() {
+      if (!window.confirm('Preparar de novo o material deste assunto? O material atual sai do turno e a leitura dele recomeça pelos blocos novos.')) return;
+      this.refazendo = true;
+      this.erroRefazer = null;
+      try {
+        await api(`/assuntos/${this.assuntoId}/material/refazer`, { method: 'POST' });
+        this.segmentos = [];
+        this.lacuna = null;
+        this.refeito = true;
+      } catch (e) {
+        this.erroRefazer = e.message;
+      } finally {
+        this.refazendo = false;
+      }
     },
 
     get temRetencao() {
@@ -871,6 +894,7 @@ document.addEventListener('alpine:init', () => {
     ia: null,
     analises: [],
     reativando: null,
+    refazendo: false,
 
     async init() {
       this.carregando = true;
@@ -927,6 +951,23 @@ document.addEventListener('alpine:init', () => {
         PRONTA: 'Pronta para revisar',
         FALHOU: 'Falhou — toque para tentar de novo',
       }[status] ?? status;
+    },
+
+    // D-66: prepara de novo o material de todo o concurso — confirma, porque a
+    // leitura em curso recomeça pelos blocos novos. Nada é apagado.
+    async refazerMaterial(c) {
+      const feitos = c.material.prontos + c.material.semMaterial;
+      if (!window.confirm(`Preparar de novo o material de ${feitos} assunto(s) de ${c.nome}? O material atual sai do turno e é refeito em segundo plano.`)) return;
+      this.refazendo = true;
+      this.erroAcao = null;
+      try {
+        await api(`/concursos/${c.id}/material/refazer`, { method: 'POST' });
+        await this.init();
+      } catch (e) {
+        this.erroAcao = e.message;
+      } finally {
+        this.refazendo = false;
+      }
     },
 
     // D-60: reativar muda peso e ordem — pede confirmação, nunca toca o estudo.

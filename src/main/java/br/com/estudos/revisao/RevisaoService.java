@@ -153,7 +153,7 @@ public class RevisaoService {
     /** D-54 — todo segmento do assunto tem alguma sessão ESTUDO (a desta transação inclusive). */
     private boolean leituraCompleta(Long assuntoId) {
         var estudados = sessaoRepository.segmentosEstudados(assuntoId);
-        return segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assuntoId).stream()
+        return segmentoRepository.findByAssuntoIdAndArquivadoEmIsNullOrderByOrdemAsc(assuntoId).stream()
             .allMatch(segmento -> estudados.contains(segmento.getId()));
     }
 

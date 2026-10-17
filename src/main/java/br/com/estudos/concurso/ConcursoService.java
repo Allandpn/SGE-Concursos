@@ -134,6 +134,17 @@ public class ConcursoService {
             concurso.getDataProva(), assuntos);
     }
 
+    /** D-66 — refaz o material de todo assunto ativo da cobertura do concurso. */
+    @Transactional
+    public void refazerMaterial(Long id) {
+        concursoRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Concurso não encontrado.", "CONCURSO_INEXISTENTE"));
+        materialService.refazer(coberturaRepository.listarDoConcurso(id).stream()
+            .filter(c -> c.getAssunto().isAtivo())
+            .map(c -> c.getAssunto().getId())
+            .toList());
+    }
+
     /** Reativa um concurso do histórico aplicando de novo a cobertura dele (D-59, D-60). */
     @Transactional
     public Concurso reativar(Long id) {

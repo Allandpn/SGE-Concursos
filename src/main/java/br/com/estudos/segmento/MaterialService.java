@@ -60,7 +60,7 @@ public class MaterialService {
             contagens.put((Long) linha[0], ((Long) linha[1]).intValue());
         }
         var lacunas = new HashMap<Long, String>();
-        for (var lacuna : lacunaRepository.findByAssuntoIdIn(assuntoIds)) {
+        for (var lacuna : lacunaRepository.findByAssuntoIdInAndDescartadaEmIsNull(assuntoIds)) {
             lacunas.put(lacuna.getAssuntoId(), lacuna.getMotivo());
         }
         for (var id : assuntoIds) {
@@ -84,7 +84,7 @@ public class MaterialService {
 
     @Transactional(readOnly = true)
     public Optional<LacunaMaterial> lacunaDe(Long assuntoId) {
-        return lacunaRepository.findById(assuntoId);
+        return lacunaRepository.findById(assuntoId).filter(l -> l.getDescartadaEm() == null);
     }
 
     /**
@@ -103,6 +103,21 @@ public class MaterialService {
             .orElseGet(() -> new LacunaMaterial(assunto.getId(), motivo.strip(), agora));
         lacuna.setMotivo(motivo.strip());
         lacuna.setRegistradaEm(agora);
+        lacuna.setDescartadaEm(null); // registrada de novo depois de um "refazer": volta a valer
         lacunaRepository.save(lacuna);
+    }
+
+    /**
+     * D-66 — refazer o material: arquiva os segmentos ativos e descarta a lacuna dos
+     * assuntos, que voltam a "a preparar" e são preparados de novo pelo planejamento.
+     * Nada é apagado (D-18); a sessão que estudou um segmento arquivado continua
+     * apontando para ele (D-51). docs/SPRINT-19-MATERIAL-AUTOMATICO.md §3B.
+     */
+    @Transactional
+    public void refazer(Collection<Long> assuntoIds) {
+        if (assuntoIds.isEmpty()) return;
+        var agora = Instant.now(clock);
+        segmentoRepository.arquivarDosAssuntos(assuntoIds, agora);
+        lacunaRepository.descartarDosAssuntos(assuntoIds, agora);
     }
 }

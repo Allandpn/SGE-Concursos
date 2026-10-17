@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.24.0 |
+| Versão | 1.25.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -469,6 +469,17 @@ preparar — é derivado (D-16) dos segmentos de cada assunto, com uma exceção
 a marca **sem material no acervo** é um fato registrado (o acervo não ensina
 aquilo), e não se deriva de nada que o sistema guarde. Ela some quando o
 assunto ganha segmentos.
+
+**Refazer o material** (D-66). A preparação pode errar a mão — trazer páginas
+do tema vizinho, ou marcar sem material o que o acervo ensina. O usuário pode
+pedir que o material de um assunto, ou de todo o concurso-alvo, seja preparado
+de novo. Nada é apagado (D-18): os segmentos atuais são **arquivados** e a marca
+sem material é **descartada**; o assunto volta a "a preparar", e o sistema
+prepara outra vez. Segmento arquivado sai do turno, da contagem de material e
+da conta de leitura completa (D-54), mas continua no histórico: a sessão que o
+estudou segue apontando para ele. Quem já tinha começado a ler um assunto
+refeito recomeça a leitura pelos segmentos novos; a escada, se já começou, não
+é tocada.
 
 ---
 
@@ -1273,7 +1284,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-47 | Nome de disciplina é único; arquivar não libera o nome para reuso | §3.1 |
 | D-48 | Ordem do assunto é única entre os ativos da mesma disciplina; arquivar libera o número | §3.2 |
 | D-49 | Reativar cria uma revisão pendente nova, no nível da última; nunca restaura a cancelada | §3.4 |
-| D-50 | Ordem do segmento é única dentro do assunto | §3.7 |
+| D-50 | Ordem do segmento é única entre os segmentos ativos do assunto | §3.7 |
 | D-51 | Segmento referenciado por uma sessão pertence ao mesmo assunto dessa sessão | §3.7 |
 | D-52 | Chave externa do assunto, quando presente, é única entre todos os assuntos | §3.2 |
 | D-53 | Todo segmento tem chave externa, obrigatória e única entre todos os segmentos | §3.7 |
@@ -1289,6 +1300,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-63 | Correspondência proposta pela análise só vale para assunto existente e ativo; senão o assunto entra como novo | §3.9 |
 | D-64 | Na confirmação de uma análise de edital, o concurso recebe identificador e cada assunto sem chave externa recebe uma; daí em diante são reconhecidos por elas, nunca pelo nome | §3.8, §3.9 |
 | D-65 | Assunto que o acervo não ensina fica marcado sem material, com o motivo; material nunca é inventado e o estudo nunca espera por ele | §3.10 |
+| D-66 | Refazer o material arquiva os segmentos e descarta a marca sem material; nada é apagado, e sessões antigas continuam apontando para o segmento arquivado | §3.10 |
 
 ---
 
@@ -1361,6 +1373,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.25.0 | 2026-10-17 | Pedido do usuário, depois da primeira preparação real (SEFAZ SC 2026): parte das faixas trazia o tema vizinho. **D-66** (§3.10): refazer o material de um assunto ou do concurso arquiva segmentos e descarta a marca sem material, sem apagar nada. **D-50** passa a valer entre os segmentos ativos — os segmentos novos repetem as ordens dos arquivados. 66 regras |
 | 1.24.0 | 2026-10-17 | Pedido do usuário: "subir o edital, escolher o cargo, e o sistema faz todo o resto". Nova **§3.10**: o material de leitura é preparado pelo sistema de planejamento rodando no mesmo servidor, sem toque humano (ADR-044). **D-64** (§3.8, §3.9): concurso e assunto confirmados ganham identificador e chave externa na confirmação — fim do casamento por nome e do concurso duplicado quando o material chegava (o concurso da análise nascia sem identificador e a importação criava outro). **D-65**: o que o acervo não ensina vira marca visível com motivo, nunca material inventado. 65 regras |
 | 1.23.0 | 2026-10-15 | Pedido do usuário. Nova **§3.8, Concurso**: o concurso-alvo e o histórico, com a cobertura do edital (peso, disciplina e ordem que ele dá a cada assunto); ativar aplica a cobertura e nunca toca o estudo feito. Nova **§3.9, análise de edital**: IA lê o PDF e propõe disciplinas e assuntos para o cargo escolhido; peso calculado pelo sistema a partir do número de questões; nada gravado sem confirmação. §9 ganha a primeira relação n:n (cobertura). D-58 a D-63. 63 regras (`docs/00A_ADR.md` ADR-042 e ADR-043) |
 | 1.22.0 | 2026-10-15 | §3.2.1: D-35 ganha definição operacional (quais resultados contam, lote abaixo do mínimo fora, N parametrizado, onde a sugestão aparece). A regra existia desde a v1.7.0 sem nenhum código — era regra órfã no sentido de `03_INVARIANTES` §9. Achado ao revisar o que falta antes do uso real |

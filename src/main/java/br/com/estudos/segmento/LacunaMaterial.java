@@ -34,6 +34,10 @@ public class LacunaMaterial {
     @Column(nullable = false)
     private Instant registradaEm;
 
+    /** D-66 — descartada por "refazer o material"; nula = vale. Nunca apagada (D-18). */
+    @Setter
+    private Instant descartadaEm;
+
     public LacunaMaterial(Long assuntoId, String motivo, Instant registradaEm) {
         this.assuntoId = assuntoId;
         this.motivo = motivo;

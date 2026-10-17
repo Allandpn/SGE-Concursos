@@ -93,6 +93,7 @@ class MaterialAutomaticoTest extends IntegracaoTestBase {
     @Autowired private AssuntoService assuntoService;
     @Autowired private MaterialService materialService;
     @Autowired private SegmentoService segmentoService;
+    @Autowired private SegmentoRepository segmentoRepository;
 
     // ------------------------------------------------------------ rotas internas
 
@@ -156,6 +157,58 @@ class MaterialAutomaticoTest extends IntegracaoTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"chaveExterna\": \"nao-existe\", \"motivo\": \"  \"}"))
             .andExpect(status().isUnprocessableEntity());
+    }
+
+    // ------------------------------------------------------------ refazer o material (D-66)
+
+    @Test
+    void refazer_arquivaSegmentos_sessaoAntigaContinua_ordemPodeRepetir() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Refazer " + UUID.randomUUID(), TipoPeso.MEDIO));
+        var assunto = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Crase", TipoPeso.MEDIO, (short) 3, 1, UUID.randomUUID().toString()));
+        var chaveAntiga = "seg-" + UUID.randomUUID();
+        var s1 = segmentoService.criarOuAtualizar(new SegmentoRequest(assunto.getId(), chaveAntiga, 1, "/material/a.pdf", 1, 10, 40));
+        segmentoService.criarOuAtualizar(new SegmentoRequest(assunto.getId(), "seg-" + UUID.randomUUID(), 2, "/material/b.pdf", 11, 20, 40));
+        var sessao = mockMvc.perform(post("/api/sessoes").contentType(MediaType.APPLICATION_JSON).content(
+                "{\"assuntoId\": %d, \"tipo\": \"ESTUDO\", \"data\": \"2026-10-17\", \"tempoMinutos\": 40, \"tentativaId\": \"%s\", \"segmentoId\": %d}"
+                    .formatted(assunto.getId(), UUID.randomUUID(), s1.getId())))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+
+        mockMvc.perform(post("/api/assuntos/{id}/material/refazer", assunto.getId()))
+            .andExpect(status().isNoContent());
+
+        assertEquals(MaterialService.Situacao.A_PREPARAR,
+            materialService.estados(List.of(assunto.getId())).get(assunto.getId()).situacao(), "D-66: volta a 'a preparar'");
+        mockMvc.perform(get("/api/assuntos/{id}/segmentos", assunto.getId()))
+            .andExpect(jsonPath("$.length()").value(0));
+        assertTrue(sessao.contains("\"segmentoId\":" + s1.getId()), "a sessão gravada apontava para o segmento");
+        assertTrue(segmentoRepository.findById(s1.getId()).orElseThrow().getArquivadoEm() != null, "arquivado, não apagado (D-18)");
+
+        // D-50 entre os ativos: o material novo repete a ordem 1.
+        segmentoService.criarOuAtualizar(new SegmentoRequest(assunto.getId(), "seg-" + UUID.randomUUID(), 1, "/material/c.pdf", 1, 15, 50));
+        assertEquals(1, segmentoService.listarPorAssunto(assunto.getId()).size());
+
+        // Reimportar a chave antiga reativa o segmento (ordem 2 está livre entre os ativos).
+        segmentoService.criarOuAtualizar(new SegmentoRequest(assunto.getId(), chaveAntiga, 2, "/material/a.pdf", 1, 10, 40));
+        assertEquals(2, segmentoService.listarPorAssunto(assunto.getId()).size());
+    }
+
+    @Test
+    void refazer_descartaALacuna_eElaPodeVoltar() throws Exception {
+        var disciplina = disciplinaService.criar(new DisciplinaRequest("Refazer lacuna " + UUID.randomUUID(), TipoPeso.MEDIO));
+        var chave = UUID.randomUUID().toString();
+        var assunto = assuntoService.criar(new AssuntoRequest(disciplina.getId(), "Tema raro", TipoPeso.MEDIO, (short) 3, 1, chave));
+        materialService.registrarLacuna(chave, "não achado");
+
+        mockMvc.perform(post("/api/assuntos/{id}/material/refazer", assunto.getId())).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/assuntos/{id}/lacuna", assunto.getId())).andExpect(status().isNotFound());
+        assertEquals(MaterialService.Situacao.A_PREPARAR,
+            materialService.estados(List.of(assunto.getId())).get(assunto.getId()).situacao());
+
+        materialService.registrarLacuna(chave, "continua não achado");
+        mockMvc.perform(get("/api/assuntos/{id}/lacuna", assunto.getId()))
+            .andExpect(jsonPath("$.motivo").value("continua não achado"));
     }
 
     // ------------------------------------------------------------ PDFs servidos

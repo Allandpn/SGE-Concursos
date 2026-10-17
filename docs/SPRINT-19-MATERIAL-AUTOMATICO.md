@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.1.0 |
+| Versão | 1.2.0 |
 | Data | 2026-10-17 |
 | Status | Vigente — em andamento |
 | Especificação conceitual | `01_DOMINIO.md` v1.24.0 (§3.8, §3.9, §3.10, D-64, D-65), `02_JORNADAS.md` v1.11.0 (J-5), `03_INVARIANTES.md` v1.12.0 |
@@ -107,6 +107,31 @@ repositório apt assinado (canal `stable`) e desliga a atualização automática
 o teto do app no compose sobe para 1,2 GB (JVM 512 MB + o processo `claude`
 durante a chamada).
 
+## 3B. Refazer o material (D-66)
+
+Achado na primeira preparação real (SEFAZ SC 2026, Ciências da Computação): parte
+das faixas escolhidas trazia o tema vizinho (acentuação dentro de crase, voz passiva
+dentro de ortografia). A triagem melhora do lado do planejamento; aqui fica o jeito de
+refazer o que já foi preparado.
+
+**Banco — `V15__refazer_material.sql`:** `segmento.arquivado_em TIMESTAMPTZ`;
+`lacuna_material.descartada_em TIMESTAMPTZ`; `ux_segmento_d50_ordem_por_assunto`
+vira índice único parcial `WHERE arquivado_em IS NULL`.
+
+**Quem passa a ignorar o arquivado:** a lista de segmentos do assunto, a sugestão do
+próximo segmento (D-55), a conta de leitura completa (D-54), o estado do material e a
+exportação. A lacuna descartada não conta no estado nem aparece no detalhe.
+Reimportar um segmento com a mesma chave o reativa; registrar lacuna de novo apaga o
+descarte.
+
+| Endpoint | Faz |
+|---|---|
+| `POST /api/assuntos/{id}/material/refazer` | Arquiva os segmentos ativos e descarta a lacuna do assunto → `204` |
+| `POST /api/concursos/{id}/material/refazer` | O mesmo para todo assunto ativo da cobertura do concurso → o concurso, com o estado do material |
+
+**Telas:** detalhe do assunto — "Refazer o material"; Concursos — "Refazer o material
+do concurso". Os dois confirmam antes, como o "Reativar" da Sprint 18.
+
 ## 4. Rotas internas (só para o planejamento)
 
 Exigem o cabeçalho `X-Internal-Token` igual a `estudos.interno.token`
@@ -169,5 +194,6 @@ O worker (Fase B, repositório do planejamento) e o compose/volumes/limites no P
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.0 | 2026-10-17 | §3B: refazer o material (D-66), V15 |
 | 1.1.0 | 2026-10-17 | §3A: IA pela assinatura do Claude (ADR-045), OpenRouter por escolha do usuário depois de aviso |
 | 1.0.0 | 2026-10-17 | Criado (Fase A) |

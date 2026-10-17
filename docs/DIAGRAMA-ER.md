@@ -12,7 +12,7 @@ schema real vence, e este arquivo está desatualizado — não o contrário.
 
 | Campo | Valor |
 |---|---|
-| Versão | 2.4.0 |
+| Versão | 2.5.0 |
 | Data | 2026-10-17 |
 | Status | Vigente |
 | Subordinado a | `docs/SPRINT-1-BANCO.md`, `docs/SPRINT-4-ESCADA.md` (ADR-032), `docs/SPRINT-7-METRICAS.md` (D-46), `docs/SPRINT-8-SIMULADO.md` (D-13), `docs/SPRINT-10-SEGMENTO.md` (D-50 a D-53), `docs/SPRINT-18-CONCURSOS.md` (D-58), `docs/SPRINT-19-MATERIAL-AUTOMATICO.md` (D-64, D-65); `src/main/resources/db/migration/V1`, `V3`, `V5`, `V7`, `V8`, `V9`, `V12`, `V13` |
@@ -85,11 +85,12 @@ erDiagram
         bigint id PK
         bigint assunto_id FK
         text chave_externa "obrigatório via CHECK + único (D-53) — identidade de reimportação"
-        integer ordem "único no assunto (D-50) — posição, não identidade"
-        text arquivo "link/identificador do material, nunca aberto pelo SGE"
+        integer ordem "único entre os ativos do assunto (D-50, índice parcial desde V15) — posição, não identidade"
+        text arquivo "/material/... servido pelo SGE (ADR-044) ou link legado"
         integer pagina_inicial
         integer pagina_final
         integer tempo_estimado_min
+        timestamptz arquivado_em "D-66: refazer o material; nulo = ativo"
         timestamptz criado_em
         timestamptz atualizado_em
     }
@@ -189,8 +190,13 @@ erDiagram
 
     configuracao_ia {
         smallint id PK "CHECK id = 1 — uma linha só"
-        text chave "nunca devolvida pela API (ADR-044)"
-        varchar modelo
+        text chave "OpenRouter; nunca devolvida pela API (ADR-044)"
+        varchar modelo "OpenRouter"
+        varchar provedor "CLAUDE|OPENROUTER (ADR-045)"
+        text claude_token "assinatura; nunca devolvido"
+        varchar claude_modelo "opus|sonnet|haiku"
+        text claude_falha_motivo "o aviso de assinatura parada"
+        timestamptz claude_falha_em
         timestamptz atualizado_em
     }
 
@@ -198,6 +204,7 @@ erDiagram
         bigint assunto_id PK "e FK"
         text motivo "D-65, CHECK não vazio"
         timestamptz registrada_em
+        timestamptz descartada_em "D-66: refazer o material; nula = vale"
     }
 ```
 
@@ -250,6 +257,7 @@ erDiagram
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.5.0 | 2026-10-17 | `V15`: `segmento.arquivado_em`, `lacuna_material.descartada_em` (D-66); D-50 vira índice único parcial sobre os segmentos ativos. `V14` só acrescentou colunas a `configuracao_ia` (provedor e assinatura do Claude, ADR-045) |
 | 2.4.0 | 2026-10-17 | Sprint 18 (`V12`), que tinha ficado de fora: `concurso` (D-58), `concurso_assunto` (cobertura do edital, a única n:n) e `analise_edital`. Sprint 19 (`V13`): `concurso.slug` passa a `NOT NULL` (D-64), `configuracao_ia` e `lacuna_material` (D-65) |
 | 2.3.0 | 2026-09-06 | Sprint 10 (`V9`): tabela `segmento` nova (`chave_externa` obrigatória e única — D-53 —, `ordem` única no assunto — D-50); `assunto.chave_externa` (opcional, único — D-52); `sessao.segmento_id` (nullable, só `ESTUDO` — D-51, via FK composta `fk_sessao_d51_segmento_mesmo_assunto`). Notas de leitura atualizadas para 9 tabelas |
 | 2.2.0 | 2026-09-01 | `sessao.proxima_sessao_data`/`proxima_sessao_descricao` removidas (`docs/SPRINT-1-BANCO.md` v1.4.0) |

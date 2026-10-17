@@ -51,6 +51,7 @@ public class SegmentoService {
         segmento.setPaginaInicial(request.paginaInicial());
         segmento.setPaginaFinal(request.paginaFinal());
         segmento.setTempoEstimadoMin(request.tempoEstimadoMin());
+        segmento.setArquivadoEm(null); // D-66: reimportar a mesma chave reativa o segmento
 
         try {
             return segmentoRepository.saveAndFlush(segmento);
@@ -62,7 +63,7 @@ public class SegmentoService {
     /** Lista os segmentos de um assunto, na ordem de leitura. */
     @Transactional(readOnly = true)
     public List<Segmento> listarPorAssunto(Long assuntoId) {
-        return segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assuntoId);
+        return segmentoRepository.findByAssuntoIdAndArquivadoEmIsNullOrderByOrdemAsc(assuntoId);
     }
 
     private RuntimeException traduzirViolacaoDeIntegridade(DataIntegrityViolationException e) {

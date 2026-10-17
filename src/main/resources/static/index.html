@@ -484,6 +484,14 @@
         <p x-show="!temSegmentos && lacuna" class="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600"
            x-text="'Sem material no acervo: ' + (lacuna?.motivo ?? '')"></p>
 
+        <!-- D-66: o material veio ruim — preparar de novo, sem apagar nada -->
+        <div x-show="temSegmentos || lacuna" class="space-y-1">
+          <button type="button" class="min-h-11 w-full rounded border border-gray-300 bg-white p-2 text-sm hover:bg-gray-50"
+                  :disabled="refazendo" @click="refazerMaterial()">Refazer o material</button>
+          <p x-show="refeito" class="text-xs text-green-700">Pedido feito. O material deste assunto será preparado de novo.</p>
+          <p x-show="erroRefazer" class="text-xs text-red-600" x-text="erroRefazer"></p>
+        </div>
+
         <!-- M-2, adicionado na Sprint 14 (04_FRONTEND.md §7B/§7D) -->
         <div x-show="temRetencao" class="space-y-2">
           <h3 class="text-sm font-medium text-gray-500">Retenção</h3>
@@ -848,6 +856,10 @@
               <p class="mt-1 text-xs text-gray-500" x-text="'Alvo desde ' + dataInstante(ativo.ativadoEm) + ' · ' + ativo.totalAssuntos + (ativo.totalAssuntos === 1 ? ' assunto no edital' : ' assuntos no edital')"></p>
               <!-- 01_DOMINIO §3.10: o material chega sozinho; aqui é só acompanhamento -->
               <p x-show="ativo.material" class="mt-1 text-xs text-gray-600" x-text="textoMaterial(ativo.material)"></p>
+              <!-- D-66: preparar de novo o material do concurso inteiro -->
+              <button type="button" x-show="ativo.material && (ativo.material.prontos + ativo.material.semMaterial) > 0"
+                      class="mt-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-primary-700 hover:bg-gray-50"
+                      :disabled="refazendo" @click="refazerMaterial(ativo)">Refazer o material do concurso</button>
             </div>
           </template>
           <template x-if="!ativo">

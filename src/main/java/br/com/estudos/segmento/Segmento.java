@@ -67,6 +67,10 @@ public class Segmento {
     @Setter
     private Integer tempoEstimadoMin;
 
+    /** D-66 — arquivado por "refazer o material"; nulo = ativo. Nunca apagado (D-18). */
+    @Setter
+    private Instant arquivadoEm;
+
     @CreationTimestamp
     private Instant criadoEm;
 

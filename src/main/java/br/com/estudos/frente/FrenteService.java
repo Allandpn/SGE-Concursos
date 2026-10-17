@@ -203,7 +203,7 @@ public class FrenteService {
     @Transactional(readOnly = true)
     public Optional<Segmento> proximoSegmentoApos(Long assuntoId, int ordemSugerida) {
         var estudados = sessaoRepository.segmentosEstudados(assuntoId);
-        return segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assuntoId).stream()
+        return segmentoRepository.findByAssuntoIdAndArquivadoEmIsNullOrderByOrdemAsc(assuntoId).stream()
             .filter(s -> s.getOrdem() > ordemSugerida && !estudados.contains(s.getId()))
             .findFirst();
     }
@@ -327,7 +327,7 @@ public class FrenteService {
     @Transactional(readOnly = true)
     public Optional<SugestaoConteudo> sugestaoDeConteudo() {
         return proximaContinuacao().or(() -> proximaSugestaoDeConteudo().map(assunto -> {
-            var segmentos = segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assunto.getId());
+            var segmentos = segmentoRepository.findByAssuntoIdAndArquivadoEmIsNullOrderByOrdemAsc(assunto.getId());
             return new SugestaoConteudo(assunto, segmentos.isEmpty() ? null : segmentos.get(0), segmentos.size(), false);
         }));
     }
@@ -339,7 +339,7 @@ public class FrenteService {
     @Transactional(readOnly = true)
     public Optional<SugestaoConteudo> proximaContinuacao() {
         for (var assuntoId : sessaoRepository.assuntosEmEstudo()) {
-            var segmentos = segmentoRepository.findByAssuntoIdOrderByOrdemAsc(assuntoId);
+            var segmentos = segmentoRepository.findByAssuntoIdAndArquivadoEmIsNullOrderByOrdemAsc(assuntoId);
             var estudados = sessaoRepository.segmentosEstudados(assuntoId);
             var proximo = segmentos.stream().filter(s -> !estudados.contains(s.getId())).findFirst();
             if (proximo.isPresent()) {

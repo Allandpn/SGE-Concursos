@@ -45,6 +45,13 @@ public class ConcursoController {
         return concursoService.paraPlanejamento(id);
     }
 
+    @PostMapping("/{id}/material/refazer")
+    @Operation(summary = "Refazer o material do concurso (D-66)", description = "Arquiva segmentos e descarta lacunas de todo assunto da cobertura; o planejamento prepara de novo. Nada é apagado.")
+    public ConcursoResponse refazerMaterial(@PathVariable Long id) {
+        concursoService.refazerMaterial(id);
+        return concursoService.resposta(id);
+    }
+
     @PostMapping("/{id}/ativar")
     @Operation(summary = "Reativa um concurso do histórico", description = "Aplica de novo a cobertura do edital dele (D-60) e encerra o período do atual (D-59).")
     public ConcursoResponse ativar(@PathVariable Long id) {
