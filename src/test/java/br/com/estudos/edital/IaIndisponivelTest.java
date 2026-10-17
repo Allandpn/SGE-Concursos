@@ -3,6 +3,7 @@ package br.com.estudos.edital;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -14,7 +15,8 @@ class IaIndisponivelTest {
 
     @Test
     void semChave_indisponivelComMotivo() {
-        var configuracao = new ConfiguracaoIa("", "modelo/x", "http://localhost", true);
+        // Nada cadastrado em Ajustes (o mock devolve Optional vazio) e ambiente sem chave.
+        var configuracao = new ConfiguracaoIa(mock(AjusteIaRepository.class), "", "modelo/x", "http://localhost", true);
         var service = new AnaliseEditalService(null, null, null, configuracao, null, null, null, null, null, null);
 
         var status = service.statusIa();

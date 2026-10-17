@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.10.0** |
+| Versão do documento | **2.11.0** |
 | Status | **Congelado** |
-| Data | 2026-10-15 |
-| Total | 43 ADRs — 30 vigentes, 12 substituídas, 1 revogada |
+| Data | 2026-10-17 |
+| Total | 44 ADRs — 30 vigentes, 13 substituídas, 1 revogada |
 
 ---
 
@@ -66,12 +66,12 @@ que custa e o que foi descartado.
 | [ADR-034](#adr-034--open-in-view-false) | `open-in-view: false` | Sprint 7/8 |
 | [ADR-035](#adr-035--bean-validation-para-forma-do-request-não-para-regra-de-domínio) | Bean Validation para forma do request, não para regra de domínio | v2 |
 | [ADR-036](#adr-036--openapiswagger-gerado-a-partir-do-código) | OpenAPI/Swagger gerado a partir do código | v2 |
-| [ADR-037](#adr-037--artefatos-do-planejamento-chegam-via-google-drive-e-rclone) | Artefatos do planejamento chegam via Google Drive e `rclone` | Sprint 10 |
 | [ADR-038](#adr-038--frontend-sem-build-com-dependências-locais-e-instalável-como-app) | Frontend sem build, com dependências locais e instalável como app | Sprint 16 |
 | [ADR-040](#adr-040--prontidão-para-multiusuário-sem-implementá-lo) | Prontidão para multiusuário, sem implementá-lo | Sprint 16 |
 | [ADR-041](#adr-041--app-android-nativo-como-segundo-cliente-da-mesma-api) | App Android nativo como segundo cliente da mesma API | 2026-10-15 |
 | [ADR-042](#adr-042--concurso-alvo-registrado-com-histórico) | Concurso-alvo registrado, com histórico | Sprint 18 |
 | [ADR-043](#adr-043--análise-de-edital-por-ia-via-openrouter) | Análise de edital por IA, via OpenRouter | Sprint 18 |
+| [ADR-044](#adr-044--material-preparado-no-próprio-servidor-sem-drive) | Material preparado no próprio servidor, sem Drive | Sprint 19 |
 
 ### 1.2 Históricas
 
@@ -89,6 +89,7 @@ que custa e o que foi descartado.
 | ADR-012 | Cache por coleção, invalidado por escrita | Substituída por **ADR-029** |
 | ADR-013 | SPA servida por `doGet` | Substituída por **ADR-030** |
 | ADR-028 | Maven no backend, zero build no frontend (Tailwind/Alpine por CDN) | Substituída por **ADR-038** — texto integral mantido abaixo |
+| ADR-037 | Artefatos do planejamento chegam via Google Drive e `rclone` | Substituída por **ADR-044** — texto integral mantido abaixo; o caminho segue como legado |
 | ADR-039 | Um concurso-alvo ativo por vez na importação automática | Substituída por **ADR-042** — texto integral mantido abaixo |
 
 O texto integral das históricas está em `docs/_apps-script-v1/00A_ADR.md`.
@@ -970,6 +971,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.11.0 | 2026-10-17 | Sprint 19, pedido do usuário. **ADR-044** substitui ADR-037: o planejamento roda no Pi como segundo contêiner, o material é servido pelo SGE, a IA do planejamento passa por um proxy interno do SGE com a chave cadastrada em Ajustes; o Drive vira legado. Total 44, 30 vigentes |
 | 2.10.0 | 2026-10-15 | Sprint 18, pedido do usuário. **ADR-042** substitui ADR-039: `Concurso` passa a existir no domínio, com cobertura do edital e histórico; um ativo por vez e peso único por assunto continuam. **ADR-043**: análise de edital por IA via OpenRouter — a IA extrai, o sistema decide o peso, nada é gravado sem revisão. Total 43, 30 vigentes |
 | 2.9.0 | 2026-10-15 | **ADR-041**: app Android nativo como segundo cliente da mesma API, em repositório próprio, sem regra de domínio. Revisita a recusa de app nativo da ADR-038 diante de dois fatos novos: o pedido explícito do usuário e necessidades que o navegador atende mal (lembrete sem servidor de push, rascunho persistente). ADR-038 continua vigente para a SPA. Total 41, 29 vigentes |
 | 2.8.0 | 2026-10-14 | Sprint 16. **ADR-038** substitui ADR-028: frontend continua sem build, mas Tailwind/Alpine viram arquivos locais em `static/vendor/` e a SPA vira app instalável (PWA, service worker só da casca estática, nunca da API) — uso passa a ser celular/tablet além da web. **ADR-039**: importação automática lê só a pasta do concurso-alvo ativo (`CONCURSO_ATIVO`) — sistema passa a servir qualquer edital. **ADR-040**: prontidão para multiusuário sem implementá-lo — o que não fazer agora para não encarecer depois. ADR-028 movida para as históricas, texto integral mantido no lugar. Total 40, 28 vigentes |
@@ -1223,7 +1225,7 @@ habilitado sem perfil separado. Reavaliar se a exposição de rede mudar.
 
 ## ADR-037 — Artefatos do planejamento chegam via Google Drive e `rclone`
 
-**Status:** Aceita · 2026-09-04 · Sprint 10
+**Status:** Substituída por ADR-044 (2026-10-17) · aceita em 2026-09-04 · Sprint 10
 
 ### Contexto
 
@@ -1630,6 +1632,74 @@ OpenRouter.
 | Enviar o PDF inteiro como arquivo ao modelo | Suporte varia por modelo e custa mais; o texto extraído serve a qualquer modelo |
 | A IA decidir o peso | Inventaria peso que o edital não declarou — a regra do planejamento já proibia ("nunca estimar peso") |
 | Gravar direto o que a IA devolveu | Erro silencioso no mapa de assuntos é caro (vira meses de estudo no lugar errado) |
+
+---
+
+## ADR-044 — Material preparado no próprio servidor, sem Drive
+
+**Status:** Aceita · 2026-10-17 · Sprint 19 · substitui ADR-037
+
+### Contexto
+
+O usuário quer que o fluxo inteiro seja "subir o edital, escolher o cargo, e o
+sistema faz o resto". Depois da Sprint 18 o estudo já começa sozinho, mas o
+material de leitura dependia de uma pessoa no PC: sessão de IA em chat para a
+triagem, aprovações, fatiamento, upload no Drive e um cron com
+`CONCURSO_ATIVO` no Pi (ADR-037). Nada consumia a entrega do concurso
+(`GET /api/concursos/{id}/planejamento`), e o concurso criado pela análise
+nascia sem identificador — quando o material chegava, a importação criava um
+segundo concurso.
+
+O Pi do usuário é um 4B de 4 GB com SSD de 480 GB: cabe o acervo (~10 GB) e o
+índice (~820 MB).
+
+### Decisão
+
+- **O sistema de planejamento roda no Pi, como um segundo contêiner** do
+  mesmo `docker compose`, com prioridade baixa e um assunto por vez. Lê o
+  acervo e o índice de um volume somente leitura e escreve os PDFs fatiados
+  em `/dados/material`.
+- **Sem Drive no caminho do material.** O planejamento fala com o SGE pela
+  rede interna do compose: lê a entrega do concurso-alvo e envia os segmentos
+  pela mesma importação de sempre. O SGE **serve os PDFs** em `/material/**`
+  — o botão "Abrir material" abre do próprio Pi, pela Tailscale (ADR-015).
+- **O SGE dá a identidade** (D-64): na confirmação, identificador do concurso
+  e chave externa de cada assunto novo. O planejamento usa essas chaves; não
+  casa nada por nome.
+- **A IA do planejamento passa pelo SGE.** Um proxy interno
+  (`POST /internal/ia/completar`) usa a chave e o modelo cadastrados em
+  **Ajustes → IA**; o planejamento nunca guarda chave. O proxy exige um token
+  compartilhado entre os contêineres (`INTERNAL_TOKEN`, no `.env`), porque
+  gasta crédito da conta do usuário.
+- **Chave e modelo no banco**, com as variáveis de ambiente da ADR-043 como
+  valor inicial: a chave é gravada uma vez pela tela e nunca devolvida pela
+  API (só os quatro últimos caracteres).
+- O que o acervo não ensina vira **lacuna registrada** (D-65), informada pelo
+  planejamento; nunca material inventado.
+
+### Consequências
+
+- O Pi passa a ter trabalho de fundo (busca no índice, fatiamento de PDF).
+  Limites de memória por serviço no compose; o app continua com prioridade.
+- A indexação inicial das ~2600 apostilas é pesada demais para o Pi — feita
+  no PC e copiada (o índice é um arquivo SQLite).
+- O caminho pelo Drive (`scripts/importar-segmentos.sh`, `CONCURSO_ATIVO`)
+  fica como **legado**: funciona, mas sai do caminho principal.
+- Os dois sistemas continuam em repositórios separados; o contrato entre eles
+  passa a ser HTTP interno em vez de arquivos no Drive.
+- Custo de IA por edital cresce: além da leitura do edital, uma chamada por
+  assunto para escolher páginas. Fica visível na conta OpenRouter do usuário;
+  o modelo é trocável em Ajustes.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Planejamento no PC, agendado, conferindo o Drive | Depende do PC ligado; mantém dois lugares para sincronizar acervo e banco canônico |
+| Sessão de IA em chat no PC (como era) | Exige o usuário; é exatamente o que o pedido quer eliminar |
+| Chave de IA também no planejamento | Dois lugares para o mesmo segredo e o mesmo modelo; o proxy deixa um só |
+| Indexar o acervo no Pi | Horas de CPU num Pi 4 por algo que só acontece uma vez |
+| Planejamento dentro da JVM do SGE | Reescrever em Java o fatiador e a busca que já existem e estão testados em Python |
 
 ---
 

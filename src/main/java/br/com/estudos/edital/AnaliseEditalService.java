@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -105,7 +106,7 @@ public class AnaliseEditalService {
     public IaStatusResponse statusIa() {
         return configuracao.disponivel()
             ? new IaStatusResponse(true, null, configuracao.modelo())
-            : new IaStatusResponse(false, "Configure OPENROUTER_API_KEY no servidor para ler editais com IA.", configuracao.modelo());
+            : new IaStatusResponse(false, "Cadastre a chave do OpenRouter em Ajustes → IA para ler editais com IA.", configuracao.modelo());
     }
 
     /** Recebe o PDF, extrai o texto e começa a etapa 1. */
@@ -283,7 +284,9 @@ public class AnaliseEditalService {
     /**
      * D-62 — a única escrita no cadastro. Cria o que é novo, aplica a
      * cobertura (D-60) e ativa o concurso. Tudo numa transação: falhou, nada
-     * fica.
+     * fica. D-64: o concurso nasce com identificador e todo assunto coberto
+     * sem chave externa ganha uma — o material preparado depois reencontra os
+     * dois por elas, nunca pelo nome (docs/SPRINT-19-MATERIAL-AUTOMATICO.md §2).
      */
     @Transactional
     public Concurso confirmar(Long id, ConfirmacaoEditalRequest pedido) {
@@ -328,7 +331,13 @@ public class AnaliseEditalService {
             throw new ValidationException("A proposta ficou sem nenhum assunto.", "PROPOSTA_VAZIA", "disciplinas");
         }
 
-        var concurso = new Concurso(nomeConcurso, OrigemConcurso.ANALISE_IA, null);
+        for (var item : itens) {
+            if (item.assunto().getChaveExterna() == null) {
+                item.assunto().setChaveExterna(UUID.randomUUID().toString()); // D-64
+            }
+        }
+
+        var concurso = new Concurso(nomeConcurso, OrigemConcurso.ANALISE_IA, concursoService.novoSlug(nomeConcurso));
         concurso.setCargo(cortar(pedido.cargo(), 250));
         concurso.setBanca(cortar(pedido.banca(), 150));
         concurso.setDataProva(pedido.dataProva());

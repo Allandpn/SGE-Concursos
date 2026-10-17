@@ -37,7 +37,11 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 "simulado", "resultado_simulado", "segmento",
                 // Sprint 18 (ADR-042/043): concurso-alvo, cobertura do edital e
                 // análise de edital. Nenhuma guarda fase, turno ou plano.
-                "concurso", "concurso_assunto", "analise_edital");
+                "concurso", "concurso_assunto", "analise_edital",
+                // Sprint 19 (ADR-044): configuração de IA e a lacuna de
+                // material (D-65), um fato registrado — nenhuma guarda estado
+                // do material, que é derivado dos segmentos.
+                "configuracao_ia", "lacuna_material");
         assertEquals(esperado, tabelasDoSchema());
     }
 

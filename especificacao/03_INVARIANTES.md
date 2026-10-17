@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.11.0 |
+| Versão | 1.12.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 63 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 65 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 63 regras, classificadas
+## 3. As 65 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -175,8 +175,10 @@ conceitual — envelhecer por motivo errado.
 | D-61  | Comportamento | S | Teste: tercis pelo número de questões, empate com o mesmo peso; disciplina sem contagem → `MEDIO` não determinado |
 | D-62  | Comportamento | S + I | Teste: até a confirmação, nenhuma disciplina, assunto ou concurso é criado pela análise |
 | D-63  | Comportamento | S | Teste: correspondência com id inexistente ou arquivado vira assunto novo |
+| D-64  | Comportamento | S | Teste: confirmar gera identificador do concurso e chave de todo assunto novo; o material entregue pelo identificador não cria segundo concurso |
+| D-65  | Comportamento | S | Teste: lacuna registrada aparece no estado do material; some quando o assunto ganha segmento |
 
-**Contagem:** 18 invariantes · 5 derivações · 34 comportamentos · 7 políticas — 64 linhas para 63 regras.
+**Contagem:** 18 invariantes · 5 derivações · 36 comportamentos · 7 políticas — 66 linhas para 65 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -353,7 +355,7 @@ movido — e a tabela vira ficção que ninguém confere.
 | O que se pergunta | Como se responde |
 |---|---|
 | Onde D-07 é implementada? | Varredura por `D-07` no código |
-| Alguma regra ficou sem implementação? | Varredura das 63 contra o resultado |
+| Alguma regra ficou sem implementação? | Varredura das 65 contra o resultado |
 | Esta restrição corresponde a quê? | O identificador está no nome dela |
 
 ### 9.1 Citação como metadado, não como comentário
@@ -363,7 +365,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 63 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 65 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -486,6 +488,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.12.0 | 2026-10-17 | **D-64 e D-65** com `01_DOMINIO.md` v1.24.0 (identidade dada na confirmação; material preparado pelo sistema). As duas Comportamento/`S`. Contagem: 66 linhas para 65 regras |
 | 1.11.0 | 2026-10-15 | **D-58 a D-63 adicionadas à tabela de §3** com `01_DOMINIO.md` v1.23.0 (concurso-alvo e análise de edital). D-58 é Invariante/`P` (índice único parcial: um ativo); as demais são Comportamento — D-62 também na interface, porque é a tela de revisão que obriga a confirmar. Contagem: 64 linhas para 63 regras |
 | 1.10.0 | 2026-10-14 | **D-56 e D-57 adicionadas à tabela de §3** no mesmo passo de `01_DOMINIO.md` v1.21.0 — ambas Comportamento/`S`, sobre o que é sugerido (§5: nada gravado a impedir). D-29 passa a `S + I`: o parâmetro de duração existe no serviço, e a declaração do tempo mora na tela de registro. Contagem: 58 linhas para 57 regras |
 | 1.9.0 | 2026-10-14 | **D-54 e D-55 adicionadas à tabela de §3**, no mesmo passo em que nasceram em `01_DOMINIO.md` v1.20.0. As duas são Comportamento/`S`: dependem de contar segmentos estudados e de ordenar assuntos em estudo, nada que a persistência expresse sem distorção. Contagem: 56 linhas para 55 regras; §0, §3 e §9 atualizados |

@@ -7,7 +7,7 @@
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-10-15-3';
+const CASCA_VERSAO = 'casca-2026-10-17-1';
 
 const CASCA = [
   './',
@@ -48,6 +48,8 @@ self.addEventListener('fetch', (evento) => {
   const url = new URL(evento.request.url);
   if (evento.request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/actuator/')) return; // sempre rede
+  // PDFs do material (ADR-044): grandes e servidos pelo próprio SGE — nunca na casca.
+  if (url.pathname.startsWith('/material/')) return;
 
   // Rede primeiro: com servidor no ar, a casca vem sempre atualizada; sem
   // rede, cai no cache (navegação cai no index.html).

@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.10.0 |
+| Versão | 1.11.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -393,6 +393,16 @@ ainda custa um toque, e não meses.
 6. **Confirma.** Só aqui algo é gravado (D-62): disciplinas e assuntos novos
    nascem, os em comum recebem peso e ordem do edital, e o concurso vira o
    alvo (D-60).
+7. **Pronto.** Os assuntos já estão no turno. O material de leitura é
+   preparado sozinho, em segundo plano (`01_DOMINIO` §3.10): em Concursos, o
+   concurso-alvo mostra "Material: 12 de 40 prontos · 3 sem material no
+   acervo · 25 a preparar", e cada assunto sem material no acervo mostra o
+   motivo no detalhe. Nada a fazer — é só acompanhamento.
+
+A chave do OpenRouter e o modelo usado ficam em **Ajustes → IA** (a chave é
+cadastrada uma vez e nunca é mostrada de volta, só os últimos quatro
+caracteres). A mesma configuração serve à leitura do edital e à preparação
+do material.
 
 Falhas, com o que fazer em cada uma: PDF sem texto (escaneado) → "este PDF
 é imagem; envie a versão com texto"; IA indisponível ou sem chave
@@ -407,9 +417,9 @@ assuntos o edital cobria e quantos tem em comum com o atual. Qualquer um
 pode ser **reativado** — a cobertura dele volta a valer (D-60), com
 confirmação, porque muda peso e ordem.
 
-**Edital vindo do planejamento** continua chegando pelo Drive (J-1); a
-importação registra o concurso a partir do `concurso.json` que viaja junto
-e o ativa — aparece no mesmo histórico.
+**Edital vindo do planejamento pelo Drive** (J-1) continua aceito como
+caminho legado (ADR-044): a importação registra o concurso a partir do
+`concurso.json` e o ativa — aparece no mesmo histórico.
 
 ## 4. As telas
 
@@ -423,7 +433,7 @@ Oito. Cada uma justificada por uma jornada — tela sem jornada não entra.
 | **Assuntos** | J-1, J-3 | Cadastro em lote, peso, frente × backlog — agrupado por disciplina, cada uma com seu resumo (§4.5) |
 | **Erros** | J-2, J-3 | Registro com causa e confiança; consulta por assunto |
 | **Progresso** | J-3 | As quatro métricas, com as regras de n de `00_PRODUTO` §7 |
-| **Ajustes** | J-1, J-3 | Tetos, limiares, intervalos |
+| **Ajustes** | J-1, J-3, J-5 | Tetos, limiares, intervalos; a chave e o modelo de IA |
 | **Concursos** | J-5 | O concurso-alvo, o histórico de editais e a entrada de edital novo |
 
 **Não existe tela de calendário.** O sistema diz o que fazer hoje; planejar a
@@ -623,6 +633,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.11.0 | 2026-10-17 | Pedido do usuário. J-5 ganha o passo 7: depois de confirmar, o material é preparado sozinho e Concursos mostra o andamento (`01_DOMINIO` §3.10). Chave e modelo de IA passam a ser cadastrados em Ajustes. O caminho pelo Drive vira legado (ADR-044) |
 | 1.10.0 | 2026-10-15 | Pedido do usuário. J-5: o concurso confirmado pode ser lido pelo planejamento (`GET /api/concursos/{id}/planejamento`, `docs/SPRINT-18-CONCURSOS.md` §10) — o SGE é o sistema principal e o planejamento parte dos assuntos confirmados aqui |
 | 1.9.0 | 2026-10-15 | Pedido do usuário. Nova **J-5**: edital novo lido por IA no próprio sistema (PDF → cargos → proposta revisável → confirmação) e histórico de editais com reativação. Oitava tela, **Concursos**. §4.4: concurso-alvo e dias até a prova no topo de Hoje. §4.5: Assuntos abre por disciplina, com resumo de peso e fases. J-1: importação **adota** assunto sem chave externa de mesmo nome, e o `concurso.json` passa a registrar o concurso (`01_DOMINIO` v1.23.0, ADR-042, ADR-043) |
 | 1.8.0 | 2026-10-15 | §1.2: app Android nativo como segundo cliente (ADR-041), implementando as mesmas telas e regras. Nova §2.2, **lembrete do turno**: opcional, uma notificação por dia no máximo, diz o que há para hoje, nunca cobra, não lembra quem já estudou no dia. Pedido pelo usuário |

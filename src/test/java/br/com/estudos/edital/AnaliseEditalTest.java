@@ -35,6 +35,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import tools.jackson.databind.json.JsonMapper;
 
 import br.com.estudos.assunto.AssuntoRepository;
+import br.com.estudos.concurso.ConcursoRepository;
 import br.com.estudos.disciplina.DisciplinaRepository;
 import br.com.estudos.shared.IntegracaoTestBase;
 import br.com.estudos.shared.enums.TipoPeso;
@@ -84,6 +85,7 @@ class AnaliseEditalTest extends IntegracaoTestBase {
 
     @Autowired private DisciplinaRepository disciplinaRepository;
     @Autowired private AssuntoRepository assuntoRepository;
+    @Autowired private ConcursoRepository concursoRepository;
 
     private String sufixo;
 
@@ -196,7 +198,7 @@ class AnaliseEditalTest extends IntegracaoTestBase {
         statusHttp = 401;
         var analise = enviarEdital();
         assertEquals("FALHOU", JsonPath.read(analise, "$.status"));
-        assertTrue(((String) JsonPath.read(analise, "$.erro")).contains("OPENROUTER_API_KEY"));
+        assertTrue(((String) JsonPath.read(analise, "$.erro")).contains("Ajustes → IA"), "a mensagem diz onde corrigir a chave (ADR-044)");
     }
 
     @Test
@@ -224,6 +226,56 @@ class AnaliseEditalTest extends IntegracaoTestBase {
             .andExpect(jsonPath("$.codigo").value("ARQUIVO_NAO_PDF"));
     }
 
+    /**
+     * D-64 (docs/SPRINT-19-MATERIAL-AUTOMATICO.md §2): a confirmação dá
+     * identificador ao concurso e chave a cada assunto novo; o material entregue
+     * pelo planejamento com esse identificador reencontra o mesmo concurso —
+     * antes criava um segundo, sem cargo, e o ativava no lugar.
+     */
+    @Test
+    void confirmar_d64_slugEChaves_eConcursoJsonDoMesmoSlugNaoDuplica() throws Exception {
+        var nome = "Concurso D64" + sufixo;
+        long concursoId = confirmarEditalSimples(nome);
+
+        var entrega = mockMvc.perform(get("/api/concursos/{id}/planejamento", concursoId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.assuntos.length()").value(2))
+            .andExpect(jsonPath("$.assuntos[0].segmentos").value(0))
+            .andExpect(jsonPath("$.assuntos[0].lacuna").doesNotExist())
+            .andReturn().getResponse().getContentAsString();
+        String slug = JsonPath.read(entrega, "$.slug");
+        assertEquals(("concurso-d64" + sufixo).replace(' ', '-'), slug);
+        List<String> chaves = JsonPath.read(entrega, "$.assuntos[*].chaveExterna");
+        assertTrue(chaves.stream().allMatch(c -> c != null && c.length() == 36), "todo assunto confirmado tem chave");
+        List<String> nomes = JsonPath.read(entrega, "$.assuntos[*].assunto");
+
+        long antes = concursoRepository.count();
+        var csv = "disciplina,assunto,peso,ordem,chaveExterna\n"
+            + "Direito D64" + sufixo + "," + nomes.get(0) + ",MEDIO,1," + chaves.get(0) + "\n"
+            + "Direito D64" + sufixo + "," + nomes.get(1) + ",MEDIO,2," + chaves.get(1) + "\n";
+        var concursoJson = "{\"slug\": \"" + slug + "\", \"nome\": \"" + nome + "\", \"dataProva\": \"2026-12-20\"}";
+        mockMvc.perform(multipart("/api/assuntos/importacoes/confirmar")
+                .file(new MockMultipartFile("arquivo", "assuntos.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)))
+                .file(new MockMultipartFile("concurso", "concurso.json", "application/json", concursoJson.getBytes(StandardCharsets.UTF_8))))
+            .andExpect(status().isOk());
+
+        assertEquals(antes, concursoRepository.count(), "o mesmo slug não cria segundo concurso");
+        mockMvc.perform(get("/api/concursos/ativo"))
+            .andExpect(jsonPath("$.id").value(concursoId))
+            .andExpect(jsonPath("$.cargo").value("Analista"));
+    }
+
+    @Test
+    void confirmar_d64_nomeRepetidoGanhaSufixoNoSlug() throws Exception {
+        var nome = "Concurso Repetido" + sufixo;
+        long primeiro = confirmarEditalSimples(nome);
+        long segundo = confirmarEditalSimples(nome);
+
+        var slugPrimeiro = concursoRepository.findById(primeiro).orElseThrow().getSlug();
+        var slugSegundo = concursoRepository.findById(segundo).orElseThrow().getSlug();
+        assertEquals(slugPrimeiro + "-2", slugSegundo);
+    }
+
     @Test
     void iaDisponivel() throws Exception {
         mockMvc.perform(get("/api/editais/ia"))
@@ -231,6 +283,31 @@ class AnaliseEditalTest extends IntegracaoTestBase {
     }
 
     // ------------------------------------------------------------ apoio
+
+    /** Edital com uma disciplina nova e dois assuntos novos, confirmado sem mudança. Devolve o id do concurso. */
+    private long confirmarEditalSimples(String nomeConcurso) throws Exception {
+        var disciplina = "Direito D64" + sufixo;
+        respostaEtapa2 = """
+            {"disciplinas": [{"nome": "%1$s", "questoes": 10,
+              "assuntos": [{"nome": "Atos administrativos%2$s"}, {"nome": "Licitacoes%2$s"}]}]}"""
+            .formatted(disciplina, sufixo);
+        Integer id = JsonPath.read(enviarEdital(), "$.id");
+        mockMvc.perform(post("/api/editais/analises/{id}/cargo", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"cargo\": \"Tecnico Judiciario\"}"))
+            .andExpect(status().isAccepted());
+        var confirmada = """
+            {"nome": "%1$s", "cargo": "Analista", "banca": "FCC", "dataProva": "2026-12-20",
+             "disciplinas": [{"nome": "%2$s", "disciplinaExistenteId": null, "peso": "MEDIO",
+               "assuntos": [{"nome": "Atos administrativos%3$s", "assuntoExistenteId": null},
+                            {"nome": "Licitacoes%3$s", "assuntoExistenteId": null}]}]}"""
+            .formatted(nomeConcurso, disciplina, sufixo);
+        var resposta = mockMvc.perform(post("/api/editais/analises/{id}/confirmar", id)
+                .contentType(MediaType.APPLICATION_JSON).content(confirmada))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        return ((Number) JsonPath.read(resposta, "$.id")).longValue();
+    }
 
     private String enviarEdital() throws Exception {
         var texto = new StringBuilder();

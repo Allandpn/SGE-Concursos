@@ -49,6 +49,12 @@ estudos:
     url-base: ${OPENROUTER_URL:https://openrouter.ai/api/v1}
     # Testes rodam a análise na própria thread da requisição.
     sincrono: false
+  # ADR-044 — o planejamento roda ao lado, no mesmo compose
+  # (docs/SPRINT-19-MATERIAL-AUTOMATICO.md §4 e §6). Sem token, /internal/** fica desligado.
+  interno:
+    token: ${INTERNAL_TOKEN:}
+  material:
+    dir: ${MATERIAL_DIR:/dados/material}
 
 management:
   endpoints:

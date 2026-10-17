@@ -54,6 +54,8 @@ public class Concurso {
     @Enumerated(EnumType.STRING)
     private OrigemConcurso origem;
 
+    /** D-64 — identificador estável, dado quando o concurso nasce; nunca muda. */
+    @Column(nullable = false, updatable = false)
     private String slug;
 
     @Setter

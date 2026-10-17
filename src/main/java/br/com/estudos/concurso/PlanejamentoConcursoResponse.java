@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * lê para triar o acervo (docs/SPRINT-18-CONCURSOS.md §2, "Entrega ao planejamento").
  */
 public record PlanejamentoConcursoResponse(
-    @Schema(description = "Pasta do planejamento; nulo no concurso lido por IA, que ainda não passou por lá") String slug,
+    @Schema(description = "Identificador do concurso (D-64)") String slug,
     @Schema(description = "Nome do concurso", example = "SEFAZ SC 2026") String nome,
     String cargo,
     String banca,
@@ -23,6 +23,8 @@ public record PlanejamentoConcursoResponse(
         String assunto,
         TipoPeso peso,
         int ordem,
-        @Schema(description = "Vazia no assunto criado pela análise por IA: o planejamento atribui o UUID e o SGE adota por nome") String chaveExterna
+        @Schema(description = "Identidade do assunto para o planejamento (D-64); vazia só em assunto antigo de importação sem chave") String chaveExterna,
+        @Schema(description = "Quantos segmentos o assunto já tem — o planejamento pula quem já tem material") int segmentos,
+        @Schema(description = "Motivo registrado de o acervo não ensinar o assunto (D-65); nulo sem lacuna") String lacuna
     ) {}
 }

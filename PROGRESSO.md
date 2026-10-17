@@ -31,10 +31,11 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 16 | Correções, multi-edital e app | Análise do código contra a especificação (2026-10-14): `PARCIAL` em manutenção desconsolidava; `FALHA` nunca voltava à fila de estudo (reestudo); fase calculada assunto a assunto; reimportação por `chaveExterna`; concurso-alvo ativo (ADR-039); frontend sem CDN e instalável como app no celular/tablet (ADR-038); prontidão multiusuário sem implementá-lo (ADR-040) — `docs/SPRINT-16-CORRECOES-MULTIEDITAL.md` | **feito** — 132/132 testes verdes contra Postgres real; app conferido num Chromium emulando celular; importação ponta a ponta (exportador do planejamento → script → SGE) conferida com troca de concurso-alvo |
 | 17 | Uso real | Pi no ar (`03E_DEPLOYMENT.md` §8 e §8A), 4–8 semanas de registro real antes de qualquer funcionalidade nova — M-2/M-3 ainda são hipótese sem dado. Começa pelos atritos da jornada que contaminariam os primeiros dados (`docs/SPRINT-17-USO-REAL.md`) | **em andamento** — os 4 atritos e as 4 lacunas da especificação resolvidos; falta o Pi no ar e o uso real |
 | 18 | Concurso-alvo e edital por IA | `Concurso` com cobertura e histórico (ADR-042), resumo por disciplina, edital novo lido por IA via OpenRouter com revisão antes de gravar (ADR-043) — `docs/SPRINT-18-CONCURSOS.md`. Antecipada a pedido do usuário depois dos wireframes do app | **em andamento** — ver §19 |
-| 19 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
-| 20 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
-| 21 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
-| 22 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; simulado no formato da prova, com nota de corte | não começou |
+| 19 | Material preparado pelo sistema | Edital → cargo → revisão e o resto sozinho: o planejamento roda no Pi ao lado do SGE, prepara o material com IA via OpenRouter e o SGE serve os PDFs; identidade dada na confirmação (D-64), lacuna visível (D-65), chave e modelo em Ajustes (ADR-044) — `docs/SPRINT-19-MATERIAL-AUTOMATICO.md`. Antecipada a pedido do usuário | **em andamento** — Fase A (SGE) feita; ver §20 |
+| 20 | Diagnóstico de edital | Edital novo × retenção medida: quanto já está consolidado/em escada/nunca visto, e o que cabe até a prova (`concurso.json` já chega com `dataProva`) | não começou |
+| 21 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico | não começou |
+| 22 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
+| 23 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; simulado no formato da prova, com nota de corte | não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -980,7 +981,29 @@ próprio uso real fica confuso.
 
 ---
 
-## 20. Como este arquivo se mantém honesto
+## 20. Sprint 19 · Material preparado pelo sistema
+
+**Documento técnico:** `docs/SPRINT-19-MATERIAL-AUTOMATICO.md` v1.0.0. Pedido do usuário
+em 2026-10-17: "subir um edital, escolher um cargo, e todo o resto será feito pelo
+sistema". A análise dos dois repositórios mostrou que o estudo já começava sozinho, mas o
+material dependia de uma pessoa no PC — e que o concurso da análise por IA nascia sem
+identificador, de modo que o material entregue depois criava um **segundo concurso**.
+Decisões do usuário: IA via OpenRouter também no planejamento; chave e modelo em Ajustes;
+o SGE dá a identidade; tudo no Pi 4B 4 GB com SSD de 480 GB, sem Drive no caminho.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 19.1 | Especificação: `01_DOMINIO` v1.24.0 (§3.10, D-64, D-65), `02_JORNADAS` v1.11.0, `03_INVARIANTES` v1.12.0, ADR-044 | Claude, a pedido do usuário | **feito** |
+| 19.2 | Fase A — SGE: identidade na confirmação (V13), Ajustes → IA, rotas internas com token, lacuna, estado do material, `/material/**`, telas | Claude | **feito** — ver o resultado da suíte no changelog |
+| 19.3 | Fase B — repositório do planejamento: worker (busca no índice, IA pelo proxy, `montar_bloco`, importação de segmentos, lacunas) | Claude, com exceção explícita da regra de escrita | aberto |
+| 19.4 | Fase C — compose com o serviço do planejamento, volumes, limites de memória do Pi 4 4 GB, `INTERNAL_TOKEN`, adendo `03E_DEPLOYMENT` §8C | Claude | aberto |
+| 19.5 | Indexar o acervo no PC e copiar apostilas + `indice.db` para o SSD do Pi; cadastrar a chave em Ajustes; primeiro edital real ponta a ponta | **você** | aberto |
+
+`docs/DIAGRAMA-ER.md` v2.4.0 também ganhou as tabelas da Sprint 18, que tinham ficado de fora.
+
+---
+
+## 21. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
    existe.
@@ -994,7 +1017,7 @@ próprio uso real fica confuso.
 
 ---
 
-## 21. Changelog
+## 22. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|

@@ -12,10 +12,10 @@ schema real vence, e este arquivo está desatualizado — não o contrário.
 
 | Campo | Valor |
 |---|---|
-| Versão | 2.3.0 |
-| Data | 2026-09-06 |
+| Versão | 2.4.0 |
+| Data | 2026-10-17 |
 | Status | Vigente |
-| Subordinado a | `docs/SPRINT-1-BANCO.md`, `docs/SPRINT-4-ESCADA.md` (ADR-032), `docs/SPRINT-7-METRICAS.md` (D-46), `docs/SPRINT-8-SIMULADO.md` (D-13), `docs/SPRINT-10-SEGMENTO.md` (D-50 a D-53); `src/main/resources/db/migration/V1`, `V3`, `V5`, `V7`, `V8`, `V9` |
+| Subordinado a | `docs/SPRINT-1-BANCO.md`, `docs/SPRINT-4-ESCADA.md` (ADR-032), `docs/SPRINT-7-METRICAS.md` (D-46), `docs/SPRINT-8-SIMULADO.md` (D-13), `docs/SPRINT-10-SEGMENTO.md` (D-50 a D-53), `docs/SPRINT-18-CONCURSOS.md` (D-58), `docs/SPRINT-19-MATERIAL-AUTOMATICO.md` (D-64, D-65); `src/main/resources/db/migration/V1`, `V3`, `V5`, `V7`, `V8`, `V9`, `V12`, `V13` |
 
 ---
 
@@ -34,6 +34,11 @@ erDiagram
     simulado ||--o{ resultado_simulado : "fk_resultado_simulado_simulado"
     assunto ||--o{ segmento : "fk_segmento_assunto (D-50: ordem única no assunto)"
     segmento |o--o{ sessao : "fk_sessao_d51_segmento_mesmo_assunto (composta, opcional, só ESTUDO)"
+    concurso ||--o{ concurso_assunto : "fk_concurso_assunto_concurso (cobertura do edital)"
+    assunto ||--o{ concurso_assunto : "fk_concurso_assunto_assunto"
+    disciplina ||--o{ concurso_assunto : "fk_concurso_assunto_disciplina"
+    concurso |o--o{ analise_edital : "fk_analise_edital_concurso (opcional, só depois de confirmar)"
+    assunto ||--o| lacuna_material : "fk_lacuna_material_assunto (D-65, no máximo uma)"
 
     disciplina {
         bigint id PK
@@ -139,12 +144,71 @@ erDiagram
         timestamptz criado_em
         timestamptz atualizado_em
     }
+
+    concurso {
+        bigint id PK
+        varchar nome
+        varchar cargo
+        varchar banca
+        date data_prova
+        varchar origem "ANALISE_IA|PLANEJAMENTO"
+        varchar slug UK "NOT NULL desde V13 (D-64)"
+        boolean ativo "D-58: índice único parcial ux_concurso_d58_um_ativo"
+        timestamptz ativado_em
+        timestamptz desativado_em
+        timestamptz criado_em
+    }
+
+    concurso_assunto {
+        bigint id PK
+        bigint concurso_id FK
+        bigint assunto_id FK
+        bigint disciplina_id FK
+        varchar peso "ALTO|MEDIO|BAIXO"
+        integer ordem
+    }
+
+    analise_edital {
+        bigint id PK
+        varchar nome_arquivo
+        text texto "o PDF não é guardado (ADR-043)"
+        varchar status
+        varchar etapa_falha
+        text erro
+        varchar modelo
+        varchar concurso_nome
+        varchar banca
+        date data_prova
+        text cargos "JSON"
+        varchar cargo_escolhido
+        text proposta "JSON"
+        bigint concurso_id FK
+        timestamptz criado_em
+        timestamptz atualizado_em
+    }
+
+    configuracao_ia {
+        smallint id PK "CHECK id = 1 — uma linha só"
+        text chave "nunca devolvida pela API (ADR-044)"
+        varchar modelo
+        timestamptz atualizado_em
+    }
+
+    lacuna_material {
+        bigint assunto_id PK "e FK"
+        text motivo "D-65, CHECK não vazio"
+        timestamptz registrada_em
+    }
 ```
 
 ## Notas de leitura
 
-- `parametro` não aparece com nenhuma linha de relacionamento — é
-  configuração pura (`01_DOMINIO` §3), sem FK para nenhuma outra tabela.
+- `parametro` e `configuracao_ia` não aparecem com nenhuma linha de
+  relacionamento — são configuração pura (`01_DOMINIO` §3), sem FK para
+  nenhuma outra tabela.
+- `lacuna_material` é a única tabela da Sprint 19 que guarda um fato: o estado
+  do material (pronto, sem material, a preparar) é derivado dos segmentos, e
+  segmento vence lacuna (D-65). Nada a apagar quando o material chega.
 - `revisao` tem duas FKs distintas para `sessao` (`sessao_origem_id` e
   `sessao_cumpriu_id`): a sessão que gerou a revisão e a sessão que a
   cumpriu não são a mesma pergunta. D-06 amarra a segunda: só pode ficar
@@ -186,6 +250,7 @@ erDiagram
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.4.0 | 2026-10-17 | Sprint 18 (`V12`), que tinha ficado de fora: `concurso` (D-58), `concurso_assunto` (cobertura do edital, a única n:n) e `analise_edital`. Sprint 19 (`V13`): `concurso.slug` passa a `NOT NULL` (D-64), `configuracao_ia` e `lacuna_material` (D-65) |
 | 2.3.0 | 2026-09-06 | Sprint 10 (`V9`): tabela `segmento` nova (`chave_externa` obrigatória e única — D-53 —, `ordem` única no assunto — D-50); `assunto.chave_externa` (opcional, único — D-52); `sessao.segmento_id` (nullable, só `ESTUDO` — D-51, via FK composta `fk_sessao_d51_segmento_mesmo_assunto`). Notas de leitura atualizadas para 9 tabelas |
 | 2.2.0 | 2026-09-01 | `sessao.proxima_sessao_data`/`proxima_sessao_descricao` removidas (`docs/SPRINT-1-BANCO.md` v1.4.0) |
 | 2.1.0 | 2026-08-31 | `sessao.previsao_reconstrucao`: `boolean` → `text` (V1, `docs/SPRINT-1-BANCO.md` v1.2.0) |

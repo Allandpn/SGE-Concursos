@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.23.0 |
+| Versão | 1.24.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -382,6 +382,10 @@ e os que já foram alvo antes. Tem nome, cargo, banca, data da prova (se o
 edital já a fixou), a origem (lido por IA no próprio sistema, ou importado
 do sistema de planejamento) e o **período em que foi alvo**.
 
+Todo concurso tem um **identificador** estável, dado pelo sistema quando o
+concurso nasce. É por ele — nunca pelo nome — que o material preparado para
+o concurso o reencontra (D-64).
+
 **No máximo um concurso é o alvo por vez** (D-58). Ativar outro encerra o
 período do anterior, que fica no histórico; nada é apagado (D-18).
 
@@ -435,9 +439,36 @@ um erro de leitura vire meses de estudo no lugar errado:
   que não existe ou está arquivado, a correspondência é descartada e o
   assunto entra como novo.
 
-Assunto criado pela análise nasce sem chave externa e sem material (§3.7):
-material continua vindo do sistema de planejamento, que pode adotar o
-assunto depois (`02_JORNADAS` J-1).
+Na confirmação, cada assunto que ainda não tem **chave externa** recebe
+uma, e o concurso recebe o seu identificador (D-64). A partir daí, concurso
+e assunto são reconhecidos por essas chaves: renomear um assunto nunca faz o
+material dele cair em outro, nem cria um segundo concurso. O material vem
+depois, sem pedir nada (§3.10).
+
+### 3.10 Material preparado pelo sistema
+
+Depois da confirmação, o sistema de planejamento — que roda no mesmo
+servidor — prepara o material de cada assunto do concurso-alvo que ainda não
+tem: procura no acervo de apostilas, uma IA escolhe as páginas que ensinam
+cada parte do assunto, e o material é fatiado em segmentos (§3.7). O usuário
+não faz nada (`docs/00A_ADR.md` ADR-044).
+
+Duas garantias:
+
+- **Nada é inventado** (D-65). Se o acervo não ensina o assunto, ou a seleção
+  da IA não passa na validação do fatiamento (página que não existe, parte do
+  assunto sem página e sem motivo), o assunto fica marcado **sem material no
+  acervo**, com o motivo. Estuda-se igual: assunto sem segmentos começa a
+  escada no primeiro estudo (D-54).
+- **O estudo nunca espera o material.** Os assuntos entram no backlog na
+  confirmação; o material chega quando fica pronto, e o turno passa a sugerir
+  os segmentos (D-55) a partir daí.
+
+O estado do material de um concurso — prontos, sem material no acervo, a
+preparar — é derivado (D-16) dos segmentos de cada assunto, com uma exceção:
+a marca **sem material no acervo** é um fato registrado (o acervo não ensina
+aquilo), e não se deriva de nada que o sistema guarde. Ela some quando o
+assunto ganha segmentos.
 
 ---
 
@@ -1256,6 +1287,8 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-61 | O peso vindo da análise de edital sai do número de questões por regra fixa (tercis); sem contagem no edital, `MEDIO` com peso não determinado — nunca estimado pela IA | §3.9 |
 | D-62 | Nada da análise de edital é gravado sem o usuário confirmar a proposta revisada | §3.9 |
 | D-63 | Correspondência proposta pela análise só vale para assunto existente e ativo; senão o assunto entra como novo | §3.9 |
+| D-64 | Na confirmação de uma análise de edital, o concurso recebe identificador e cada assunto sem chave externa recebe uma; daí em diante são reconhecidos por elas, nunca pelo nome | §3.8, §3.9 |
+| D-65 | Assunto que o acervo não ensina fica marcado sem material, com o motivo; material nunca é inventado e o estudo nunca espera por ele | §3.10 |
 
 ---
 
@@ -1328,6 +1361,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.24.0 | 2026-10-17 | Pedido do usuário: "subir o edital, escolher o cargo, e o sistema faz todo o resto". Nova **§3.10**: o material de leitura é preparado pelo sistema de planejamento rodando no mesmo servidor, sem toque humano (ADR-044). **D-64** (§3.8, §3.9): concurso e assunto confirmados ganham identificador e chave externa na confirmação — fim do casamento por nome e do concurso duplicado quando o material chegava (o concurso da análise nascia sem identificador e a importação criava outro). **D-65**: o que o acervo não ensina vira marca visível com motivo, nunca material inventado. 65 regras |
 | 1.23.0 | 2026-10-15 | Pedido do usuário. Nova **§3.8, Concurso**: o concurso-alvo e o histórico, com a cobertura do edital (peso, disciplina e ordem que ele dá a cada assunto); ativar aplica a cobertura e nunca toca o estudo feito. Nova **§3.9, análise de edital**: IA lê o PDF e propõe disciplinas e assuntos para o cargo escolhido; peso calculado pelo sistema a partir do número de questões; nada gravado sem confirmação. §9 ganha a primeira relação n:n (cobertura). D-58 a D-63. 63 regras (`docs/00A_ADR.md` ADR-042 e ADR-043) |
 | 1.22.0 | 2026-10-15 | §3.2.1: D-35 ganha definição operacional (quais resultados contam, lote abaixo do mínimo fora, N parametrizado, onde a sugestão aparece). A regra existia desde a v1.7.0 sem nenhum código — era regra órfã no sentido de `03_INVARIANTES` §9. Achado ao revisar o que falta antes do uso real |
 | 1.21.0 | 2026-10-14 | Atritos 2, 3 e 4 da análise de jornada, decididos pelo usuário. (2) §7.7: tempo de bloco de conteúdo e de lote de questões é **declarado** no registro — tempo de tela gravava um minuto para uma hora de leitura e anulava o "o sistema mede a real" de D-29; conteúdo vem preenchido com a estimativa do segmento ou com a duração de bloco parametrizada. (3) Nova **D-56** (§5.3): com o alerta de represamento ligado, o plano para de sugerir assunto novo, mas continua a leitura em curso. (4) Nova **D-57** (§7.4): o assunto novo vem da disciplina com menos assuntos na frente, em vez de encher uma disciplina por vez. 57 regras |

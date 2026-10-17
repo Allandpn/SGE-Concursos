@@ -11,5 +11,7 @@ public interface ConcursoRepository extends JpaRepository<Concurso, Long> {
 
     Optional<Concurso> findBySlug(String slug);
 
+    boolean existsBySlug(String slug);
+
     List<Concurso> findAllByOrderByAtivadoEmDescIdDesc();
 }

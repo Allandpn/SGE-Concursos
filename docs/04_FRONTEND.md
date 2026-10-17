@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.12.0 |
+| Versão | 1.13.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -704,6 +704,22 @@ documento da sprint).
 - Ajustes ganha o atalho "Concursos e editais" no topo. `CASCA_VERSAO`
   trocada.
 
+## 7K. Material automático e Ajustes de IA (Sprint 19)
+
+`docs/SPRINT-19-MATERIAL-AUTOMATICO.md` §7.
+
+- **Ajustes → IA**, acima dos parâmetros: chave nova (campo senha; a atual aparece só
+  como "••••1234" e de onde vem — cadastrada ou do servidor), modelo num seletor com a
+  lista do OpenRouter e o preço por milhão de tokens, "Salvar IA". A lista é auxiliar: sem
+  ela, o modelo em uso continua no seletor.
+- **Concursos:** no concurso-alvo, "Material: N de M prontos · K sem material no acervo ·
+  R a preparar". Só acompanhamento, sem ação.
+- **Assunto → detalhe:** sem segmento e com lacuna registrada, "Sem material no acervo:
+  <motivo>" (D-65).
+- **"Abrir material"** (Hoje e detalhe) aceita link `http(s)` (legado do Drive) ou caminho
+  `/material/...` servido pelo próprio SGE. O `sw.js` não intercepta `/material/**`;
+  `CASCA_VERSAO` trocada.
+
 ## 8. Os quatro estados de tela
 
 Referenciado por `09_CODE_STYLE §9` (`04_FRONTEND.md §10` — número que
@@ -794,6 +810,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.13.0 | 2026-10-17 | §7K, Sprint 19: Ajustes → IA (chave e modelo), andamento do material em Concursos, lacuna no detalhe do assunto, "Abrir material" com PDF servido pelo SGE |
 | 1.12.0 | 2026-10-15 | O app passa a se chamar **eAgora** (decisão do usuário): título, cabeçalho, manifesto e nome ao instalar. `CASCA_VERSAO` trocada |
 | 1.11.0 | 2026-10-15 | §7J, Sprint 18: linha do concurso-alvo em Hoje, Assuntos por disciplina com resumo, telas Concursos e Novo edital (análise por IA com revisão antes de confirmar) |
 | 1.10.0 | 2026-10-15 | §7I, Sprint 17 lacunas 5–8: mensagem de retorno e "quer adiantar?" em Hoje (J-4, §4.3); Progresso reorganizado como balanço semanal, com a frente da semana e as sugestões de divisão (J-3, D-35) |

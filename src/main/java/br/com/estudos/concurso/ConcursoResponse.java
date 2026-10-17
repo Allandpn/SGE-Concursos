@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import br.com.estudos.segmento.MaterialService;
 import br.com.estudos.shared.enums.OrigemConcurso;
 
 /** Concurso-alvo ou do histórico (docs/SPRINT-18-CONCURSOS.md §2). */
@@ -20,5 +21,6 @@ public record ConcursoResponse(
     @Schema(description = "Fim do período; nulo no ativo (D-59)") Instant desativadoEm,
     @Schema(description = "Dias até a prova pela data do servidor; nulo sem data; negativo depois dela") Long diasParaProva,
     @Schema(description = "Quantos assuntos o edital cobre") int totalAssuntos,
-    @Schema(description = "Quantos destes assuntos também estão no edital do concurso ativo") long emComumComAtivo
+    @Schema(description = "Quantos destes assuntos também estão no edital do concurso ativo") long emComumComAtivo,
+    @Schema(description = "Estado do material de leitura (01_DOMINIO §3.10); só no concurso-alvo, nulo nos do histórico") MaterialService.Resumo material
 ) {}

@@ -192,7 +192,8 @@ document.addEventListener('alpine:init', () => {
 
     get linkMaterial() {
       const arquivo = this.segmentoSugerido?.arquivo;
-      return arquivo && /^https?:\/\//.test(arquivo) ? arquivo : null;
+      // Link do Drive (legado) ou PDF servido pelo próprio SGE (ADR-044).
+      return arquivo && (/^https?:\/\//.test(arquivo) || arquivo.startsWith('/material/')) ? arquivo : null;
     },
 
     // D-07/D-11: reestudo é uma sessão ESTUDO do mesmo assunto — mesma tela
@@ -494,6 +495,7 @@ document.addEventListener('alpine:init', () => {
     peso: null,
     fase: null,
     segmentos: [],
+    lacuna: null,
     retencao: [],
     carregando: false,
     semDados: false,
@@ -512,6 +514,7 @@ document.addEventListener('alpine:init', () => {
       this.disciplinaNome = item.disciplina.nome;
       this.peso = item.assunto.peso;
       this.fase = item.assunto.fase;
+      this.lacuna = null;
       this.carregando = true;
       try {
         this.segmentos = await api(`/assuntos/${assuntoId}/segmentos`);
@@ -522,6 +525,16 @@ document.addEventListener('alpine:init', () => {
         this.segmentos = [];
       } finally {
         this.carregando = false;
+      }
+
+      // D-65: sem segmento, o motivo de o acervo não ensinar o assunto, se houver.
+      // 404 é o normal (sem lacuna); qualquer falha só esconde a linha.
+      if (this.segmentos.length === 0) {
+        try {
+          this.lacuna = await api(`/assuntos/${assuntoId}/lacuna`);
+        } catch (e) {
+          this.lacuna = null;
+        }
       }
 
       // M-2, adicionado na Sprint 14 (04_FRONTEND §7B) — mesmo princípio
@@ -682,6 +695,15 @@ document.addEventListener('alpine:init', () => {
     draft: {}, // cópia editável por chave — só o que o <input> lê/escreve
     salvando: {},
     erroPorChave: {},
+    // Ajustes → IA (ADR-044, docs/SPRINT-19-MATERIAL-AUTOMATICO.md §7). A chave
+    // digitada só vai no PUT; a resposta nunca a traz de volta.
+    ia: null,
+    modelos: [],
+    chaveNova: '',
+    modeloEscolhido: '',
+    salvandoIa: false,
+    erroIa: null,
+    salvoIa: false,
 
     async init() {
       this.carregando = true;
@@ -693,6 +715,52 @@ document.addEventListener('alpine:init', () => {
         this.erro = e.message;
       } finally {
         this.carregando = false;
+      }
+      this.carregarIa();
+    },
+
+    // Auxiliar: falhar aqui não esconde os parâmetros.
+    async carregarIa() {
+      try {
+        this.ia = await api('/ia/configuracao');
+        this.modeloEscolhido = this.ia.modelo;
+      } catch (e) {
+        this.erroIa = e.message;
+      }
+      try {
+        this.modelos = await api('/ia/modelos');
+      } catch (e) {
+        this.modelos = []; // sem a lista, o modelo atual continua no seletor
+      }
+    },
+
+    rotuloModelo(m) {
+      const preco = m.precoEntradaPorMilhao == null ? ''
+        : ` · US$ ${m.precoEntradaPorMilhao.toFixed(2)} / ${m.precoSaidaPorMilhao?.toFixed(2) ?? '?'} por milhão`;
+      return m.nome + preco;
+    },
+
+    get opcoesModelo() {
+      // O modelo em uso aparece mesmo que a lista não tenha carregado.
+      if (this.modelos.some((m) => m.id === this.modeloEscolhido) || !this.modeloEscolhido) return this.modelos;
+      return [{ id: this.modeloEscolhido, nome: this.modeloEscolhido, precoEntradaPorMilhao: null }, ...this.modelos];
+    },
+
+    async salvarIa() {
+      this.erroIa = null;
+      this.salvoIa = false;
+      this.salvandoIa = true;
+      try {
+        this.ia = await api('/ia/configuracao', {
+          method: 'PUT',
+          body: JSON.stringify({ chave: this.chaveNova || null, modelo: this.modeloEscolhido || null }),
+        });
+        this.chaveNova = '';
+        this.salvoIa = true;
+      } catch (e) {
+        this.erroIa = e.message;
+      } finally {
+        this.salvandoIa = false;
       }
     },
 
@@ -782,6 +850,16 @@ document.addEventListener('alpine:init', () => {
 
     get anteriores() {
       return this.concursos.filter((c) => !c.ativo);
+    },
+
+    // 01_DOMINIO §3.10 — andamento do material preparado sozinho.
+    textoMaterial(m) {
+      if (!m) return '';
+      const total = m.prontos + m.semMaterial + m.aPreparar;
+      const partes = [`Material: ${m.prontos} de ${total} prontos`];
+      if (m.semMaterial) partes.push(`${m.semMaterial} sem material no acervo`);
+      if (m.aPreparar) partes.push(`${m.aPreparar} a preparar`);
+      return partes.join(' · ');
     },
 
     detalhes(c) {

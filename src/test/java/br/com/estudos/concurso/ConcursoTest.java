@@ -43,9 +43,11 @@ class ConcursoTest extends IntegracaoTestBase {
     @Test
     void d58_segundoAtivoRecusadoPelaEscrita() {
         jdbc.update("update concurso set ativo = false where ativo");
-        jdbc.update("insert into concurso (nome, origem, ativo) values ('D58 um', 'ANALISE_IA', true)");
+        // slug é obrigatório desde a V13 (D-64); nanoTime evita colidir entre execuções.
+        var s = System.nanoTime();
+        jdbc.update("insert into concurso (nome, origem, slug, ativo) values ('D58 um', 'ANALISE_IA', ?, true)", "d58-um-" + s);
         var erro = assertThrows(DataIntegrityViolationException.class,
-            () -> jdbc.update("insert into concurso (nome, origem, ativo) values ('D58 dois', 'ANALISE_IA', true)"));
+            () -> jdbc.update("insert into concurso (nome, origem, slug, ativo) values ('D58 dois', 'ANALISE_IA', ?, true)", "d58-dois-" + s));
         assertTrue(erro.getMessage().contains("ux_concurso_d58_um_ativo"));
         jdbc.update("update concurso set ativo = false where nome = 'D58 um'");
     }

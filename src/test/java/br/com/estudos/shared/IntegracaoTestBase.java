@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -39,6 +41,19 @@ public abstract class IntegracaoTestBase {
 
     static {
         POSTGRES.start();
+    }
+
+    /**
+     * Cada combinação de configuração de teste (relógio fixo, IA falsa, token
+     * interno...) é um contexto do Spring guardado em cache até o fim da suíte,
+     * cada um com o próprio pool. Com o pool padrão (10), a Sprint 19 passou do
+     * limite de 100 conexões do Postgres ("too many clients already"). Os testes
+     * nunca usam mais que poucas conexões por contexto.
+     */
+    @DynamicPropertySource
+    static void poolPequeno(DynamicPropertyRegistry registro) {
+        registro.add("spring.datasource.hikari.maximum-pool-size", () -> "3");
+        registro.add("spring.datasource.hikari.minimum-idle", () -> "1");
     }
 
     @Autowired

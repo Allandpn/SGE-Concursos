@@ -1,5 +1,6 @@
 package br.com.estudos.concurso;
 
+import java.text.Normalizer;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.estudos.assunto.Assunto;
 import br.com.estudos.assunto.AssuntoRepository;
 import br.com.estudos.disciplina.Disciplina;
+import br.com.estudos.segmento.MaterialService;
 import br.com.estudos.shared.enums.OrigemConcurso;
 import br.com.estudos.shared.enums.TipoPeso;
 import br.com.estudos.shared.exception.ConflictException;
@@ -38,16 +41,19 @@ public class ConcursoService {
     private final ConcursoRepository concursoRepository;
     private final CoberturaEditalRepository coberturaRepository;
     private final AssuntoRepository assuntoRepository;
+    private final MaterialService materialService;
     private final Clock clock;
 
     public ConcursoService(
             ConcursoRepository concursoRepository,
             CoberturaEditalRepository coberturaRepository,
             AssuntoRepository assuntoRepository,
+            MaterialService materialService,
             Clock clock) {
         this.concursoRepository = concursoRepository;
         this.coberturaRepository = coberturaRepository;
         this.assuntoRepository = assuntoRepository;
+        this.materialService = materialService;
         this.clock = clock;
     }
 
@@ -77,11 +83,11 @@ public class ConcursoService {
         return concursos.stream().map(c -> {
             var deste = assuntosPorConcurso.getOrDefault(c.getId(), Set.of());
             long emComum = deste.stream().filter(doAtivo::contains).count();
-            return new ConcursoComContagem(c, deste.size(), emComum);
+            return new ConcursoComContagem(c, deste.size(), emComum, deste);
         }).toList();
     }
 
-    public record ConcursoComContagem(Concurso concurso, int totalAssuntos, long emComumComAtivo) {}
+    public record ConcursoComContagem(Concurso concurso, int totalAssuntos, long emComumComAtivo, Set<Long> assuntoIds) {}
 
     /** Resposta de um concurso com as contagens do histórico e os dias até a prova. */
     @Transactional(readOnly = true)
@@ -98,7 +104,9 @@ public class ConcursoService {
         return new ConcursoResponse(
             concurso.getId(), concurso.getNome(), concurso.getCargo(), concurso.getBanca(), concurso.getDataProva(),
             concurso.getOrigem(), concurso.isAtivo(), concurso.getAtivadoEm(), concurso.getDesativadoEm(),
-            diasParaProva(concurso), c.totalAssuntos(), c.emComumComAtivo());
+            diasParaProva(concurso), c.totalAssuntos(), c.emComumComAtivo(),
+            // Só no alvo: contar o material de todo o histórico a cada tela não serve a ninguém.
+            concurso.isAtivo() ? materialService.resumo(c.assuntoIds()) : null);
     }
 
     /**
@@ -109,11 +117,17 @@ public class ConcursoService {
     public PlanejamentoConcursoResponse paraPlanejamento(Long id) {
         var concurso = concursoRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Concurso não encontrado.", "CONCURSO_INEXISTENTE"));
-        var assuntos = coberturaRepository.listarDoConcurso(id).stream()
+        var cobertura = coberturaRepository.listarDoConcurso(id).stream()
             .filter(c -> c.getAssunto().isAtivo())
-            .map(c -> new PlanejamentoConcursoResponse.Assunto(
-                c.getDisciplina().getNome(), c.getAssunto().getNome(), c.getPeso(), c.getOrdem(),
-                c.getAssunto().getChaveExterna()))
+            .toList();
+        var estados = materialService.estados(cobertura.stream().map(c -> c.getAssunto().getId()).toList());
+        var assuntos = cobertura.stream()
+            .map(c -> {
+                var estado = estados.get(c.getAssunto().getId());
+                return new PlanejamentoConcursoResponse.Assunto(
+                    c.getDisciplina().getNome(), c.getAssunto().getNome(), c.getPeso(), c.getOrdem(),
+                    c.getAssunto().getChaveExterna(), estado.segmentos(), estado.lacuna());
+            })
             .toList();
         return new PlanejamentoConcursoResponse(
             concurso.getSlug(), concurso.getNome(), concurso.getCargo(), concurso.getBanca(),
@@ -152,6 +166,25 @@ public class ConcursoService {
             .map(i -> new CoberturaEdital(salvo, i.assunto(), i.disciplina(), i.peso(), i.ordem()))
             .toList());
         return salvo;
+    }
+
+    /**
+     * D-64 — identificador de um concurso que está nascendo: o nome sem acento,
+     * em minúsculas, com hífen; já usado, ganha "-2", "-3"... Dado uma vez e
+     * nunca mudado depois, mesmo que o nome seja corrigido
+     * (docs/SPRINT-19-MATERIAL-AUTOMATICO.md §2).
+     */
+    @Transactional(readOnly = true)
+    public String novoSlug(String nome) {
+        var semAcento = Normalizer.normalize(nome, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        var base = semAcento.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-+|-+$)", "");
+        if (base.isEmpty()) base = "concurso";
+        if (base.length() > 140) base = base.substring(0, 140).replaceAll("-+$", "");
+        var slug = base;
+        for (int n = 2; concursoRepository.existsBySlug(slug); n++) {
+            slug = base + "-" + n;
+        }
+        return slug;
     }
 
     /** Concurso vindo do planejamento: reencontrado pelo slug da pasta, ou criado (docs/SPRINT-18-CONCURSOS.md §5). */

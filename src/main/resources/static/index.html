@@ -463,6 +463,10 @@
           </ul>
         </div>
 
+        <!-- D-65: o acervo não ensina este assunto -->
+        <p x-show="!temSegmentos && lacuna" class="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600"
+           x-text="'Sem material no acervo: ' + (lacuna?.motivo ?? '')"></p>
+
         <!-- M-2, adicionado na Sprint 14 (04_FRONTEND.md §7B/§7D) -->
         <div x-show="temRetencao" class="space-y-2">
           <h3 class="text-sm font-medium text-gray-500">Retenção</h3>
@@ -686,6 +690,27 @@
       </div>
     </template>
 
+    <!-- Ajustes → IA (ADR-044): chave cadastrada uma vez e nunca mostrada de volta -->
+    <div class="mb-6 space-y-2 rounded border border-gray-200 bg-white p-3">
+      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">IA (OpenRouter)</h2>
+      <p class="text-sm text-gray-600" x-show="ia && ia.disponivel"
+         x-text="'Chave ' + (ia?.origem === 'AJUSTES' ? 'cadastrada' : 'do servidor') + ' ••••' + (ia?.chaveFinal ?? '')"></p>
+      <p class="text-sm text-gray-600" x-show="ia && !ia.disponivel">Sem chave: ler edital e preparar material ficam desligados.</p>
+      <label for="ia-chave" class="block text-sm text-gray-600">Chave nova</label>
+      <input id="ia-chave" type="password" autocomplete="off" x-model="chaveNova"
+             placeholder="sk-or-…" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
+      <label for="ia-modelo" class="block text-sm text-gray-600">Modelo</label>
+      <select id="ia-modelo" x-model="modeloEscolhido" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
+        <template x-for="m in opcoesModelo" :key="m.id">
+          <option :value="m.id" x-text="rotuloModelo(m)" :selected="m.id === modeloEscolhido"></option>
+        </template>
+      </select>
+      <p x-show="erroIa" class="text-xs text-red-600" x-text="erroIa"></p>
+      <p x-show="salvoIa" class="text-xs text-green-700">Salvo. Vale na próxima chamada.</p>
+      <button type="button" class="min-h-11 w-full rounded bg-primary-600 p-2 text-sm font-medium text-white hover:bg-primary-700"
+              :disabled="salvandoIa" @click="salvarIa()">Salvar IA</button>
+    </div>
+
     <template x-if="!carregando && !erro">
       <div class="space-y-6">
         <template x-for="grupo in grupos" :key="grupo.nome">
@@ -741,6 +766,8 @@
               <p x-show="ativo.cargo" class="text-sm text-gray-700" x-text="ativo.cargo"></p>
               <p class="mt-1 text-sm text-gray-500" x-text="detalhes(ativo)"></p>
               <p class="mt-1 text-xs text-gray-500" x-text="'Alvo desde ' + dataInstante(ativo.ativadoEm) + ' · ' + ativo.totalAssuntos + (ativo.totalAssuntos === 1 ? ' assunto no edital' : ' assuntos no edital')"></p>
+              <!-- 01_DOMINIO §3.10: o material chega sozinho; aqui é só acompanhamento -->
+              <p x-show="ativo.material" class="mt-1 text-xs text-gray-600" x-text="textoMaterial(ativo.material)"></p>
             </div>
           </template>
           <template x-if="!ativo">
