@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.11.0 |
+| Versão | 1.12.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -399,10 +399,17 @@ ainda custa um toque, e não meses.
    acervo · 25 a preparar", e cada assunto sem material no acervo mostra o
    motivo no detalhe. Nada a fazer — é só acompanhamento.
 
-A chave do OpenRouter e o modelo usado ficam em **Ajustes → IA** (a chave é
-cadastrada uma vez e nunca é mostrada de volta, só os últimos quatro
-caracteres). A mesma configuração serve à leitura do edital e à preparação
-do material.
+A IA fica em **Ajustes → IA** (ADR-045): o token da **assinatura do Claude**
+(gerado uma vez com `claude setup-token`) e o modelo, e, como segunda opção, a
+chave e o modelo do **OpenRouter**. Segredos são cadastrados uma vez e nunca
+mostrados de volta, só os últimos quatro caracteres. A mesma configuração serve
+à leitura do edital e à preparação do material.
+
+**Quando a assinatura para** (limite de uso da janela, token vencido), aparece
+um aviso no topo de Hoje, em Concursos e em Ajustes, com o motivo e o botão
+**Continuar pelo OpenRouter**. Nada troca sozinho: até o usuário decidir, o
+material espera e o sistema tenta o Claude de novo a cada ciclo; quando ele
+volta a responder, o aviso some.
 
 Falhas, com o que fazer em cada uma: PDF sem texto (escaneado) → "este PDF
 é imagem; envie a versão com texto"; IA indisponível ou sem chave
@@ -633,6 +640,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.12.0 | 2026-10-17 | J-5: IA pela assinatura do Claude, OpenRouter como segunda opção; aviso quando a assinatura para, e a troca é sempre decisão do usuário (ADR-045) |
 | 1.11.0 | 2026-10-17 | Pedido do usuário. J-5 ganha o passo 7: depois de confirmar, o material é preparado sozinho e Concursos mostra o andamento (`01_DOMINIO` §3.10). Chave e modelo de IA passam a ser cadastrados em Ajustes. O caminho pelo Drive vira legado (ADR-044) |
 | 1.10.0 | 2026-10-15 | Pedido do usuário. J-5: o concurso confirmado pode ser lido pelo planejamento (`GET /api/concursos/{id}/planejamento`, `docs/SPRINT-18-CONCURSOS.md` §10) — o SGE é o sistema principal e o planejamento parte dos assuntos confirmados aqui |
 | 1.9.0 | 2026-10-15 | Pedido do usuário. Nova **J-5**: edital novo lido por IA no próprio sistema (PDF → cargos → proposta revisável → confirmação) e histórico de editais com reativação. Oitava tela, **Concursos**. §4.4: concurso-alvo e dias até a prova no topo de Hoje. §4.5: Assuntos abre por disciplina, com resumo de peso e fases. J-1: importação **adota** assunto sem chave externa de mesmo nome, e o `concurso.json` passa a registrar o concurso (`01_DOMINIO` v1.23.0, ADR-042, ADR-043) |

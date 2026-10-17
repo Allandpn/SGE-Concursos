@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.11.0** |
+| Versão do documento | **2.12.0** |
 | Status | **Congelado** |
 | Data | 2026-10-17 |
-| Total | 44 ADRs — 30 vigentes, 13 substituídas, 1 revogada |
+| Total | 45 ADRs — 31 vigentes, 13 substituídas, 1 revogada |
 
 ---
 
@@ -72,6 +72,7 @@ que custa e o que foi descartado.
 | [ADR-042](#adr-042--concurso-alvo-registrado-com-histórico) | Concurso-alvo registrado, com histórico | Sprint 18 |
 | [ADR-043](#adr-043--análise-de-edital-por-ia-via-openrouter) | Análise de edital por IA, via OpenRouter | Sprint 18 |
 | [ADR-044](#adr-044--material-preparado-no-próprio-servidor-sem-drive) | Material preparado no próprio servidor, sem Drive | Sprint 19 |
+| [ADR-045](#adr-045--ia-pela-assinatura-do-claude-openrouter-só-por-escolha-do-usuário) | IA pela assinatura do Claude; OpenRouter só por escolha do usuário | Sprint 19 |
 
 ### 1.2 Históricas
 
@@ -971,6 +972,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.12.0 | 2026-10-17 | **ADR-045**, pedido do usuário: a IA (leitura de edital e preparação de material) passa pela assinatura do Claude, via Claude Code no contêiner do app; OpenRouter só quando o usuário escolher, depois de um aviso — nunca troca sozinho. Total 45, 31 vigentes |
 | 2.11.0 | 2026-10-17 | Sprint 19, pedido do usuário. **ADR-044** substitui ADR-037: o planejamento roda no Pi como segundo contêiner, o material é servido pelo SGE, a IA do planejamento passa por um proxy interno do SGE com a chave cadastrada em Ajustes; o Drive vira legado. Total 44, 30 vigentes |
 | 2.10.0 | 2026-10-15 | Sprint 18, pedido do usuário. **ADR-042** substitui ADR-039: `Concurso` passa a existir no domínio, com cobertura do edital e histórico; um ativo por vez e peso único por assunto continuam. **ADR-043**: análise de edital por IA via OpenRouter — a IA extrai, o sistema decide o peso, nada é gravado sem revisão. Total 43, 30 vigentes |
 | 2.9.0 | 2026-10-15 | **ADR-041**: app Android nativo como segundo cliente da mesma API, em repositório próprio, sem regra de domínio. Revisita a recusa de app nativo da ADR-038 diante de dois fatos novos: o pedido explícito do usuário e necessidades que o navegador atende mal (lembrete sem servidor de push, rascunho persistente). ADR-038 continua vigente para a SPA. Total 41, 29 vigentes |
@@ -1700,6 +1702,59 @@ O Pi do usuário é um 4B de 4 GB com SSD de 480 GB: cabe o acervo (~10 GB) e o
 | Chave de IA também no planejamento | Dois lugares para o mesmo segredo e o mesmo modelo; o proxy deixa um só |
 | Indexar o acervo no Pi | Horas de CPU num Pi 4 por algo que só acontece uma vez |
 | Planejamento dentro da JVM do SGE | Reescrever em Java o fatiador e a busca que já existem e estão testados em Python |
+
+---
+
+## ADR-045 — IA pela assinatura do Claude; OpenRouter só por escolha do usuário
+
+**Status:** Aceita · 2026-10-17 · Sprint 19 · complementa ADR-043 e ADR-044
+
+### Contexto
+
+Com a Sprint 19 a IA deixou de ser usada duas vezes por edital (ADR-043) e passou
+a ser usada uma ou duas vezes **por assunto** (ADR-044). O usuário mantém uma
+assinatura do Claude e prefere que ela pague esse uso, em vez de recarregar
+crédito no OpenRouter. O Claude Code oferece, para scripts, um token de um ano
+ligado à assinatura (`claude setup-token`, variável `CLAUDE_CODE_OAUTH_TOKEN`), e
+roda em Linux ARM64.
+
+### Decisão
+
+- **Dois provedores, um em uso.** Ajustes → IA guarda o token da assinatura do
+  Claude e o modelo (Opus, Sonnet ou Haiku), além da chave e do modelo do
+  OpenRouter. O usuário escolhe qual está em uso; com o token cadastrado, o
+  padrão é o Claude.
+- **O SGE chama o Claude Code no próprio contêiner**, em modo não interativo
+  (`claude -p`), sem ferramentas e com um turno só — é chamada de modelo, não
+  agente. A leitura do edital e o proxy do planejamento (ADR-044) passam pelo
+  mesmo roteador; o worker não muda.
+- **Falhou, avisa — nunca troca sozinho.** Se a assinatura parar (limite da
+  janela de uso, token expirado ou revogado), o SGE registra o motivo e mostra um
+  aviso em Hoje, Concursos e Ajustes, com o botão "Continuar pelo OpenRouter".
+  Só o usuário passa a usar o OpenRouter. Enquanto não passa, a leitura de edital
+  falha com o motivo e a preparação do material espera, tentando o Claude de novo
+  no ciclo seguinte; a primeira resposta boa apaga o aviso.
+
+### Consequências
+
+- O uso sai da mesma cota da assinatura que o usuário usa para programar com o
+  Claude Code. Um edital grande pode consumir uma janela inteira — por isso o
+  aviso, e não uma troca silenciosa para um serviço pago por uso.
+- A imagem do app passa a incluir o Claude Code (pelo repositório apt assinado da
+  Anthropic) e o contêiner precisa de mais memória: o processo `claude` roda ao
+  lado da JVM durante cada chamada.
+- O token tem validade de um ano; expirado, o aviso diz o que fazer (gerar outro
+  com `claude setup-token` e cadastrar em Ajustes).
+- O OpenRouter continua inteiro (ADR-043): só deixa de ser o padrão.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| API da Anthropic com chave paga por uso | É o mesmo problema do OpenRouter: crédito a recarregar |
+| Cair para o OpenRouter automaticamente | Gasta crédito sem o usuário decidir — pedido explícito dele foi avisar e deixar a escolha manual |
+| Claude Code no contêiner do worker | A leitura do edital também usa IA e roda no SGE; dois lugares para o mesmo token |
+| `claude --bare` (início mais rápido) | O modo bare não lê o token da assinatura |
 
 ---
 

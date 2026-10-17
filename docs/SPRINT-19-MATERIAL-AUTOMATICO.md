@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.1.0 |
 | Data | 2026-10-17 |
 | Status | Vigente — em andamento |
 | Especificação conceitual | `01_DOMINIO.md` v1.24.0 (§3.8, §3.9, §3.10, D-64, D-65), `02_JORNADAS.md` v1.11.0 (J-5), `03_INVARIANTES.md` v1.12.0 |
-| ADRs | ADR-044 (substitui ADR-037), ADR-043, ADR-042 |
+| ADRs | ADR-044 (substitui ADR-037), ADR-045, ADR-043, ADR-042 |
 
 Pedido do usuário (2026-10-17): "subir o edital, escolher o cargo, e o sistema faz
 todo o resto". O estudo já começava sozinho depois da Sprint 18; faltava o material
@@ -53,6 +53,59 @@ lacuna (§5). Nada a apagar (D-18).
 `ConfiguracaoIa` passa a ler a linha de `configuracao_ia` a cada uso; campo nulo cai no
 valor do ambiente (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`). A análise de edital e o
 proxy usam a mesma configuração.
+
+## 3A. Assinatura do Claude e OpenRouter (ADR-045)
+
+**Banco — `V14__ia_assinatura_claude.sql`**, colunas novas em `configuracao_ia`:
+
+| Coluna | Detalhe |
+|---|---|
+| `provedor` | `CLAUDE` ou `OPENROUTER` (`CHECK`); nulo = `CLAUDE` se houver token, senão `OPENROUTER` |
+| `claude_token` | O token do `claude setup-token`; nunca devolvido pela API |
+| `claude_modelo` | `opus`, `sonnet` ou `haiku` (`CHECK`); nulo = `sonnet` |
+| `claude_falha_motivo`, `claude_falha_em` | A última falha da assinatura; apagadas pela primeira resposta boa |
+
+**Roteador (`ServicoIa`)** — a única porta para a IA: a análise de edital e
+`/internal/ia/completar` chamam `ServicoIa.completar(sistema, usuario)`.
+
+| Provedor em uso | Faz |
+|---|---|
+| `CLAUDE` | `ClienteClaudeCli`. Deu certo: apaga a falha registrada, se havia. Falhou: registra motivo e momento (transação própria, sobrevive ao erro) e lança `FalhaIaException` com o motivo e o caminho ("em Ajustes → IA você pode continuar pelo OpenRouter") |
+| `OPENROUTER` | `ClienteOpenRouter`, como antes |
+
+Nunca troca de provedor sozinho. `/internal/ia/completar` devolve
+`503 IA_PAUSADA` quando a assinatura falha — o worker trata como "IA
+indisponível" e espera o próximo ciclo, sem marcar lacuna.
+
+**Chamada ao Claude Code** (`ClienteClaudeCli`): processo
+`claude -p --output-format json --model <alias> --system-prompt-file <arquivo>
+--tools "" --max-turns 1 --no-session-persistence --permission-prompts none`,
+pedido pela entrada padrão, `CLAUDE_CODE_OAUTH_TOKEN` só no ambiente do processo
+filho, `HOME` numa pasta temporária própria, tempo máximo de 5 minutos. Sem
+`--bare`: o modo bare não lê o token. O JSON de saída traz `result` e
+`is_error`; código de saída diferente de zero ou `is_error` é falha, e o texto de
+`result` vira o motivo. O executável é `estudos.ia.claude.executavel` (padrão
+`claude`).
+
+**API de Ajustes → IA**, que substitui a do §3:
+
+| Endpoint | Corpo / resposta |
+|---|---|
+| `GET /api/ia/configuracao` | `{provedor, disponivel, claude: {configurado, tokenFinal, modelo, falha: {motivo, em} \| null}, openrouter: {configurado, chaveFinal, modelo, origem}}` |
+| `PUT /api/ia/configuracao` | `{provedor?, claudeToken?, claudeModelo?, chave?, modelo?}` — ausente ou vazio mantém. `provedor: OPENROUTER` sem chave do OpenRouter: `422 OPENROUTER_SEM_CHAVE`; `CLAUDE` sem token: `422 CLAUDE_SEM_TOKEN`. Escolher `CLAUDE` apaga a falha registrada ("tentar o Claude de novo") |
+| `GET /api/ia/modelos` | Lista do OpenRouter, como no §3 (os do Claude são os três aliases, fixos na tela) |
+
+`GET /api/editais/ia` (Sprint 18) passa a responder pelo provedor em uso.
+
+**Telas:** Ajustes → IA com os dois blocos e o seletor de provedor. Aviso no topo
+de Hoje e de Concursos quando `claude.falha` existe e o provedor é `CLAUDE`:
+"A assinatura do Claude parou: <motivo>", com "Continuar pelo OpenRouter" (só
+se houver chave) e "Tentar o Claude de novo".
+
+**Imagem e memória:** o estágio final do `Dockerfile` instala o Claude Code pelo
+repositório apt assinado (canal `stable`) e desliga a atualização automática;
+o teto do app no compose sobe para 1,2 GB (JVM 512 MB + o processo `claude`
+durante a chamada).
 
 ## 4. Rotas internas (só para o planejamento)
 
@@ -116,4 +169,5 @@ O worker (Fase B, repositório do planejamento) e o compose/volumes/limites no P
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-10-17 | §3A: IA pela assinatura do Claude (ADR-045), OpenRouter por escolha do usuário depois de aviso |
 | 1.0.0 | 2026-10-17 | Criado (Fase A) |

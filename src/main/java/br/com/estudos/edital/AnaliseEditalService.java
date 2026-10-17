@@ -61,7 +61,7 @@ public class AnaliseEditalService {
 
     private final AnaliseEditalRepository repository;
     private final ExtratorTextoPdf extrator;
-    private final ClienteOpenRouter cliente;
+    private final ServicoIa cliente;
     private final ConfiguracaoIa configuracao;
     private final JsonMapper jsonMapper;
     private final AssuntoRepository assuntoRepository;
@@ -78,7 +78,7 @@ public class AnaliseEditalService {
     public AnaliseEditalService(
             AnaliseEditalRepository repository,
             ExtratorTextoPdf extrator,
-            ClienteOpenRouter cliente,
+            ServicoIa cliente,
             ConfiguracaoIa configuracao,
             JsonMapper jsonMapper,
             AssuntoRepository assuntoRepository,
@@ -105,8 +105,10 @@ public class AnaliseEditalService {
 
     public IaStatusResponse statusIa() {
         return configuracao.disponivel()
-            ? new IaStatusResponse(true, null, configuracao.modelo())
-            : new IaStatusResponse(false, "Cadastre a chave do OpenRouter em Ajustes → IA para ler editais com IA.", configuracao.modelo());
+            ? new IaStatusResponse(true, null, configuracao.modeloEmUso())
+            : new IaStatusResponse(false, configuracao.provedor() == ProvedorIa.CLAUDE
+                ? "Cadastre o token da assinatura do Claude em Ajustes → IA para ler editais com IA."
+                : "Cadastre a chave do OpenRouter em Ajustes → IA para ler editais com IA.", configuracao.modeloEmUso());
     }
 
     /** Recebe o PDF, extrai o texto e começa a etapa 1. */
@@ -122,7 +124,7 @@ public class AnaliseEditalService {
         }
         var texto = extrator.extrair(bytes);
         var nome = arquivo.getOriginalFilename() == null ? "edital.pdf" : arquivo.getOriginalFilename();
-        var analise = repository.save(new AnaliseEdital(cortar(nome, 250), texto, configuracao.modelo()));
+        var analise = repository.save(new AnaliseEdital(cortar(nome, 250), texto, configuracao.modeloEmUso()));
         agendar(analise.getId(), StatusAnaliseEdital.LENDO_EDITAL);
         return buscar(analise.getId());
     }

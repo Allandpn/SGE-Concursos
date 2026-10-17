@@ -997,7 +997,8 @@ o SGE dá a identidade; tudo no Pi 4B 4 GB com SSD de 480 GB, sem Drive no camin
 | 19.2 | Fase A — SGE: identidade na confirmação (V13), Ajustes → IA, rotas internas com token, lacuna, estado do material, `/material/**`, telas | Claude | **feito** — 182/182 verdes; Ajustes → IA conferida em Chrome contra Postgres real, `/material` servindo e `/internal` recusando sem token |
 | 19.3 | Fase B — repositório do planejamento: worker (busca no índice, IA pelo proxy, `montar_bloco`, importação de segmentos, lacunas) | Claude, com exceção explícita da regra de escrita | **feito** na branch `material-automatico` de lá — 32/32 + 25/25 verdes; imagem construída e conferida |
 | 19.4 | Fase C — compose com o serviço do planejamento, volumes, limites de memória do Pi 4 4 GB, `INTERNAL_TOKEN`, adendo `03E_DEPLOYMENT` §8C | Claude | **feito** — `docker compose config` válido; o compose completo só roda no Pi (precisa do SSD e do acervo) |
-| 19.5 | Indexar o acervo no PC e copiar apostilas + `indice.db` para o SSD do Pi; cadastrar a chave em Ajustes; primeiro edital real ponta a ponta (`03E_DEPLOYMENT` §8C.1) | **você** | aberto |
+| 19.6 | IA pela assinatura do Claude, OpenRouter só por escolha do usuário depois de aviso (ADR-045, `SPRINT-19` §3A, V14) | Claude, decisão do usuário | **feito** — 195/195 verdes; o comando exato rodado no contêiner com token inválido (flags aceitas, `is_error`/`api_error_status: 401` lidos certo); aviso em Hoje e troca para o OpenRouter conferidos no Chrome |
+| 19.5 | Copiar para o SSD do Pi as apostilas + o `indice.db` que você já gerou (o indexador não mudou); gerar o token com `claude setup-token` e cadastrar em Ajustes; primeiro edital real ponta a ponta (`03E_DEPLOYMENT` §8C.1) | **você** | aberto |
 
 `docs/DIAGRAMA-ER.md` v2.4.0 também ganhou as tabelas da Sprint 18, que tinham ficado de fora.
 
@@ -1031,6 +1032,7 @@ por um modelo de verdade — é o item 19.5.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.52.0 | 2026-10-17 | Sprint 19, item 19.6, pedido do usuário: IA pela assinatura do Claude (Claude Code no contêiner do app, token de `claude setup-token` cadastrado em Ajustes, Opus/Sonnet/Haiku); o OpenRouter só quando o usuário escolher depois do aviso de assinatura parada — nunca troca sozinho (ADR-045). 195/195 verdes. A indexação feita antes no PC continua valendo (o indexador não mudou desde 2026-09-04) |
 | 1.51.0 | 2026-10-17 | **Sprint 19 aberta e com o código das três fases feito** (§20), a pedido do usuário: edital → cargo → o resto sozinho. Especificação primeiro (`01_DOMINIO` v1.24.0, D-64/D-65, ADR-044 substitui ADR-037). SGE: identidade na confirmação (corrige o concurso duplicado), Ajustes → IA, rotas internas, `/material/**`, 182/182. Planejamento: worker na branch `material-automatico`, 32/32 + 25/25. Compose com o serviço `planejamento` e tetos de memória do Pi 4B 4 GB (`03E_DEPLOYMENT` §8C). Falta o Pi com o acervo |
 | 1.50.0 | 2026-10-15 | **Preparação do beta.** `03E_DEPLOYMENT` v1.2.0, §8B: `OPENROUTER_API_KEY` no `.env`, limite de 30 MB no envio de PDF, checklist do beta (8B.1) e o que o beta mede (8B.2: constância do registro e calibração). Pilha conferida em banco limpo (12 migrações, health UP). Ressalva: o `docker compose --build` completo não rodou neste ambiente (o contêiner de build não confia no proxy de TLS e o Docker Hub devolveu 429) — rode-o no Pi como primeiro passo do checklist |
 | 1.49.0 | 2026-10-15 | O app (web e Android) passa a se chamar **eAgora**, decisão do usuário. `04_FRONTEND` v1.12.0; app Android em `github.com/Allandpn/-eAgora` |

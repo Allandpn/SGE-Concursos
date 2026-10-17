@@ -28,6 +28,43 @@ const ROTULOS_PARAMETRO = {
 
 document.addEventListener('alpine:init', () => {
 
+  // IA em uso e o aviso de assinatura parada (ADR-045, docs/SPRINT-19-MATERIAL-AUTOMATICO.md
+  // §3A). Um store só para Hoje, Concursos e Ajustes mostrarem o mesmo aviso. Auxiliar:
+  // falhar aqui nunca esconde a tela.
+  Alpine.store('ia', {
+    config: null,
+    erro: null,
+    trocando: false,
+
+    async carregar() {
+      try {
+        this.config = await api('/ia/configuracao');
+      } catch (e) {
+        this.config = null;
+      }
+    },
+
+    get assinaturaParou() {
+      return !!(this.config && this.config.provedor === 'CLAUDE' && this.config.claude.falha);
+    },
+
+    get podeUsarOpenRouter() {
+      return !!(this.config && this.config.openrouter.configurado);
+    },
+
+    async escolher(provedor) {
+      this.erro = null;
+      this.trocando = true;
+      try {
+        this.config = await api('/ia/configuracao', { method: 'PUT', body: JSON.stringify({ provedor }) });
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.trocando = false;
+      }
+    },
+  });
+
   // Handoff Hoje → Recuperar (04_FRONTEND.md §6, "decisão de código, não de
   // arquitetura"): a tela Recuperar não busca nível/data prevista de novo —
   // usa o que a fila do turno já trouxe. Store Alpine global, não parâmetro
@@ -127,6 +164,7 @@ document.addEventListener('alpine:init', () => {
     async carregar() {
       this.carregando = true;
       this.erro = null;
+      Alpine.store('ia').carregar(); // aviso de assinatura parada (ADR-045), sem esperar
       try {
         const plano = await api(`/turno/plano?extraRecuperacoes=${this.extraRecuperacoes}`);
         this.fila = plano.filaRecuperacao;
@@ -695,16 +733,16 @@ document.addEventListener('alpine:init', () => {
     draft: {}, // cópia editável por chave — só o que o <input> lê/escreve
     salvando: {},
     erroPorChave: {},
-    // Ajustes → IA (ADR-044, docs/SPRINT-19-MATERIAL-AUTOMATICO.md §7). A chave
-    // digitada só vai no PUT; a resposta nunca a traz de volta.
-    ia: null,
+    // Ajustes → IA (ADR-045, docs/SPRINT-19-MATERIAL-AUTOMATICO.md §3A). Token e chave
+    // digitados só vão no PUT; a resposta nunca os traz de volta.
     modelos: [],
+    tokenNovo: '',
+    claudeModelo: 'sonnet',
     chaveNova: '',
     modeloEscolhido: '',
     salvandoIa: false,
     erroIa: null,
     salvoIa: false,
-
     async init() {
       this.carregando = true;
       this.erro = null;
@@ -721,11 +759,13 @@ document.addEventListener('alpine:init', () => {
 
     // Auxiliar: falhar aqui não esconde os parâmetros.
     async carregarIa() {
-      try {
-        this.ia = await api('/ia/configuracao');
-        this.modeloEscolhido = this.ia.modelo;
-      } catch (e) {
-        this.erroIa = e.message;
+      await Alpine.store('ia').carregar();
+      const config = Alpine.store('ia').config;
+      if (config) {
+        this.claudeModelo = config.claude.modelo;
+        this.modeloEscolhido = config.openrouter.modelo;
+      } else {
+        this.erroIa = 'Não foi possível ler a configuração de IA.';
       }
       try {
         this.modelos = await api('/ia/modelos');
@@ -746,15 +786,22 @@ document.addEventListener('alpine:init', () => {
       return [{ id: this.modeloEscolhido, nome: this.modeloEscolhido, precoEntradaPorMilhao: null }, ...this.modelos];
     },
 
-    async salvarIa() {
+    async salvarIa(provedor) {
       this.erroIa = null;
       this.salvoIa = false;
       this.salvandoIa = true;
       try {
-        this.ia = await api('/ia/configuracao', {
+        Alpine.store('ia').config = await api('/ia/configuracao', {
           method: 'PUT',
-          body: JSON.stringify({ chave: this.chaveNova || null, modelo: this.modeloEscolhido || null }),
+          body: JSON.stringify({
+            provedor: provedor ?? null,
+            claudeToken: this.tokenNovo || null,
+            claudeModelo: this.claudeModelo || null,
+            chave: this.chaveNova || null,
+            modelo: this.modeloEscolhido || null,
+          }),
         });
+        this.tokenNovo = '';
         this.chaveNova = '';
         this.salvoIa = true;
       } catch (e) {
@@ -830,6 +877,7 @@ document.addEventListener('alpine:init', () => {
       this.erro = null;
       this.erroAcao = null;
       try {
+        Alpine.store('ia').carregar(); // aviso de assinatura parada (ADR-045), sem esperar
         const [concursos, ia, analises] = await Promise.all([
           api('/concursos'), api('/editais/ia'), api('/editais/analises'),
         ]);

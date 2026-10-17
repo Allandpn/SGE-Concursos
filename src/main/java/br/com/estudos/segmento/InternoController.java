@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import br.com.estudos.edital.ClienteOpenRouter;
 import br.com.estudos.edital.ConfiguracaoIa;
 import br.com.estudos.edital.FalhaIaException;
+import br.com.estudos.edital.ServicoIa;
 import br.com.estudos.shared.exception.IndisponivelException;
 
 /**
@@ -30,26 +30,27 @@ public class InternoController {
 
     public record LacunaRequest(String chaveExterna, String motivo) {}
 
-    private final ClienteOpenRouter cliente;
+    private final ServicoIa cliente;
     private final ConfiguracaoIa configuracao;
     private final MaterialService materialService;
 
-    public InternoController(ClienteOpenRouter cliente, ConfiguracaoIa configuracao, MaterialService materialService) {
+    public InternoController(ServicoIa cliente, ConfiguracaoIa configuracao, MaterialService materialService) {
         this.cliente = cliente;
         this.configuracao = configuracao;
         this.materialService = materialService;
     }
 
     @PostMapping("/ia/completar")
-    @Operation(summary = "Proxy de IA", description = "Usa a chave e o modelo de Ajustes → IA; o planejamento nunca guarda chave.")
+    @Operation(summary = "Proxy de IA", description = "Usa o provedor em uso em Ajustes → IA (ADR-045); o planejamento nunca guarda credencial.")
     public CompletarResponse completar(@RequestBody CompletarRequest pedido) {
         if (!configuracao.disponivel()) {
-            throw new IndisponivelException("Cadastre a chave do OpenRouter em Ajustes → IA.", "IA_INDISPONIVEL");
+            throw new IndisponivelException("Cadastre a IA em Ajustes → IA.", "IA_INDISPONIVEL");
         }
         try {
-            return new CompletarResponse(cliente.completar(pedido.sistema(), pedido.usuario()), configuracao.modelo());
+            return new CompletarResponse(cliente.completar(pedido.sistema(), pedido.usuario()), configuracao.modeloEmUso());
         } catch (FalhaIaException e) {
-            throw new IndisponivelException(e.getMessage(), "IA_FALHOU");
+            // ADR-045: assinatura parada é decisão do usuário — o worker espera, não marca lacuna.
+            throw new IndisponivelException(e.getMessage(), e.assinaturaParou() ? "IA_PAUSADA" : "IA_FALHOU");
         }
     }
 

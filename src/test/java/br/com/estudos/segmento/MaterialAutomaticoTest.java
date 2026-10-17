@@ -178,8 +178,9 @@ class MaterialAutomaticoTest extends IntegracaoTestBase {
         var corpo = mockMvc.perform(get("/api/ia/configuracao"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.disponivel").value(true))
-            .andExpect(jsonPath("$.origem").value("AMBIENTE"))
-            .andExpect(jsonPath("$.chaveFinal").value("1234"))
+            .andExpect(jsonPath("$.provedor").value("OPENROUTER")) // sem token do Claude, o OpenRouter
+            .andExpect(jsonPath("$.openrouter.origem").value("AMBIENTE"))
+            .andExpect(jsonPath("$.openrouter.chaveFinal").value("1234"))
             .andReturn().getResponse().getContentAsString();
         assertTrue(!corpo.contains("chave-do-ambiente"), "a chave nunca sai na resposta");
     }
@@ -189,17 +190,17 @@ class MaterialAutomaticoTest extends IntegracaoTestBase {
         var corpo = mockMvc.perform(put("/api/ia/configuracao").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"chave\": \"sk-or-cadastrada-9876\", \"modelo\": \"a/modelo-a\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.origem").value("AJUSTES"))
-            .andExpect(jsonPath("$.chaveFinal").value("9876"))
-            .andExpect(jsonPath("$.modelo").value("a/modelo-a"))
+            .andExpect(jsonPath("$.openrouter.origem").value("AJUSTES"))
+            .andExpect(jsonPath("$.openrouter.chaveFinal").value("9876"))
+            .andExpect(jsonPath("$.openrouter.modelo").value("a/modelo-a"))
             .andReturn().getResponse().getContentAsString();
         assertTrue(!corpo.contains("sk-or-cadastrada"), "a chave nunca sai na resposta");
 
         // Só o modelo: a chave cadastrada continua.
         mockMvc.perform(put("/api/ia/configuracao").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"modelo\": \"z/modelo-b\"}"))
-            .andExpect(jsonPath("$.chaveFinal").value("9876"))
-            .andExpect(jsonPath("$.modelo").value("z/modelo-b"));
+            .andExpect(jsonPath("$.openrouter.chaveFinal").value("9876"))
+            .andExpect(jsonPath("$.openrouter.modelo").value("z/modelo-b"));
     }
 
     @Test

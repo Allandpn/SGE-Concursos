@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.13.0 |
+| Versão | 1.14.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -719,6 +719,11 @@ documento da sprint).
 - **"Abrir material"** (Hoje e detalhe) aceita link `http(s)` (legado do Drive) ou caminho
   `/material/...` servido pelo próprio SGE. O `sw.js` não intercepta `/material/**`;
   `CASCA_VERSAO` trocada.
+- **ADR-045:** `Alpine.store('ia')` guarda a configuração de IA para três telas. Ajustes → IA
+  ganha dois blocos (assinatura do Claude: token e Opus/Sonnet/Haiku; OpenRouter: chave e
+  modelo) e diz qual está em uso. Quando a assinatura para, o mesmo aviso aparece no topo
+  de Hoje, de Concursos e de Ajustes, com o motivo, "Continuar pelo OpenRouter" (só com
+  chave cadastrada) e "Tentar o Claude de novo". Nada troca sozinho.
 
 ## 8. Os quatro estados de tela
 
@@ -810,6 +815,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.14.0 | 2026-10-17 | §7K: IA pela assinatura do Claude e o aviso de assinatura parada em Hoje, Concursos e Ajustes (ADR-045) |
 | 1.13.0 | 2026-10-17 | §7K, Sprint 19: Ajustes → IA (chave e modelo), andamento do material em Concursos, lacuna no detalhe do assunto, "Abrir material" com PDF servido pelo SGE |
 | 1.12.0 | 2026-10-15 | O app passa a se chamar **eAgora** (decisão do usuário): título, cabeçalho, manifesto e nome ao instalar. `CASCA_VERSAO` trocada |
 | 1.11.0 | 2026-10-15 | §7J, Sprint 18: linha do concurso-alvo em Hoje, Assuntos por disciplina com resumo, telas Concursos e Novo edital (análise por IA com revisão antes de confirmar) |

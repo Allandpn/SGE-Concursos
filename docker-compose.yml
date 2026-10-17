@@ -17,9 +17,9 @@
 #     feito pelo `127.0.0.1:` do lado do host. É a confusão mais comum de
 #     Docker + Spring.
 #
-# PI 4B DE 4 GB (ADR-044, 03E_DEPLOYMENT.md §8C): cada serviço tem teto de
-# memória. Somados ficam em ~2,3 GB, deixando o resto para o sistema e o cache
-# de disco. O worker do planejamento roda com prioridade baixa.
+# PI 4B DE 4 GB (ADR-044, ADR-045, 03E_DEPLOYMENT.md §8C): cada serviço tem
+# teto de memória. Somados ficam em ~2,6 GB, deixando o resto para o sistema e
+# o cache de disco. O worker do planejamento roda com prioridade baixa.
 # =============================================================================
 
 services:
@@ -61,8 +61,9 @@ services:
     build: .
     restart: unless-stopped
     # JAVA_OPTS do Dockerfile já limita o heap a 512 MB; o resto é metaspace,
-    # threads e buffers.
-    mem_limit: 900m
+    # threads, buffers e, durante cada chamada de IA, o processo `claude` da
+    # assinatura (ADR-045).
+    mem_limit: 1200m
     depends_on:
       postgres:
         condition: service_healthy

@@ -5,7 +5,7 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.3.0** |
+| Versão do documento | **1.3.1** |
 | Status | **Congelado** |
 | Data | 2026-10-14 |
 
@@ -551,9 +551,14 @@ material) e um teto de memória por serviço.
    ```
 
    É o que o worker usa para chamar a IA pelo SGE. Sem ele o compose não sobe.
-2. **Chave e modelo de IA** passam a ser cadastrados em **Ajustes → IA**. O
-   `OPENROUTER_API_KEY` do `.env` (§8B) continua valendo como valor inicial;
-   cadastrar na tela tem precedência.
+2. **IA pela assinatura do Claude (ADR-045).** No computador onde você usa o
+   Claude Code, rode uma vez `claude setup-token`: ele abre o navegador, você
+   aprova, e o token (válido por um ano) aparece no terminal — não fica salvo em
+   lugar nenhum. Cole em **Ajustes → IA → Assinatura do Claude** e escolha o
+   modelo (Sonnet é o padrão). A imagem do app já traz o Claude Code. O
+   OpenRouter (§8B) fica como segunda opção: só é usado se você escolher, depois
+   do aviso de que a assinatura parou. Cadastrar a chave dele também é pela
+   tela; o `OPENROUTER_API_KEY` do `.env` vale como valor inicial.
 3. **Repositório do planejamento** clonado ao lado deste (o compose usa
    `../Plano-de-Estudos-Automatizado`; outro caminho: `PLANEJAMENTO_DIR` no
    `.env`). Só leitura pública basta.
@@ -570,13 +575,16 @@ material) e um teto de memória por serviço.
    `rsync` só manda o que mudou.
 5. **Pasta do material.** `sudo mkdir -p /mnt/ssd/material && sudo chown
    1000:1000 /mnt/ssd/material` — o worker roda sem root, com uid 1000.
-6. **Memória (Pi 4B, 4 GB).** Tetos: Postgres 640 MB, app 900 MB (heap 512 MB),
-   worker 768 MB e 1,5 CPU, com `nice 15`. Somados ~2,3 GB. Se `docker stats`
-   mostrar o worker no teto com frequência, baixe `MAX_POR_CICLO`.
+6. **Memória (Pi 4B, 4 GB).** Tetos: Postgres 640 MB, app 1,2 GB (heap 512 MB +
+   o processo `claude` durante cada chamada de IA), worker 768 MB e 1,5 CPU, com
+   `nice 15`. Somados ~2,6 GB. O Claude Code pede 4 GB de RAM na máquina — o Pi
+   está no limite; se `docker stats` mostrar o app no teto, use Haiku em Ajustes
+   ou baixe `MAX_POR_CICLO`.
 7. **O que sai do Pi** passa a incluir, por assunto preparado, trechos curtos
-   das apostilas (as linhas da busca) para o OpenRouter. Custo: uma ou duas
-   chamadas por assunto; um edital de 60 assuntos custa poucos dólares no
-   modelo padrão. Troque por um modelo mais barato em Ajustes se quiser.
+   das apostilas (as linhas da busca) para a IA. Pela assinatura, o custo é cota:
+   uma ou duas chamadas por assunto saem da mesma janela de uso que você usa no
+   Claude Code — um edital grande pode consumir uma janela. Quando ela acaba,
+   aparece o aviso; o material espera, ou você escolhe o OpenRouter.
 8. **Legado.** `scripts/importar-segmentos.sh` e `CONCURSO_ATIVO` (§8A)
    continuam funcionando, mas saem do caminho principal.
 
@@ -585,7 +593,9 @@ material) e um teto de memória por serviço.
 - [ ] `docker compose up -d --build` com os três serviços; `docker compose ps`
       mostra `planejamento` rodando.
 - [ ] As 13 migrações aplicaram (`V13` = material automático).
-- [ ] Ajustes → IA mostra a chave (só os 4 últimos caracteres) e o modelo.
+- [ ] Ajustes → IA mostra o token da assinatura (só os 4 últimos caracteres),
+      "Em uso: assinatura do Claude" e o modelo.
+- [ ] `docker compose exec app claude --version` responde (Claude Code na imagem).
 - [ ] Um edital confirmado; em até alguns ciclos de 5 minutos, Concursos mostra
       "Material: N de M prontos" subindo, e `docker compose logs planejamento`
       mostra os assuntos preparados.
@@ -599,6 +609,7 @@ material) e um teto de memória por serviço.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.1 | 2026-10-17 | §8C: IA pela assinatura do Claude (ADR-045) — `claude setup-token`, Claude Code na imagem do app, teto do app em 1,2 GB, custo em cota; checklist atualizado |
 | 1.3.0 | 2026-10-17 | §8C, adendo da Sprint 19 (ADR-044): `INTERNAL_TOKEN`, chave e modelo em Ajustes, serviço `planejamento` no compose, acervo e índice copiados do PC para o SSD, pasta do material com uid 1000, tetos de memória do Pi 4B 4 GB; checklist 8C.1. Desenho das seções 0–8 intacto |
 | 1.2.0 | 2026-10-15 | §8B, adendo da Sprint 18 e do beta: `OPENROUTER_API_KEY`/`OPENROUTER_MODEL` no `.env`, limite de 30 MB no envio de PDF, `concurso.json` na importação, nome eAgora; checklist do beta (8B.1) e o que o beta mede (8B.2). Desenho das seções 0–8 intacto |
 | 1.1.0 | 2026-10-14 | §8A, adendo da Sprint 16: HTTPS via `tailscale serve` passa a ser obrigatório (service worker e `crypto.randomUUID()` exigem contexto seguro — ADR-038); instalação do app no celular/tablet; cron da importação com `CONCURSO_ATIVO` (ADR-039). Desenho das seções 0–8 intacto |

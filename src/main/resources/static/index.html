@@ -99,6 +99,23 @@
           <p x-show="alertaRepresamento">Enquanto drena, nenhum assunto novo é sugerido.</p>
         </div>
 
+        <!-- ADR-045: a assinatura do Claude parou; trocar para o OpenRouter é decisão do usuário -->
+        <div x-show="$store.ia.assinaturaParou" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
+          <p class="font-medium">A assinatura do Claude parou.</p>
+          <p class="mt-1" x-text="$store.ia.config?.claude?.falha?.motivo ?? ''"></p>
+          <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button type="button" x-show="$store.ia.podeUsarOpenRouter" :disabled="$store.ia.trocando"
+                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
+                    @click="$store.ia.escolher('OPENROUTER')">Continuar pelo OpenRouter</button>
+            <button type="button" :disabled="$store.ia.trocando"
+                    class="min-h-11 rounded border border-gray-300 bg-white px-3 text-sm hover:bg-gray-50"
+                    @click="$store.ia.escolher('CLAUDE')">Tentar o Claude de novo</button>
+          </div>
+          <p x-show="!$store.ia.podeUsarOpenRouter" class="mt-1 text-xs text-gray-600">Para continuar pelo OpenRouter, cadastre a chave em Ajustes → IA.</p>
+          <p x-show="$store.ia.erro" class="mt-1 text-xs text-red-600" x-text="$store.ia.erro"></p>
+        </div>
+
         <p x-show="vazio" class="text-gray-500">Nada para hoje. Volte amanhã.</p>
 
         <!-- D-56 / 01_DOMINIO §5.3: o alerta diz por que não há assunto novo (dentro da mensagem de J-4 quando ela aparece) -->
@@ -690,25 +707,71 @@
       </div>
     </template>
 
-    <!-- Ajustes → IA (ADR-044): chave cadastrada uma vez e nunca mostrada de volta -->
-    <div class="mb-6 space-y-2 rounded border border-gray-200 bg-white p-3">
-      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">IA (OpenRouter)</h2>
-      <p class="text-sm text-gray-600" x-show="ia && ia.disponivel"
-         x-text="'Chave ' + (ia?.origem === 'AJUSTES' ? 'cadastrada' : 'do servidor') + ' ••••' + (ia?.chaveFinal ?? '')"></p>
-      <p class="text-sm text-gray-600" x-show="ia && !ia.disponivel">Sem chave: ler edital e preparar material ficam desligados.</p>
-      <label for="ia-chave" class="block text-sm text-gray-600">Chave nova</label>
-      <input id="ia-chave" type="password" autocomplete="off" x-model="chaveNova"
-             placeholder="sk-or-…" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
-      <label for="ia-modelo" class="block text-sm text-gray-600">Modelo</label>
-      <select id="ia-modelo" x-model="modeloEscolhido" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
-        <template x-for="m in opcoesModelo" :key="m.id">
-          <option :value="m.id" x-text="rotuloModelo(m)" :selected="m.id === modeloEscolhido"></option>
-        </template>
-      </select>
+    <!-- Ajustes → IA (ADR-045): assinatura do Claude, OpenRouter como segunda opção -->
+    <div class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
+      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">IA</h2>
+      <div class="px-0">
+<!-- ADR-045: a assinatura do Claude parou; trocar para o OpenRouter é decisão do usuário -->
+        <div x-show="$store.ia.assinaturaParou" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
+          <p class="font-medium">A assinatura do Claude parou.</p>
+          <p class="mt-1" x-text="$store.ia.config?.claude?.falha?.motivo ?? ''"></p>
+          <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button type="button" x-show="$store.ia.podeUsarOpenRouter" :disabled="$store.ia.trocando"
+                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
+                    @click="$store.ia.escolher('OPENROUTER')">Continuar pelo OpenRouter</button>
+            <button type="button" :disabled="$store.ia.trocando"
+                    class="min-h-11 rounded border border-gray-300 bg-white px-3 text-sm hover:bg-gray-50"
+                    @click="$store.ia.escolher('CLAUDE')">Tentar o Claude de novo</button>
+          </div>
+          <p x-show="!$store.ia.podeUsarOpenRouter" class="mt-1 text-xs text-gray-600">Para continuar pelo OpenRouter, cadastre a chave em Ajustes → IA.</p>
+          <p x-show="$store.ia.erro" class="mt-1 text-xs text-red-600" x-text="$store.ia.erro"></p>
+        </div>
+      </div>
+      <p class="text-sm text-gray-600" x-show="$store.ia.config"
+         x-text="'Em uso: ' + ($store.ia.config?.provedor === 'CLAUDE' ? 'assinatura do Claude (' + $store.ia.config?.claude?.modelo + ')' : 'OpenRouter (' + $store.ia.config?.openrouter?.modelo + ')')"></p>
+
+      <div class="space-y-2 border-t border-gray-100 pt-3">
+        <h3 class="text-sm font-medium">Assinatura do Claude</h3>
+        <p class="text-xs text-gray-600" x-show="$store.ia.config?.claude?.configurado"
+           x-text="'Token cadastrado ••••' + ($store.ia.config?.claude?.tokenFinal ?? '')"></p>
+        <p class="text-xs text-gray-600" x-show="!$store.ia.config?.claude?.configurado">Gere o token uma vez no computador com <code>claude setup-token</code> e cole aqui.</p>
+        <label for="ia-token" class="block text-sm text-gray-600">Token novo</label>
+        <input id="ia-token" type="password" autocomplete="off" x-model="tokenNovo"
+               placeholder="sk-ant-oat01-…" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
+        <label for="ia-claude-modelo" class="block text-sm text-gray-600">Modelo</label>
+        <select id="ia-claude-modelo" x-model="claudeModelo" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
+          <option value="sonnet">Sonnet — equilíbrio</option>
+          <option value="opus">Opus — melhor triagem, gasta mais da cota</option>
+          <option value="haiku">Haiku — mais leve</option>
+        </select>
+        <button type="button" class="min-h-11 w-full rounded border border-primary-600 p-2 text-sm font-medium text-primary-700 hover:bg-gray-50"
+                :disabled="salvandoIa" @click="salvarIa('CLAUDE')">Salvar e usar a assinatura</button>
+      </div>
+
+      <div class="space-y-2 border-t border-gray-100 pt-3">
+        <h3 class="text-sm font-medium">OpenRouter (segunda opção)</h3>
+        <p class="text-xs text-gray-600" x-show="$store.ia.config?.openrouter?.configurado"
+           x-text="'Chave ' + ($store.ia.config?.openrouter?.origem === 'AJUSTES' ? 'cadastrada' : 'do servidor') + ' ••••' + ($store.ia.config?.openrouter?.chaveFinal ?? '')"></p>
+        <label for="ia-chave" class="block text-sm text-gray-600">Chave nova</label>
+        <input id="ia-chave" type="password" autocomplete="off" x-model="chaveNova"
+               placeholder="sk-or-…" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
+        <label for="ia-modelo" class="block text-sm text-gray-600">Modelo</label>
+        <select id="ia-modelo" x-model="modeloEscolhido" class="w-full rounded border border-gray-200 bg-white p-2 text-sm">
+          <template x-for="m in opcoesModelo" :key="m.id">
+            <option :value="m.id" x-text="rotuloModelo(m)" :selected="m.id === modeloEscolhido"></option>
+          </template>
+        </select>
+        <div class="flex gap-2">
+          <button type="button" class="min-h-11 flex-1 rounded border border-gray-300 p-2 text-sm hover:bg-gray-50"
+                  :disabled="salvandoIa" @click="salvarIa()">Só salvar</button>
+          <button type="button" class="min-h-11 flex-1 rounded border border-gray-300 p-2 text-sm hover:bg-gray-50"
+                  :disabled="salvandoIa" @click="salvarIa('OPENROUTER')">Salvar e usar o OpenRouter</button>
+        </div>
+      </div>
+
       <p x-show="erroIa" class="text-xs text-red-600" x-text="erroIa"></p>
       <p x-show="salvoIa" class="text-xs text-green-700">Salvo. Vale na próxima chamada.</p>
-      <button type="button" class="min-h-11 w-full rounded bg-primary-600 p-2 text-sm font-medium text-white hover:bg-primary-700"
-              :disabled="salvandoIa" @click="salvarIa()">Salvar IA</button>
     </div>
 
     <template x-if="!carregando && !erro">
@@ -754,6 +817,23 @@
 
     <template x-if="!carregando && !erro">
       <div class="space-y-6">
+<!-- ADR-045: a assinatura do Claude parou; trocar para o OpenRouter é decisão do usuário -->
+        <div x-show="$store.ia.assinaturaParou" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
+          <p class="font-medium">A assinatura do Claude parou.</p>
+          <p class="mt-1" x-text="$store.ia.config?.claude?.falha?.motivo ?? ''"></p>
+          <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button type="button" x-show="$store.ia.podeUsarOpenRouter" :disabled="$store.ia.trocando"
+                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
+                    @click="$store.ia.escolher('OPENROUTER')">Continuar pelo OpenRouter</button>
+            <button type="button" :disabled="$store.ia.trocando"
+                    class="min-h-11 rounded border border-gray-300 bg-white px-3 text-sm hover:bg-gray-50"
+                    @click="$store.ia.escolher('CLAUDE')">Tentar o Claude de novo</button>
+          </div>
+          <p x-show="!$store.ia.podeUsarOpenRouter" class="mt-1 text-xs text-gray-600">Para continuar pelo OpenRouter, cadastre a chave em Ajustes → IA.</p>
+          <p x-show="$store.ia.erro" class="mt-1 text-xs text-red-600" x-text="$store.ia.erro"></p>
+        </div>
+
         <template x-if="erroAcao">
           <div class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" x-text="erroAcao"></div>
         </template>
