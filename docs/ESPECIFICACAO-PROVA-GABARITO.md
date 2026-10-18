@@ -2,13 +2,15 @@
 
 | | |
 |---|---|
-| Versão | 0.3.0 |
+| Versão | 0.4.0 |
 | Data | 2026-10-18 |
 | Status | **Rascunho — não vigente.** Nada daqui é implementado até os requisitos serem aprovados e as seções migrarem para os documentos donos (§11) |
 | Origem | Pedido do usuário, 2026-10-17: "subir uma prova e saber se, com o material montado, seria possível responder as questões e gabaritar o concurso. É o nosso objetivo final". Revisado em 2026-10-18 com as respostas do usuário aos pontos em aberto |
 | Decisões já tomadas | Gabarito obrigatório · o SGE hospeda a prova e o usuário a responde no sistema · a nota alimenta disciplina e global, assunto só informa · reanálise incremental por assunto · só o concurso-alvo · IA julga questão a questão · entrada pelo mesmo gesto do edital (§10) |
 
-**Mudanças da v0.2.0.** Amostra real de 4 bancas (§5.6): o gabarito vem em arquivo multi-cargo e multi-tipo, em layouts diferentes; uma prova veio em imagem pura; questão fora do edital deixa de ser furo. Regras P-17 e P-18; pontos abertos I, J e K.
+**Mudanças da v0.3.0.** Prova e gabarito da FCC (a banca do alvo) avaliados: a prova veio em imagem, em fatias que cortam questões. OCR decidido e **medido no Pi** (§9.1): cabe com folga. Regra P-19; pontos L e M; I e K fechados.
+
+**Mudanças da v0.2.0 (já na v0.3.0).** Amostra real de 4 bancas (§5.6): o gabarito vem em arquivo multi-cargo e multi-tipo, em layouts diferentes; uma prova veio em imagem pura; questão fora do edital deixa de ser furo. Regras P-17 e P-18; pontos abertos I, J e K.
 
 **Mudanças da v0.1.0 (já na v0.2.0).** O gabarito deixou de ser opcional. O SGE passa a guardar a prova
 (enunciado, alternativas, gabarito) e o usuário a responde no sistema. O critério do julgamento
@@ -238,6 +240,19 @@ entrega é igual à outra, e isso decide onde a IA entra e onde o sistema só va
 | **Tipo** | Não aparece | Tipo 1 e Tipo 3, **respostas diferentes** (8 de 70 diferem no Dataprev) | Tipo A |
 | **Identificar o par** | Pelo cargo no título | Capa da prova × cabeçalho da página do gabarito, com nomes grafados diferente ("DESENVOLVIMENTO DE SOFTWARE" × "Desenvolvimento de Software") | Código do cargo (`9006`) na capa da prova × bloco do gabarito |
 
+**A FCC (TJ-CE 2026, cargo E05 — a banca do alvo)** é a entrega mais diferente:
+
+- **Prova:** um PDF de **uma única página de 595 × 8 772 pt, sem texto**, com **12 imagens**
+  de 1675 × 2048 px empilhadas — uma captura de páginas escaneadas. As imagens são **fatias**
+  da tira, não páginas: a fatia termina no meio de uma questão (a 28 começa numa e acaba na
+  seguinte). O cabeçalho "Caderno de Prova 'E05', Tipo 004" dá o cargo e o tipo.
+- **Gabarito:** 4 páginas de texto, **uma tabela** `Questão · Resposta · Situação`, com
+  "Tipo de Gabarito: 4", "Publicação **preliminar**" e a situação **por questão**
+  ("Gabarito sem alteração"; no definitivo, presumivelmente alterada ou anulada). Um cargo só.
+- O OCR lê a prosa e as alternativas bem; erra no **código em fonte monoespaçada**
+  (`max_connections = 0` virou "max connections = Ono") e nos **algarismos romanos**
+  (`I, II, III` viraram "1., 11., TI.") — justamente o que muda a resposta em questões de TI.
+
 O que isso obriga:
 
 - **Gabarito é multi-cargo e multi-tipo** (P-17). O sistema precisa recortar a página certa
@@ -248,9 +263,14 @@ O que isso obriga:
   igual ao de questões, só letras válidas, anuladas reconhecidas (`*`, `X`).
 - **Anulada e preliminar existem de verdade** (P-04, P-18). 14 questões anuladas só no gabarito
   do IDECAN.
-- **PDF em imagem é caso real, não exceção:** a prova do IDECAN, entregue pela própria banca,
-  não tem texto. Recusar na hora (como o edital) descartaria uma prova legítima. É preciso OCR
-  ou leitura por visão (ponto I). **No Pi não há OCR hoje**, nem no worker.
+- **PDF em imagem é caso real, não exceção:** as provas do IDECAN **e da FCC (a banca do
+  alvo)** vieram sem texto. Recusar na hora (como o edital) descartaria provas legítimas. **OCR
+  no worker, num estágio de leitura próprio** (ponto I, decidido): cabe no Pi com folga (§9.1).
+  Hoje o Pi **não tem** OCR; entra na imagem do worker quando a sprint começar.
+- **A leitura reconstitui as questões a partir de fatias** (ponto L): o texto de uma fatia
+  continua na seguinte, então o OCR é feito em ordem, com sobreposição, e as questões são
+  remontadas pelo número. A **IA corrige** o que o OCR errou de forma óbvia, mas o que muda a
+  resposta (código, romanos) é **marcado como lido por OCR** (P-19).
 - **CEBRASPE liga o item ao texto-base:** a questão carrega o texto e o comando, senão o item
   "O trecho acima..." não é julgável. A leitura precisa anexá-los (ponto J).
 - **A prova traz blocos que o edital do alvo não tem:** legislação do próprio órgão (MPES,
@@ -332,6 +352,7 @@ viram D-67 em diante. Cada uma diz como se garante (`03_INVARIANTES` §4).
 | P-16 | O gabarito tem o **tipo** da prova; gabarito de nº de questões diferente é recusado | Serviço |
 | P-17 | O gabarito é do **cargo e do tipo** da prova; arquivo multi-cargo é **recortado pelo sistema** e o recorte (cargo, tipo, turno) é mostrado na conferência. Sem recorte único, o usuário escolhe | Serviço + teste com os arquivos reais |
 | P-18 | **Gabarito preliminar vale como provisório:** o relatório marca "gabarito preliminar". Quando o definitivo chega e muda uma resposta ou anula uma questão, a nota se recalcula (derivada) e as questões afetadas voltam para julgamento (como P-13) | Derivação + teste |
+| P-19 | **Questão lida por OCR leva a marca "lida por OCR"**, e o usuário pode ver a **imagem da página** de onde saiu. Código e algarismos romanos lidos por OCR são os pontos de risco; na dúvida a questão fica **não avaliável** (P-04) em vez de julgada sobre texto corrompido | Serviço + teste com as provas reais |
 
 P-06 é a que mais custa se esquecida: é ela que impede esta funcionalidade de virar, por
 acidente, o banco de questões que o produto escolheu não ser.
@@ -344,11 +365,41 @@ acidente, o banco de questões que o produto escolheu não ser.
 |---|---|---|
 | **Custo de IA** | Julgamento ≈ 1 chamada por questão; atribuição ≈ 1 por lote de ~10; prova de 60 questões ≈ 70 chamadas, uma vez. Reanálise: só o que mudou | A cota da assinatura é o recurso escasso |
 | **Tempo** | Prova de 60 questões em até ~30 min, em segundo plano | Como o material |
-| **Memória no Pi** | Dentro do teto do worker (768 MB, `03E_DEPLOYMENT` §8C) | O Pi 4B tem 4 GB para tudo |
+| **Memória no Pi** | OCR com pico de ~85 MB, dentro do teto do worker (768 MB, `03E_DEPLOYMENT` §8C); **medido** (§9.1) | O Pi 4B tem 4 GB para tudo |
+| **Disco no Pi** | +~150 MB na imagem do worker (253 MB → ~400 MB) | 384 GB livres; irrelevante, mas registrado |
+| **CPU no Pi** | OCR com `nice` 15 e teto de 2 núcleos; carga do host ≤ ~2,1 de 4 | Os outros sistemas do Pi não podem sentir |
 | **Retomada** | Reiniciar o worker no meio retoma de onde parou, sem repetir questão julgada | O worker já se reinicia no deploy |
 | **Idempotência** | Reenviar a mesma prova (mesmo hash) não duplica | Como D-45 |
 | **Resolução** | Navegação local; resposta gravada ao tocar; sair e voltar não perde nada | Provas de 3 a 4 horas |
 | **Tamanho** | PDF até o mesmo limite do edital | Consistência |
+
+### 9.1 Medição no Pi (2026-10-18)
+
+Pi 4B de 4 GB, **com os outros sistemas rodando** (SGE, Imagineer, Guardian, Pi-hole, Tailscale e
+a sessão gráfica com VNC). Medido com a prova da FCC (12 fatias de 1675 × 2048 px, ~60 questões),
+num contêiner descartável de `python:3.12-slim` com teto de **700 MB e 2 núcleos**, Tesseract 5.5.0
+e o idioma português. Tudo que a medição criou foi removido depois.
+
+| | Antes | Durante o OCR | Depois |
+|---|---|---|---|
+| Memória do host em uso | 1 504 MB (disponível 2 290 MB) | pico 1 655 MB (+~150 MB); disponível ≥ 2 139 MB | 1 534 MB |
+| Swap | 110 MB | 113 MB (não cresceu) | — |
+| Carga (4 núcleos) | 0,26 | até 2,13 | — |
+| Temperatura / throttling | 38,4 °C / nenhum | 40,9 °C / nenhum | — |
+
+| OCR | Resultado |
+|---|---|
+| Pico de memória do Tesseract | ~85 MB |
+| Tempo | 1,1 a 11,9 s por fatia; **101 s as 12** (≈ 8 s por fatia), com prioridade baixa |
+| Instalação (`apt`) | 35 s; 71 pacotes; **+150 MB** de imagem (205 → 355 MB) |
+| Texto | ~5 000 a 8 000 caracteres por fatia cheia; prosa e alternativas legíveis |
+
+**Conclusão:** o OCR **cabe com folga**, sem afetar os outros sistemas: pico de ~85 MB contra um
+teto de 768 MB, ~100 s por prova e nenhum swap. O custo real não é recurso, é **qualidade**:
+código e romanos (P-19).
+
+Observações do Pi, fora do escopo desta funcionalidade: o cache de build do Docker ocupa 9,4 GB
+(7 GB recuperáveis) e a sessão gráfica (labwc, wayvnc) consome ~200 MB de RAM.
 
 ---
 
@@ -385,9 +436,11 @@ acidente, o banco de questões que o produto escolheu não ser.
 | E | **Resolver mais de uma vez** a mesma prova | Cada tentativa é um registro; a nota que entra em M-1 é a **primeira** (as seguintes já têm memória da prova), as outras ficam como informação |
 | F | **Posição no mapa:** sprint própria ou fundida com a 23 (simulado no formato da prova, com nota de corte) | A resolução (JV-2) é o simulado da Sprint 23; a cobertura (JV-1) pode sair antes. Decidir depois de aprovados os requisitos |
 | G | **Direitos da prova:** uso pessoal de provas públicas de banca, um usuário só | Registrar no ADR que o conteúdo é do usuário e não é redistribuído |
-| I | **Prova em imagem (§5.6):** OCR no worker (instalar Tesseract com português: mais disco e memória no Pi), ou leitura por visão (o proxy de IA hoje só aceita texto) | OCR no worker, num estágio de **leitura** separado do julgamento, e conferência mais rígida (OCR erra): mostrar a página lida ao lado do texto extraído em 3 questões sorteadas. Medir tamanho e RAM antes de aprovar |
-| J | **Texto-base e figuras:** itens do CEBRASPE dependem do texto; questões com imagem (gráfico, diagrama) não são avaliáveis | Anexar o texto-base à questão; imagem = não avaliável e declarada (P-04) |
-| K | **Quantas provas bastam:** as 4 bancas da amostra são de TI, mas a banca do alvo (FCC) não está nela | Pedir uma prova da FCC para o ensaio da §1, porque o formato pode ser o mais diferente de todos |
+| I | **Prova em imagem (§5.6) — decidido (2026-10-18):** OCR no worker, estágio de **leitura** próprio, **medido no Pi** (§9.1) | Mantido. Conferência rígida: página ao lado do texto em 3 questões sorteadas, mais P-19 |
+| J | **Texto-base e figuras — aceito:** itens do CEBRASPE dependem do texto; questões com imagem (gráfico, diagrama) não são avaliáveis | Anexar o texto-base à questão; imagem = não avaliável e declarada (P-04) |
+| K | **A banca do alvo — fechado:** a prova e o gabarito da FCC (TJ-CE 2026, cargo E05) foram entregues e avaliados (§5.6); eram, de fato, o formato mais diferente | Usar o par da FCC no ensaio da §1 |
+| L | **Fatias que cortam questões (FCC):** o OCR por fatia parte a questão no limite; como remontar | OCR em ordem com sobreposição entre fatias e remontagem pelo número da questão; detalhe é do documento técnico |
+| M | **Guardar a imagem das páginas** (~6 MB por prova) para o usuário conferir o OCR e para as questões com figura | Sim: é conteúdo da prova hospedada (P-06) e o que torna P-19 verificável |
 | H | **Tempo e custo da primeira prova** | Medir no ensaio da FCC antes de fixar as metas da §9 |
 
 ---
@@ -398,7 +451,7 @@ acidente, o banco de questões que o produto escolheu não ser.
 |---|---|---|
 | Para que serve, métrica, não-objetivo | `00_PRODUTO` | §7 (métrica), §11 (decisão vinculante) |
 | **Revisões necessárias** | `00_PRODUTO` | **§5.1** ("o sistema não faz: hospeda enunciado, alternativa ou gabarito; corrige questão") e **§6.7** ("não há atribuição confiável por assunto"), mais as decisões vinculantes nº 2 ("a recuperação acontece fora") e nº 15 ("simulado não é sessão") |
-| Glossário e regras P-01 a P-18 | `01_DOMINIO` | §3 (nova subseção), §10 (D-67+) |
+| Glossário e regras P-01 a P-19 | `01_DOMINIO` | §3 (nova subseção), §10 (D-67+) |
 | Jornadas JV-1 e JV-2, falhas, orçamento | `02_JORNADAS` | novas jornadas, ao lado da J-5 |
 | Quem garante P-xx e como se testa | `03_INVARIANTES` | §3 e §9 |
 | Por que hospedar a prova; por que o §6.7 muda; direitos | `docs/00A_ADR.md` | ADR novo |
@@ -417,6 +470,7 @@ documentação técnica nasce com a sprint).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 0.4.0 | 2026-10-18 | Par da FCC avaliado (prova em imagem, 12 fatias que cortam questões; gabarito em tabela com situação por questão). OCR decidido e **medido no Pi com os outros sistemas rodando** (§9.1: pico ~85 MB, ~100 s por prova, +150 MB de imagem, sem swap). Regra P-19 (marca de OCR e imagem da página). Pontos I e K fechados, J aceito, L e M abertos |
 | 0.3.0 | 2026-10-18 | Amostra real de 4 bancas (§5.6): gabarito multi-cargo e multi-tipo em layouts diferentes (P-17), preliminar × definitivo (P-18), prova em imagem sem OCR (ponto I), texto-base do CEBRASPE (J), banca do alvo fora da amostra (K). Questão fora do edital deixa de ser furo e sai do denominador (P-04, P-08). PDF em imagem deixa de ser recusado na hora |
 | 0.2.0 | 2026-10-18 | Respostas do usuário aos pontos em aberto. Gabarito obrigatório e critério sobre a alternativa do gabarito (§5.2). O SGE hospeda a prova e o usuário a resolve (JV-2); revisa `00_PRODUTO` §5.1 e §6.7. Nota alimenta disciplina e global, assunto só informa (P-12). Reanálise incremental derivada dos segmentos (P-13). Regras P-12 a P-16. Pontos decididos e abertos separados (§10) |
 | 0.1.0 | 2026-10-17 | Rascunho inicial: prova só no planejamento, gabarito opcional, IA por questão |
