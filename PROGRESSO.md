@@ -36,7 +36,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 21 | Modo reta final | Com data de prova no concurso-alvo, o turno muda de regime: menos assunto novo, manutenção só de peso alto, simulado periódico. **Requisito do usuário (2026-10-17), a detalhar na abertura:** o usuário estuda editais com prova já passada ou em cima da hora como preparação para o próximo — o regime de reta final não pode entrar sozinho só porque a data está perto; precisa de um jeito explícito de marcar o concurso como preparação | não começou |
 | 22 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
 | 23 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; nota de corte (o simulado no formato da prova passou para a Sprint 24) | não começou |
-| 24 | Prova e gabarito | O planejamento lê a prova (OCR quando é imagem) e entrega questões e gabarito; o sistema julga se o material sustenta a alternativa do gabarito (cobertura) e o usuário resolve a prova, com nota em M-1 por disciplina e global. Especificação migrada (`01_DOMINIO` §3.11, D-67 a D-85, J-6, J-7, ADR-046); `docs/ESPECIFICACAO-PROVA-GABARITO.md` guarda o raciocínio e a amostra | não começou |
+| 24 | Prova e gabarito | O planejamento lê a prova (OCR quando é imagem) e entrega questões e gabarito; o sistema julga se o material sustenta a alternativa do gabarito (cobertura) e o usuário resolve a prova, com nota em M-1 por disciplina e global. Especificação migrada (`01_DOMINIO` §3.11, D-67 a D-85, J-6, J-7, ADR-046); `docs/ESPECIFICACAO-PROVA-GABARITO.md` guarda o raciocínio e a amostra | **em andamento** — `docs/SPRINT-24-PROVA-GABARITO.md` |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -1017,6 +1017,31 @@ por um modelo de verdade — é o item 19.5.
 
 ---
 
+## 20A. Sprint 24 · Prova e gabarito
+
+**Documento técnico:** `docs/SPRINT-24-PROVA-GABARITO.md` v1.0.0, escrito na abertura da sprint contra
+`01_DOMINIO` v1.26.0 (§3.11, D-67 a D-85). Pedido do usuário em 2026-10-17: subir uma prova e o gabarito e
+saber se o material montado permite gabaritar o concurso, e poder resolver a prova no sistema. A Sprint 19
+segue aberta só no item 19.5 (token e primeiro edital real); as duas correm em paralelo porque não dividem código.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 24.1 | Especificação: `00_PRODUTO` 1.8.0, `01_DOMINIO` 1.26.0, `02_JORNADAS` 1.15.0, `03_INVARIANTES` 1.14.0, ADR-046 | Claude, a pedido do usuário | **feito** |
+| 24.2 | SGE — `V16`, entidades, `ProvaService`, rotas internas, testes de estrutura, leitura e vereditos | Claude | não começou |
+| 24.3 | SGE — rotas públicas: envio, conferência, confirmar, reanálise, relatório | Claude | não começou |
+| 24.4 | SGE — resolução: tentativas, respostas, entregar → simulado; gabarito definitivo | Claude | não começou |
+| 24.5 | Planejamento — OCR, questões, gabarito, atribuição, contra a amostra real | Claude, com exceção explícita de escrita | não começou |
+| 24.6 | Planejamento — julgamento por trechos e vereditos | Claude, com exceção explícita de escrita | não começou |
+| 24.7 | Frontend — telas de J-6 e J-7 | Claude | não começou |
+| 24.8 | Pi — volume `provas`, Tesseract na imagem do worker, ensaio com a prova da FCC e conferência de ~20 vereditos | **você**, com Claude por SSH | não começou |
+
+**Definition of Done:** os testes do doc técnico §10 verdes; a prova e o gabarito da FCC percorrem J-6 do envio ao
+relatório no Pi; o usuário confere ~20 vereditos e a discordância fica abaixo de 1 em 5; a prova resolvida entra em
+M-1 por disciplina e o índice `ux_..._d78_uma_conta` impede a segunda; nenhuma sessão, revisão ou mudança de turno
+nasce da prova.
+
+---
+
 ## 21. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
@@ -1035,6 +1060,7 @@ por um modelo de verdade — é o item 19.5.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.62.0 | 2026-10-18 | **Sprint 24 aberta** (§20A), a pedido do usuário. Documento técnico `docs/SPRINT-24-PROVA-GABARITO.md` v1.0.0: `V16` (prova, questão, alternativa, veredito, tentativa, resposta), rotas internas e públicas, reanálise por uma consulta (D-79), nota entrando por `simulado`/`resultado_simulado` com índice único parcial (D-78), volume `provas`, contrato do planejamento. Item 24.1 (especificação) feito; o código começa em 24.2. Nenhum código escrito |
 | 1.61.0 | 2026-10-18 | **Especificação da prova e gabarito migrada** para os documentos vigentes: `00_PRODUTO` v1.8.0 (§5.1.1: o sistema hospeda uma prova inteira com gabarito; §6.7 e decisões nº 2, 15 e 18), `01_DOMINIO` v1.26.0 (§3.11, **D-67 a D-85**, 85 regras), `02_JORNADAS` v1.15.0 (J-6 e J-7), `03_INVARIANTES` v1.14.0 (86 linhas para 85 regras), **ADR-046**. Mapa: **Sprint 24** nova; a 23 perde o simulado no formato da prova. Nenhum código: a sprint ainda não começou |
 | 1.60.0 | 2026-10-18 | `ESPECIFICACAO-PROVA-GABARITO` v0.4.0: par da FCC (banca do alvo) avaliado — prova em imagem, 12 fatias que cortam questões; gabarito em tabela com situação por questão. **OCR medido no Pi com os outros sistemas rodando** (contêiner com teto de 700 MB e 2 núcleos): Tesseract ~85 MB de pico, ~100 s por prova de 12 fatias, +150 MB na imagem do worker, carga ≤ 2,1 de 4, sem swap, 41 °C. Tudo que a medição criou foi removido do Pi. Qualidade: boa na prosa, fraca em código e algarismos romanos (P-19) |
 | 1.59.0 | 2026-10-18 | `ESPECIFICACAO-PROVA-GABARITO` v0.3.0, depois de avaliar provas e gabaritos reais de CEBRASPE, FGV e IDECAN (`provas e gabaritos/` do usuário): gabarito multi-cargo e multi-tipo em layouts diferentes (a IA lê, o sistema valida), preliminar × definitivo, anuladas (`*`, `X`), uma prova em imagem pura (sem OCR no Pi nem no worker), texto-base nos itens do CEBRASPE; questão fora do edital sai do denominador. Pontos abertos I, J e K |
