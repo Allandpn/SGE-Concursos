@@ -2,10 +2,18 @@
 
 **Versão** 1.0.0 · **Data** 2026-10-18 · **Natureza:** relatório de medição, não muda código nem especificação.
 
+> **ERRATA (2026-10-18, versão 1.0.1).** A versão 1.0.0 afirmava que o concurso-alvo era o mesmo edital da prova.
+> **Não é.** O alvo é o **SEFAZ SC 2026, Auditor, Ciências da Computação** (programa de TI voltado a dados, com uma
+> linha de infraestrutura); a prova é do **TJ-CE, Analista, Infraestrutura de TI** (programa de redes profundo). A prova
+> não é uma régua justa para o material do alvo: parte das lacunas é só diferença de programa. As conclusões das
+> §3 e §5 que dizem "falha da cadeia" valem apenas para as questões **dentro do edital-alvo** (reclassificação na
+> §3.1). O mecanismo da §4 (consulta, orçamento fixo, filtro de curso) continua verdadeiro como propriedade do código.
+
 ## 1. Por que existe
 
 O ensaio da Sprint 24 (item 24.8) com a prova da FCC (TJ-CE, Analista de Infraestrutura de TI, tipo 4) foi
-rodado contra o concurso-alvo, que **é o mesmo edital da prova**. Resultado do julgamento (prova id 2):
+rodado contra o concurso-alvo (**SEFAZ SC 2026**, outro edital; ver a errata acima). Resultado do julgamento
+(prova id 2):
 
 | Das 39 questões avaliáveis | Quantas |
 |---|---|
@@ -13,8 +21,8 @@ rodado contra o concurso-alvo, que **é o mesmo edital da prova**. Resultado do 
 | Parciais | 5 |
 | Não respondíveis | 28 |
 
-Como o edital é o mesmo, a lacuna não é diferença de programa: algo na cadeia perdeu o conteúdo. Esta auditoria
-mede **onde**, usando o índice completo (`indice.db`: 2.639 PDFs, 264.013 páginas, 160 cursos) como verdade.
+Como os editais são diferentes, parte da lacuna é diferença de programa; outra parte é conteúdo que o edital-alvo
+nomeia e a cadeia não entregou. Esta auditoria mede **onde**, usando o índice completo (`indice.db`: 2.639 PDFs, 264.013 páginas, 160 cursos) como verdade.
 
 ## 2. Método
 
@@ -47,8 +55,16 @@ Dockerfile 165 · Kubernetes 725 · LDAP 513 · Active Directory 364 · hipercon
 checksum 162 · função hash 385 · supply chain 81 · "razão e proporção" 291 · "variação percentual" 324.
 Cursos de TI que o acervo traz: `Redes e Segurança` (SEFAZ-CE 2026, TCE-SC, TSE, TRT-SC) e `Especialidade TI`.
 
-**Conclusão:** no máximo 4 das 33 (12%) são ausência real do acervo. Pelo menos 22 (3 + 19) são falha da cadeia, e
-nenhuma delas é OCR (só 4.864 páginas, 1,8%, estão vazias; B é irrelevante hoje).
+**Conclusão (revista):** no máximo 4 das 33 (12%) são ausência real do acervo, e nenhuma é OCR (só 4.864 páginas,
+1,8%, estão vazias; B é irrelevante hoje). A frase "pelo menos 22 são falha da cadeia" da versão 1.0.0 **não vale**:
+ela ignorava que a prova é de outro edital.
+
+### 3.1 Reclassificação por escopo do edital-alvo (preliminar, não validada pelo dono)
+
+Lendo o Anexo III do SEFAZ SC contra o conceito que faltou: **~12 falhas reais** (4, 7, 8, 22, 23, 29, 33, 37, 38,
+45, 49, 54), **~8 de fronteira** (21, 27, 28, 35, 36, 41, 42, 56), **~7 fora do edital** (30, 34, 39, 40, 46, 47, 59),
+2 dependem da prova (2, 12) e 4 a verificar (6, 13, 14, 24). Detalhe e critério em `RELATORIO-SEGUNDA-OPINIAO.md` §8.5.
+O ensaio válido exige uma prova do concurso-alvo.
 
 ## 4. O mecanismo (reproduzido offline, `integracao/acervo.py` sobre o índice real)
 
@@ -102,3 +118,4 @@ escrever no repositório do planejamento.
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0.0 | 2026-10-18 | Primeira auditoria: ensaio da FCC (prova 2) contra o índice completo |
+| 1.0.1 | 2026-10-18 | **Errata:** o concurso-alvo (SEFAZ SC, Ciências da Computação) não é o edital da prova (TJ-CE, Infraestrutura de TI). Conclusão "22 falhas da cadeia" retirada; reclassificação por escopo (§3.1) |

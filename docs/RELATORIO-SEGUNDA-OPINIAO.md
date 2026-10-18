@@ -6,6 +6,35 @@ considerando fazer.
 
 ---
 
+## ERRATA (2026-10-18, depois da primeira versão) — LEIA ANTES DO RESTO
+
+**A premissa central das §7 e §8 estava errada e foi corrigida.** A primeira versão afirmava que o concurso-alvo
+do sistema era o mesmo edital da prova usada no ensaio. **Não é.** [Medido, `GET /api/concursos`]
+
+- **Concurso-alvo no SGE:** SEFAZ SC 2026, Auditor Estadual de Finanças Públicas, **Ciências da Computação**,
+  banca FCC (97 assuntos). Seu conteúdo de TI é voltado a **dados, auditoria e governança** (BI, Python/pandas,
+  Machine Learning, Spark, SQL, LGPD, auditoria de contratos de TI), com **uma linha** de infraestrutura/redes.
+- **Prova usada no ensaio:** TJ-CE, Analista Judiciário, **Infraestrutura de TI**, FCC, tipo 4. É outro concurso,
+  de outro cargo, com um programa de redes e infraestrutura muito mais profundo.
+
+**Consequência.** A prova **não é uma régua justa** para o material do concurso-alvo. O placar (6 respondíveis,
+5 parciais, 28 não respondíveis) mede o material do SEFAZ SC contra questões de um programa diferente. Duas
+coisas se misturam: (i) o que o material do edital-alvo realmente deixou de cobrir; (ii) o que a prova do TJ-CE
+cobra e o edital-alvo nunca pediu. Só 7 questões saíram como "fora do edital": a atribuição por IA tende a encaixar a
+questão no assunto mais próximo, e isso **infla** os "furos".
+
+**O que continua válido:** o mecanismo da busca (§8.3: 12 termos em OU casando 24% do índice, orçamento fixo de 72
+páginas, filtro de curso por radical de nome) é propriedade do código e foi reproduzido; os assuntos sem segmento
+(Q4, Q7, Q8: Morfossintaxe e Flexão, que **estão** no edital-alvo) são falha real; e questões cujo conceito **está
+nomeado no edital-alvo** e não chegou ao material são falha real (por exemplo Docker e Kubernetes, nuvens
+pública/privada/híbrida, IPv6, backup e continuidade, alta disponibilidade, hashes).
+**O que deixa de valer:** a conclusão "pelo menos 22 das 33 são falha da cadeia" e a leitura de que o material do
+concurso-alvo cobre 15% da prova. Uma reclassificação por escopo do edital-alvo está em andamento (§8.5).
+
+Onde o texto abaixo disser "o mesmo edital da prova", leia "o edital-alvo é outro (SEFAZ SC)".
+
+---
+
 ## 0. Como ler este documento
 
 **Quem está pedindo.** O dono de um sistema pessoal de gestão de estudos para concursos públicos. O sistema é
@@ -348,8 +377,10 @@ do material** que sustenta o estudo; a Sprint 17 ("uso real") ainda não termino
 
 ### 7.1 Placar
 
-[Medido, relatório da prova id 2] O concurso-alvo no SGE **é o mesmo edital da prova** (TJ-CE, Analista Judiciário,
-Infraestrutura de TI). Portanto a prova é uma régua justa para o material montado.
+[Medido, relatório da prova id 2] **CORREÇÃO:** o concurso-alvo é o SEFAZ SC 2026 (Auditor, Ciências da
+Computação) e a prova é do TJ-CE (Analista, Infraestrutura de TI): **são editais diferentes**. Por isso a prova
+**não é uma régua justa** para o material do alvo (ver ERRATA). Os números abaixo valem como medida do material
+contra aquela prova, não como cobertura do concurso-alvo.
 
 | Das 39 questões avaliáveis | Quantas |
 |---|---|
@@ -416,8 +447,11 @@ hiperconvergente 14 · endereços fc00 (IPv6) 12 · checksum 162 · função has
 "razão e proporção" 291 · "variação percentual" 324. O acervo traz cursos de TI completos
 ("Redes e Segurança" de quatro preparações diferentes, "Especialidade TI").
 
-**Conclusão [Inferência apoiada em Medido]:** no máximo 4 das 33 (12%) são ausência real do acervo. Pelo menos
-22 são falha da cadeia. **Nenhuma é OCR do acervo** (só 1,8% das páginas estão vazias).
+**Conclusão [Inferência apoiada em Medido], REVISTA:** no máximo 4 das 33 (12%) são ausência real do acervo, e
+**nenhuma é OCR do acervo** (só 1,8% das páginas estão vazias). A frase anterior ("pelo menos 22 são falha da
+cadeia") **não se sustenta**: ela tratava o TJ-CE como o edital-alvo. O que se pode dizer é que o acervo contém o
+conceito em quase todos os casos buscados, e que **parte** dessas questões está dentro do edital-alvo (então o
+material deveria tê-las coberto) e **parte** está fora (então o material nunca deveria). A §8.5 separa as duas.
 
 ### 8.3 O mecanismo, reproduzido offline
 
@@ -448,6 +482,31 @@ material, embora o acervo tenha dezenas a centenas de páginas sobre eles.
   apontou a falta). **Falta um elo que pergunte "o que este assunto cobra, e isso chegou?"**
 - Não existe medida de cobertura **por subitem**. `PRONTO` quer dizer "existe segmento".
 - A prova só enxerga os subitens que sorteia; não mede o edital todo.
+
+### 8.5 Reclassificação por escopo do edital-alvo (preliminar)
+
+[Inferência minha, lendo o texto do Anexo III do edital SEFAZ SC contra o conceito que faltou; **não validada pelo
+dono**.] O edital-alvo, na parte de infraestrutura, diz: "servidores, sistemas operacionais, virtualização,
+armazenamento, contêineres, alta disponibilidade e balanceamento de carga; modelos OSI e TCP/IP, IPv4 e IPv6, TCP, UDP,
+DNS, DHCP, HTTP/HTTPS, LAN, WAN, WLAN, VLAN, NAT, VPN, roteamento e switching; nuvem: IaaS, PaaS, SaaS, nuvens pública,
+privada e híbrida, ... AWS, Azure, GCP, Docker e Kubernetes"; em segurança: "IAM, MFA, RBAC, firewalls, IDS/IPS e WAF,
+hardening, ... backup e continuidade, criptografia, hashes, PKI, TLS".
+
+| Situação | Questões |
+|---|---|
+| **Dentro do edital-alvo e o material falhou** (falha real) | 4, 7, 8 (assuntos sem segmento); 33 (continuidade, RPO/RTO); 37 (IPv6); 38 (backup); 45 (alta disponibilidade); 49 (nuvem pública/privada/híbrida); 54 (Docker, Kubernetes); 29 (hashes); 22, 23 (backup em SQL Server, PostgreSQL: o acervo não tem) |
+| **Fronteira** (o edital cita o tema geral, não o detalhe) | 35 (switching → RSTP), 36 (roteamento → BGP), 41 (VPN/TLS → IKEv2), 42 (armazenamento → hiperconvergência), 56 (IAM → AD/LDAP), 27, 28, 21 |
+| **Fora do edital-alvo** (o material nunca deveria cobrir) | 34 (DAI), 39 (NTP), 40 (PoE), 46 (Zabbix), 47 (QoS), 30 e 59 (e-mail: SPF/DKIM/DMARC) |
+| **Depende da prova** | 2, 12 |
+| **A verificar** | 6, 13, 14, 24 |
+
+Leitura: de 33, cerca de **12 são falha real contra o edital-alvo**, cerca de **8 são fronteira**, cerca de **7 estão
+fora do edital**, 2 dependem da prova e 4 estão por verificar. A taxa de falha do material contra o **que o edital-alvo nomeia** é bem menor
+do que o placar bruto sugere, mas **não é zero**, e os assuntos sem segmento e os de Docker/Kubernetes e nuvem são
+falhas que o edital cobra com todas as letras.
+
+**O ensaio válido seria com uma prova do próprio concurso-alvo** (cargo Ciências da Computação do SEFAZ SC, ou outra
+FCC com programa equivalente), ou restringir a análise às questões que a atribuição colocar dentro do escopo.
 
 ---
 
