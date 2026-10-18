@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.5 |
+| Versão | 1.0.6 |
 | Data | 2026-10-18 |
 | Status | Vigente — em andamento |
 | Especificação | `01_DOMINIO` v1.26.0 §3.11 e D-67 a D-85 · `02_JORNADAS` v1.15.0 J-6 e J-7 · `03_INVARIANTES` v1.14.0 · `00_PRODUTO` v1.8.0 §5.1.1 · ADR-046 |
@@ -260,12 +260,24 @@ Exige o pedido explícito de exceção à regra de escrita cruzada do `CLAUDE.md
 
 | Etapa | O que faz |
 |---|---|
-| **Imagem → texto** | Extrai as imagens embutidas, **empilha as fatias numa tira contínua** e roda o Tesseract em faixas com sobreposição, tirando as linhas repetidas na emenda; a questão que não se remonta fica `SEM_TEXTO`. Grava as imagens em `paginas/<id>/` (pontos L e M). Texto nativo dispensa o OCR |
-| **Questões** | A IA separa número, enunciado, alternativas e texto-base; o worker valida a sequência e as alternativas. O que o OCR provavelmente errou (código, algarismos romanos) leva `lida_por_ocr` e, na dúvida, `OCR_DUVIDOSO` (D-85) |
-| **Gabarito** | A IA lê PDF ou texto; o worker valida: nº de respostas igual ao de questões, só letras válidas, anuladas (`*`, `X`) reconhecidas. Multi-cargo: recorta pela capa da prova (cargo, tipo, turno, normalizando acento e caixa) e devolve o recorte (D-83). Preliminar × definitivo (D-84) |
+| **Imagem → texto** | O documento é "de imagem" quando **menos da metade das páginas tem texto** (uma prova de texto tem páginas em branco e de figura — a FGV tem —, e isso não a torna imagem). Aí cada página sem texto é renderizada **por bandas de 2048 px com 256 px de sobreposição** (a prova da FCC é uma página de 8 772 pt com 12 imagens empilhadas, e as imagens cortam questões) e roda o Tesseract; de cada banda só ficam as linhas cujo **centro** cai na faixa que ela "possui", então a linha partida pela emenda sai uma vez, inteira, e sem lixo. A ordem de leitura do Tesseract é preservada (nunca se reordena por posição: intercalaria colunas). As imagens vão para `paginas/<id>/` (pontos L e M). Texto nativo dispensa o OCR. Cada linha de OCR leva a confiança média das palavras |
+| **Questões** | **Determinístico, com validação, sem IA** (decisão desta sprint, ver abaixo). Guia a **sequência numérica** (acha a 1, depois a 2...); em múltipla escolha uma largada só vale se a questão anterior já chegou às alternativas e há "A)" e "B)" logo adiante; a primeira questão nunca é pulada. Cabeçalho e rodapé repetidos em ≥70% das páginas saem (o número sozinho, não). Número não achado vira questão `SEM_TEXTO`, para o gabarito casar (D-82). Certo/errado: o texto-base vem do comando "Julgue…", resolvido pelo código ("texto CB1A1"). O que o OCR provavelmente errou leva `lida_por_ocr` e `OCR_DUVIDOSO` quando **muitas linhas têm confiança baixa** ou **algarismos romanos foram lidos como "1.", "11.", "TI."** (D-85) |
+| **Gabarito** | Escolhe a **página** do cargo e do tipo no arquivo multi-cargo por cabeçalho (palavras do cargo em comum; o **tipo** desempata páginas do mesmo cargo, mas sozinho não qualifica uma página). A IA lê o texto escolhido e o worker valida: numeração contígua, letras válidas para o formato, anuladas (`*`, `X`) reconhecidas, total igual ao de questões (D-82; até 5 questões a mais no gabarito estendem a numeração com questões sem texto). O que não serve vira **`avisoGabarito` com o motivo** e a prova espera; nunca um silêncio (D-83, D-84) |
 | **Atribuição** | Em lotes de ~10: a IA escolhe o assunto da cobertura do alvo, usando o `cabecalho_disciplina` como pista, ou "nenhum"; devolve a confiança. Baixa confiança → `REVISAR` |
-| **Julgamento** | Para cada questão a julgar: junta o texto das páginas dos **segmentos ativos** do assunto (os PDFs estão em `/dados/material`), escolhe as ~6 mais próximas da questão por busca (índice temporário em memória) e pergunta à IA o veredito **sobre a alternativa do gabarito**, com a página citada (`segmentoId` + página dentro dele). Na dúvida, o pior (D-69) |
-| **Falha da IA** | Não entrega nada; tenta no ciclo seguinte (D-75) |
+| **Julgamento** | Para cada questão a julgar: junta o texto das páginas dos **segmentos ativos** do assunto (os PDFs estão em `/dados/material`), escolhe as ~6 mais próximas por busca **FTS5 em memória** (termos do enunciado e da alternativa do gabarito) e pergunta à IA o veredito **sobre a alternativa do gabarito**, com a página citada (`S<segmento>-p<página no segmento>`). O worker só aceita página das oferecidas; `RESPONDIVEL` sem página válida **rebaixa** para `NAO_RESPONDIVEL` (D-68, D-69). Assunto sem segmento, ou sem página que cite os termos, é `NAO_RESPONDIVEL` **sem gastar IA**. Vereditos em lotes de 5, no máximo 20 questões por ciclo: o que foi julgado sobrevive a um reinício |
+| **Falha da IA** | **IA indisponível** (assinatura parou): o ciclo para, nada é gravado, tenta no seguinte (D-75). **Resposta ilegível da IA** não é veredito: a questão é pulada e só na 3ª volta vira `NAO_RESPONDIVEL` com o motivo, para a prova não ficar presa. **Prova ilegível** (PDF inválido, imagem sem OCR, nenhuma questão): `falha` da etapa com o motivo. **Gabarito que não serve**: a prova espera com o aviso |
+
+**Decisão de projeto: a separação das questões é determinística, não por IA.** A v0.4 da especificação supunha a IA
+separando as questões. Mas uma prova de 70 questões são ~25 mil tokens que a IA teria de devolver reescritos, por
+prova, da cota da assinatura (ADR-045), para um resultado que regras simples dão de graça, que os testes provam, e que
+já funciona nas provas reais: **70/70 (FGV Dataprev), 60/60 (FGV MPES) e 120 itens certo/errado com o texto-base
+(CEBRASPE)**. A IA fica onde só ela serve: ler o gabarito (cada edital tem um layout), atribuir o assunto e julgar.
+
+**Limites conhecidos, para o ensaio do item 24.8** (só o OCR de verdade os mostra): (a) uma instrução numerada
+"1. …" na capa, com as alternativas da questão 1 dentro de 80 linhas, seria tomada como a questão 1 — não ocorre em
+FGV nem CEBRASPE, e não se inventa regra que colidiria com listas numeradas legítimas no enunciado; (b) os limiares de
+confiança do OCR (65, e 25% das linhas) são palpites até a prova da FCC; (c) o Tesseract roda com `--psm 3`
+(automático, vale para colunas), configurável por `OCR_PSM`.
 
 ---
 
@@ -335,6 +347,7 @@ ou a revisão; limiar de "gabaritar" e nota de corte (Sprint 23); prova de concu
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.0.6 | 2026-10-18 | Itens 24.5 e 24.6 feitos (código e testes). §8 reescrita com o que foi construído: **separação das questões determinística** (decisão registrada, com a razão e os números das provas reais), OCR por bandas com sobreposição, escolha da página do gabarito, julgamento por FTS5, tratamento de cada tipo de falha. `GabaritoRequest` ganha `avisoGabarito` (gabarito recusado volta a esperar com o motivo) |
 | 1.0.5 | 2026-10-18 | Item 24.4 feito; nomes dos testes alinhados ao que existe |
 | 1.0.4 | 2026-10-18 | Ao desenhar o código do item 24.4: `{tid}` é o `tentativaId` do cliente; gabarito só na lista `correcao`, vazia até a entrega; entregar é idempotente; a nota exclui questão sem assunto (declarada em `foraDaNota`); disciplina que perde todas as questões perde a apuração; relatório com nota, outras tentativas e discordâncias |
 | 1.0.3 | 2026-10-18 | Item 24.3 feito; nomes dos testes alinhados ao que existe (o relatório e a API ficaram em `ProvaApiTest`) |

@@ -5,7 +5,7 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.3.2** |
+| Versão do documento | **1.4.0** |
 | Status | **Congelado** |
 | Data | 2026-10-14 |
 
@@ -615,10 +615,57 @@ material) e um teto de memória por serviço.
 
 ---
 
+## 8D. Adendo — Sprint 24: provas e gabaritos (ADR-046)
+
+O usuário envia a prova e o gabarito pelo app; o worker (serviço `planejamento`) os lê — com **OCR**
+quando a prova é imagem, como a da FCC e a do IDECAN —, atribui cada questão a um assunto e julga se o
+material sustenta a alternativa do gabarito. Dois acréscimos de infraestrutura: um volume e o Tesseract.
+
+**O volume `provas`**, montado nos dois serviços como `/dados/provas` (`PROVAS_DIR`), com dois donos de
+propósito, porque o app roda com uid **1001** e o worker com uid **1000**:
+
+| Pasta | Quem grava | Quem lê |
+|---|---|---|
+| `entrada/<prova>/` (a prova e o gabarito enviados) | o app (uid 1001) | o worker |
+| `paginas/<prova>/` (as imagens das páginas e `capa.txt`) | o worker (uid 1000) | o app, que serve as imagens ao usuário conferir o OCR |
+
+**O Tesseract** entra na imagem do worker (`tesseract-ocr` e `tesseract-ocr-por`). Medido neste Pi com os
+outros sistemas rodando, num contêiner de teste com teto de 700 MB e 2 núcleos: **+150 MB de imagem, pico de
+~85 MB de memória, ~8 s por página, 101 s por prova de 60 questões, sem swap, 41 °C**. O teto do worker
+(768 MB, §8C) continua valendo.
+
+### 8D.1 Instalação
+
+1. **Pastas, com os donos certos:**
+   `sudo mkdir -p /mnt/ssd/provas/entrada /mnt/ssd/provas/paginas && sudo chown 1001:1001 /mnt/ssd/provas/entrada
+   && sudo chown 1000:1000 /mnt/ssd/provas/paginas`
+2. **O código do planejamento** (que o Pi constrói a partir do GitHub, branch `main`):
+   `cd /opt/Plano-de-Estudos-Automatizado && sudo git pull --ff-only`
+3. **O SGE e a reconstrução dos dois serviços** (a `V16` aplica na subida do app):
+   `cd /opt/estudos && sudo git pull --ff-only && sudo docker compose up -d --build app planejamento`
+4. **O Tesseract na imagem:** `sudo docker compose exec planejamento tesseract --list-langs` lista `por`.
+
+### 8D.2 Checklist (é o ensaio do item 24.8)
+
+- [ ] `ls -ld /mnt/ssd/provas/entrada /mnt/ssd/provas/paginas` mostra os donos 1001 e 1000.
+- [ ] `docker compose ps` com `app` saudável e `planejamento` rodando; as 16 migrações aplicadas.
+- [ ] Em Concursos, **Verificar com uma prova**: enviar um PDF pequeno cria `entrada/<id>/prova.pdf`.
+- [ ] A **prova da FCC** (imagem) vai de `LENDO` a `CONFERIR` em poucos minutos; `paginas/<id>/` tem as imagens.
+- [ ] A conferência mostra as questões lidas, as 3 de amostra e as atribuições duvidosas; **as que o OCR leu mal
+      (código, algarismos romanos) aparecem como não avaliáveis**, não como julgadas.
+- [ ] O gabarito da FCC é recortado para o cargo E05, tipo 4, e o recorte aparece na conferência.
+- [ ] Depois de **confirmar**, a prova chega a `PRONTA`; o relatório traz os dois números (D-71).
+- [ ] **Conferência à mão de ~20 vereditos:** o usuário discorda da IA em menos de 1 a cada 5.
+- [ ] **Resolver** a prova e entregar cria um simulado em M-1 por disciplina; uma segunda tentativa não o cria.
+- [ ] `docker compose logs planejamento` não tem erro inesperado; a assinatura do Claude não esgotou a janela.
+
+---
+
 ## 9. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.4.0 | 2026-10-18 | §8D, adendo da Sprint 24 (ADR-046): volume `provas` com dois donos (app uid 1001 grava `entrada/`, worker uid 1000 grava `paginas/`), Tesseract na imagem do worker (medido neste Pi: +150 MB, pico ~85 MB, ~8 s por página), instalação e checklist do ensaio. Desenho das seções 0–8C intacto |
 | 1.3.2 | 2026-10-17 | §8C item 4: nomes com acento chegam em cp1252 quando copiados com `pscp` do Windows; como conferir e corrigir. Achado na primeira instalação real |
 | 1.3.1 | 2026-10-17 | §8C: IA pela assinatura do Claude (ADR-045) — `claude setup-token`, Claude Code na imagem do app, teto do app em 1,2 GB, custo em cota; checklist atualizado |
 | 1.3.0 | 2026-10-17 | §8C, adendo da Sprint 19 (ADR-044): `INTERNAL_TOKEN`, chave e modelo em Ajustes, serviço `planejamento` no compose, acervo e índice copiados do PC para o SSD, pasta do material com uid 1000, tetos de memória do Pi 4B 4 GB; checklist 8C.1. Desenho das seções 0–8 intacto |

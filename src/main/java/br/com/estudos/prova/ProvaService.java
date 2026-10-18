@@ -172,12 +172,22 @@ public class ProvaService {
     @Transactional
     public Estado entregarGabarito(Long id, GabaritoRequest pedido) {
         var prova = buscar(id);
-        if (pedido.gabarito() == null) {
-            throw new ValidationException("O gabarito não veio.", "GABARITO_OBRIGATORIO", "gabarito");
-        }
         var questoes = questaoRepository.findByProvaIdOrderByNumeroAsc(id);
         var status = prova.getStatus();
         var esperando = (status == StatusProva.LENDO || status == StatusProva.AGUARDANDO_GABARITO) && !questoes.isEmpty();
+        if (pedido.gabarito() == null) {
+            if (pedido.avisoGabarito() == null || pedido.avisoGabarito().isBlank()) {
+                throw new ValidationException("O gabarito não veio.", "GABARITO_OBRIGATORIO", "gabarito");
+            }
+            if (!esperando) {
+                throw new ConflictException("A prova está em " + status + "; não espera gabarito.", "ESTADO_INVALIDO");
+            }
+            // O arquivo não serviu: volta a esperar, com o motivo (J-6 falhas), sem inventar gabarito (D-81).
+            prova.setGabaritoArquivo(null);
+            prova.setErro(limitar(pedido.avisoGabarito()));
+            prova.setStatus(StatusProva.AGUARDANDO_GABARITO);
+            return new Estado(prova.getId(), prova.getStatus());
+        }
         var definitivo = pedido.gabarito().situacao() == SituacaoGabarito.DEFINITIVO
             && EnumSet.of(StatusProva.CONFERIR, StatusProva.JULGANDO, StatusProva.PRONTA).contains(status);
         if (!esperando && !definitivo) {

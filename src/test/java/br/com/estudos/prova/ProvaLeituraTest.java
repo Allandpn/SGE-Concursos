@@ -211,6 +211,30 @@ class ProvaLeituraTest extends ProvaTestBase {
     }
 
     @Test
+    void gabaritoRecusadoNaSegundaLeitura_voltaAEsperarComOMotivo_semGabaritoInventado() throws Exception {
+        var alvo = alvo();
+        var prova = prova(alvo, null);
+        provaService.entregarLeitura(prova.getId(), leituraTresQuestoes(alvo, null));
+        // O usuário enviou o gabarito: a prova volta a LENDO, e o worker lê só o gabarito.
+        jdbc.update("update prova set status = 'LENDO', gabarito_arquivo = 'gabarito.pdf' where id = ?", prova.getId());
+
+        mockMvc.perform(comToken(post("/internal/provas/{id}/gabarito", prova.getId()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"modelo\": \"m\", \"gabarito\": null, \"avisoGabarito\": \"O tipo 4 não está no arquivo.\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("AGUARDANDO_GABARITO"));
+
+        var esperando = provaRepository.findById(prova.getId()).orElseThrow();
+        assertNull(esperando.getGabaritoSituacao(), "recusar o gabarito não inventa gabarito (D-81)");
+        assertNull(esperando.getGabaritoArquivo(), "o arquivo que não serviu sai, para o usuário enviar outro");
+        assertEquals("O tipo 4 não está no arquivo.", esperando.getErro());
+        mockMvc.perform(comToken(post("/internal/provas/{id}/gabarito", prova.getId()))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"modelo\": \"m\", \"gabarito\": null}"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.codigo").value("GABARITO_OBRIGATORIO"));
+    }
+
+    @Test
     void avisoDoGabarito_ficaNaProvaQueEspera_eSomeQuandoOGabaritoChega() throws Exception {
         var alvo = alvo();
         var prova = prova(alvo, "gabarito.pdf");

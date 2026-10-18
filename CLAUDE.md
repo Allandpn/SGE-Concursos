@@ -70,7 +70,7 @@ Herdados da v2 e ainda válidos:
 |---|---|
 | `docs/00A_ADR.md` | 46 ADRs, 32 vigentes (até ADR-046 — prova hospedada) |
 | `docs/03C_LOGGING.md` | Intacto |
-| `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta) e §8C (Sprint 19: worker do material, tetos de memória do Pi 4) |
+| `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta), §8C (Sprint 19: worker do material, tetos de memória do Pi 4) e §8D (Sprint 24: volume `provas`, OCR) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |
 | `docs/09_CODE_STYLE.md` | Intacto |
 

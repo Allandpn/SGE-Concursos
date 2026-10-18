@@ -56,7 +56,15 @@ public final class ProvaInterna {
                                  FormatoBanca formato, String modelo, List<QuestaoLida> questoes,
                                  GabaritoLido gabarito, String avisoGabarito) {}
 
-    public record GabaritoRequest(String modelo, GabaritoLido gabarito) {}
+    /**
+     * O gabarito lido. Sem {@code gabarito} mas com {@code avisoGabarito}, o arquivo enviado não serviu
+     * (não casa com a prova, ou o cargo não está nele): a prova volta a esperar, e o usuário vê o motivo.
+     */
+    public record GabaritoRequest(String modelo, GabaritoLido gabarito, String avisoGabarito) {
+        public GabaritoRequest(String modelo, GabaritoLido gabarito) {
+            this(modelo, gabarito, null);
+        }
+    }
 
     public record Estado(Long id, StatusProva status) {}
 
