@@ -126,7 +126,7 @@ abstract class ProvaTestBase extends IntegracaoTestBase {
 
     protected static LeituraRequest leitura(List<QuestaoLida> questoes, GabaritoLido gabarito) {
         return new LeituraRequest("Prova lida", "Banca", (short) 2026, "1", "Cargo X",
-            FormatoBanca.MULTIPLA_ESCOLHA, "modelo-teste", questoes, gabarito);
+            FormatoBanca.MULTIPLA_ESCOLHA, "modelo-teste", questoes, gabarito, null);
     }
 
     /** Uma prova pronta para o julgamento: lida com gabarito preliminar e em JULGANDO. */

@@ -112,9 +112,10 @@ public class ProvaService {
         var assuntos = coberturaDoAlvo(prova).values().stream()
             .map(c -> new AssuntoDaCobertura(c.assunto().getChaveExterna(), c.assunto().getNome(), c.disciplina()))
             .toList();
+        var numeros = questaoRepository.findByProvaIdOrderByNumeroAsc(id).stream().map(Questao::getNumero).toList();
         return new DadosLeitura(prova.getId(), prova.getStatus(), prova.getConcurso().getId(), prova.getNome(),
-            prova.getTipo(), "entrada/" + prova.getId() + "/prova.pdf", prova.getGabaritoArquivo(),
-            questaoRepository.existsByProvaId(id), assuntos);
+            prova.getTipo(), prova.getCargoProva(), prova.getFormato(), "entrada/" + prova.getId() + "/prova.pdf",
+            prova.getGabaritoArquivo(), !numeros.isEmpty(), numeros, assuntos);
     }
 
     /**
@@ -157,6 +158,8 @@ public class ProvaService {
         // O gabarito entra antes de gravar: o banco recusa questão avaliável sem resposta (D-70).
         aplicarGabarito(prova, questoes, pedido.gabarito());
         questaoRepository.saveAll(questoes);
+        // Sem gabarito por um motivo: a prova espera e o usuário vê o motivo (J-6 falhas).
+        prova.setErro(pedido.gabarito() == null ? limitar(pedido.avisoGabarito()) : null);
         prova.setStatus(pedido.gabarito() == null ? StatusProva.AGUARDANDO_GABARITO : StatusProva.CONFERIR);
         return new Estado(prova.getId(), prova.getStatus());
     }
@@ -182,6 +185,7 @@ public class ProvaService {
         }
         if (pedido.modelo() != null) prova.setModelo(pedido.modelo());
         aplicarGabarito(prova, questoes, pedido.gabarito());
+        prova.setErro(null);
         questaoRepository.flush();
         // D-84: se o definitivo mudou ou anulou uma resposta, a nota da tentativa que conta se recalcula.
         resolucaoService.recalcularNotaQueConta(prova);
@@ -300,6 +304,11 @@ public class ProvaService {
     }
 
     // ------------------------------------------------------------ internos
+
+    private static String limitar(String texto) {
+        if (texto == null || texto.isBlank()) return null;
+        return texto.length() > ERRO_MAX ? texto.substring(0, ERRO_MAX) : texto;
+    }
 
     private Prova buscar(Long id) {
         return provaRepository.findById(id)

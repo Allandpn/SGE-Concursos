@@ -193,7 +193,7 @@ class ProvaLeituraTest extends ProvaTestBase {
         var itens = List.of(new QuestaoLida(1, "O item afirma X.", "Texto-base do item", null, null,
             alvo.chave(1), false, false, null, null));
         var invalido = new ProvaInterna.LeituraRequest("Prova CE", "CEBRASPE", (short) 2026, null, null,
-            FormatoBanca.CERTO_ERRADO, "m", itens, gabarito(SituacaoGabarito.DEFINITIVO, "A"));
+            FormatoBanca.CERTO_ERRADO, "m", itens, gabarito(SituacaoGabarito.DEFINITIVO, "A"), null);
 
         mockMvc.perform(comToken(post("/internal/provas/{id}/leitura", prova.getId()))
                 .contentType(MediaType.APPLICATION_JSON).content(corpo(invalido)))
@@ -201,13 +201,49 @@ class ProvaLeituraTest extends ProvaTestBase {
             .andExpect(jsonPath("$.codigo").value("LETRA_INVALIDA"));
 
         var valido = new ProvaInterna.LeituraRequest("Prova CE", "CEBRASPE", (short) 2026, null, null,
-            FormatoBanca.CERTO_ERRADO, "m", itens, gabarito(SituacaoGabarito.DEFINITIVO, "C"));
+            FormatoBanca.CERTO_ERRADO, "m", itens, gabarito(SituacaoGabarito.DEFINITIVO, "C"), null);
         provaService.entregarLeitura(prova.getId(), valido);
         var q = questaoRepository.findByProvaIdAndNumero(prova.getId(), 1).orElseThrow();
         assertEquals("C", q.getRespostaGabarito());
         assertEquals("Texto-base do item", q.getTextoBase());
         assertEquals(0L, jdbc.queryForObject("select count(*) from alternativa where questao_id = ?", Long.class, q.getId()),
             "certo/errado não tem alternativas");
+    }
+
+    @Test
+    void avisoDoGabarito_ficaNaProvaQueEspera_eSomeQuandoOGabaritoChega() throws Exception {
+        var alvo = alvo();
+        var prova = prova(alvo, "gabarito.pdf");
+        var semGabarito = new ProvaInterna.LeituraRequest("Prova", "FGV", (short) 2026, "1", "Cargo X",
+            FormatoBanca.MULTIPLA_ESCOLHA, "m", List.of(questao(1, alvo.chave(1))), null,
+            "O gabarito traz 59 respostas e a prova 60 questões.");
+
+        provaService.entregarLeitura(prova.getId(), semGabarito);
+
+        var esperando = provaRepository.findById(prova.getId()).orElseThrow();
+        assertEquals(StatusProva.AGUARDANDO_GABARITO, esperando.getStatus());
+        assertEquals("O gabarito traz 59 respostas e a prova 60 questões.", esperando.getErro(), "o usuário vê o motivo, não um silêncio");
+        mockMvc.perform(get("/api/provas/{id}", prova.getId()))
+            .andExpect(jsonPath("$.erro").value("O gabarito traz 59 respostas e a prova 60 questões."));
+
+        provaService.entregarGabarito(prova.getId(), new GabaritoRequest("m", gabarito(SituacaoGabarito.DEFINITIVO, "A")));
+        assertNull(provaRepository.findById(prova.getId()).orElseThrow().getErro(), "o aviso some com o gabarito");
+    }
+
+    @Test
+    void dadosDeLeitura_depoisDeLida_trazFormatoCargoENumerosParaLerSoOGabarito() throws Exception {
+        var alvo = alvo();
+        var prova = prova(alvo, null);
+        provaService.entregarLeitura(prova.getId(), leituraTresQuestoes(alvo, null));
+        jdbc.update("update prova set status = 'LENDO' where id = ?", prova.getId());
+
+        mockMvc.perform(comToken(get("/internal/provas/{id}/leitura", prova.getId())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.jaLida").value(true))
+            .andExpect(jsonPath("$.formato").value("MULTIPLA_ESCOLHA"))
+            .andExpect(jsonPath("$.cargoProva").value("Cargo X"))
+            .andExpect(jsonPath("$.numerosDasQuestoes.length()").value(3))
+            .andExpect(jsonPath("$.numerosDasQuestoes[2]").value(3));
     }
 
     @Test

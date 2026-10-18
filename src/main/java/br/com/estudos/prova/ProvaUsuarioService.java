@@ -124,6 +124,7 @@ public class ProvaUsuarioService {
         }
         arquivos.salvarEntrada(prova.getId(), entrada.nome(), entrada.bytes());
         prova.setGabaritoArquivo(entrada.nome());
+        prova.setErro(null); // o aviso do gabarito anterior já foi lido
         prova.setStatus(StatusProva.LENDO);
         return resumo(prova);
     }

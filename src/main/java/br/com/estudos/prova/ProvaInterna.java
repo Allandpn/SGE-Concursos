@@ -22,8 +22,13 @@ public final class ProvaInterna {
 
     public record AssuntoDaCobertura(String chaveExterna, String nome, String disciplina) {}
 
+    /**
+     * O que o worker precisa para ler. Numa prova que já foi lida ({@code jaLida}) ele só lê o
+     * gabarito, e para isso conhece o formato, o cargo e os números das questões que já estão aqui.
+     */
     public record DadosLeitura(Long id, StatusProva status, Long concursoId, String nome, String tipo,
-                               String arquivoProva, String gabaritoArquivo, boolean jaLida,
+                               String cargoProva, FormatoBanca formato, String arquivoProva,
+                               String gabaritoArquivo, boolean jaLida, List<Integer> numerosDasQuestoes,
                                List<AssuntoDaCobertura> assuntos) {}
 
     public record AlternativaLida(String letra, String texto) {}
@@ -43,9 +48,13 @@ public final class ProvaInterna {
 
     public record GabaritoLido(SituacaoGabarito situacao, String recorte, List<RespostaGabarito> respostas) {}
 
+    /**
+     * {@code avisoGabarito}: sem gabarito por um motivo (o arquivo não casa com a prova, ou o cargo
+     * não foi achado nele) — a prova espera e o usuário vê o motivo em vez de um silêncio.
+     */
     public record LeituraRequest(String nome, String banca, Short ano, String tipo, String cargoProva,
                                  FormatoBanca formato, String modelo, List<QuestaoLida> questoes,
-                                 GabaritoLido gabarito) {}
+                                 GabaritoLido gabarito, String avisoGabarito) {}
 
     public record GabaritoRequest(String modelo, GabaritoLido gabarito) {}
 
