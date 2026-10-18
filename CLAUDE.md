@@ -212,6 +212,10 @@ qualquer coisa envolvendo o projeto de planejamento).
 - **Outra exceção (2026-10-17), pedida pelo usuário:** a Sprint 19 escreveu o
   worker do material no repositório do planejamento (branch
   `material-automatico`). Também vale só para aquele pedido.
+- **Outra exceção (2026-10-17), pedida pelo usuário:** corrigir a busca de candidatos do
+  worker por disciplina (`integracao/acervo.py`, `worker.py`; branch
+  `candidatos-por-disciplina`), depois da auditoria das 12 lacunas do SEFAZ SC. Também vale
+  só para aquele pedido.
 
 ---
 

@@ -412,3 +412,25 @@ Pedido do planejamento (`requisitos-sge-integracao.md` §10 de lá) atendido na 
 banca, dataProva` e os assuntos do edital em ordem (`disciplina, assunto, peso, ordem,
 chaveExterna`). Fora, por não serem guardados após a confirmação: número de questões por
 disciplina e correspondência com assunto existente. Ver `docs/SPRINT-18-CONCURSOS.md` §10.
+
+## 16. Requisito novo (2026-10-17): a busca de candidatos precisa conhecer a disciplina
+
+Achado na primeira preparação real (SEFAZ SC 2026, 97 assuntos). Doze assuntos ficaram
+"sem material no acervo"; a auditoria do índice mostrou que **oito deles tinham apostila
+no acervo** (Português, lógica, ciência de dados). Causa: `Acervo.candidatos` buscava os
+termos do nome do assunto (OR de prefixos) no acervo inteiro, sem olhar a disciplina.
+Assunto de nome genérico — "Conectivos", "Morfossintaxe", "Elementos estruturais e processos
+de formação de palavras" — recebia como melhores arquivos os de outra disciplina (conectivos
+lógicos, diagramas UML), e a IA, com razão, respondia que aquilo não ensinava o assunto.
+
+Pedido: **o planejamento restringe a busca aos cursos afins à disciplina do edital** antes
+de buscar no acervo inteiro, e, se a IA recusa o recorte, tenta o acervo inteiro uma vez
+antes de registrar a lacuna. Corrigido do lado de vocês na branch `candidatos-por-disciplina`
+(afinidade por radicais entre a disciplina e a pasta do curso; 40/40 + 25/25 verdes; conferido
+contra o índice real, sem alterar nada).
+
+Do lado do SGE nada muda: a disciplina já vem no `GET /api/concursos/{id}/planejamento`,
+e refazer o material (D-66) já reaproveita os assuntos. Dois assuntos ficam como lacuna de
+verdade: a Lei Complementar nº 741/2019 e os conhecimentos regionais de Santa Catarina — o
+acervo não os cobre. Ação sugerida: **nenhuma obrigatória** (requisito especulativo, só para
+quem quiser indexar apostilas de legislação e de conhecimentos de SC).
