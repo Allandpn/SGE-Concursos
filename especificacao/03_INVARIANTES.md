@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.13.0 |
-| Data | 2026-10-15 |
+| Versão | 1.14.0 |
+| Data | 2026-10-18 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 66 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 85 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 66 regras, classificadas
+## 3. As 85 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -178,8 +178,27 @@ conceitual — envelhecer por motivo errado.
 | D-64  | Comportamento | S | Teste: confirmar gera identificador do concurso e chave de todo assunto novo; o material entregue pelo identificador não cria segundo concurso |
 | D-65  | Comportamento | S | Teste: lacuna registrada aparece no estado do material; some quando o assunto ganha segmento |
 | D-66  | Comportamento | S | Teste: refazer arquiva os segmentos (o assunto volta a "a preparar", o turno não os sugere) e descarta a lacuna; a sessão antiga continua com o segmento; segmento novo com a mesma ordem é aceito |
+| D-67  | Política | S | Teste: a contagem e a nota saem de regra fixa; resposta da IA com contagem própria é ignorada |
+| D-68  | Comportamento | S | Teste: `RESPONDIVEL` com página que não existe no segmento do assunto é rebaixado para `NAO_RESPONDIVEL` |
+| D-69  | Política | S + H | Instrução à IA; conferência humana de ~20 vereditos antes de a funcionalidade valer (`docs/ESPECIFICACAO-PROVA-GABARITO.md` §1) |
+| D-70  | Comportamento | S | Teste: questão anulada, sem gabarito, fora do edital ou sem texto sai do denominador e aparece declarada |
+| D-71  | Comportamento | S + I | Teste: nenhuma resposta de relatório ou nota traz percentual sem o denominador |
+| D-72  | Invariante | S | Teste estrutural: nenhuma rota lista, busca ou exporta questões fora do contexto de uma prova |
+| D-73  | Invariante | **P** | Reanálise cria registro novo e o anterior permanece; resposta e entrega não têm caminho de remoção |
+| D-74  | Comportamento | S | Teste: atribuição a assunto fora da cobertura do alvo é descartada; "nenhum" vira fora do edital e não conta como furo |
+| D-75  | Comportamento | S | Teste: IA indisponível pausa a análise e não grava veredito algum |
+| D-76  | Comportamento | S + P | Teste: mudar o material não altera vereditos antigos; o novo é registrado com data |
+| D-77  | Comportamento | S | Teste: a atribuição só enxerga a cobertura do concurso-alvo |
+| D-78  | Comportamento | S | Teste de ausência: entregar a prova não cria sessão, revisão nem muda o turno; a nota entra em M-1 só por disciplina e global |
+| D-79  | Derivação | S | Teste com data congelada: assunto com segmento criado ou arquivado depois do veredito é o único reaberto |
+| D-80  | Invariante | **P** + S | Mesmo identificador de tentativa duas vezes → uma tentativa; correção sai do gabarito, não da IA |
+| D-81  | Comportamento | S | Teste: prova sem gabarito é lida e não é julgada nem resolvida |
+| D-82  | Comportamento | S | Teste: gabarito com número de respostas diferente do de questões é recusado |
+| D-83  | Comportamento | S | Teste com os arquivos reais (FGV, IDECAN, FCC, CEBRASPE): o recorte do gabarito é o do cargo e tipo da prova e é mostrado |
+| D-84  | Derivação | S | Teste: definitivo que altera ou anula uma resposta recalcula a nota e devolve as questões afetadas ao julgamento |
+| D-85  | Comportamento | S + I | Teste: questão lida por OCR leva a marca; texto duvidoso torna a questão não avaliável |
 
-**Contagem:** 18 invariantes · 5 derivações · 37 comportamentos · 7 políticas — 67 linhas para 66 regras.
+**Contagem:** 21 invariantes · 7 derivações · 49 comportamentos · 9 políticas — 86 linhas para 85 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -356,7 +375,7 @@ movido — e a tabela vira ficção que ninguém confere.
 | O que se pergunta | Como se responde |
 |---|---|
 | Onde D-07 é implementada? | Varredura por `D-07` no código |
-| Alguma regra ficou sem implementação? | Varredura das 66 contra o resultado |
+| Alguma regra ficou sem implementação? | Varredura das 85 contra o resultado |
 | Esta restrição corresponde a quê? | O identificador está no nome dela |
 
 ### 9.1 Citação como metadado, não como comentário
@@ -366,7 +385,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 66 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 85 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -489,6 +508,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.14.0 | 2026-10-18 | **D-67 a D-85** com `01_DOMINIO.md` v1.26.0 (prova hospedada e verificação do material). Três invariantes (D-72, D-73, D-80), duas derivações (D-79, D-84), duas políticas (D-67, D-69), doze comportamentos. Contagem: 86 linhas para 85 regras |
 | 1.13.0 | 2026-10-17 | **D-66** com `01_DOMINIO.md` v1.25.0 (refazer material). **D-50** passa a índice único parcial sobre os segmentos ativos. Contagem: 67 linhas para 66 regras |
 | 1.12.0 | 2026-10-17 | **D-64 e D-65** com `01_DOMINIO.md` v1.24.0 (identidade dada na confirmação; material preparado pelo sistema). As duas Comportamento/`S`. Contagem: 66 linhas para 65 regras |
 | 1.11.0 | 2026-10-15 | **D-58 a D-63 adicionadas à tabela de §3** com `01_DOMINIO.md` v1.23.0 (concurso-alvo e análise de edital). D-58 é Invariante/`P` (índice único parcial: um ativo); as demais são Comportamento — D-62 também na interface, porque é a tela de revisão que obriga a confirmar. Contagem: 64 linhas para 63 regras |

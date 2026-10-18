@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.25.0 |
-| Data | 2026-10-15 |
+| Versão | 1.26.0 |
+| Data | 2026-10-18 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -325,6 +325,9 @@ Não é sessão, não gera revisão, não consolida nada. Alimenta **apenas M-1*
 é a entrada mais pura que M-1 tem, porque é mista, cronometrada e é o melhor
 preditor isolado de desempenho na prova.
 
+Quando o simulado é uma **prova hospedada** (§3.11), é resolvido no sistema e a nota entra em M-1
+por disciplina e global (D-78); o desempenho por assunto só informa.
+
 Desenho decidido; implementação adiada.
 
 ### 3.7 Segmento
@@ -480,6 +483,67 @@ da conta de leitura completa (D-54), mas continua no histórico: a sessão que o
 estudou segue apontando para ele. Quem já tinha começado a ler um assunto
 refeito recomeça a leitura pelos segmentos novos; a escada, se já começou, não
 é tocada.
+
+### 3.11 Prova hospedada e verificação do material
+
+O objetivo do sistema é o usuário gabaritar a prova. Duas perguntas o medem: **o material que o
+sistema montou sustenta a resposta certa de cada questão?** (a **cobertura**, uma previsão) e
+**o usuário acertou?** (a **resolução**, a medida). Ambas partem de uma **prova**: a prova
+objetiva de um concurso, de qualquer banca e ano, que o usuário traz em PDF com o **gabarito**.
+Ela é avaliada contra a cobertura do concurso-alvo (D-77) e hospedada com um fim só: verificar e
+resolver (D-72; `00_PRODUTO` §5.1.1, ADR-046).
+
+| Termo | Significa |
+|---|---|
+| **Prova** | A prova objetiva (múltipla escolha ou certo/errado); a parte discursiva é ignorada e declarada |
+| **Questão** | Enunciado, alternativas e a resposta do gabarito; pertence a uma prova |
+| **Gabarito** | A resposta oficial de cada questão; do **cargo e tipo** da prova |
+| **Questão avaliável** | Com texto utilizável e gabarito válido; as demais saem do denominador (D-70) |
+| **Atribuição** | O assunto do concurso-alvo ao qual a questão pertence, ou "fora do edital" |
+| **Sustentação** | A página do material do assunto que justifica a alternativa do gabarito |
+| **Veredito** | `RESPONDIVEL` · `PARCIAL` · `NAO_RESPONDIVEL` |
+| **Furo** | Assunto com questões `PARCIAL` ou `NAO_RESPONDIVEL` |
+
+**Entrada.** Prova e gabarito entram como o edital (§3.9): o usuário carrega os PDFs, o sistema
+lê e mostra o que achou — questões lidas, não avaliáveis, gabarito casado com cargo e tipo — e só
+então roda. Quem lê o PDF é o planejamento (por OCR quando é imagem) e entrega as questões ao SGE,
+que guarda questões, alternativas, gabarito e a imagem das páginas. **Sem gabarito a prova só é
+lida**, não julgada nem resolvida (D-81). O gabarito é do cargo e do tipo: arquivo de vários
+cargos é recortado pelo sistema e o recorte é mostrado (D-83); número de respostas diferente do
+de questões é recusado (D-82); o **preliminar** vale como provisório e o definitivo o substitui
+(D-84).
+
+**Julgamento, em três etapas.** *Leitura*: a IA separa as questões; o sistema valida a sequência,
+as alternativas e o gabarito. *Atribuição*: a IA escolhe o assunto do concurso-alvo; o sistema só
+aceita assunto da cobertura, e "nenhum" é **fora do edital** (D-74). *Julgamento*: a IA lê a
+questão, a alternativa do gabarito e **trechos** do material do assunto (por busca no índice) e
+cita a página; o sistema só aceita citação que existe (D-68). A IA lê e julga; o sistema valida,
+conta e calcula (D-67).
+
+**O veredito é sobre a alternativa do gabarito.** As alternativas erradas podem usar fatos que
+nenhum PDF traz, e isso não é furo. `RESPONDIVEL`: o material ensina o necessário para justificar a
+alternativa do gabarito. `PARCIAL`: ensina parte, e o que falta é dito. `NAO_RESPONDIVEL`: não
+traz o necessário. Em "marque a incorreta", a alternativa do gabarito é a falsa e o material
+sustenta se permite reconhecê-la como falsa; em certo/errado, se permite decidir o item; em
+cálculo, se ensina o método. **Na dúvida, o pior veredito** (D-69), e a falha da IA nunca vira
+veredito (D-75). O veredito é um **julgamento de IA**, não uma medição: o relatório mostra sempre
+o denominador (D-71) e a página de sustentação.
+
+**Registro.** O veredito é **fato registrado** (um julgamento externo, como a lacuna de D-65); a
+nota e as contagens são **derivadas** (D-16). Nada se apaga: reanalisar cria um veredito novo e o
+anterior permanece, como retrato datado do material daquele dia (D-73, D-76). **Reanálise
+incremental:** um assunto mudou se tem segmento ativo criado ou arquivado depois do veredito
+vigente das suas questões, e "Analisar de novo" julga só essas questões (D-79); a prova não é
+relida.
+
+**Resolução.** O usuário resolve a prova inteira no sistema, com ou sem cronômetro; o sistema
+corrige **pelo gabarito, nunca pela IA**, e a mesma tentativa conta uma vez (D-80). A nota entra em
+M-1 **por disciplina e global**; por assunto só informa, e **nenhuma revisão, sessão ou mudança de
+turno nasce dela** (D-78). A cobertura prevista e a nota real lado a lado, por assunto, mostram
+onde o julgamento da IA errou.
+
+**Texto lido por OCR** leva a marca e deixa o usuário ver a imagem da página; na dúvida, a questão
+fica não avaliável em vez de julgada sobre texto corrompido (D-85).
 
 ---
 
@@ -1301,6 +1365,25 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-64 | Na confirmação de uma análise de edital, o concurso recebe identificador e cada assunto sem chave externa recebe uma; daí em diante são reconhecidos por elas, nunca pelo nome | §3.8, §3.9 |
 | D-65 | Assunto que o acervo não ensina fica marcado sem material, com o motivo; material nunca é inventado e o estudo nunca espera por ele | §3.10 |
 | D-66 | Refazer o material arquiva os segmentos e descarta a marca sem material; nada é apagado, e sessões antigas continuam apontando para o segmento arquivado | §3.10 |
+| D-67 | A IA lê e julga a prova; o sistema valida, conta e calcula. Contagem, nota e percentual saem de regra fixa, nunca da IA | §3.11 |
+| D-68 | `RESPONDIVEL` exige página de sustentação da alternativa do gabarito que exista no segmento do assunto; citação inexistente rebaixa para `NAO_RESPONDIVEL` | §3.11 |
+| D-69 | Na dúvida, o veredito é o pior dos dois | §3.11 |
+| D-70 | Questão não avaliável (sem texto utilizável, anulada, sem gabarito, fora do edital) sai do denominador e é declarada | §3.11 |
+| D-71 | Todo percentual ou nota da prova é exibido com o denominador | §3.11 |
+| D-72 | A prova hospedada serve só à verificação e à resolução: nenhuma rota lista, busca ou exporta questões fora do contexto de uma prova | §3.11 |
+| D-73 | Reanalisar cria veredito novo e o anterior permanece; resposta e entrega também ficam; nada é apagado | §3.11 |
+| D-74 | A atribuição só aceita assunto da cobertura do concurso-alvo; "nenhum" é resposta válida (fora do edital) e não conta como furo do material | §3.11 |
+| D-75 | Indisponibilidade da IA não é veredito: a análise pausa e retoma, nunca grava `NAO_RESPONDIVEL` por falha | §3.11 |
+| D-76 | O veredito é um retrato datado contra o material daquele dia; mudar o material não altera vereditos antigos | §3.11 |
+| D-77 | A prova é sempre avaliada contra a cobertura do concurso-alvo | §3.11 |
+| D-78 | A nota entra em M-1 por disciplina e global; o desempenho por assunto só informa e não gera revisão, sessão nem mudança de turno | §3.11 |
+| D-79 | Um assunto mudou se tem segmento ativo criado ou arquivado depois do veredito vigente das suas questões; a reanálise julga só essas questões, e é derivada dos segmentos | §3.11 |
+| D-80 | A mesma tentativa de resolução conta uma vez (identificador gerado no cliente); a correção é do sistema, pelo gabarito, nunca da IA | §3.11 |
+| D-81 | Sem gabarito, a prova não é julgada nem resolvida; a leitura segue | §3.11 |
+| D-82 | O gabarito tem o tipo da prova; número de respostas diferente do de questões é recusado | §3.11 |
+| D-83 | O gabarito é do cargo e do tipo da prova; arquivo de vários cargos é recortado pelo sistema e o recorte é mostrado ao usuário | §3.11 |
+| D-84 | Gabarito preliminar vale como provisório; o definitivo, ao mudar ou anular uma resposta, recalcula a nota e devolve as questões afetadas ao julgamento | §3.11 |
+| D-85 | Questão lida por OCR leva a marca e a imagem da página fica disponível; na dúvida fica não avaliável em vez de julgada sobre texto corrompido | §3.11 |
 
 ---
 
@@ -1373,6 +1456,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.26.0 | 2026-10-18 | Pedido do usuário: o objetivo final é gabaritar a prova. **§3.11** (prova hospedada e verificação do material) e **D-67 a D-85**, migradas de `docs/ESPECIFICACAO-PROVA-GABARITO.md` v0.4.0: o veredito é sobre a alternativa do gabarito, a nota entra em M-1 por disciplina e global, o desempenho por assunto só informa, a reanálise é incremental e derivada. **§3.6** remete à prova hospedada. Revisa `00_PRODUTO` §5.1 e §6.7 (v1.8.0). 85 regras |
 | 1.25.0 | 2026-10-17 | Pedido do usuário, depois da primeira preparação real (SEFAZ SC 2026): parte das faixas trazia o tema vizinho. **D-66** (§3.10): refazer o material de um assunto ou do concurso arquiva segmentos e descarta a marca sem material, sem apagar nada. **D-50** passa a valer entre os segmentos ativos — os segmentos novos repetem as ordens dos arquivados. 66 regras |
 | 1.24.0 | 2026-10-17 | Pedido do usuário: "subir o edital, escolher o cargo, e o sistema faz todo o resto". Nova **§3.10**: o material de leitura é preparado pelo sistema de planejamento rodando no mesmo servidor, sem toque humano (ADR-044). **D-64** (§3.8, §3.9): concurso e assunto confirmados ganham identificador e chave externa na confirmação — fim do casamento por nome e do concurso duplicado quando o material chegava (o concurso da análise nascia sem identificador e a importação criava outro). **D-65**: o que o acervo não ensina vira marca visível com motivo, nunca material inventado. 65 regras |
 | 1.23.0 | 2026-10-15 | Pedido do usuário. Nova **§3.8, Concurso**: o concurso-alvo e o histórico, com a cobertura do edital (peso, disciplina e ordem que ele dá a cada assunto); ativar aplica a cobertura e nunca toca o estudo feito. Nova **§3.9, análise de edital**: IA lê o PDF e propõe disciplinas e assuntos para o cargo escolhido; peso calculado pelo sistema a partir do número de questões; nada gravado sem confirmação. §9 ganha a primeira relação n:n (cobertura). D-58 a D-63. 63 regras (`docs/00A_ADR.md` ADR-042 e ADR-043) |

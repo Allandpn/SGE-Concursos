@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Versão | 0.4.0 |
+| Versão | 0.5.0 (migrado) |
 | Data | 2026-10-18 |
-| Status | **Rascunho — não vigente.** Nada daqui é implementado até os requisitos serem aprovados e as seções migrarem para os documentos donos (§11) |
+| Status | **Migrado em 2026-10-18** para `00_PRODUTO` v1.8.0 (§5.1.1, §6.7), `01_DOMINIO` v1.26.0 (§3.11, D-67 a D-85), `02_JORNADAS` v1.15.0 (J-6, J-7), `03_INVARIANTES` v1.14.0 e ADR-046. **Este arquivo fica como histórico do raciocínio e dos dados da amostra (§5.6, §9.1); a fonte vigente são os documentos donos.** Os pontos L e M seguem abertos para o documento técnico da sprint |
 | Origem | Pedido do usuário, 2026-10-17: "subir uma prova e saber se, com o material montado, seria possível responder as questões e gabaritar o concurso. É o nosso objetivo final". Revisado em 2026-10-18 com as respostas do usuário aos pontos em aberto |
 | Decisões já tomadas | Gabarito obrigatório · o SGE hospeda a prova e o usuário a responde no sistema · a nota alimenta disciplina e global, assunto só informa · reanálise incremental por assunto · só o concurso-alvo · IA julga questão a questão · entrada pelo mesmo gesto do edital (§10) |
 
@@ -470,6 +470,7 @@ documentação técnica nasce com a sprint).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 0.5.0 | 2026-10-18 | **Migrado.** Regras P-01 a P-19 viram D-67 a D-85. Sem mudança de conteúdo |
 | 0.4.0 | 2026-10-18 | Par da FCC avaliado (prova em imagem, 12 fatias que cortam questões; gabarito em tabela com situação por questão). OCR decidido e **medido no Pi com os outros sistemas rodando** (§9.1: pico ~85 MB, ~100 s por prova, +150 MB de imagem, sem swap). Regra P-19 (marca de OCR e imagem da página). Pontos I e K fechados, J aceito, L e M abertos |
 | 0.3.0 | 2026-10-18 | Amostra real de 4 bancas (§5.6): gabarito multi-cargo e multi-tipo em layouts diferentes (P-17), preliminar × definitivo (P-18), prova em imagem sem OCR (ponto I), texto-base do CEBRASPE (J), banca do alvo fora da amostra (K). Questão fora do edital deixa de ser furo e sai do denominador (P-04, P-08). PDF em imagem deixa de ser recusado na hora |
 | 0.2.0 | 2026-10-18 | Respostas do usuário aos pontos em aberto. Gabarito obrigatório e critério sobre a alternativa do gabarito (§5.2). O SGE hospeda a prova e o usuário a resolve (JV-2); revisa `00_PRODUTO` §5.1 e §6.7. Nota alimenta disciplina e global, assunto só informa (P-12). Reanálise incremental derivada dos segmentos (P-13). Regras P-12 a P-16. Pontos decididos e abertos separados (§10) |

@@ -5,8 +5,8 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.7.0 |
-| Data | 2026-09-01 |
+| Versão | 1.8.0 |
+| Data | 2026-10-18 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
 
@@ -180,10 +180,24 @@ conhece o recorte de assuntos dele.
 
 | O sistema faz | O sistema não faz |
 |---|---|
-| Registra assunto, quantas, quantas certas, quando | Hospeda enunciado, alternativa ou gabarito |
-| Amarra o resultado ao assunto e à revisão | Corrige questão |
+| Registra assunto, quantas, quantas certas, quando | Hospeda um banco de questões: enunciado, alternativa e gabarito só existem como parte de uma **prova inteira** que o usuário traz (§5.1.1) |
+| Amarra o resultado ao assunto e à revisão | Corrige questão avulsa; só corrige a **prova hospedada**, pelo gabarito (§5.1.1) |
 | Acumula a série e mostra a tendência | Sincroniza com a plataforma externa |
 | Guarda o erro classificado por causa e por confiança | Guarda a questão errada |
+
+### 5.1.1 A prova inteira, a exceção
+
+O objetivo final do sistema é o usuário **gabaritar a prova**, e a medida mais honesta disso é
+uma prova de verdade. Por isso uma exceção, estreita: o usuário pode trazer **uma prova objetiva
+completa, com o gabarito**, e o sistema a **hospeda** para dois fins e só dois — **verificar se o
+material montado sustenta a resposta certa de cada questão** e **deixar o usuário resolvê-la**,
+corrigindo pelo gabarito (`01_DOMINIO` §3.11).
+
+A exceção não reabre o resto da §5.1. O volume diário de questões continua na plataforma externa;
+a prova hospedada **não é buscada, filtrada nem exportada em massa** (D-72), e a nota **não gera
+revisão nem mexe na escada** (D-78). O que mudou foi a premissa de que o sistema nunca guarda uma
+questão: ele guarda as de **uma prova por vez que o usuário escolheu trazer**, porque sem o
+enunciado não há como verificar o material nem medir se ele bastou (ADR-046).
 
 ### 5.2 Duas formas de recuperar
 
@@ -423,6 +437,12 @@ prova real. Registrá-lo no nível onde a medição funciona é o tratamento cer
 Ele não gera revisão e não alimenta consolidação, porque não há atribuição
 confiável por assunto. Alimenta M-1 e nada mais.
 
+**Atualização (v1.8.0).** Quando o simulado é uma **prova hospedada** (§5.1.1), o desempenho por
+assunto passa a existir — atribuído por IA e conferido pelo usuário —, mas **continua só
+informando**: a nota alimenta M-1 por disciplina e global, e nenhuma revisão nasce dela (D-78).
+O argumento "classificar 120 questões à mão custa demais" caiu, porque a atribuição agora é da
+IA; a decisão de não alimentar a escada fica, porque a atribuição, mesmo revisada, é de uma IA.
+
 **Implementação adiada**, não o desenho: o usuário faz poucos hoje. A forma
 fica decidida aqui para que, quando entrar, não seja improviso.
 
@@ -660,7 +680,8 @@ sobrevive não entra.
 Vinculante para todos os demais:
 
 1. O evento central é uma **tentativa de recuperação com resultado**.
-2. A recuperação acontece **fora**; o sistema registra e serializa.
+2. A recuperação acontece **fora**; o sistema registra e serializa. **Exceção (§5.1.1):** a
+   prova inteira que o usuário traz é hospedada e resolvida no sistema.
 3. Há **duas formas** de recuperar: lote de questões (objetivo) e recuperação
    livre. A segunda é o caminho principal, por aritmética.
 4. Recuperação livre exige **produção antes do julgamento** (§5.2.1). O sistema
@@ -680,10 +701,13 @@ Vinculante para todos os demais:
 14. **Cadastrado ≠ em aprendizagem.** Existe **frente de estudo** com teto, e
     assunto novo só é sugerido quando há vaga. O algoritmo pergunta primeiro se
     cabe, depois o quê.
-15. **Simulado não é sessão**: evento por disciplina, alimenta só M-1.
+15. **Simulado não é sessão**: evento por disciplina, alimenta só M-1. A prova hospedada é o
+    simulado; o desempenho por assunto só informa (§6.7, D-78).
 16. O banco de erros é a **camada explicativa**, não funcionalidade lateral.
 17. *Streak* fora; horas rebaixadas; cobertura ponderada; confiança por lote
     recusada.
+18. **A prova hospedada serve só à verificação do material e à resolução**; nunca vira banco
+    aberto de questões (§5.1.1, D-72).
 18. Recomendação desce de prioridade, e passa a ter **tipo** (leia / resolva /
     revise).
 19. Vale o princípio da **economia cognitiva** (§9.1).
@@ -710,6 +734,7 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.8.0 | 2026-10-18 | Pedido do usuário: o objetivo final é gabaritar a prova. **§5.1.1**: o sistema hospeda **uma prova objetiva inteira, com gabarito**, para verificar o material e deixar o usuário resolvê-la; revisa §5.1 ("não hospeda enunciado, alternativa ou gabarito", "não corrige questão") e a decisão vinculante nº 2. **§6.7**: a nota alimenta M-1 por disciplina e global, o desempenho por assunto só informa, e nada vira revisão (D-78). Decisões nº 2 e 15 ressalvadas; nº 18 nova (D-72). ADR-046 |
 | 1.7.0 | 2026-09-01 | §8.2: **intenção de implementação removida** como substituto da terceira dor — o campo (`Sessao.proximaSessaoData`/`proximaSessaoDescricao`) nunca era lido de volta por nada, falhando o próprio critério de §9.1 (informação que não muda decisão nem alimenta métrica). A dor passa a ser atacada só por atrito baixo — a fila automática já entrega o que fazer, sem o usuário planejar nada. §4: pilar da dor #3 atualizado. Decisão do usuário, testando o fluxo de sessão |
 | 1.6.0 | 2026-08-31 | §7 M-3: nota explícita de que a granularidade do par previsto×real da variante subjetiva é decisão de tela (`02_JORNADAS §4.1`), não deste documento — fecha uma contradição achada em auditoria (`/agents/mentor.md`): a frase solta "vai conseguir reconstruir? / conseguiu?" tinha sido lida como binária no código (`previsaoReconstrucao: Boolean`), enquanto `02_JORNADAS` já desenhava três botões e o próprio `resultado` de `RECUPERACAO` já é `SUCESSO`/`PARCIAL`/`FALHA` desde a Sprint 3 (D-07 exige isso de qualquer sessão que cumpre revisão). Não é mudança da métrica — é a mesma métrica, granularidade explicitada. Código corrigido na mesma sessão: `previsaoReconstrucao` passa a `ResultadoSessao` |
 | ~~1.3.0–1.5.0~~ | — | Bump de versão sem changelog correspondente, achado nesta revisão — não reconstruído aqui (fora do escopo do que foi pedido); registrado para não se perder |

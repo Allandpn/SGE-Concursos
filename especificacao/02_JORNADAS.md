@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.14.0 |
-| Data | 2026-10-15 |
+| Versão | 1.15.0 |
+| Data | 2026-10-18 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -433,6 +433,62 @@ confirmação, porque muda peso e ordem.
 caminho legado (ADR-044): a importação registra o concurso a partir do
 `concurso.json` e o ativa — aparece no mesmo histórico.
 
+### J-6 · Verificar o material com uma prova
+
+Rara — algumas vezes por concurso —, como a J-5: o orçamento é de **atenção**, não de segundos.
+Responde a pergunta do objetivo final: *"com este material, eu acertaria esta prova?"*
+(`01_DOMINIO` §3.11).
+
+1. Em **Concursos**, no concurso-alvo, toca **"Verificar com uma prova"**.
+2. Escolhe **"Carregar prova"** (PDF) e **"Carregar gabarito"** (PDF com texto ou texto colado). O
+   sistema descobre o cargo e o tipo pela capa da prova e **recorta o gabarito certo** (D-83); se
+   não tiver certeza, pergunta. Enquanto faltar o gabarito, a prova fica **"aguardando
+   gabarito"**: é lida, mas não julgada nem resolvida (D-81).
+3. O sistema lê a prova e mostra o que achou **antes de gastar IA no julgamento**: nome (corrigível),
+   banca, ano, **quantas questões leu**, quantas não consegue avaliar (figura, tabela, anulada),
+   quantas respostas do gabarito casaram e **o recorte escolhido** (cargo, tipo, turno). Mostra
+   também 3 questões sorteadas, com a alternativa do gabarito, para o olho pegar uma troca
+   grosseira. É o ponto de conferência, como a proposta do edital (D-62).
+4. Revisa só o **duvidoso**: questões atribuídas com baixa confiança ou sem assunto. As demais
+   atribuições o usuário não precisa ver. "Fora do edital" não é erro (D-74).
+5. Confirma. A análise roda em segundo plano — **a tela pode ser fechada**. Em Concursos:
+   "Prova X: 34 de 60 questões julgadas".
+6. **Relatório:** o número de cobertura com denominador ("42 de 58 avaliáveis · 9 parciais · 7 não",
+   D-71), por disciplina, os **assuntos furados** (do mais furado ao menos, com o que faltou), as
+   questões fora do edital contadas à parte e, por questão, o assunto, o veredito e a **página de
+   sustentação**. Nunca o enunciado fora da prova (D-72).
+7. Do assunto furado: ver o motivo, **refazer o material** (D-66) ou aceitar. Depois, **"Analisar de
+   novo"** julga só as questões dos assuntos que mudaram (D-79); a prova não é relida.
+
+| Falha | O que acontece |
+|---|---|
+| PDF é imagem | Lido por OCR; questão com código ou algarismos romanos lidos por OCR leva a marca e a imagem da página (D-85) |
+| Leu poucas questões (< 50% do esperado) | Mostra e avisa; o usuário decide seguir ou trocar o PDF |
+| Gabarito não casa (nº de questões diferente) | Recusa o gabarito, mantém a prova, diz a diferença (D-82) |
+| Gabarito preliminar | Marcado "preliminar"; o definitivo o substitui e recalcula (D-84) |
+| IA indisponível / cota esgotada | A análise **pausa** e retoma sozinha (ADR-045); nunca vira veredito (D-75) |
+
+### J-7 · Resolver a prova
+
+Uma prova inteira é um bloco de horas, como o simulado do `00_PRODUTO` §6.7: o usuário a faz uma
+vez, de propósito, e o sistema não a mistura com o estudo diário.
+
+1. Em Concursos, na prova com gabarito, toca **"Resolver"**. Pode resolver mesmo sem a cobertura ter
+   rodado.
+2. Uma questão por tela, uma alternativa por toque; **marcar para revisar**, **pular** e **sair e
+   voltar** — o progresso fica guardado, e a mesma tentativa conta uma vez (D-80). Cronômetro
+   opcional, com o tempo da prova.
+3. **"Entregar":** o sistema corrige **pelo gabarito** e mostra a **nota** — acertos de questões
+   avaliáveis, **por disciplina e global**, sempre com denominador (D-71). Entra em M-1 por
+   disciplina e global; **só a primeira tentativa** da prova conta, as seguintes ficam como
+   informação (D-78).
+4. O relatório ganha a **nota real** ao lado da cobertura. Cada erro mostra a questão, a alternativa
+   marcada, a correta e, se houve cobertura, a **página que a sustentava**. Onde cobertura e nota
+   discordam, por assunto, o relatório diz; é informação, não gatilho: **nenhuma revisão nasce da
+   nota** (D-78).
+
+Orçamento: ≤ 1 s entre uma questão e a seguinte (navegação local); entregar e corrigir em ≤ 3 s.
+
 ## 4. As telas
 
 Oito. Cada uma justificada por uma jornada — tela sem jornada não entra.
@@ -645,6 +701,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.15.0 | 2026-10-18 | **J-6** (verificar o material com uma prova e gabarito) e **J-7** (resolver a prova), com `01_DOMINIO` v1.26.0 (§3.11, D-67 a D-85). Telas e orçamento detalhados no documento da sprint |
 | 1.14.0 | 2026-10-17 | J-5 passo 7: lista do material por assunto (situação, minutos, páginas, motivo) |
 | 1.13.0 | 2026-10-17 | J-5 passo 7: refazer o material de um assunto ou do concurso (D-66) |
 | 1.12.0 | 2026-10-17 | J-5: IA pela assinatura do Claude, OpenRouter como segunda opção; aviso quando a assinatura para, e a troca é sempre decisão do usuário (ADR-045) |

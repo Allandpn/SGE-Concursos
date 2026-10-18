@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.12.0** |
+| Versão do documento | **2.13.0** |
 | Status | **Congelado** |
-| Data | 2026-10-17 |
-| Total | 45 ADRs — 31 vigentes, 13 substituídas, 1 revogada |
+| Data | 2026-10-18 |
+| Total | 46 ADRs — 32 vigentes, 13 substituídas, 1 revogada |
 
 ---
 
@@ -73,6 +73,7 @@ que custa e o que foi descartado.
 | [ADR-043](#adr-043--análise-de-edital-por-ia-via-openrouter) | Análise de edital por IA, via OpenRouter | Sprint 18 |
 | [ADR-044](#adr-044--material-preparado-no-próprio-servidor-sem-drive) | Material preparado no próprio servidor, sem Drive | Sprint 19 |
 | [ADR-045](#adr-045--ia-pela-assinatura-do-claude-openrouter-só-por-escolha-do-usuário) | IA pela assinatura do Claude; OpenRouter só por escolha do usuário | Sprint 19 |
+| [ADR-046](#adr-046--prova-hospedada-para-verificar-o-material-e-ser-resolvida) | Prova hospedada, para verificar o material e ser resolvida | 2026-10-18 |
 
 ### 1.2 Históricas
 
@@ -972,6 +973,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.13.0 | 2026-10-18 | **ADR-046**, pedido do usuário: o SGE hospeda uma prova objetiva inteira com gabarito para verificar o material e deixar o usuário resolvê-la; o planejamento lê o PDF (OCR no worker); o veredito é sobre a alternativa do gabarito; a nota alimenta M-1 por disciplina e global, assunto só informa. Revisa `00_PRODUTO` §5.1 e §6.7. Total 46, 32 vigentes |
 | 2.12.0 | 2026-10-17 | **ADR-045**, pedido do usuário: a IA (leitura de edital e preparação de material) passa pela assinatura do Claude, via Claude Code no contêiner do app; OpenRouter só quando o usuário escolher, depois de um aviso — nunca troca sozinho. Total 45, 31 vigentes |
 | 2.11.0 | 2026-10-17 | Sprint 19, pedido do usuário. **ADR-044** substitui ADR-037: o planejamento roda no Pi como segundo contêiner, o material é servido pelo SGE, a IA do planejamento passa por um proxy interno do SGE com a chave cadastrada em Ajustes; o Drive vira legado. Total 44, 30 vigentes |
 | 2.10.0 | 2026-10-15 | Sprint 18, pedido do usuário. **ADR-042** substitui ADR-039: `Concurso` passa a existir no domínio, com cobertura do edital e histórico; um ativo por vez e peso único por assunto continuam. **ADR-043**: análise de edital por IA via OpenRouter — a IA extrai, o sistema decide o peso, nada é gravado sem revisão. Total 43, 30 vigentes |
@@ -1755,6 +1757,65 @@ roda em Linux ARM64.
 | Cair para o OpenRouter automaticamente | Gasta crédito sem o usuário decidir — pedido explícito dele foi avisar e deixar a escolha manual |
 | Claude Code no contêiner do worker | A leitura do edital também usa IA e roda no SGE; dois lugares para o mesmo token |
 | `claude --bare` (início mais rápido) | O modo bare não lê o token da assinatura |
+
+---
+
+## ADR-046 — Prova hospedada, para verificar o material e ser resolvida
+
+**Status:** Aceita · 2026-10-18 · complementa ADR-044 e ADR-045 · revisa `00_PRODUTO` §5.1 e §6.7
+
+### Contexto
+
+O objetivo final do sistema é o usuário gabaritar a prova. O sistema já sabia **quanto** material
+existe por assunto e **o que não existe**, mas não se o que existe **basta para acertar**. A
+verificação precisa de questões reais, com a resposta oficial; e o usuário pediu também poder
+**resolver a prova** no sistema, porque a nota dele é o critério de sucesso.
+
+O `00_PRODUTO` §5.1 dizia que o sistema não hospeda enunciado, alternativa nem gabarito, nem corrige
+questão; o §6.7, que o simulado não alimenta a escada porque "não há atribuição confiável por
+assunto" e classificar 120 questões à mão custava demais. Uma amostra real (CEBRASPE, FGV, IDECAN e
+FCC, a banca do alvo) mostrou o formato do que as bancas entregam.
+
+### Decisão
+
+- **O SGE hospeda uma prova objetiva inteira, com gabarito**, para dois fins e só dois: verificar
+  o material e deixar o usuário resolvê-la, corrigida pelo gabarito. Não é um banco de questões:
+  nenhuma rota lista, busca ou exporta questões fora do contexto de uma prova (D-72).
+- **Quem lê o PDF é o planejamento**, que já tem o acervo, o índice e a IA. Ele entrega as questões
+  ao SGE como entrega segmentos; o SGE guarda. **OCR no worker**, num estágio de leitura próprio,
+  porque duas das quatro bancas entregaram a prova em imagem.
+- **O veredito é sobre a alternativa do gabarito**, dado por IA e validado pelo sistema (a página
+  citada precisa existir); na dúvida, o pior (D-67 a D-69). Gabarito é **obrigatório** para julgar e
+  resolver (D-81).
+- **A nota alimenta M-1 por disciplina e global; o desempenho por assunto só informa**, sem
+  revisão, sessão nem mudança de turno (D-78). A atribuição por IA remove a objeção de custo do
+  §6.7, mas não a de confiança, por isso a escada continua fora.
+- **Reanálise incremental e derivada dos segmentos** (D-79): custo proporcional à mudança, sem
+  coluna de "sujo".
+
+### Consequências
+
+- O SGE passa a guardar texto e imagem de provas (cerca de 6 MB por prova) e as respostas do
+  usuário. Uma prova por vez, escolhida por ele; conteúdo pessoal, não redistribuído.
+- O worker ganha o Tesseract com o idioma português. **Medido no Pi com os outros sistemas
+  rodando:** pico de ~85 MB, ~8 s por página, 101 s por prova, +150 MB de imagem, sem swap, 41 °C.
+  O custo real é a qualidade: código e algarismos romanos saem errados (D-85).
+- Gabarito é multi-cargo, multi-tipo e muda de layout até dentro da mesma banca: a IA o lê e o
+  sistema o valida (D-82, D-83). Preliminar e definitivo existem de verdade (D-84).
+- Usa cota da assinatura (ADR-045): ~70 chamadas por prova de 60 questões, uma vez; a reanálise só
+  repete o que mudou.
+- O julgamento é de IA, não uma medição; a nota real do usuário é o que o calibra.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Manter a prova só no planejamento, sem hospedar | Impede o usuário de resolvê-la, e o resultado é um número sem a medida real para conferi-lo |
+| Julgar a questão inteira, com todas as alternativas | As erradas usam fatos de fora dos PDFs; acusaria furo onde não há |
+| Gabarito opcional, só cobertura de assunto | Diz que existe PDF sobre o tema, não que o material leva à resposta correta |
+| Leitura por visão do modelo para provas em imagem | O proxy de IA só aceita texto e gastaria cota; o OCR no Pi custa ~100 s e nenhum swap |
+| Nota alimentando a escada por assunto | Um erro de atribuição da IA contaminaria o estudo; fica só como informação |
+| Reanálise da prova inteira | Gasta cota mesmo quando um assunto só mudou |
 
 ---
 
