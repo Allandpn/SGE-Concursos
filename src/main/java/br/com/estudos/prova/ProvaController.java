@@ -1,6 +1,7 @@
 package br.com.estudos.prova;
 
 import java.util.List;
+import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,18 +21,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import br.com.estudos.prova.ProvaPublica.AbrirTentativaRequest;
 import br.com.estudos.prova.ProvaPublica.AssuntoDaQuestaoRequest;
 import br.com.estudos.prova.ProvaPublica.CorrecaoRequest;
 import br.com.estudos.prova.ProvaPublica.Detalhe;
+import br.com.estudos.prova.ProvaPublica.Nota;
 import br.com.estudos.prova.ProvaPublica.Reanalise;
 import br.com.estudos.prova.ProvaPublica.Relatorio;
+import br.com.estudos.prova.ProvaPublica.RespostaRequest;
 import br.com.estudos.prova.ProvaPublica.Resumo;
+import br.com.estudos.prova.ProvaPublica.TentativaAberta;
+import br.com.estudos.prova.ProvaPublica.TentativaDetalhe;
 import br.com.estudos.shared.exception.NotFoundException;
 
 /**
  * Verificar o material com uma prova (J-6; docs/SPRINT-24-PROVA-GABARITO.md §4). Nenhuma rota
  * lista, busca ou exporta questões fora do contexto de uma prova (D-72): toda rota de questão
- * tem a prova no caminho. A resolução (J-7) chega no item 24.4.
+ * tem a prova no caminho. Resolver a prova é a J-7.
  */
 @RestController
 @RequestMapping("/api/provas")
@@ -39,10 +45,12 @@ import br.com.estudos.shared.exception.NotFoundException;
 public class ProvaController {
 
     private final ProvaUsuarioService service;
+    private final ProvaResolucaoService resolucao;
     private final ProvaArquivos arquivos;
 
-    public ProvaController(ProvaUsuarioService service, ProvaArquivos arquivos) {
+    public ProvaController(ProvaUsuarioService service, ProvaResolucaoService resolucao, ProvaArquivos arquivos) {
         this.service = service;
+        this.resolucao = resolucao;
         this.arquivos = arquivos;
     }
 
@@ -118,6 +126,38 @@ public class ProvaController {
         description = "Sempre com denominador; o que sai dele vem contado à parte; nunca o enunciado.")
     public Relatorio relatorio(@PathVariable Long id) {
         return service.relatorio(id);
+    }
+
+    // ------------------------------------------------------------ resolver (J-7)
+
+    @PostMapping("/{id}/tentativas")
+    @Operation(summary = "Abre ou retoma uma tentativa de resolver a prova",
+        description = "O tentativaId é gerado no cliente ao abrir a tela (D-80): 201 ao abrir, 200 ao retomar. Sem gabarito, 409 (D-81).")
+    public ResponseEntity<ProvaPublica.TentativaResumo> abrirTentativa(@PathVariable Long id, @RequestBody AbrirTentativaRequest pedido) {
+        TentativaAberta aberta = resolucao.abrir(id, pedido);
+        return ResponseEntity.status(aberta.criada() ? HttpStatus.CREATED : HttpStatus.OK).body(aberta.tentativa());
+    }
+
+    @GetMapping("/{id}/tentativas/{tentativaId}")
+    @Operation(summary = "A tentativa: as questões e as respostas dadas",
+        description = "Nunca a resposta do gabarito: a lista `correcao` só se enche depois da entrega (D-80).")
+    public TentativaDetalhe tentativa(@PathVariable Long id, @PathVariable UUID tentativaId) {
+        return resolucao.detalhe(id, tentativaId);
+    }
+
+    @PutMapping("/{id}/tentativas/{tentativaId}/respostas/{numero}")
+    @Operation(summary = "Grava ou limpa a resposta de uma questão", description = "Também a marca de revisar. Tentativa entregue não muda (409).")
+    public ResponseEntity<Void> responder(@PathVariable Long id, @PathVariable UUID tentativaId, @PathVariable Integer numero,
+                                          @RequestBody RespostaRequest pedido) {
+        resolucao.responder(id, tentativaId, numero, pedido);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/tentativas/{tentativaId}/entregar")
+    @Operation(summary = "Entrega a tentativa: corrige pelo gabarito e devolve a nota",
+        description = "Idempotente. Na primeira tentativa da prova a nota entra em M-1 por disciplina (D-78); não cria sessão, revisão nem muda o turno.")
+    public Nota entregar(@PathVariable Long id, @PathVariable UUID tentativaId) {
+        return resolucao.entregar(id, tentativaId);
     }
 
     @GetMapping("/{id}/paginas/{n}")

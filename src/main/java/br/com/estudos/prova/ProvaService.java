@@ -65,6 +65,7 @@ public class ProvaService {
     private final ConcursoRepository concursoRepository;
     private final CoberturaEditalRepository coberturaRepository;
     private final SegmentoRepository segmentoRepository;
+    private final ProvaResolucaoService resolucaoService;
 
     public ProvaService(
             ProvaRepository provaRepository,
@@ -72,13 +73,15 @@ public class ProvaService {
             VereditoQuestaoRepository vereditoRepository,
             ConcursoRepository concursoRepository,
             CoberturaEditalRepository coberturaRepository,
-            SegmentoRepository segmentoRepository) {
+            SegmentoRepository segmentoRepository,
+            ProvaResolucaoService resolucaoService) {
         this.provaRepository = provaRepository;
         this.questaoRepository = questaoRepository;
         this.vereditoRepository = vereditoRepository;
         this.concursoRepository = concursoRepository;
         this.coberturaRepository = coberturaRepository;
         this.segmentoRepository = segmentoRepository;
+        this.resolucaoService = resolucaoService;
     }
 
     // ------------------------------------------------------------ registro
@@ -161,7 +164,7 @@ public class ProvaService {
     /**
      * Entrega só o gabarito: de uma prova já lida que esperava por ele, ou o definitivo que
      * substitui o preliminar (D-84) — este devolve ao julgamento as questões cuja resposta mudou.
-     * Recalcular a nota da tentativa que conta é do item 24.4 (resolução).
+     * A nota da tentativa que conta é recalculada pela resolução (D-84).
      */
     @Transactional
     public Estado entregarGabarito(Long id, GabaritoRequest pedido) {
@@ -180,6 +183,8 @@ public class ProvaService {
         if (pedido.modelo() != null) prova.setModelo(pedido.modelo());
         aplicarGabarito(prova, questoes, pedido.gabarito());
         questaoRepository.flush();
+        // D-84: se o definitivo mudou ou anulou uma resposta, a nota da tentativa que conta se recalcula.
+        resolucaoService.recalcularNotaQueConta(prova);
 
         if (esperando) {
             prova.setStatus(StatusProva.CONFERIR);

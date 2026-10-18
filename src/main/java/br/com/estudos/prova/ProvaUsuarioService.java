@@ -64,6 +64,7 @@ public class ProvaUsuarioService {
     private final ConcursoRepository concursoRepository;
     private final CoberturaEditalRepository coberturaRepository;
     private final ProvaService provaService;
+    private final ProvaResolucaoService resolucaoService;
     private final ProvaArquivos arquivos;
 
     public ProvaUsuarioService(
@@ -73,6 +74,7 @@ public class ProvaUsuarioService {
             ConcursoRepository concursoRepository,
             CoberturaEditalRepository coberturaRepository,
             ProvaService provaService,
+            ProvaResolucaoService resolucaoService,
             ProvaArquivos arquivos) {
         this.provaRepository = provaRepository;
         this.questaoRepository = questaoRepository;
@@ -80,6 +82,7 @@ public class ProvaUsuarioService {
         this.concursoRepository = concursoRepository;
         this.coberturaRepository = coberturaRepository;
         this.provaService = provaService;
+        this.resolucaoService = resolucaoService;
         this.arquivos = arquivos;
     }
 
@@ -383,6 +386,8 @@ public class ProvaUsuarioService {
                 q.isLidaPorOcr(), q.getPaginaOrigem()));
         }
 
+        var nota = resolucaoService.notaDaProva(prova, questoes, vigentes);
+
         // Na ordem do edital (disciplina, depois ordem): a mesma de Concursos.
         var ordemDisciplina = new LinkedHashMap<String, Integer>();
         var ordemAssunto = new HashMap<Long, Integer>();
@@ -414,7 +419,10 @@ public class ProvaUsuarioService {
             prova.getStatus(), prova.getGabaritoSituacao() == br.com.estudos.shared.enums.SituacaoGabarito.PRELIMINAR,
             prova.getGabaritoRecorte(), total.cobertura(),
             new Declaradas(foraDoEdital, anuladas, semGabarito, semTexto, ocrDuvidoso),
-            disciplinas, furados, semQuestao, linhas);
+            disciplinas, furados, semQuestao, linhas,
+            nota.map(ProvaResolucaoService.NotaDaProva::nota).orElse(null),
+            nota.map(ProvaResolucaoService.NotaDaProva::outras).orElse(List.of()),
+            nota.map(ProvaResolucaoService.NotaDaProva::discordancias).orElse(List.of()));
     }
 
     // ------------------------------------------------------------ internos

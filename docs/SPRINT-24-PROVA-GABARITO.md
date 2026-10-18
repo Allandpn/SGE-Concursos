@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.3 |
+| Versão | 1.0.5 |
 | Data | 2026-10-18 |
 | Status | Vigente — em andamento |
 | Especificação | `01_DOMINIO` v1.26.0 §3.11 e D-67 a D-85 · `02_JORNADAS` v1.15.0 J-6 e J-7 · `03_INVARIANTES` v1.14.0 · `00_PRODUTO` v1.8.0 §5.1.1 · ADR-046 |
@@ -192,10 +192,10 @@ questão tem `{provaId}` no caminho.
 | `POST /api/provas/{id}/tentar-de-novo` | `FALHOU` → a etapa em que falhou (`LENDO` ou `JULGANDO`), sem o erro | J-6 |
 | `GET /api/provas/{id}/relatorio` | §6 | J-6 6 |
 | `GET /api/provas/{id}/paginas/{n}` | a imagem da página de origem (D-85); do diretório `paginas/`, sem sair dele | J-6 / J-7 |
-| `POST /api/provas/{id}/tentativas` | abre ou **retoma** a tentativa pelo `tentativaId` (D-80) | J-7 1-2 |
-| `GET /api/provas/{id}/tentativas/{tid}` | as questões **sem a resposta do gabarito** e as respostas dadas | J-7 2 |
-| `PUT /api/provas/{id}/tentativas/{tid}/respostas/{numero}` | grava a alternativa e a marca de revisar | J-7 2 |
-| `POST /api/provas/{id}/tentativas/{tid}/entregar` | corrige, devolve a nota; na tentativa que conta, cria o simulado (§7) | J-7 3-4 |
+| `POST /api/provas/{id}/tentativas` | `{tentativaId, cronometrada?, limiteMinutos?}`: abre ou **retoma** a tentativa pelo `tentativaId`, gerado no cliente (D-80) → `201`, ou `200` se já existe. Prova sem gabarito `409 PROVA_SEM_GABARITO` (D-81); `tentativaId` de outra prova `409` | J-7 1-2 |
+| `GET /api/provas/{id}/tentativas/{tid}` | `{tid}` é o `tentativaId` do cliente. Traz `questoes` **sem a resposta do gabarito** e as respostas dadas; a lista `correcao` (resposta do gabarito, se acertou, veredito e página que sustentava) fica **vazia até a entrega** | J-7 2 |
+| `PUT /api/provas/{id}/tentativas/{tid}/respostas/{numero}` | `{alternativa?, marcadaRevisar?}`: grava (ou limpa) a alternativa e a marca de revisar; letra inválida `422`, tentativa entregue `409 TENTATIVA_ENTREGUE` | J-7 2 |
+| `POST /api/provas/{id}/tentativas/{tid}/entregar` | corrige pelo gabarito e devolve a `Nota`; na tentativa que conta, cria o simulado (§7). **Idempotente**: entregar de novo devolve a mesma nota, sem outro simulado (D-80) | J-7 3-4 |
 
 Durante a tentativa em andamento, **a resposta do gabarito nunca sai do servidor** (só depois de `entregar`): o
 contrato do `GET .../tentativas/{tid}` não tem o campo.
@@ -228,7 +228,7 @@ que conta:
 - **Por disciplina** (a da atribuição, na ordem do edital) e **por assunto furado**: quantas questões, o que faltou,
   a sustentação.
 - **Assuntos do edital sem nenhuma questão na prova**, como informação.
-- Até o item 24.4 o relatório **não traz a nota real** nem a discordância com a cobertura; ficam para a resolução.
+- **Nota real**, quando há tentativa que conta entregue: `nota` (global e por disciplina, com denominador), `outrasTentativas` à parte e `discordancias` por assunto (`SOLIDA_E_ERROU`: todas as questões do assunto `RESPONDIVEL` e o usuário errou alguma; `FURADA_E_ACERTOU`: alguma `PARCIAL` ou `NAO_RESPONDIVEL` e o usuário acertou todas). Informação, não gatilho (D-78).
 - **Por questão:** número, assunto, veredito, sustentação (`segmentoId`, página), `lidaPorOcr` e `paginaOrigem`; **sem
   enunciado fora da prova** — o enunciado só sai em `GET .../tentativas/{tid}` e na revisão pós-entrega.
 - **Nota real**, se houver tentativa entregue: por disciplina e global, com denominador, da tentativa que conta; as
@@ -241,7 +241,7 @@ que conta:
 
 Em `entregar`, numa transação:
 
-1. Corrige: compara cada resposta com `resposta_gabarito`; questão não avaliável ou sem assunto atribuído fica fora.
+1. Corrige: compara cada resposta com `resposta_gabarito`. Entram na nota as questões **avaliáveis com assunto atribuído** (a mesma base do denominador da cobertura, D-70); as demais ficam fora e vêm contadas em `foraDaNota`. Questão sem resposta conta no total e não como acerto.
 2. Se **nenhuma tentativa da prova tem `simulado_id`** (consulta + o índice `ux_..._d78_uma_conta` como garantia
    final), cria um `Simulado` (`data` = hoje, `duracao_minutos` = tempo gasto, no mínimo 1) e um `ResultadoSimulado`
    **por disciplina** que tenha ao menos uma questão avaliável atribuída, com o `formato` da prova. Reusa
@@ -250,7 +250,7 @@ Em `entregar`, numa transação:
 
 Gabarito definitivo que **muda ou anula** uma resposta (D-84): o serviço recalcula e **atualiza** o
 `resultado_simulado` da tentativa que conta (única exceção a "resultado de simulado não muda"; fica no log), e as
-questões afetadas entram em §5, regra 3.
+questões afetadas entram em §5, regra 3. A disciplina que perde **todas** as questões (por anulação) deixa de ter apuração: a linha de `resultado_simulado` dela é removida, porque `questoes_total` não pode ser zero; é dado derivado, recriável.
 
 ---
 
@@ -287,8 +287,8 @@ assunto"); e **"Resolver"** (J-7), uma questão por tela. Nenhuma tela mostra a 
 | `ProvaReanaliseTest.assuntoComMaterialNovo_reabre` / `semMudanca_naoReabre` / `gabaritoMudou_reabre` (D-79, D-84; data congelada) | §5 |
 | `ProvaApiTest.relatorio_denominadorSempre_foraDoEditalNaoEFuro_eSemEnunciado` / `relatorio_antesDoJulgamento_mostraSemVeredito` / `relatorio_deProvaAindaNaoLida_409` (D-70, D-71, D-72) | §6 |
 | `ProvaApiTest` — envio (`envio_*`, `anexarGabarito_*`), conferência (`conferencia_*`, `lista_*`), correção (`corrigir_*`, `d74_corrigirAssunto_*`), `confirmar_*`, `d79_analisarDeNovo_*`, `tentarDeNovo_*`, `d85_pagina_*` | §4 |
-| `ProvaResolucaoTest.gabaritoNaoSaiAntesDaEntrega` / `mesmaTentativaContaUmaVez` / `entregarCriaSimuladoPorDisciplina` / `segundaTentativaNaoAlimentaM1` / `entregarNaoCriaSessaoNemRevisao` (D-78, D-80) | §7 |
-| `ProvaGabaritoDefinitivoTest.respostaMudou_recalculaNotaEReabreQuestao` (D-84) | §7 |
+| `ProvaResolucaoTest.d81_semGabarito_naoResolve` / `d80_mesmaTentativaContaUmaVez` / `d80_gabaritoNaoSaiAntesDaEntrega` / `entregar_corrigePeloGabarito_criaSimuladoPorDisciplina` / `d80_entregarDeNovo_devolveAMesmaNota_semOutroSimulado` / `d78_segundaTentativa_naoAlimentaM1` / `d78_entregarNaoCriaSessaoNemRevisao` / `relatorio_trazANotaReal_*` (D-78, D-80, D-81) | §7 |
+| `ProvaResolucaoTest.d84_respostaMudou_recalculaANotaQueConta` / `d84_disciplinaSemQuestao_perdeAApuracao` (D-84) | §7 |
 | `ProvaEstruturalTest.d72_nenhumaRotaDeQuestaoSemAProvaNoCaminho` / `d72_osControllersDaProvaSoVivemSobProvas` / `d72_naoExisteListagemDeQuestoesNaRaiz` | teste estrutural sobre o mapeamento real |
 | No planejamento: leitura e recorte de gabarito contra os **seis arquivos reais** da amostra (FGV ×2, IDECAN, FCC, CEBRASPE); OCR da prova da FCC | D-82, D-83 |
 
@@ -335,6 +335,8 @@ ou a revisão; limiar de "gabaritar" e nota de corte (Sprint 23); prova de concu
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.0.5 | 2026-10-18 | Item 24.4 feito; nomes dos testes alinhados ao que existe |
+| 1.0.4 | 2026-10-18 | Ao desenhar o código do item 24.4: `{tid}` é o `tentativaId` do cliente; gabarito só na lista `correcao`, vazia até a entrega; entregar é idempotente; a nota exclui questão sem assunto (declarada em `foraDaNota`); disciplina que perde todas as questões perde a apuração; relatório com nota, outras tentativas e discordâncias |
 | 1.0.3 | 2026-10-18 | Item 24.3 feito; nomes dos testes alinhados ao que existe (o relatório e a API ficaram em `ProvaApiTest`) |
 | 1.0.2 | 2026-10-18 | Ao desenhar o código do item 24.3: `tentar-de-novo`; gabarito anexado só em `AGUARDANDO_GABARITO` (o definitivo é do 24.4); atribuição corrigida só em `CONFERIR`; `tipo` só até o gabarito valer; amostra espalhada em vez de sorteada; relatório sem nota real até o 24.4 |
 | 1.0.1 | 2026-10-18 | Ao desenhar o código do item 24.2: `formato` nulo até a leitura; coluna `gabarito_arquivo`; D-68 **rebaixa** em vez de recusar o item (era contradição com `01_DOMINIO`); gatilho de D-73; restrição de avaliável com gabarito |
