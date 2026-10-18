@@ -12,8 +12,8 @@ schema real vence, e este arquivo está desatualizado — não o contrário.
 
 | Campo | Valor |
 |---|---|
-| Versão | 2.5.0 |
-| Data | 2026-10-17 |
+| Versão | 2.6.0 |
+| Data | 2026-10-18 |
 | Status | Vigente |
 | Subordinado a | `docs/SPRINT-1-BANCO.md`, `docs/SPRINT-4-ESCADA.md` (ADR-032), `docs/SPRINT-7-METRICAS.md` (D-46), `docs/SPRINT-8-SIMULADO.md` (D-13), `docs/SPRINT-10-SEGMENTO.md` (D-50 a D-53), `docs/SPRINT-18-CONCURSOS.md` (D-58), `docs/SPRINT-19-MATERIAL-AUTOMATICO.md` (D-64, D-65); `src/main/resources/db/migration/V1`, `V3`, `V5`, `V7`, `V8`, `V9`, `V12`, `V13` |
 
@@ -39,6 +39,16 @@ erDiagram
     disciplina ||--o{ concurso_assunto : "fk_concurso_assunto_disciplina"
     concurso |o--o{ analise_edital : "fk_analise_edital_concurso (opcional, só depois de confirmar)"
     assunto ||--o| lacuna_material : "fk_lacuna_material_assunto (D-65, no máximo uma)"
+    concurso ||--o{ prova : "fk_prova_concurso (D-77, o alvo no envio)"
+    prova ||--o{ questao : "fk_questao_prova"
+    assunto |o--o{ questao : "fk_questao_assunto (opcional: fora do edital, D-74)"
+    questao ||--o{ alternativa : "fk_alternativa_questao"
+    questao ||--o{ veredito_questao : "fk_veredito_questao_questao (D-73, só INSERT)"
+    segmento |o--o{ veredito_questao : "fk_veredito_questao_segmento (a sustentação, D-68)"
+    prova ||--o{ tentativa_prova : "fk_tentativa_prova_prova"
+    simulado |o--o| tentativa_prova : "fk_tentativa_prova_simulado (só a que conta, D-78)"
+    tentativa_prova ||--o{ resposta_prova : "fk_resposta_prova_tentativa"
+    questao ||--o{ resposta_prova : "fk_resposta_prova_questao"
 
     disciplina {
         bigint id PK
@@ -206,10 +216,92 @@ erDiagram
         timestamptz registrada_em
         timestamptz descartada_em "D-66: refazer o material; nula = vale"
     }
+
+    prova {
+        bigint id PK
+        bigint concurso_id FK "D-77"
+        varchar nome
+        varchar banca
+        smallint ano
+        varchar tipo "tipo da prova; o gabarito é do tipo (D-82)"
+        varchar cargo_prova
+        varchar formato "nulo até a leitura"
+        varchar status "LENDO, AGUARDANDO_GABARITO, CONFERIR, JULGANDO, PRONTA, FALHOU"
+        varchar etapa_falha
+        text erro
+        varchar hash_prova "UNIQUE com concurso_id: idempotência"
+        varchar gabarito_arquivo "nulo = nenhum enviado"
+        varchar gabarito_situacao "PRELIMINAR, DEFINITIVO; nulo = sem gabarito (D-81)"
+        text gabarito_recorte "cargo, tipo, turno recortados (D-83)"
+        integer questoes_esperadas
+        varchar modelo
+        timestamptz criado_em
+        timestamptz atualizado_em
+    }
+
+    questao {
+        bigint id PK
+        bigint prova_id FK
+        integer numero "UNIQUE com prova_id"
+        text enunciado "nulo só em SEM_TEXTO"
+        text texto_base "itens do CEBRASPE"
+        varchar cabecalho_disciplina
+        varchar resposta_gabarito "A a E; nula se anulada ou sem gabarito"
+        varchar motivo_nao_avaliavel "SEM_TEXTO, ANULADA, SEM_GABARITO, OCR_DUVIDOSO (D-70, D-85)"
+        bigint assunto_id FK "nulo: pendente ou fora do edital"
+        varchar atribuicao "PENDENTE, AUTOMATICA, REVISAR, CONFIRMADA, FORA_DO_EDITAL"
+        boolean lida_por_ocr
+        integer pagina_origem
+        timestamptz criado_em
+    }
+
+    alternativa {
+        bigint id PK
+        bigint questao_id FK
+        varchar letra "A a E; UNIQUE com questao_id"
+        text texto
+    }
+
+    veredito_questao {
+        bigint id PK "o vigente é o maior id"
+        bigint questao_id FK
+        varchar veredito "RESPONDIVEL, PARCIAL, NAO_RESPONDIVEL"
+        bigint segmento_id FK "RESPONDIVEL exige (D-68)"
+        integer pagina_segmento
+        text falta
+        varchar gabarito_considerado "para D-84"
+        varchar modelo
+        timestamptz criado_em "retrato datado (D-76)"
+    }
+
+    tentativa_prova {
+        bigint id PK
+        bigint prova_id FK
+        uuid tentativa_id "UNIQUE, gerado no cliente (D-80)"
+        timestamptz iniciada_em
+        timestamptz entregue_em
+        boolean cronometrada
+        integer limite_minutos
+        bigint simulado_id FK "só a tentativa que conta; UNIQUE parcial por prova (D-78)"
+        timestamptz criado_em
+    }
+
+    resposta_prova {
+        bigint id PK
+        bigint tentativa_id FK
+        bigint questao_id FK
+        varchar alternativa "nula = só marcada para revisar"
+        boolean marcada_revisar
+        timestamptz respondida_em
+    }
 ```
 
 ## Notas de leitura
 
+- **Sprint 24 (`V16`):** `veredito_questao` é um fato registrado e imutável — um gatilho recusa `UPDATE` e
+  `DELETE` (D-73); o vigente é o de maior `id`. Não há coluna de nota nem de "acertou": a nota é derivada do
+  gabarito e das respostas (D-16), e só `resultado_simulado` (Sprint 8) guarda o que M-1 precisa. O estado
+  "questão a julgar" também é derivado, por uma consulta sobre `segmento` (D-79).
 - `parametro` e `configuracao_ia` não aparecem com nenhuma linha de
   relacionamento — são configuração pura (`01_DOMINIO` §3), sem FK para
   nenhuma outra tabela.
@@ -257,6 +349,7 @@ erDiagram
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.6.0 | 2026-10-18 | `V16` (Sprint 24, ADR-046): `prova`, `questao`, `alternativa`, `veredito_questao` (imutável por gatilho, D-73), `tentativa_prova` (índice único parcial, D-78) e `resposta_prova` |
 | 2.5.0 | 2026-10-17 | `V15`: `segmento.arquivado_em`, `lacuna_material.descartada_em` (D-66); D-50 vira índice único parcial sobre os segmentos ativos. `V14` só acrescentou colunas a `configuracao_ia` (provedor e assinatura do Claude, ADR-045) |
 | 2.4.0 | 2026-10-17 | Sprint 18 (`V12`), que tinha ficado de fora: `concurso` (D-58), `concurso_assunto` (cobertura do edital, a única n:n) e `analise_edital`. Sprint 19 (`V13`): `concurso.slug` passa a `NOT NULL` (D-64), `configuracao_ia` e `lacuna_material` (D-65) |
 | 2.3.0 | 2026-09-06 | Sprint 10 (`V9`): tabela `segmento` nova (`chave_externa` obrigatória e única — D-53 —, `ordem` única no assunto — D-50); `assunto.chave_externa` (opcional, único — D-52); `sessao.segmento_id` (nullable, só `ESTUDO` — D-51, via FK composta `fk_sessao_d51_segmento_mesmo_assunto`). Notas de leitura atualizadas para 9 tabelas |

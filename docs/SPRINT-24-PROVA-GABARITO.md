@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.0.1 |
 | Data | 2026-10-18 |
 | Status | Vigente — em andamento |
 | Especificação | `01_DOMINIO` v1.26.0 §3.11 e D-67 a D-85 · `02_JORNADAS` v1.15.0 J-6 e J-7 · `03_INVARIANTES` v1.14.0 · `00_PRODUTO` v1.8.0 §5.1.1 · ADR-046 |
@@ -55,17 +55,19 @@ Convenção do projeto: toda restrição leva a regra no nome. Colunas em `snake
 | `ano` | `SMALLINT` | |
 | `tipo` | `VARCHAR(10)` | "4", "A"; lido da capa; corrigível |
 | `cargo_prova` | `VARCHAR(250)` | cargo/código lido da capa ("E05", "9006") |
-| `formato` | `TEXT NOT NULL` | `MULTIPLA_ESCOLHA` · `CERTO_ERRADO` (mesmo enum de `resultado_simulado`) |
+| `formato` | `VARCHAR(20)` | `MULTIPLA_ESCOLHA` · `CERTO_ERRADO` (mesmo enum de `resultado_simulado`); **NULL até a leitura**, que é quem descobre |
+| `gabarito_arquivo` | `VARCHAR(250)` | arquivo do gabarito em `entrada/<id>/` (`gabarito.pdf` ou `gabarito.txt`); NULL = nenhum enviado ainda |
 | `status` | `TEXT NOT NULL` | §2.1.1 |
 | `etapa_falha`, `erro` | `TEXT` | como `analise_edital` |
-| `hash_prova` | `CHAR(64) NOT NULL` | SHA-256 do PDF da prova |
+| `hash_prova` | `VARCHAR(64) NOT NULL` | SHA-256 do PDF da prova |
 | `gabarito_situacao` | `TEXT` | `PRELIMINAR` · `DEFINITIVO`; **NULL = sem gabarito** |
 | `gabarito_recorte` | `TEXT` | o que o sistema recortou (cargo, tipo, turno), mostrado na conferência (D-83) |
 | `questoes_esperadas` | `INTEGER` | nº de respostas do gabarito, para D-82 |
 | `modelo` | `VARCHAR(150)` | modelo de IA da última etapa |
 | `criado_em`, `atualizado_em` | `TIMESTAMPTZ` | |
 
-Restrições: `ck_prova_status`, `ck_prova_formato`, `ck_prova_gabarito_situacao`,
+Restrições: `ck_prova_status`, `ck_prova_formato`, `ck_prova_etapa_falha`, `ck_prova_gabarito_situacao`,
+`ck_prova_formato_lido` (`CONFERIR`, `JULGANDO` e `PRONTA` exigem `formato`),
 `ux_prova_concurso_hash` (**idempotência**: reenviar a mesma prova ao mesmo concurso devolve a existente, como
 D-45), e **`ck_prova_d81_sem_gabarito_nao_julga`**:
 `CHECK (status NOT IN ('JULGANDO','PRONTA') OR gabarito_situacao IS NOT NULL)` — D-81 na camada mais baixa que a
@@ -100,7 +102,9 @@ worker não entrega e tenta de novo no ciclo seguinte (D-75). `PRONTA` volta a `
 
 Restrições com regra: `ck_questao_d70_motivo` (`motivo_nao_avaliavel` só nos valores da D-70/D-85),
 `ck_questao_d74_fora_do_edital_sem_assunto` (`atribuicao = 'FORA_DO_EDITAL'` ⇒ `assunto_id IS NULL`) e
-`ck_questao_atribuida_tem_assunto` (`AUTOMATICA`/`CONFIRMADA` ⇒ `assunto_id NOT NULL`). Que o assunto pertença à
+`ck_questao_atribuida_tem_assunto` (`AUTOMATICA`/`CONFIRMADA` ⇒ `assunto_id NOT NULL`) e
+`ck_questao_d70_avaliavel_tem_gabarito` (`motivo_nao_avaliavel IS NOT NULL OR resposta_gabarito IS NOT NULL`: questão
+avaliável sempre tem resposta). Que o assunto pertença à
 **cobertura do alvo** (D-74) depende de outra tabela: é do serviço, não de CHECK.
 
 ### 2.3 `veredito_questao` — fato registrado, nunca alterado
@@ -116,7 +120,8 @@ Restrições com regra: `ck_questao_d70_motivo` (`motivo_nao_avaliavel` só nos 
 
 **`ck_veredito_d68_sustentacao`:** `CHECK (veredito <> 'RESPONDIVEL' OR (segmento_id IS NOT NULL AND pagina_segmento
 IS NOT NULL))`. Que o segmento exista, seja **ativo** e do **assunto da questão**, e que a página caiba nele, o
-serviço valida antes de gravar. O veredito **vigente** de uma questão é o de maior `id`: `ix_veredito_questao_vigente
+serviço valida antes de gravar; citação que não passa **rebaixa** o veredito para `NAO_RESPONDIVEL` (D-68), com a
+razão em `falta`. **`tg_veredito_questao_d73_imutavel`:** gatilho que recusa `UPDATE` e `DELETE` (D-73). O veredito **vigente** de uma questão é o de maior `id`: `ix_veredito_questao_vigente
 (questao_id, id DESC)`. Nada o marca como vigente (D-16).
 
 ### 2.4 `tentativa_prova` e `resposta_prova` (resolução)
@@ -161,7 +166,7 @@ Mesmo filtro e token de `/internal/**` (Sprint 19 §4).
 | `POST /internal/provas/{id}/leitura` | Entrega as questões, o gabarito lido e o recorte. → `CONFERIR` ou `AGUARDANDO_GABARITO` |
 | `POST /internal/provas/{id}/gabarito` | Entrega só o gabarito (prova que esperava) |
 | `GET /internal/provas/{id}/julgamento` | As questões **a julgar** (D-79, §5) e, de cada uma, o assunto e seus **segmentos ativos** |
-| `POST /internal/provas/{id}/vereditos` | Lote de vereditos. Valida D-68 por item; o lote não é tudo-ou-nada (item recusado volta com o motivo) |
+| `POST /internal/provas/{id}/vereditos` | Lote de vereditos. Valida D-68 por item: citação inválida **rebaixa** o item para `NAO_RESPONDIVEL` e volta em `rebaixados`; questão que não existe, não é avaliável ou não tem assunto volta em `recusados`. O lote não é tudo-ou-nada |
 | `POST /internal/provas/{id}/falha` | `{etapa, erro}` → `FALHOU` |
 
 Recusas: prova inexistente `404 PROVA_INEXISTENTE`; entrega fora do estado `409 ESTADO_INVALIDO`; gabarito com número
@@ -276,7 +281,7 @@ assunto"); e **"Resolver"** (J-7), uma questão por tela. Nenhuma tela mostra a 
 |---|---|
 | `ProvaEstruturaTest.d81_semGabaritoNaoJulga` / `d73_veredito_naoTemUpdate` / `d68_respondivelExigeSustentacao` / `d80_tentativaUnica` / `d78_umaTentativaConta` | restrições com a regra no nome |
 | `ProvaLeituraTest.entregaDeLeitura_vaiParaConferirOuAguardandoGabarito` / `gabaritoComNumeroDiferente_recusa` (D-82) / `atribuicaoForaDaCobertura_viraForaDoEdital` (D-74) / `mesmaProvaDeNovo_devolveAExistente` | §3, §4 |
-| `ProvaVereditoTest.citacaoInexistente_recusaOItem` / `segmentoArquivado_naoSustenta` / `segmentoDeOutroAssunto_naoSustenta` (D-68) | validação do serviço |
+| `ProvaVereditoTest.citacaoInexistente_rebaixa` / `segmentoArquivado_naoSustenta` / `segmentoDeOutroAssunto_naoSustenta` / `paginaForaDoSegmento_naoSustenta` (D-68) | validação do serviço |
 | `ProvaReanaliseTest.assuntoComMaterialNovo_reabre` / `semMudanca_naoReabre` / `gabaritoMudou_reabre` (D-79, D-84; data congelada) | §5 |
 | `ProvaRelatorioTest.denominadorSempre` / `foraDoEditalNaoContaComoFuro` / `semEnunciadoForaDaProva` (D-70, D-71, D-72) | §6 |
 | `ProvaResolucaoTest.gabaritoNaoSaiAntesDaEntrega` / `mesmaTentativaContaUmaVez` / `entregarCriaSimuladoPorDisciplina` / `segundaTentativaNaoAlimentaM1` / `entregarNaoCriaSessaoNemRevisao` (D-78, D-80) | §7 |
@@ -327,4 +332,5 @@ ou a revisão; limiar de "gabaritar" e nota de corte (Sprint 23); prova de concu
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.0.1 | 2026-10-18 | Ao desenhar o código do item 24.2: `formato` nulo até a leitura; coluna `gabarito_arquivo`; D-68 **rebaixa** em vez de recusar o item (era contradição com `01_DOMINIO`); gatilho de D-73; restrição de avaliável com gabarito |
 | 1.0.0 | 2026-10-18 | Criado, na abertura da sprint, contra `01_DOMINIO` v1.26.0 |

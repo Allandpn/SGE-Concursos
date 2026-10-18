@@ -1027,7 +1027,7 @@ segue aberta só no item 19.5 (token e primeiro edital real); as duas correm em 
 | | Item | Quem escreve | Estado |
 |---|---|---|---|
 | 24.1 | Especificação: `00_PRODUTO` 1.8.0, `01_DOMINIO` 1.26.0, `02_JORNADAS` 1.15.0, `03_INVARIANTES` 1.14.0, ADR-046 | Claude, a pedido do usuário | **feito** |
-| 24.2 | SGE — `V16`, entidades, `ProvaService`, rotas internas, testes de estrutura, leitura e vereditos | Claude | não começou |
+| 24.2 | SGE — `V16`, entidades, `ProvaService`, rotas internas, testes de estrutura, leitura e vereditos | Claude | **feito** — 240/240 verdes (39 novos: estrutura 8, leitura 14, vereditos 7, reanálise 10); `V16` aplicada e validada contra Postgres real; 3 defeitos achados pelos testes e corrigidos (ver changelog 1.63.0) |
 | 24.3 | SGE — rotas públicas: envio, conferência, confirmar, reanálise, relatório | Claude | não começou |
 | 24.4 | SGE — resolução: tentativas, respostas, entregar → simulado; gabarito definitivo | Claude | não começou |
 | 24.5 | Planejamento — OCR, questões, gabarito, atribuição, contra a amostra real | Claude, com exceção explícita de escrita | não começou |
@@ -1060,6 +1060,7 @@ nasce da prova.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.63.0 | 2026-10-18 | **Item 24.2 feito.** `V16` (6 tabelas, gatilho de D-73, índices únicos parciais de D-78), entidades, `ProvaService` e as rotas `/internal/provas`. 240/240 (39 novos). Achados pelos testes: (1) o serviço gravava a questão antes do gabarito e o banco, corretamente, recusava "avaliável sem resposta" (D-70) — o gabarito agora entra antes de gravar; (2) `CHAR(64)` não bate com o `ddl-auto=validate` — virou `VARCHAR(64)`; (3) `EstruturaSchemaTest` tem a lista fechada de tabelas e `ProvaEstruturaTest` deixava linhas em `simulado` no banco compartilhado. `SPRINT-24` v1.0.1 (D-68 rebaixa, não recusa). `DIAGRAMA-ER` v2.6.0 |
 | 1.62.0 | 2026-10-18 | **Sprint 24 aberta** (§20A), a pedido do usuário. Documento técnico `docs/SPRINT-24-PROVA-GABARITO.md` v1.0.0: `V16` (prova, questão, alternativa, veredito, tentativa, resposta), rotas internas e públicas, reanálise por uma consulta (D-79), nota entrando por `simulado`/`resultado_simulado` com índice único parcial (D-78), volume `provas`, contrato do planejamento. Item 24.1 (especificação) feito; o código começa em 24.2. Nenhum código escrito |
 | 1.61.0 | 2026-10-18 | **Especificação da prova e gabarito migrada** para os documentos vigentes: `00_PRODUTO` v1.8.0 (§5.1.1: o sistema hospeda uma prova inteira com gabarito; §6.7 e decisões nº 2, 15 e 18), `01_DOMINIO` v1.26.0 (§3.11, **D-67 a D-85**, 85 regras), `02_JORNADAS` v1.15.0 (J-6 e J-7), `03_INVARIANTES` v1.14.0 (86 linhas para 85 regras), **ADR-046**. Mapa: **Sprint 24** nova; a 23 perde o simulado no formato da prova. Nenhum código: a sprint ainda não começou |
 | 1.60.0 | 2026-10-18 | `ESPECIFICACAO-PROVA-GABARITO` v0.4.0: par da FCC (banca do alvo) avaliado — prova em imagem, 12 fatias que cortam questões; gabarito em tabela com situação por questão. **OCR medido no Pi com os outros sistemas rodando** (contêiner com teto de 700 MB e 2 núcleos): Tesseract ~85 MB de pico, ~100 s por prova de 12 fatias, +150 MB na imagem do worker, carga ≤ 2,1 de 4, sem swap, 41 °C. Tudo que a medição criou foi removido do Pi. Qualidade: boa na prosa, fraca em código e algarismos romanos (P-19) |

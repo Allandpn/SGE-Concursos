@@ -41,7 +41,12 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 19 (ADR-044): configuração de IA e a lacuna de
                 // material (D-65), um fato registrado — nenhuma guarda estado
                 // do material, que é derivado dos segmentos.
-                "configuracao_ia", "lacuna_material");
+                "configuracao_ia", "lacuna_material",
+                // Sprint 24 (ADR-046): a prova hospedada, a verificação do material e a
+                // resolução. O veredito é um fato registrado (D-73); a nota não é guardada
+                // aqui (D-16) — M-1 continua entrando por resultado_simulado. Nenhuma
+                // guarda fase, turno ou plano.
+                "prova", "questao", "alternativa", "veredito_questao", "tentativa_prova", "resposta_prova");
         assertEquals(esperado, tabelasDoSchema());
     }
 
