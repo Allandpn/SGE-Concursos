@@ -1,52 +1,75 @@
-# Verificação por prova e gabarito — especificação conceitual (rascunho)
+# Prova e gabarito — especificação conceitual (rascunho)
 
 | | |
 |---|---|
-| Versão | 0.1.0 |
-| Data | 2026-10-17 |
-| Status | **Rascunho — não vigente.** Nada daqui é implementado até os requisitos (§9) serem decididos e as seções migrarem para os documentos donos (§11) |
-| Origem | Pedido do usuário, 2026-10-17: "subir uma prova e saber se, com o material montado, seria possível responder as questões e gabaritar o concurso. É o nosso objetivo final" |
-| Decisões já tomadas | Mora no planejamento; o SGE não guarda enunciado nem gabarito (`00_PRODUTO` §5.1 intacto); a IA julga questão a questão; entrada pelo mesmo gesto do edital, com **carregar prova** e **carregar gabarito** separados |
+| Versão | 0.2.0 |
+| Data | 2026-10-18 |
+| Status | **Rascunho — não vigente.** Nada daqui é implementado até os requisitos serem aprovados e as seções migrarem para os documentos donos (§11) |
+| Origem | Pedido do usuário, 2026-10-17: "subir uma prova e saber se, com o material montado, seria possível responder as questões e gabaritar o concurso. É o nosso objetivo final". Revisado em 2026-10-18 com as respostas do usuário aos pontos em aberto |
+| Decisões já tomadas | Gabarito obrigatório · o SGE hospeda a prova e o usuário a responde no sistema · a nota alimenta disciplina e global, assunto só informa · reanálise incremental por assunto · só o concurso-alvo · IA julga questão a questão · entrada pelo mesmo gesto do edital (§10) |
+
+**Mudanças da v0.1.0.** O gabarito deixou de ser opcional. O SGE passa a guardar a prova
+(enunciado, alternativas, gabarito) e o usuário a responde no sistema. O critério do julgamento
+passou a ser a alternativa do gabarito. A reanálise passou a ser incremental. Isso revisa
+`00_PRODUTO` §5.1 e §6.7 (ver §11).
 
 ---
 
 ## 1. Para que serve
 
-Hoje o sistema sabe **quanto** material existe por assunto (91 de 97 prontos, 15 896 min)
-e **o que não existe** (6 lacunas, com motivo). Não sabe se o que existe **ensina o
-suficiente**. O assunto "Relação do texto com seu contexto histórico" está "pronto" com
-2 páginas soltas; o validador o aceitou porque a faixa é válida, não porque ensina.
+Hoje o sistema sabe **quanto** material existe por assunto (91 de 97 prontos, 15 896 min) e **o
+que não existe** (6 lacunas, com motivo). Não sabe se o que existe **ensina o suficiente**. O
+assunto "Relação do texto com seu contexto histórico" está "pronto" com 2 páginas soltas; o
+validador o aceitou porque a faixa é válida, não porque ensina.
 
-A verificação por prova troca a pergunta. Em vez de "tem PDF sobre o tema?", pergunta
-**"com este material, eu responderia esta questão?"** — usando questões reais da banca,
-que são a medida mais honesta do que a prova vai cobrar.
+A funcionalidade responde a pergunta do objetivo final — **"com este material, eu acertaria
+esta prova?"** — por dois caminhos que se conferem:
 
-**Como saberemos que funcionou.** Dois testes, antes de confiar no número:
+| Face | Pergunta | Natureza |
+|---|---|---|
+| **Cobertura** | O material sustenta a alternativa correta de cada questão? | **Previsão**, feita pela IA, antes de estudar |
+| **Resolução** | O usuário acertou a questão? | **Medida**, feita pelo usuário, depois de estudar |
 
-1. **Ensaio com prova conhecida:** uma prova anterior da FCC (a banca do SEFAZ SC),
-   analisada contra o material atual. O resultado precisa apontar como furos os assuntos
-   que já sabemos furados (Morfossintaxe, Flexão, SC) e não apontar os sólidos.
-2. **Conferência de amostra:** o usuário confere ~20 vereditos à mão. Se o julgamento da IA
-   discorda do usuário em mais de 1 a cada 5, o critério (§5) é ajustado antes de a
-   funcionalidade valer.
+A previsão é barata e vem primeiro; a medida é a verdade. Comparar as duas **por assunto**
+mostra onde a IA errou o julgamento e calibra o critério (§5.3). Se o usuário tira boa nota
+numa prova que a cobertura previa como furada, o julgamento está severo demais; se tira nota
+ruim onde a cobertura previa sólida, o material ensina menos do que parece. **O critério de
+sucesso do sistema é a nota do usuário** — é o que ele pediu.
+
+**Como saberemos que funcionou.**
+
+1. **Ensaio com prova conhecida:** uma prova anterior da FCC (banca do SEFAZ SC) analisada
+   contra o material atual. Os assuntos já sabidamente furados (Morfossintaxe, Flexão, SC)
+   precisam aparecer como furos; os sólidos, não.
+2. **Conferência de amostra:** o usuário confere ~20 vereditos à mão. Se discordar da IA em
+   mais de 1 a cada 5, o critério (§5) é ajustado antes de a funcionalidade valer.
+3. **A nota real**, quando o usuário resolver a prova depois de estudar, contra a cobertura
+   prevista (§6).
 
 ---
 
 ## 2. O que é e o que não é
 
-**É:** um relatório de **cobertura do material sobre uma prova**, por questão, por assunto
-e por disciplina, apontando onde o material do concurso-alvo não sustenta a resposta.
+**É:**
+
+- Um relatório de **cobertura do material sobre uma prova**, por questão, por assunto e por
+  disciplina, apontando onde o material do concurso-alvo não sustenta a resposta correta.
+- Uma **prova hospedada** que o usuário resolve no próprio sistema, que a corrige pelo
+  gabarito e registra a nota.
 
 **Não é:**
 
-- **Um banco de questões.** O SGE não hospeda enunciado, alternativa nem gabarito
-  (`00_PRODUTO` §5.1). Guarda só o **resultado** por questão (§7).
-- **Um corretor.** Não diz que o usuário acertaria; diz que o material **permite** acertar.
-  O usuário continua resolvendo questões na plataforma externa (`00_PRODUTO` §5.1).
-- **Uma garantia de aprovação.** "Gabaritar" é o horizonte, e o relatório mede a distância
-  do material até ele, com a incerteza de um julgamento de IA (§5.3).
-- **Um gerador de material.** Achou furo, o caminho é o que já existe: refazer o material
-  do assunto (D-66) ou indexar apostila nova. Nada é inventado (D-65).
+- **Um banco aberto de questões.** A prova é hospedada para **este fim** (verificar e
+  resolver), não para ser buscada, filtrada ou exportada em massa (P-06).
+- **Uma plataforma de questões.** O usuário continua resolvendo volume na plataforma externa
+  (`00_PRODUTO` §5.1, primeira parte); aqui entra a prova inteira que ele trouxe, uma por vez.
+- **Uma fonte de revisão.** A nota **não gera revisão, não mexe na escada e não muda o turno**
+  (P-12). É medida, não gatilho.
+- **Uma garantia de aprovação.** "Gabaritar" é o horizonte; o relatório mede a distância com a
+  incerteza de um julgamento de IA (§5.3).
+- **Um gerador de material.** Achou furo, o caminho é o que já existe: refazer o material do
+  assunto (D-66) ou indexar apostila nova. Nada é inventado (D-65).
+- **Discursiva ou estudo de caso.** Só prova objetiva (múltipla escolha e certo/errado).
 
 ---
 
@@ -54,36 +77,46 @@ e por disciplina, apontando onde o material do concurso-alvo não sustenta a res
 
 | Termo | Significa |
 |---|---|
-| **Prova** | O PDF de uma prova de concurso (de qualquer ano, qualquer banca) |
-| **Gabarito** | O PDF (ou texto) com a resposta oficial de cada questão; pode chegar depois da prova |
-| **Questão avaliável** | Questão com enunciado em texto, que a IA consegue ler e julgar |
+| **Prova** | A prova objetiva de um concurso (qualquer banca, qualquer ano), hospedada no SGE |
+| **Questão** | Enunciado, alternativas e a resposta do gabarito; pertence a uma prova |
+| **Gabarito** | A resposta oficial de cada questão. **Obrigatório** para julgar e para corrigir |
+| **Tipo da prova** | A versão impressa (Tipo 1, 2...), quando a banca embaralha alternativas. O gabarito é do tipo (§5.5) |
+| **Questão avaliável** | Questão com enunciado em texto e gabarito válido; fora disso, sai do denominador (P-04) |
 | **Atribuição** | O assunto do concurso-alvo ao qual a questão pertence |
-| **Sustentação** | A página (ou faixa) do material do assunto que ensina o necessário para a questão |
+| **Sustentação** | A página do material do assunto que ensina o necessário para justificar a alternativa do gabarito |
 | **Veredito** | `RESPONDIVEL` · `PARCIAL` · `NAO_RESPONDIVEL` (§5.2) |
-| **Furo** | Assunto com questões `PARCIAL` ou `NAO_RESPONDIVEL`, ou questão sem assunto onde atribuir |
-| **Relatório** | O retrato datado do resultado de uma análise de prova |
+| **Furo** | Assunto com questões `PARCIAL` ou `NAO_RESPONDIVEL`, ou questão sem assunto no edital |
+| **Resolução** | O usuário responde a prova no sistema; a correção sai do gabarito |
+| **Nota** | Acertos sobre questões avaliáveis, por disciplina e global |
+| **Relatório** | O retrato datado de cobertura e (quando houver) de nota |
 
 ---
 
-## 4. A jornada (JV-1)
+## 4. As jornadas
+
+### JV-1 · Carregar a prova e verificar o material
 
 Rara — algumas vezes por concurso —, como a J-5: o orçamento é de **atenção**, não de
-segundos. O usuário só carrega o PDF e confere o resultado; o resto é do sistema.
+segundos. O usuário carrega os PDFs e confere; o resto é do sistema.
 
 1. Em **Concursos**, no concurso-alvo, toca **"Verificar com uma prova"**.
-2. Escolhe **"Carregar prova"** (PDF) e, se tiver, **"Carregar gabarito"**. O gabarito pode
-   ser enviado **na mesma hora ou depois**; sem ele a análise roda mesmo assim (§5.4).
-3. O sistema lê a prova e mostra o que achou **antes de gastar IA no julgamento**: nome da
-   prova (corrigível), banca, ano, **quantas questões leu**, quantas não consegue avaliar
-   (imagem, tabela) e, se há gabarito, quantas respostas casaram com questões. É o ponto
-   de conferência, como a proposta do edital (D-62): erro de leitura aqui custa um toque.
-4. Confirma. A análise roda em segundo plano — **a tela pode ser fechada**; ela continua e
-   fica guardada, como a análise de edital. Acompanha em Concursos: "Prova X: 34 de 60
-   questões julgadas".
-5. **Relatório** (§6): o número que importa no topo, os assuntos furados, e cada questão.
-6. Do relatório, o usuário vai direto ao assunto furado: ver o motivo, **refazer o
-   material** ou aceitar. Quando o material mudar (D-66), **"Analisar de novo"** repete só
-   o julgamento, sem reler a prova.
+2. Escolhe **"Carregar prova"** (PDF) e **"Carregar gabarito"** (PDF com texto, ou texto
+   colado) e, se a prova tem versões, informa o **tipo**. As duas entradas ficam na mesma tela;
+   enquanto faltar o gabarito, a prova fica **"aguardando gabarito"**: o sistema **lê** a
+   prova, mas **não julga nem deixa resolver** (P-15).
+3. O sistema lê a prova e mostra o que achou **antes de gastar IA no julgamento**: nome
+   (corrigível), banca, ano, **quantas questões leu**, quantas não consegue avaliar (imagem,
+   tabela, anulada) e **quantas respostas do gabarito casaram** com questões. É o ponto de
+   conferência, como a proposta do edital (D-62): erro de leitura aqui custa um toque.
+4. Revisa só o que vem **duvidoso**: questões que a IA atribuiu com baixa confiança ou que
+   ficaram **sem assunto no edital**. As demais atribuições o usuário não precisa ver.
+5. Confirma. A análise roda em segundo plano — **a tela pode ser fechada**; ela continua e fica
+   guardada, como a análise de edital. Acompanha em Concursos: "Prova X: 34 de 60 questões
+   julgadas".
+6. **Relatório** (§6): o número que importa no topo, os assuntos furados, e cada questão.
+7. Do relatório, vai ao assunto furado: ver o motivo, **refazer o material** ou aceitar. Depois
+   que o material mudar (D-66), **"Analisar de novo"** julga só as questões dos assuntos que
+   mudaram (P-13); a prova **não é relida**.
 
 Falhas que o usuário vê, e o que fazem:
 
@@ -91,8 +124,27 @@ Falhas que o usuário vê, e o que fazem:
 |---|---|
 | PDF é imagem (sem texto) | Recusa na hora: "envie a versão com texto" — como o edital |
 | Leu poucas questões (<50% do esperado) | Mostra e avisa; o usuário decide seguir ou trocar o PDF |
-| IA indisponível / cota da assinatura esgotada | A análise **pausa** e retoma sozinha (ADR-045). Nunca vira veredito |
-| Gabarito não casa com a prova (nº de questões diferente) | Recusa o gabarito, mantém a prova; diz a diferença |
+| Gabarito não casa (nº de questões diferente) | Recusa o gabarito, mantém a prova; diz a diferença |
+| Gabarito de outro tipo da prova | Não há como o sistema ter certeza; ver §5.5 |
+| IA indisponível / cota da assinatura esgotada | A análise **pausa** e retoma sozinha (ADR-045). Nunca vira veredito (P-09) |
+
+### JV-2 · Resolver a prova
+
+Uma prova inteira é um bloco de horas, como o simulado do `00_PRODUTO` §6.7; o usuário a faz
+uma vez, de propósito, e o sistema não a mistura com o estudo diário.
+
+1. Em Concursos, na prova já verificada (ou só lida, com gabarito), toca **"Resolver"**.
+2. Uma questão por tela, uma alternativa por toque; pode **marcar para revisar**, **pular** e
+   **sair e voltar** — o progresso fica guardado, e a mesma tentativa conta uma vez (P-14).
+   Cronômetro opcional, com o tempo da prova.
+3. Toca **"Entregar"**. O sistema corrige **pelo gabarito** (nunca pela IA) e mostra a **nota**:
+   acertos de questões avaliáveis, **por disciplina e global**, sempre com denominador.
+4. O relatório ganha a **nota real** ao lado da cobertura (§6). Cada erro mostra a questão, a
+   alternativa marcada, a correta e — se houve cobertura — a **página que a sustentava**: o
+   caminho do erro até o ponto do material, em um toque.
+
+Orçamento: ≤ 1 s entre uma questão e a seguinte (é só navegação local); entregar e corrigir em
+≤ 3 s.
 
 ---
 
@@ -102,20 +154,32 @@ Falhas que o usuário vê, e o que fazem:
 
 | Etapa | A IA | O sistema |
 |---|---|---|
-| **Leitura** | Separa as questões do PDF: número, enunciado, alternativas | Valida: números sequenciais, sem repetição, alternativas presentes. O que não passa é "não avaliável", declarado |
-| **Atribuição** | Escolhe, dentre os assuntos do concurso-alvo, a qual pertence cada questão; ou "nenhum" | Só aceita assunto que existe na cobertura (como D-63). "Nenhum" vira furo "sem assunto no edital" |
-| **Julgamento** | Lê a questão e o texto dos segmentos do assunto; diz o veredito e **cita a página** | Só aceita citação que existe no segmento. Sem página válida, o veredito cai para `NAO_RESPONDIVEL` |
+| **Leitura** | Separa as questões do PDF: número, enunciado, alternativas; lê o gabarito | Valida: números sequenciais, sem repetição, alternativas presentes, gabarito casando. O que não passa é "não avaliável", declarado |
+| **Atribuição** | Escolhe, dentre os assuntos do concurso-alvo, a qual pertence cada questão, ou "nenhum", com um grau de confiança | Só aceita assunto que existe na cobertura (como D-63). Baixa confiança e "nenhum" vão para a revisão do usuário |
+| **Julgamento** | Lê a questão, a alternativa do gabarito e **trechos** do material do assunto (escolhidos por busca no índice, com o sumário); diz o veredito e **cita a página** | Só aceita citação que existe no segmento. Sem página válida, o veredito cai para `NAO_RESPONDIVEL` |
 
-### 5.2 O veredito
+### 5.2 O veredito — sobre a alternativa do gabarito
+
+O que importa é a **alternativa correta**: as erradas podem usar fatos que não estão em PDF
+nenhum, e isso **não é furo**. O critério é se o material **sustenta a alternativa do gabarito**
+— e, por isso, o enunciado e a resposta oficial entram no pedido à IA.
 
 | Veredito | Quer dizer | Exige |
 |---|---|---|
-| `RESPONDIVEL` | O material do assunto ensina o que a questão pede, de modo suficiente para decidir a alternativa | Página de sustentação válida |
-| `PARCIAL` | Ensina parte; falta um elemento que a questão exige (exceção, valor, conceito vizinho) | Página do que há **e** nota do que falta |
+| `RESPONDIVEL` | O material do assunto ensina o necessário para justificar a alternativa do gabarito | Página de sustentação válida |
+| `PARCIAL` | Ensina parte; falta um elemento que a justificativa exige (exceção, valor, conceito vizinho) | Página do que há **e** nota do que falta |
 | `NAO_RESPONDIVEL` | O material do assunto não traz o necessário | Nota do que falta |
 
-Regra de ouro, como D-65: **na dúvida, o veredito é o pior dos dois.** Prefere-se acusar
-furo falso (custo: o usuário confere) a esconder furo real (custo: a prova).
+Casos que mudam o que "sustentar" quer dizer:
+
+- **"Marque a incorreta"** (ou "errada"): a alternativa do gabarito é a **falsa**. O material
+  sustenta se permite **reconhecê-la como falsa**; não se exige que ensine as outras.
+- **Certo/errado:** a resposta do gabarito é `C` ou `E`; o material sustenta se permite
+  decidir o item nesse sentido.
+- **Cálculo:** o material precisa ensinar o **método**, não só o conceito.
+
+Regra de ouro, como D-65: **na dúvida, o veredito é o pior dos dois.** Prefere-se acusar furo
+falso (custo: o usuário confere) a esconder furo real (custo: a prova).
 
 ### 5.3 O limite honesto
 
@@ -124,20 +188,41 @@ vinculantes:
 
 - O relatório mostra sempre o **denominador** (princípio 9 do `00_PRODUTO`): "42 de 58
   questões avaliáveis", nunca só "72%".
-- Cada questão no relatório mostra a **sustentação** (página). O usuário pode abrir o PDF
-  e discordar com um toque; o número nunca é uma caixa-preta.
+- Cada questão mostra a **sustentação** (página). O usuário abre o PDF e discorda com um toque;
+  o número nunca é uma caixa-preta.
 
-### 5.4 Com e sem gabarito
+A **nota real** (JV-2) é o que corrige o julgamento ao longo do tempo: onde cobertura e nota
+discordam por assunto, o relatório mostra a discordância, e a conferência de amostra (§1)
+fica mais barata do que antes de existir resolução.
 
-| | Sem gabarito | Com gabarito |
-|---|---|---|
-| Pergunta | O material cobre o assunto da questão? | O material **leva à alternativa correta**? |
-| Veredito | `RESPONDIVEL` / `PARCIAL` / `NAO_RESPONDIVEL` | Os mesmos, mais `leva_a_resposta`: `SIM` / `NAO` / `INDETERMINADO` |
-| Custo | Uma chamada por questão | A mesma chamada (a resposta oficial entra no pedido) |
+### 5.4 Reanálise incremental
 
-O gabarito **refina**, não substitui: uma questão `RESPONDIVEL` cujo material leva à
-alternativa errada é o furo mais perigoso (o material **ensina errado ou incompleto**), e só
-aparece com gabarito. Questão **anulada** ou sem gabarito sai do denominador, declarada.
+O material muda (D-66, indexação nova). Reler a prova não adianta — o texto é o mesmo —; o que
+muda é **o julgamento dos assuntos cujo material mudou**.
+
+- Um assunto **mudou** se tem segmento ativo **criado ou arquivado depois** do veredito vigente
+  das suas questões. É **derivado** dos segmentos (D-16): nenhuma coluna nova, nenhum "sujo".
+- **"Analisar de novo"** julga de novo **só** as questões desses assuntos, e cada uma ganha um
+  veredito **novo**; o anterior permanece (D-18).
+- A **leitura** da prova roda **uma vez**. O enunciado já está no SGE, então a reanálise nem
+  toca o PDF.
+
+Custo proporcional à mudança, e não à prova: refazer o material de um assunto reabre
+algumas questões, não 60.
+
+### 5.5 O tipo da prova (risco real)
+
+Bancas como a FCC imprimem a prova em **tipos**, com alternativas embaralhadas e um gabarito
+**por tipo**. Gabarito do tipo errado faz o julgamento inteiro apontar a alternativa errada,
+**em silêncio**, e a correção da JV-2 marcar certo o que o usuário errou. Proteções propostas:
+
+- O usuário informa o **tipo** na entrada; o gabarito é associado a ele.
+- Na conferência (JV-1, passo 3), o sistema **sorteia 3 questões** e mostra enunciado, alternativa
+  do gabarito e o veredito inicial, para o olho do usuário pegar uma troca grosseira.
+- A reanálise não esconde o tipo: ele aparece no relatório.
+
+Se o PDF da prova traz um único tipo (caso comum de provas já publicadas com tipo único), a
+pergunta some. Ver §10.
 
 ---
 
@@ -145,63 +230,74 @@ aparece com gabarito. Questão **anulada** ou sem gabarito sai do denominador, d
 
 De cima para baixo, o que o usuário precisa para decidir:
 
-1. **O número:** "Material sustenta **42 de 58** questões avaliáveis · 9 parciais · 7 não",
-   da prova X, analisada em 17/10/2026 contra o material daquela data.
-2. **Por disciplina:** a mesma contagem, na ordem do edital.
-3. **Assuntos furados:** os assuntos com `PARCIAL`/`NAO_RESPONDIVEL`, do mais furado ao
-   menos, cada um com quantas questões da prova caem nele — e o que faltou. Mais os
-   **assuntos sem nenhuma questão** na prova (informação, não furo).
-4. **Questões sem assunto no edital:** a prova cobra algo que o edital não lista.
-5. **Cada questão:** número, assunto atribuído, veredito, página de sustentação, e (com
-   gabarito) `leva_a_resposta`. Sem enunciado (§7).
+1. **O número de cobertura:** "Material sustenta **42 de 58** questões avaliáveis · 9 parciais ·
+   7 não", da prova X, analisada em 17/10/2026 contra o material daquela data.
+2. **A nota real**, se resolvida: "Você acertou **38 de 58**". Ao lado do número de cobertura.
+3. **Por disciplina:** cobertura e nota, na ordem do edital.
+4. **Assuntos furados:** os com `PARCIAL`/`NAO_RESPONDIVEL`, do mais furado ao menos, cada um
+   com quantas questões da prova caem nele e o que faltou. Mais os **assuntos sem nenhuma
+   questão** na prova (informação, não furo).
+5. **Onde cobertura e nota discordam**, por assunto: prevista sólida e errada (o material ensina
+   menos do que parece) ou prevista furada e acertada (o julgamento está severo). Só quando há
+   as duas medidas; **informação, não gatilho** (P-12).
+6. **Questões sem assunto no edital:** a prova cobra algo que o edital não lista.
+7. **Cada questão:** número, assunto atribuído, veredito, página de sustentação e, se resolvida,
+   o que o usuário marcou.
 
-O que **não** faz nesta fase: reordenar o turno, criar revisão ou mudar peso por causa do
-relatório (§10, pergunta 7).
+O desempenho **por assunto** é sempre informação. O que entra em M-1 é a nota por **disciplina**
+e a global (P-12).
 
 ---
 
-## 7. O que o SGE guarda e o que não guarda
+## 7. O que o SGE guarda
 
 Conceitual; coluna e índice são do documento de banco da sprint, depois.
 
 | Guarda | Não guarda |
 |---|---|
-| A **análise de prova**: concurso, nome, banca, ano, estado, quando | Enunciado, alternativas, texto da prova |
-| Por questão: número, assunto atribuído, veredito, página de sustentação, nota do que falta, `leva_a_resposta` | O gabarito oficial (guarda só se casou) |
-| Retratos antigos: reanalisar gera um **relatório novo**, o anterior fica (D-18) | Qualquer coisa que reconstitua a prova |
+| A **prova**: concurso-alvo, nome, banca, ano, tipo, estado, quando | Nada que reconstitua uma prova fora do contexto dela (P-06) |
+| As **questões**: número, enunciado, alternativas, gabarito, se avaliável e por quê | Uma busca ou lista de questões fora de uma prova |
+| A **atribuição** de cada questão a um assunto, e se o usuário a corrigiu | |
+| O **veredito**: por questão, com página, nota do que falta e quando; um por rodada | |
+| A **resolução**: respostas do usuário, tentativa, tempo, entrega | |
+| A **nota**, derivada das respostas e do gabarito: **não** é persistida (D-16) | |
 
-O veredito é **fato registrado**, não derivado (D-16 vale para o que se calcula dos
-segmentos; aqui há um julgamento externo, como a lacuna de D-65). O percentual e as
-contagens **são derivados** do veredito, nunca persistidos.
+Veredito é **fato registrado** (um julgamento externo, como a lacuna de D-65); a nota e as
+contagens do relatório são **derivadas** do veredito e das respostas, nunca persistidas.
 
-**Onde o enunciado vive durante o trabalho:** no diretório de trabalho do planejamento, que
-é do worker. O SGE nunca o recebe. Quando a análise termina, o planejamento descarta o
-texto (pergunta 3).
+**Planejamento e SGE.** O planejamento **lê o PDF** e entrega as questões ao SGE por uma rota
+interna, como entrega os segmentos; o SGE guarda. Para julgar, o planejamento **pede as questões
+ao SGE**, e o trecho do material vem do índice dele. O planejamento **não guarda enunciado**:
+tudo que a reanálise precisa já está no SGE.
 
 ---
 
 ## 8. Regras propostas
 
-Numeração provisória `P-xx`, para não colidir com as D-xx; ao migrar para o
-`01_DOMINIO` §10 viram D-67 em diante. Cada uma diz como se garante (§4 do
-`03_INVARIANTES`).
+Numeração provisória `P-xx`, para não colidir com as D-xx; ao migrar para o `01_DOMINIO` §10
+viram D-67 em diante. Cada uma diz como se garante (`03_INVARIANTES` §4).
 
 | Id | Regra | Natureza provável |
 |---|---|---|
-| P-01 | A IA lê e julga; o **sistema** valida, conta e calcula. Contagem e percentual saem de regra fixa, nunca da IA (como D-61) | Política no serviço |
-| P-02 | **Nada é inventado:** veredito `RESPONDIVEL` exige página de sustentação que exista no segmento do assunto; citação inexistente rebaixa para `NAO_RESPONDIVEL` | Validação no serviço + teste |
+| P-01 | A IA lê e julga; o **sistema** valida, conta e calcula. Contagem e nota saem de regra fixa, nunca da IA (como D-61) | Política no serviço |
+| P-02 | **Nada é inventado:** `RESPONDIVEL` exige página de sustentação **da alternativa do gabarito** que exista no segmento do assunto; citação inexistente rebaixa para `NAO_RESPONDIVEL` | Validação no serviço + teste |
 | P-03 | **Na dúvida, o pior veredito** | Instrução à IA + teste de calibragem |
-| P-04 | Questão não avaliável (imagem, tabela, anulada) sai do denominador **e é declarada** no relatório | Serviço |
-| P-05 | **Denominador sempre** exibido junto de qualquer percentual | Interface + teste |
-| P-06 | O SGE **não persiste** enunciado, alternativa nem gabarito (`00_PRODUTO` §5.1) | Estrutura: o contrato da rota não tem o campo; teste estrutural |
-| P-07 | **Nada é apagado:** reanalisar cria relatório novo; o antigo permanece (D-18) | Persistência (sem caminho de remoção) |
+| P-04 | Questão não avaliável (imagem, tabela, anulada, sem gabarito) sai do denominador **e é declarada** | Serviço |
+| P-05 | **Denominador sempre** exibido junto de qualquer percentual ou nota | Interface + teste |
+| P-06 | A prova hospedada serve **só à verificação e à resolução**: nenhuma rota lista, busca ou exporta questões fora do contexto de uma prova. O SGE **não vira banco aberto de questões** | Estrutura: o contrato não tem a rota; teste estrutural |
+| P-07 | **Nada é apagado:** reanalisar cria veredito novo e o anterior permanece; resposta e entrega também ficam (D-18) | Persistência (sem caminho de remoção) |
 | P-08 | A atribuição só aceita assunto da **cobertura do concurso-alvo** (como D-63); "nenhum" é resposta válida e vira furo | Serviço |
 | P-09 | **Indisponibilidade da IA não é veredito:** a análise pausa e retoma (ADR-045); nunca grava `NAO_RESPONDIVEL` por falha | Serviço + teste |
-| P-10 | O relatório é um **retrato datado** contra o material vigente naquela data; mudar o material não altera relatórios antigos | Persistência |
+| P-10 | O veredito é um **retrato datado** contra o material vigente naquela data; mudar o material não altera vereditos antigos, só motiva um novo | Persistência |
 | P-11 | A prova é sempre avaliada contra a cobertura do **concurso-alvo** | Serviço |
+| P-12 | A nota entra em **M-1 por disciplina e global**, como o simulado do `00_PRODUTO` §6.7; o desempenho por assunto **só informa**: não gera revisão, não toca a escada, não muda o turno | Serviço + teste de ausência (nenhuma sessão é criada) |
+| P-13 | **Reanálise incremental:** um assunto mudou se tem segmento ativo criado ou arquivado depois do veredito vigente das suas questões; "Analisar de novo" julga só essas questões. Derivado dos segmentos (D-16), sem coluna nova | Derivação + teste com data congelada |
+| P-14 | **A mesma tentativa de resolução conta uma vez** (identificador gerado no cliente ao abrir a tela, como D-45). A **correção é do sistema, pelo gabarito**, nunca da IA | Persistência (unicidade) + serviço |
+| P-15 | **Sem gabarito, a prova não é julgada nem resolvida:** fica "aguardando gabarito"; a leitura segue | Serviço |
+| P-16 | O gabarito tem o **tipo** da prova; gabarito de nº de questões diferente é recusado | Serviço |
 
-P-06 é a que mais custa se esquecida: é ela que impede esta funcionalidade de virar,
-por acidente, o banco de questões que o produto decidiu não ser.
+P-06 é a que mais custa se esquecida: é ela que impede esta funcionalidade de virar, por
+acidente, o banco de questões que o produto escolheu não ser.
 
 ---
 
@@ -209,33 +305,50 @@ por acidente, o banco de questões que o produto decidiu não ser.
 
 | Requisito | Meta proposta | Por quê |
 |---|---|---|
-| **Custo de IA** | ≤ ~1 chamada por questão no julgamento + 1 por lote de ~10 na atribuição; prova de 60 questões ≈ 70 chamadas | A cota da assinatura é o recurso escasso (`memória do projeto`: IA só na preparação) |
-| **Tempo** | Prova de 60 questões em até ~30 min, sem o usuário esperar | Roda em segundo plano, como o material |
+| **Custo de IA** | Julgamento ≈ 1 chamada por questão; atribuição ≈ 1 por lote de ~10; prova de 60 questões ≈ 70 chamadas, uma vez. Reanálise: só o que mudou | A cota da assinatura é o recurso escasso |
+| **Tempo** | Prova de 60 questões em até ~30 min, em segundo plano | Como o material |
 | **Memória no Pi** | Dentro do teto do worker (768 MB, `03E_DEPLOYMENT` §8C) | O Pi 4B tem 4 GB para tudo |
-| **Retomada** | Reiniciar o worker no meio retoma de onde parou, sem repetir questão julgada | O worker já se reinicia (deploy) |
-| **Idempotência** | Reenviar a mesma prova (mesmo hash) não duplica a análise | Como D-45 |
-| **Tamanho** | PDF de prova até o mesmo limite do edital | Consistência |
+| **Retomada** | Reiniciar o worker no meio retoma de onde parou, sem repetir questão julgada | O worker já se reinicia no deploy |
+| **Idempotência** | Reenviar a mesma prova (mesmo hash) não duplica | Como D-45 |
+| **Resolução** | Navegação local; resposta gravada ao tocar; sair e voltar não perde nada | Provas de 3 a 4 horas |
+| **Tamanho** | PDF até o mesmo limite do edital | Consistência |
 
 ---
 
-## 10. Perguntas em aberto — para definir os requisitos
+## 10. Pontos de requisito
 
-Cada uma com a recomendação, para decidir rápido.
+### 10.1 Decididos
 
-| # | Pergunta | Recomendação |
+| # | Ponto | Decisão |
 |---|---|---|
-| 1 | A prova é avaliada só contra o **concurso-alvo**, ou também contra o de histórico? | Só o alvo (P-11). Simples, e é o que importa para a prova que vem |
-| 2 | Quais **bancas/anos** servem de prova de referência? Qualquer? | Qualquer; o usuário escolhe. Ideal: provas anteriores da banca do alvo (FCC) |
-| 3 | O texto da prova (enunciado) fica **descartado** após a análise, ou o planejamento o guarda para reanalisar sem recarregar o PDF? | Guardar no **planejamento** (não no SGE), para "Analisar de novo" sem reenviar; apagar por ação do usuário |
-| 4 | **Várias provas** juntas? (ex.: 3 anos da FCC e um relatório consolidado) | Fora da primeira entrega; um relatório por prova. Consolidado é Sprint seguinte |
-| 5 | O relatório mostra **o trecho do enunciado** ao usuário, ou só número + assunto + página? | Só número + assunto + página: o usuário tem a prova em PDF. Mostrar enunciado é o primeiro passo para hospedá-lo |
-| 6 | A IA julga com o **texto completo** dos segmentos do assunto ou com trechos? Segmentos podem ter 200+ páginas | Trechos escolhidos por busca no índice, mais o sumário; texto completo estoura contexto e cota |
-| 7 | O resultado **influencia o turno** (reforçar assunto furado, subir prioridade)? | Não nesta fase. Primeiro mostrar o relatório e ver se o número é confiável; ligar ao turno é decisão separada |
-| 8 | **Meta de "gabaritar"**: definir um limiar (ex.: ≥ 90%) que o relatório compara? | Não definir; mostrar o número e a distância à nota de corte quando a Sprint 23 existir |
-| 9 | Prova **discursiva** ou de estudo de caso? | Fora: só objetiva (múltipla escolha, certo/errado) |
-| 10 | O **gabarito** tem formatos variados (PDF da banca, tabela, texto colado). Quais aceitar? | PDF com texto e **texto colado**. Imagem não |
-| 11 | Quem gera a atribuição e o julgamento é a **mesma IA/modelo** da preparação do material? | Sim, mesma assinatura; mas o modelo pode ser escolhido em Ajustes |
-| 12 | Número da Sprint e posição no mapa | Antes da 20 (Diagnóstico de edital)? Depende de quanto o usuário valoriza o veredito diante da prova de 22/11/2026 |
+| 1 | Contra qual concurso | Só o **alvo** (P-11) |
+| 2 | Bancas e anos | Qualquer; o usuário escolhe |
+| 3 | Onde mora o texto | **No SGE** (mudou da v0.1.0): o planejamento lê e entrega |
+| 4 | Várias provas juntas | Fora da primeira entrega: um relatório por prova; consolidado, sprint seguinte |
+| 5 | Relatório mostra enunciado | **Sim, e o usuário resolve a prova** (mudou) |
+| 6 | Texto completo ou trechos | **Trechos** por busca no índice, mais o sumário |
+| 7 | Influencia o turno | **Não** nesta fase (P-12) |
+| 8 | Limiar de "gabaritar" | Não definir; mostrar número e distância à nota de corte quando a Sprint 23 existir |
+| 9 | Discursiva | Fora: só objetiva |
+| 10 | Formatos de gabarito | PDF com texto e texto colado; imagem não |
+| 11 | Qual IA | A mesma assinatura da preparação; modelo escolhido em Ajustes |
+| 12 | Prazo | **Nenhum.** O usuário não fará a prova de 22/11/2026 e usa o sistema para começar a estudar em 2027 |
+| 13 | Gabarito | **Obrigatório** (P-15) |
+| 14 | Reanálise | **Incremental por assunto** (P-13) |
+| 15 | O que a nota alimenta | Disciplina e global (M-1); assunto só informa (P-12) |
+
+### 10.2 Abertos — para decidir antes de implementar
+
+| # | Ponto | Recomendação |
+|---|---|---|
+| A | **Tipo/versão da prova** (§5.5): o usuário informa o tipo? Como evitar gabarito do tipo errado em silêncio? | Informar o tipo na entrada, mais o sorteio de 3 questões na conferência |
+| B | **Revisão da atribuição:** só o duvidoso, ou todas? | Só o duvidoso (baixa confiança e "sem assunto"), para não pedir revisão de 100 questões |
+| C | **Resolver antes de verificar:** o usuário pode resolver a prova sem a cobertura ter rodado? | Sim, desde que haja gabarito; a cobertura se junta depois |
+| D | **Cronômetro:** obrigatório, opcional ou nenhum? | Opcional, com o tempo da prova; o resultado marca se foi cronometrado |
+| E | **Resolver mais de uma vez** a mesma prova | Cada tentativa é um registro; a nota que entra em M-1 é a **primeira** (as seguintes já têm memória da prova), as outras ficam como informação |
+| F | **Posição no mapa:** sprint própria ou fundida com a 23 (simulado no formato da prova, com nota de corte) | A resolução (JV-2) é o simulado da Sprint 23; a cobertura (JV-1) pode sair antes. Decidir depois de aprovados os requisitos |
+| G | **Direitos da prova:** uso pessoal de provas públicas de banca, um usuário só | Registrar no ADR que o conteúdo é do usuário e não é redistribuído |
+| H | **Tempo e custo da primeira prova** | Medir no ensaio da FCC antes de fixar as metas da §9 |
 
 ---
 
@@ -244,11 +357,16 @@ Cada uma com a recomendação, para decidir rápido.
 | Parte | Dono | Documento |
 |---|---|---|
 | Para que serve, métrica, não-objetivo | `00_PRODUTO` | §7 (métrica), §11 (decisão vinculante) |
-| Glossário e regras P-01 a P-11 | `01_DOMINIO` | §3 (nova subseção), §10 (D-67+) |
-| Jornada JV-1 e falhas | `02_JORNADAS` | nova jornada, ao lado da J-5 |
+| **Revisões necessárias** | `00_PRODUTO` | **§5.1** ("o sistema não faz: hospeda enunciado, alternativa ou gabarito; corrige questão") e **§6.7** ("não há atribuição confiável por assunto"), mais as decisões vinculantes nº 2 ("a recuperação acontece fora") e nº 15 ("simulado não é sessão") |
+| Glossário e regras P-01 a P-16 | `01_DOMINIO` | §3 (nova subseção), §10 (D-67+) |
+| Jornadas JV-1 e JV-2, falhas, orçamento | `02_JORNADAS` | novas jornadas, ao lado da J-5 |
 | Quem garante P-xx e como se testa | `03_INVARIANTES` | §3 e §9 |
-| Por que no planejamento, sem guardar enunciado | `docs/00A_ADR.md` | ADR novo |
-| Tabelas, endpoints, formato do enunciado no worker | documento da sprint | nasce quando a sprint começar |
+| Por que hospedar a prova; por que o §6.7 muda; direitos | `docs/00A_ADR.md` | ADR novo |
+| Tabelas, endpoints, formato do enunciado | documento da sprint | nasce quando a sprint começar |
+
+**Sobreposição com o mapa.** A linha da **Sprint 23** ("simulado no formato da prova, com nota de
+corte") cobre a resolução (JV-2). Quando os requisitos forem aprovados, ou a Sprint 23 absorve a
+JV-2, ou esta funcionalidade ganha a sua e a 23 perde essa parte (ponto F).
 
 Nada de coluna, endpoint ou formato de arquivo entra aqui (segunda regra do projeto: a
 documentação técnica nasce com a sprint).
@@ -259,4 +377,5 @@ documentação técnica nasce com a sprint).
 
 | Versão | Data | Mudança |
 |---|---|---|
-| 0.1.0 | 2026-10-17 | Rascunho inicial, a partir do pedido do usuário. Decisões já tomadas: planejamento, sem guardar enunciado, IA por questão, prova e gabarito carregados separadamente |
+| 0.2.0 | 2026-10-18 | Respostas do usuário aos pontos em aberto. Gabarito obrigatório e critério sobre a alternativa do gabarito (§5.2). O SGE hospeda a prova e o usuário a resolve (JV-2); revisa `00_PRODUTO` §5.1 e §6.7. Nota alimenta disciplina e global, assunto só informa (P-12). Reanálise incremental derivada dos segmentos (P-13). Regras P-12 a P-16. Pontos decididos e abertos separados (§10) |
+| 0.1.0 | 2026-10-17 | Rascunho inicial: prova só no planejamento, gabarito opcional, IA por questão |
