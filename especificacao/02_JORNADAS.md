@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.13.0 |
+| Versão | 1.14.0 |
 | Data | 2026-10-15 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -399,7 +399,10 @@ ainda custa um toque, e não meses.
    acervo · 25 a preparar", e cada assunto sem material no acervo mostra o
    motivo no detalhe. Nada a fazer — é só acompanhamento. Se o material de um
    assunto vier ruim, o detalhe dele tem **Refazer o material**; Concursos tem o
-   mesmo para o concurso inteiro, com confirmação (`01_DOMINIO` D-66).
+   mesmo para o concurso inteiro, com confirmação (`01_DOMINIO` D-66). **Ver por
+   assunto** abre a lista do concurso-alvo: cada assunto com a situação do
+   material, quantos segmentos, quantos minutos e páginas de leitura, e, nos que
+   o acervo não ensina, o motivo; um filtro mostra só os sem material.
 
 A IA fica em **Ajustes → IA** (ADR-045): o token da **assinatura do Claude**
 (gerado uma vez com `claude setup-token`) e o modelo, e, como segunda opção, a
@@ -642,6 +645,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.14.0 | 2026-10-17 | J-5 passo 7: lista do material por assunto (situação, minutos, páginas, motivo) |
 | 1.13.0 | 2026-10-17 | J-5 passo 7: refazer o material de um assunto ou do concurso (D-66) |
 | 1.12.0 | 2026-10-17 | J-5: IA pela assinatura do Claude, OpenRouter como segunda opção; aviso quando a assinatura para, e a troca é sempre decisão do usuário (ADR-045) |
 | 1.11.0 | 2026-10-17 | Pedido do usuário. J-5 ganha o passo 7: depois de confirmar, o material é preparado sozinho e Concursos mostra o andamento (`01_DOMINIO` §3.10). Chave e modelo de IA passam a ser cadastrados em Ajustes. O caminho pelo Drive vira legado (ADR-044) |

@@ -33,6 +33,19 @@ public interface SegmentoRepository extends JpaRepository<Segmento, Long> {
         """)
     List<Object[]> contarPorAssunto(@Param("assuntoIds") Collection<Long> assuntoIds);
 
+    // Material por assunto (docs/SPRINT-19-MATERIAL-AUTOMATICO.md §5A): minutos e
+    // páginas dos segmentos ativos. A soma ignora nulos; página só conta com as duas pontas.
+    @Query("""
+        select s.assunto.id,
+               coalesce(sum(s.tempoEstimadoMin), 0),
+               coalesce(sum(case when s.paginaInicial is not null and s.paginaFinal is not null
+                                 then s.paginaFinal - s.paginaInicial + 1 else 0 end), 0)
+        from Segmento s
+        where s.assunto.id in :assuntoIds and s.arquivadoEm is null
+        group by s.assunto.id
+        """)
+    List<Object[]> somarVolumePorAssunto(@Param("assuntoIds") Collection<Long> assuntoIds);
+
     // Exportação (§5 do doc técnico): join fetch pra ler a chaveExterna do
     // assunto sem N+1 (mesmo cuidado de AssuntoRepository.listarParaExportacao).
     @Query("""

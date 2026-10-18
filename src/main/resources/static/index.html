@@ -860,6 +860,34 @@
               <button type="button" x-show="ativo.material && (ativo.material.prontos + ativo.material.semMaterial) > 0"
                       class="mt-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-primary-700 hover:bg-gray-50"
                       :disabled="refazendo" @click="refazerMaterial(ativo)">Refazer o material do concurso</button>
+              <!-- SPRINT-19 §5A: o material de cada assunto, e o motivo de quem ficou sem -->
+              <button type="button" x-show="ativo.material"
+                      class="mt-2 ml-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-primary-700 hover:bg-gray-50"
+                      :disabled="carregandoLista" @click="verPorAssunto(ativo)"
+                      x-text="porAssunto ? 'Fechar a lista' : 'Ver por assunto'"></button>
+              <template x-if="porAssunto">
+                <div class="mt-3 border-t border-gray-100 pt-3">
+                  <label class="mb-2 flex items-center gap-2 text-sm text-gray-700">
+                    <input type="checkbox" x-model="soSemMaterial"> Só os sem material
+                  </label>
+                  <p x-show="gruposMaterial.length === 0" class="text-sm text-gray-500">Nenhum assunto nesta lista.</p>
+                  <template x-for="g in gruposMaterial" :key="g.disciplina">
+                    <div class="mb-3">
+                      <h3 class="text-xs font-medium uppercase text-gray-500" x-text="g.disciplina"></h3>
+                      <ul class="mt-1 space-y-1">
+                        <template x-for="a in g.assuntos" :key="a.assuntoId">
+                          <li class="text-sm">
+                            <span x-text="a.assunto"></span>
+                            <span class="block text-xs"
+                                  :class="a.situacao === 'SEM_MATERIAL' ? 'text-red-700' : (a.situacao === 'A_PREPARAR' ? 'text-gray-500' : 'text-gray-600')"
+                                  x-text="textoAssuntoMaterial(a)"></span>
+                          </li>
+                        </template>
+                      </ul>
+                    </div>
+                  </template>
+                </div>
+              </template>
             </div>
           </template>
           <template x-if="!ativo">

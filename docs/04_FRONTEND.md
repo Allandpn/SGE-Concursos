@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.15.0 |
+| Versão | 1.16.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -713,7 +713,9 @@ documento da sprint).
   lista do OpenRouter e o preço por milhão de tokens, "Salvar IA". A lista é auxiliar: sem
   ela, o modelo em uso continua no seletor.
 - **Concursos:** no concurso-alvo, "Material: N de M prontos · K sem material no acervo ·
-  R a preparar". Só acompanhamento, sem ação.
+  R a preparar". Só acompanhamento, sem ação. **Ver por assunto** (`SPRINT-19` §5A) abre a
+  lista por disciplina com situação, segmentos, minutos, páginas e o motivo das lacunas, e o
+  filtro "Só os sem material".
 - **Assunto → detalhe:** sem segmento e com lacuna registrada, "Sem material no acervo:
   <motivo>" (D-65).
 - **"Abrir material"** (Hoje e detalhe) aceita link `http(s)` (legado do Drive) ou caminho
@@ -817,6 +819,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.16.0 | 2026-10-17 | §7K: Concursos — lista do material por assunto |
 | 1.15.0 | 2026-10-17 | §7K: refazer o material do assunto e do concurso (D-66) |
 | 1.14.0 | 2026-10-17 | §7K: IA pela assinatura do Claude e o aviso de assinatura parada em Hoje, Concursos e Ajustes (ADR-045) |
 | 1.13.0 | 2026-10-17 | §7K, Sprint 19: Ajustes → IA (chave e modelo), andamento do material em Concursos, lacuna no detalhe do assunto, "Abrir material" com PDF servido pelo SGE |

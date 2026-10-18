@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.2.0 |
+| Versão | 1.3.0 |
 | Data | 2026-10-17 |
 | Status | Vigente — em andamento |
 | Especificação conceitual | `01_DOMINIO.md` v1.24.0 (§3.8, §3.9, §3.10, D-64, D-65), `02_JORNADAS.md` v1.11.0 (J-5), `03_INVARIANTES.md` v1.12.0 |
@@ -156,6 +156,32 @@ senão **a preparar**.
 - `GET /api/assuntos/{id}/lacuna` → `{motivo, registradaEm}` ou `404` — mostrado no
   detalhe do assunto quando não há segmento.
 
+## 5A. Material por assunto (derivado, D-16)
+
+Pedido do usuário em 2026-10-17, depois da primeira preparação real: ver **quais assuntos
+estão sem material** e **quanto material cada assunto tem**. Nenhuma coluna nova, nenhuma
+regra de domínio nova: tudo sai dos segmentos ativos e da lacuna ativa.
+
+`GET /api/concursos/{id}/material` → lista dos assuntos ativos da cobertura, na ordem do
+edital (disciplina, depois ordem):
+
+| Campo | Valor |
+|---|---|
+| `assuntoId`, `disciplina`, `assunto` | identificação |
+| `situacao` | `PRONTO` · `SEM_MATERIAL` · `A_PREPARAR` (§5) |
+| `segmentos` | quantidade de segmentos ativos |
+| `minutos` | soma de `tempoEstimadoMin` dos segmentos ativos (os sem estimativa contam 0) |
+| `paginas` | soma de `paginaFinal - paginaInicial + 1` dos segmentos que têm as duas |
+| `motivo` | o motivo da lacuna, só em `SEM_MATERIAL`; nulo nos demais |
+
+Concurso inexistente: `404 CONCURSO_INEXISTENTE`. Segmento arquivado (D-66) e lacuna
+descartada não entram. Duas consultas para o conjunto inteiro, como em §5.
+
+**Tela (Concursos, no alvo):** a linha "Material: N de M…" ganha **Ver por assunto**; abre a
+lista agrupada por disciplina, cada assunto com a situação, "N segmentos · X min · Y págs." e,
+nos sem material, o motivo. Os sem material vêm primeiro dentro da disciplina e há um filtro
+"Só os sem material". Só acompanhamento, sem ação.
+
 ## 6. Material servido pelo SGE
 
 `/material/**` → diretório `estudos.material.dir` (`MATERIAL_DIR`, padrão
@@ -183,6 +209,7 @@ fora do diretório não resolve). O `arquivo` do segmento passa a ser o caminho
 | `MaterialAutomaticoTest.lacunaAparece_segmentoVence` / `lacunaSemMotivo_ou_assuntoInexistente_recusa` | D-65 |
 | `MaterialAutomaticoTest.serveDoDiretorio_naoSaiDele` | §6 |
 | `MaterialAutomaticoTest.semAjuste_valeOAmbiente_eAChaveNuncaVolta` / `cadastrarChaveEModelo_passaAValerSemReiniciar` / `chaveCurta_recusa` / `modelos_ordenadosComPrecoPorMilhao` | §3 |
+| `MaterialPorAssuntoTest.listaNaOrdemDoEdital_comSituacaoMinutosEPaginas` / `lacunaMostraOMotivo_segmentoVence` / `arquivadoELacunaDescartadaNaoEntram` / `concursoInexistente_404` | §5A |
 | `ConcursoTest.d58_segundoAtivoRecusadoPelaEscrita` | agora com `slug` — a V13 o torna obrigatório |
 
 ## 9. Fora desta fase
@@ -194,6 +221,7 @@ O worker (Fase B, repositório do planejamento) e o compose/volumes/limites no P
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-10-17 | §5A: material por assunto (situação, segmentos, minutos, páginas, motivo) e a lista em Concursos |
 | 1.2.0 | 2026-10-17 | §3B: refazer o material (D-66), V15 |
 | 1.1.0 | 2026-10-17 | §3A: IA pela assinatura do Claude (ADR-045), OpenRouter por escolha do usuário depois de aviso |
 | 1.0.0 | 2026-10-17 | Criado (Fase A) |

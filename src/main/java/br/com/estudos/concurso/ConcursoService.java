@@ -134,6 +134,33 @@ public class ConcursoService {
             concurso.getDataProva(), assuntos);
     }
 
+    /**
+     * Material de cada assunto ativo da cobertura, na ordem do edital (SPRINT-19 §5A).
+     * Tudo derivado dos segmentos e da lacuna ativos (D-16); só leitura.
+     */
+    @Transactional(readOnly = true)
+    public List<MaterialAssuntoResponse> materialPorAssunto(Long id) {
+        concursoRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Concurso não encontrado.", "CONCURSO_INEXISTENTE"));
+        var cobertura = coberturaRepository.listarDoConcurso(id).stream()
+            .filter(c -> c.getAssunto().isAtivo())
+            .toList();
+        var ids = cobertura.stream().map(c -> c.getAssunto().getId()).toList();
+        var estados = materialService.estados(ids);
+        var volumes = materialService.volumes(ids);
+        return cobertura.stream()
+            .map(c -> {
+                var assuntoId = c.getAssunto().getId();
+                var estado = estados.get(assuntoId);
+                var volume = volumes.getOrDefault(assuntoId, new MaterialService.Volume(0, 0));
+                var semMaterial = estado.situacao() == MaterialService.Situacao.SEM_MATERIAL;
+                return new MaterialAssuntoResponse(
+                    assuntoId, c.getDisciplina().getNome(), c.getAssunto().getNome(), estado.situacao(),
+                    estado.segmentos(), volume.minutos(), volume.paginas(), semMaterial ? estado.lacuna() : null);
+            })
+            .toList();
+    }
+
     /** D-66 — refaz o material de todo assunto ativo da cobertura do concurso. */
     @Transactional
     public void refazerMaterial(Long id) {

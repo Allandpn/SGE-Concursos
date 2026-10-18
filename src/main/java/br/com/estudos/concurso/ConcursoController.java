@@ -45,6 +45,12 @@ public class ConcursoController {
         return concursoService.paraPlanejamento(id);
     }
 
+    @GetMapping("/{id}/material")
+    @Operation(summary = "Material de cada assunto do concurso", description = "Na ordem do edital: situação (pronto, sem material, a preparar), segmentos, minutos, páginas e, nos sem material, o motivo da lacuna. Derivado; só leitura.")
+    public List<MaterialAssuntoResponse> materialPorAssunto(@PathVariable Long id) {
+        return concursoService.materialPorAssunto(id);
+    }
+
     @PostMapping("/{id}/material/refazer")
     @Operation(summary = "Refazer o material do concurso (D-66)", description = "Arquiva segmentos e descarta lacunas de todo assunto da cobertura; o planejamento prepara de novo. Nada é apagado.")
     public ConcursoResponse refazerMaterial(@PathVariable Long id) {

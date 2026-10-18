@@ -69,6 +69,19 @@ public class MaterialService {
         return estados;
     }
 
+    public record Volume(long minutos, long paginas) {}
+
+    /** §5A — minutos e páginas de leitura por assunto; assunto sem segmento fica fora do mapa. */
+    @Transactional(readOnly = true)
+    public Map<Long, Volume> volumes(Collection<Long> assuntoIds) {
+        var volumes = new HashMap<Long, Volume>();
+        if (assuntoIds.isEmpty()) return volumes;
+        for (var linha : segmentoRepository.somarVolumePorAssunto(assuntoIds)) {
+            volumes.put((Long) linha[0], new Volume(((Number) linha[1]).longValue(), ((Number) linha[2]).longValue()));
+        }
+        return volumes;
+    }
+
     @Transactional(readOnly = true)
     public Resumo resumo(Collection<Long> assuntoIds) {
         long prontos = 0, sem = 0, aPreparar = 0;

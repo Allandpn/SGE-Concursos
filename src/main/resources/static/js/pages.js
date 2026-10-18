@@ -895,6 +895,10 @@ document.addEventListener('alpine:init', () => {
     analises: [],
     reativando: null,
     refazendo: false,
+    // SPRINT-19 §5A — "Ver por assunto": null = fechada, [] = aberta e vazia.
+    porAssunto: null,
+    soSemMaterial: false,
+    carregandoLista: false,
 
     async init() {
       this.carregando = true;
@@ -922,6 +926,49 @@ document.addEventListener('alpine:init', () => {
 
     get anteriores() {
       return this.concursos.filter((c) => !c.ativo);
+    },
+
+    // SPRINT-19 §5A — abre/fecha a lista do material, assunto a assunto.
+    async verPorAssunto(c) {
+      if (this.porAssunto) { this.porAssunto = null; return; }
+      this.carregandoLista = true;
+      this.erroAcao = null;
+      try {
+        this.porAssunto = await api(`/concursos/${c.id}/material`);
+      } catch (e) {
+        this.erroAcao = e.message;
+      } finally {
+        this.carregandoLista = false;
+      }
+    },
+
+    // Agrupa por disciplina na ordem do edital; dentro dela, os sem material primeiro.
+    get gruposMaterial() {
+      const grupos = new Map();
+      for (const a of this.porAssunto ?? []) {
+        if (this.soSemMaterial && a.situacao !== 'SEM_MATERIAL') continue;
+        if (!grupos.has(a.disciplina)) grupos.set(a.disciplina, []);
+        grupos.get(a.disciplina).push(a);
+      }
+      const peso = (a) => (a.situacao === 'SEM_MATERIAL' ? 0 : 1);
+      return [...grupos].map(([disciplina, assuntos]) => ({
+        disciplina,
+        assuntos: assuntos.map((a, i) => [a, i]).sort((x, y) => peso(x[0]) - peso(y[0]) || x[1] - y[1]).map((x) => x[0]),
+      }));
+    },
+
+    minutosTexto(min) {
+      if (min < 60) return `${min} min`;
+      const h = Math.floor(min / 60);
+      return min % 60 ? `${h} h ${min % 60} min` : `${h} h`;
+    },
+
+    textoAssuntoMaterial(a) {
+      if (a.situacao === 'SEM_MATERIAL') return 'Sem material no acervo: ' + a.motivo;
+      if (a.situacao === 'A_PREPARAR') return 'A preparar';
+      const partes = [`${a.segmentos} ${a.segmentos === 1 ? 'segmento' : 'segmentos'}`, this.minutosTexto(a.minutos)];
+      if (a.paginas) partes.push(`${a.paginas} págs.`);
+      return partes.join(' · ');
     },
 
     // 01_DOMINIO §3.10 — andamento do material preparado sozinho.
