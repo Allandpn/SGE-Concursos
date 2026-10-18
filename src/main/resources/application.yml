@@ -55,6 +55,8 @@ estudos:
     token: ${INTERNAL_TOKEN:}
   material:
     dir: ${MATERIAL_DIR:/dados/material}
+  provas:
+    dir: ${PROVAS_DIR:/dados/provas}
 
 management:
   endpoints:

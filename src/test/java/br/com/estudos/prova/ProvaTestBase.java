@@ -4,7 +4,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,10 +43,21 @@ abstract class ProvaTestBase extends IntegracaoTestBase {
 
     static final String TOKEN = "token-interno-da-prova";
     static final JsonMapper JSON = JsonMapper.builder().build();
+    /** O volume `provas` dos testes: o SGE grava em entrada/, o worker em paginas/ (§2.5). */
+    static final Path PROVAS;
+
+    static {
+        try {
+            PROVAS = Files.createTempDirectory("provas");
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     @DynamicPropertySource
     static void tokenInterno(DynamicPropertyRegistry registro) {
         registro.add("estudos.interno.token", () -> TOKEN);
+        registro.add("estudos.provas.dir", PROVAS::toString);
     }
 
     @Autowired protected ProvaService provaService;

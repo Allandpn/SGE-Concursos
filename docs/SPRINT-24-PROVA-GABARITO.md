@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.1 |
+| Versão | 1.0.3 |
 | Data | 2026-10-18 |
 | Status | Vigente — em andamento |
 | Especificação | `01_DOMINIO` v1.26.0 §3.11 e D-67 a D-85 · `02_JORNADAS` v1.15.0 J-6 e J-7 · `03_INVARIANTES` v1.14.0 · `00_PRODUTO` v1.8.0 §5.1.1 · ADR-046 |
@@ -144,7 +144,7 @@ D-16). A nota **não é persistida**, salvo o que o `resultado_simulado` já gua
 ### 2.5 Arquivos
 
 Um volume novo, **`provas`**, montado nos dois contêineres (`estudos.provas.dir`, `PROVAS_DIR`, padrão
-`/dados/provas`):
+`/dados/provas`; o compose é do item 24.8):
 
 | Caminho | Quem escreve | Quem lê |
 |---|---|---|
@@ -183,12 +183,13 @@ questão tem `{provaId}` no caminho.
 | Rota | Faz | J |
 |---|---|---|
 | `POST /api/provas` | multipart: `prova` (PDF), `gabarito` (PDF) **ou** `gabaritoTexto`; `tipo` opcional → `202` e a prova em `LENDO`. Sem concurso-alvo `422 SEM_CONCURSO_ALVO`; não é PDF ou passa do limite `422`; mesma prova de novo → a existente | J-6 1-2 |
-| `POST /api/provas/{id}/gabarito` | anexa o gabarito a uma prova que o esperava | J-6 2 |
-| `GET /api/provas` / `GET /api/provas/{id}` | estado, e na conferência: questões lidas, não avaliáveis (com motivo), gabarito casado, **recorte**, 3 questões sorteadas, as **duvidosas** | J-6 3 |
-| `PATCH /api/provas/{id}` | corrige nome, banca, ano, tipo | J-6 3 |
-| `PUT /api/provas/{id}/questoes/{numero}/assunto` | corrige a atribuição (assunto da cobertura, ou `null` = fora do edital) → `CONFIRMADA` | J-6 4 |
-| `POST /api/provas/{id}/confirmar` | `CONFERIR` → `JULGANDO` | J-6 5 |
-| `POST /api/provas/{id}/analisar-de-novo` | volta a `JULGANDO`; só as questões que mudaram (D-79) | J-6 7 |
+| `POST /api/provas/{id}/gabarito` | multipart `gabarito` ou `gabaritoTexto`, a uma prova em `AGUARDANDO_GABARITO` (`409` fora dela); a devolve a `LENDO`. O gabarito **definitivo** que substitui o preliminar entra no item 24.4 | J-6 2 |
+| `GET /api/provas` / `GET /api/provas/{id}` | a lista é a das provas do concurso-alvo; o detalhe traz o estado e, na conferência: questões lidas, não avaliáveis (com motivo), fora do edital, gabarito casado, **recorte**, **3 questões de amostra** e as **duvidosas**. A amostra é **espalhada** (posições ¼, ½ e ¾ das avaliáveis), não sorteada: a mesma a cada leitura, para a tela não piscar | J-6 3 |
+| `PATCH /api/provas/{id}` | corrige nome, banca, ano; o `tipo` só em `AGUARDANDO_GABARITO` e `CONFERIR`, antes de o gabarito valer (`409` depois) | J-6 3 |
+| `PUT /api/provas/{id}/questoes/{numero}/assunto` | corrige a atribuição (`assuntoId` da cobertura do alvo, ou `null` = fora do edital) → `CONFIRMADA`. **Só em `CONFERIR`**: depois do julgamento a consulta de D-79 não vê troca de assunto (`409`); assunto fora da cobertura `422 ASSUNTO_FORA_DA_COBERTURA` (D-74) | J-6 4 |
+| `POST /api/provas/{id}/confirmar` | `CONFERIR` → `JULGANDO`; sem nenhuma questão avaliável com assunto, `422 SEM_QUESTAO_AVALIAVEL` | J-6 5 |
+| `POST /api/provas/{id}/analisar-de-novo` | `PRONTA` → `JULGANDO` se há questão a julgar (D-79) e devolve `{status, aJulgar}`; se nada mudou, fica `PRONTA` com `aJulgar: 0` | J-6 7 |
+| `POST /api/provas/{id}/tentar-de-novo` | `FALHOU` → a etapa em que falhou (`LENDO` ou `JULGANDO`), sem o erro | J-6 |
 | `GET /api/provas/{id}/relatorio` | §6 | J-6 6 |
 | `GET /api/provas/{id}/paginas/{n}` | a imagem da página de origem (D-85); do diretório `paginas/`, sem sair dele | J-6 / J-7 |
 | `POST /api/provas/{id}/tentativas` | abre ou **retoma** a tentativa pelo `tentativaId` (D-80) | J-7 1-2 |
@@ -227,6 +228,7 @@ que conta:
 - **Por disciplina** (a da atribuição, na ordem do edital) e **por assunto furado**: quantas questões, o que faltou,
   a sustentação.
 - **Assuntos do edital sem nenhuma questão na prova**, como informação.
+- Até o item 24.4 o relatório **não traz a nota real** nem a discordância com a cobertura; ficam para a resolução.
 - **Por questão:** número, assunto, veredito, sustentação (`segmentoId`, página), `lidaPorOcr` e `paginaOrigem`; **sem
   enunciado fora da prova** — o enunciado só sai em `GET .../tentativas/{tid}` e na revisão pós-entrega.
 - **Nota real**, se houver tentativa entregue: por disciplina e global, com denominador, da tentativa que conta; as
@@ -283,10 +285,11 @@ assunto"); e **"Resolver"** (J-7), uma questão por tela. Nenhuma tela mostra a 
 | `ProvaLeituraTest.entregaDeLeitura_vaiParaConferirOuAguardandoGabarito` / `gabaritoComNumeroDiferente_recusa` (D-82) / `atribuicaoForaDaCobertura_viraForaDoEdital` (D-74) / `mesmaProvaDeNovo_devolveAExistente` | §3, §4 |
 | `ProvaVereditoTest.citacaoInexistente_rebaixa` / `segmentoArquivado_naoSustenta` / `segmentoDeOutroAssunto_naoSustenta` / `paginaForaDoSegmento_naoSustenta` (D-68) | validação do serviço |
 | `ProvaReanaliseTest.assuntoComMaterialNovo_reabre` / `semMudanca_naoReabre` / `gabaritoMudou_reabre` (D-79, D-84; data congelada) | §5 |
-| `ProvaRelatorioTest.denominadorSempre` / `foraDoEditalNaoContaComoFuro` / `semEnunciadoForaDaProva` (D-70, D-71, D-72) | §6 |
+| `ProvaApiTest.relatorio_denominadorSempre_foraDoEditalNaoEFuro_eSemEnunciado` / `relatorio_antesDoJulgamento_mostraSemVeredito` / `relatorio_deProvaAindaNaoLida_409` (D-70, D-71, D-72) | §6 |
+| `ProvaApiTest` — envio (`envio_*`, `anexarGabarito_*`), conferência (`conferencia_*`, `lista_*`), correção (`corrigir_*`, `d74_corrigirAssunto_*`), `confirmar_*`, `d79_analisarDeNovo_*`, `tentarDeNovo_*`, `d85_pagina_*` | §4 |
 | `ProvaResolucaoTest.gabaritoNaoSaiAntesDaEntrega` / `mesmaTentativaContaUmaVez` / `entregarCriaSimuladoPorDisciplina` / `segundaTentativaNaoAlimentaM1` / `entregarNaoCriaSessaoNemRevisao` (D-78, D-80) | §7 |
 | `ProvaGabaritoDefinitivoTest.respostaMudou_recalculaNotaEReabreQuestao` (D-84) | §7 |
-| `ProvaEstruturalTest.nenhumaRotaListaQuestoesForaDeUmaProva` (D-72) | teste estrutural sobre o mapeamento |
+| `ProvaEstruturalTest.d72_nenhumaRotaDeQuestaoSemAProvaNoCaminho` / `d72_osControllersDaProvaSoVivemSobProvas` / `d72_naoExisteListagemDeQuestoesNaRaiz` | teste estrutural sobre o mapeamento real |
 | No planejamento: leitura e recorte de gabarito contra os **seis arquivos reais** da amostra (FGV ×2, IDECAN, FCC, CEBRASPE); OCR da prova da FCC | D-82, D-83 |
 
 ---
@@ -332,5 +335,7 @@ ou a revisão; limiar de "gabaritar" e nota de corte (Sprint 23); prova de concu
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.0.3 | 2026-10-18 | Item 24.3 feito; nomes dos testes alinhados ao que existe (o relatório e a API ficaram em `ProvaApiTest`) |
+| 1.0.2 | 2026-10-18 | Ao desenhar o código do item 24.3: `tentar-de-novo`; gabarito anexado só em `AGUARDANDO_GABARITO` (o definitivo é do 24.4); atribuição corrigida só em `CONFERIR`; `tipo` só até o gabarito valer; amostra espalhada em vez de sorteada; relatório sem nota real até o 24.4 |
 | 1.0.1 | 2026-10-18 | Ao desenhar o código do item 24.2: `formato` nulo até a leitura; coluna `gabarito_arquivo`; D-68 **rebaixa** em vez de recusar o item (era contradição com `01_DOMINIO`); gatilho de D-73; restrição de avaliável com gabarito |
 | 1.0.0 | 2026-10-18 | Criado, na abertura da sprint, contra `01_DOMINIO` v1.26.0 |
