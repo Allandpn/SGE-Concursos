@@ -2,13 +2,15 @@
 
 | | |
 |---|---|
-| Versão | 0.2.0 |
+| Versão | 0.3.0 |
 | Data | 2026-10-18 |
 | Status | **Rascunho — não vigente.** Nada daqui é implementado até os requisitos serem aprovados e as seções migrarem para os documentos donos (§11) |
 | Origem | Pedido do usuário, 2026-10-17: "subir uma prova e saber se, com o material montado, seria possível responder as questões e gabaritar o concurso. É o nosso objetivo final". Revisado em 2026-10-18 com as respostas do usuário aos pontos em aberto |
 | Decisões já tomadas | Gabarito obrigatório · o SGE hospeda a prova e o usuário a responde no sistema · a nota alimenta disciplina e global, assunto só informa · reanálise incremental por assunto · só o concurso-alvo · IA julga questão a questão · entrada pelo mesmo gesto do edital (§10) |
 
-**Mudanças da v0.1.0.** O gabarito deixou de ser opcional. O SGE passa a guardar a prova
+**Mudanças da v0.2.0.** Amostra real de 4 bancas (§5.6): o gabarito vem em arquivo multi-cargo e multi-tipo, em layouts diferentes; uma prova veio em imagem pura; questão fora do edital deixa de ser furo. Regras P-17 e P-18; pontos abertos I, J e K.
+
+**Mudanças da v0.1.0 (já na v0.2.0).** O gabarito deixou de ser opcional. O SGE passa a guardar a prova
 (enunciado, alternativas, gabarito) e o usuário a responde no sistema. O critério do julgamento
 passou a ser a alternativa do gabarito. A reanálise passou a ser incremental. Isso revisa
 `00_PRODUTO` §5.1 e §6.7 (ver §11).
@@ -101,7 +103,7 @@ segundos. O usuário carrega os PDFs e confere; o resto é do sistema.
 
 1. Em **Concursos**, no concurso-alvo, toca **"Verificar com uma prova"**.
 2. Escolhe **"Carregar prova"** (PDF) e **"Carregar gabarito"** (PDF com texto, ou texto
-   colado) e, se a prova tem versões, informa o **tipo**. As duas entradas ficam na mesma tela;
+   colado) e o sistema **descobre o cargo e o tipo** pela capa da prova e **recorta o gabarito certo** (§5.6); se não tiver certeza, pergunta. As duas entradas ficam na mesma tela;
    enquanto faltar o gabarito, a prova fica **"aguardando gabarito"**: o sistema **lê** a
    prova, mas **não julga nem deixa resolver** (P-15).
 3. O sistema lê a prova e mostra o que achou **antes de gastar IA no julgamento**: nome
@@ -122,7 +124,7 @@ Falhas que o usuário vê, e o que fazem:
 
 | Falha | O que acontece |
 |---|---|
-| PDF é imagem (sem texto) | Recusa na hora: "envie a versão com texto" — como o edital |
+| PDF é imagem (sem texto) | **Não recusa mais** (§5.6): a prova pode ser lida por OCR; se o OCR não estiver disponível, recusa com o motivo |
 | Leu poucas questões (<50% do esperado) | Mostra e avisa; o usuário decide seguir ou trocar o PDF |
 | Gabarito não casa (nº de questões diferente) | Recusa o gabarito, mantém a prova; diz a diferença |
 | Gabarito de outro tipo da prova | Não há como o sistema ter certeza; ver §5.5 |
@@ -155,7 +157,7 @@ Orçamento: ≤ 1 s entre uma questão e a seguinte (é só navegação local); 
 | Etapa | A IA | O sistema |
 |---|---|---|
 | **Leitura** | Separa as questões do PDF: número, enunciado, alternativas; lê o gabarito | Valida: números sequenciais, sem repetição, alternativas presentes, gabarito casando. O que não passa é "não avaliável", declarado |
-| **Atribuição** | Escolhe, dentre os assuntos do concurso-alvo, a qual pertence cada questão, ou "nenhum", com um grau de confiança | Só aceita assunto que existe na cobertura (como D-63). Baixa confiança e "nenhum" vão para a revisão do usuário |
+| **Atribuição** | Escolhe, dentre os assuntos do concurso-alvo, a qual pertence cada questão, ou "nenhum", com um grau de confiança | Só aceita assunto que existe na cobertura (como D-63). Baixa confiança vai para a revisão do usuário; "nenhum" é **fora do edital**, declarado e fora do denominador (P-08) |
 | **Julgamento** | Lê a questão, a alternativa do gabarito e **trechos** do material do assunto (escolhidos por busca no índice, com o sumário); diz o veredito e **cita a página** | Só aceita citação que existe no segmento. Sem página válida, o veredito cai para `NAO_RESPONDIVEL` |
 
 ### 5.2 O veredito — sobre a alternativa do gabarito
@@ -224,6 +226,39 @@ Bancas como a FCC imprimem a prova em **tipos**, com alternativas embaralhadas e
 Se o PDF da prova traz um único tipo (caso comum de provas já publicadas com tipo único), a
 pergunta some. Ver §10.
 
+### 5.6 O que as bancas entregam (amostra real, 2026-10-18)
+
+Quatro bancas, seis arquivos úteis, avaliados em `provas e gabaritos/` do usuário. Nenhuma
+entrega é igual à outra, e isso decide onde a IA entra e onde o sistema só valida.
+
+| | CEBRASPE (UNEAL 2026) | FGV (Dataprev e MPES 2026) | IDECAN (SEFAZ-RR 2023) |
+|---|---|---|---|
+| **Prova** | Texto; itens **certo/errado**, ligados a um texto-base e a um comando ("Julgue os itens...") | Texto; **A–E**; nº da questão sozinho na linha; cabeçalho de disciplina entre as questões; a prova do MPES traz **também discursiva** | **Imagem pura**, sem camada de texto, duas colunas; A–E |
+| **Gabarito** | 2 págs., grade de colunas fora de ordem; anulado = `X`; vários blocos (básicos, específicos) | **Um arquivo para todos os cargos**: Dataprev 22 págs., MPES 41 págs., **uma página por cargo e tipo**. Layout varia entre editais (Dataprev: linha de números e linha de letras; MPES: pares "n letra"). Anulada = `*`. Dataprev é **preliminar**; MPES, **definitivo** | Um arquivo, 6 cargos (`9001`–`9006`), grade `Q01..Q10` e letras; anulada = `*` |
+| **Tipo** | Não aparece | Tipo 1 e Tipo 3, **respostas diferentes** (8 de 70 diferem no Dataprev) | Tipo A |
+| **Identificar o par** | Pelo cargo no título | Capa da prova × cabeçalho da página do gabarito, com nomes grafados diferente ("DESENVOLVIMENTO DE SOFTWARE" × "Desenvolvimento de Software") | Código do cargo (`9006`) na capa da prova × bloco do gabarito |
+
+O que isso obriga:
+
+- **Gabarito é multi-cargo e multi-tipo** (P-17). O sistema precisa recortar a página certa
+  pela capa da prova, normalizando acento e caixa, e mostrar o recorte na conferência, porque
+  escolher o cargo errado dá um gabarito plausível e errado.
+- **O layout do gabarito muda até dentro da mesma banca.** A extração por regra fixa quebra no
+  edital seguinte; por isso a **IA lê o gabarito** e o **sistema valida**: número de respostas
+  igual ao de questões, só letras válidas, anuladas reconhecidas (`*`, `X`).
+- **Anulada e preliminar existem de verdade** (P-04, P-18). 14 questões anuladas só no gabarito
+  do IDECAN.
+- **PDF em imagem é caso real, não exceção:** a prova do IDECAN, entregue pela própria banca,
+  não tem texto. Recusar na hora (como o edital) descartaria uma prova legítima. É preciso OCR
+  ou leitura por visão (ponto I). **No Pi não há OCR hoje**, nem no worker.
+- **CEBRASPE liga o item ao texto-base:** a questão carrega o texto e o comando, senão o item
+  "O trecho acima..." não é julgável. A leitura precisa anexá-los (ponto J).
+- **A prova traz blocos que o edital do alvo não tem:** legislação do próprio órgão (MPES,
+  CETIF), português e raciocínio lógico de outro cargo. Daí "fora do edital" (P-08).
+- **O cabeçalho de disciplina da prova** ("Legislação e Código de Ética do MPES", "CONHECIMENTOS
+  GERAIS EM TI") ajuda a atribuição: a IA o recebe como pista.
+- **Discursiva na mesma prova:** ignorar (só objetiva) e declarar quantas ignorou.
+
 ---
 
 ## 6. O relatório
@@ -240,7 +275,7 @@ De cima para baixo, o que o usuário precisa para decidir:
 5. **Onde cobertura e nota discordam**, por assunto: prevista sólida e errada (o material ensina
    menos do que parece) ou prevista furada e acertada (o julgamento está severo). Só quando há
    as duas medidas; **informação, não gatilho** (P-12).
-6. **Questões sem assunto no edital:** a prova cobra algo que o edital não lista.
+6. **Questões fora do edital:** a prova cobra algo que o edital do alvo não lista (a legislação do órgão da prova, o bloco de outro cargo). **Não são furo do material** e saem do denominador (P-08), mas aparecem contadas.
 7. **Cada questão:** número, assunto atribuído, veredito, página de sustentação e, se resolvida,
    o que o usuário marcou.
 
@@ -282,11 +317,11 @@ viram D-67 em diante. Cada uma diz como se garante (`03_INVARIANTES` §4).
 | P-01 | A IA lê e julga; o **sistema** valida, conta e calcula. Contagem e nota saem de regra fixa, nunca da IA (como D-61) | Política no serviço |
 | P-02 | **Nada é inventado:** `RESPONDIVEL` exige página de sustentação **da alternativa do gabarito** que exista no segmento do assunto; citação inexistente rebaixa para `NAO_RESPONDIVEL` | Validação no serviço + teste |
 | P-03 | **Na dúvida, o pior veredito** | Instrução à IA + teste de calibragem |
-| P-04 | Questão não avaliável (imagem, tabela, anulada, sem gabarito) sai do denominador **e é declarada** | Serviço |
+| P-04 | Questão não avaliável (imagem, tabela, anulada, sem gabarito, fora do edital) sai do denominador **e é declarada** | Serviço |
 | P-05 | **Denominador sempre** exibido junto de qualquer percentual ou nota | Interface + teste |
 | P-06 | A prova hospedada serve **só à verificação e à resolução**: nenhuma rota lista, busca ou exporta questões fora do contexto de uma prova. O SGE **não vira banco aberto de questões** | Estrutura: o contrato não tem a rota; teste estrutural |
 | P-07 | **Nada é apagado:** reanalisar cria veredito novo e o anterior permanece; resposta e entrega também ficam (D-18) | Persistência (sem caminho de remoção) |
-| P-08 | A atribuição só aceita assunto da **cobertura do concurso-alvo** (como D-63); "nenhum" é resposta válida e vira furo | Serviço |
+| P-08 | A atribuição só aceita assunto da **cobertura do concurso-alvo** (como D-63); "nenhum" é resposta válida: a questão é **fora do edital**, sai do denominador e é declarada, e **não conta como furo** do material | Serviço |
 | P-09 | **Indisponibilidade da IA não é veredito:** a análise pausa e retoma (ADR-045); nunca grava `NAO_RESPONDIVEL` por falha | Serviço + teste |
 | P-10 | O veredito é um **retrato datado** contra o material vigente naquela data; mudar o material não altera vereditos antigos, só motiva um novo | Persistência |
 | P-11 | A prova é sempre avaliada contra a cobertura do **concurso-alvo** | Serviço |
@@ -295,6 +330,8 @@ viram D-67 em diante. Cada uma diz como se garante (`03_INVARIANTES` §4).
 | P-14 | **A mesma tentativa de resolução conta uma vez** (identificador gerado no cliente ao abrir a tela, como D-45). A **correção é do sistema, pelo gabarito**, nunca da IA | Persistência (unicidade) + serviço |
 | P-15 | **Sem gabarito, a prova não é julgada nem resolvida:** fica "aguardando gabarito"; a leitura segue | Serviço |
 | P-16 | O gabarito tem o **tipo** da prova; gabarito de nº de questões diferente é recusado | Serviço |
+| P-17 | O gabarito é do **cargo e do tipo** da prova; arquivo multi-cargo é **recortado pelo sistema** e o recorte (cargo, tipo, turno) é mostrado na conferência. Sem recorte único, o usuário escolhe | Serviço + teste com os arquivos reais |
+| P-18 | **Gabarito preliminar vale como provisório:** o relatório marca "gabarito preliminar". Quando o definitivo chega e muda uma resposta ou anula uma questão, a nota se recalcula (derivada) e as questões afetadas voltam para julgamento (como P-13) | Derivação + teste |
 
 P-06 é a que mais custa se esquecida: é ela que impede esta funcionalidade de virar, por
 acidente, o banco de questões que o produto escolheu não ser.
@@ -348,6 +385,9 @@ acidente, o banco de questões que o produto escolheu não ser.
 | E | **Resolver mais de uma vez** a mesma prova | Cada tentativa é um registro; a nota que entra em M-1 é a **primeira** (as seguintes já têm memória da prova), as outras ficam como informação |
 | F | **Posição no mapa:** sprint própria ou fundida com a 23 (simulado no formato da prova, com nota de corte) | A resolução (JV-2) é o simulado da Sprint 23; a cobertura (JV-1) pode sair antes. Decidir depois de aprovados os requisitos |
 | G | **Direitos da prova:** uso pessoal de provas públicas de banca, um usuário só | Registrar no ADR que o conteúdo é do usuário e não é redistribuído |
+| I | **Prova em imagem (§5.6):** OCR no worker (instalar Tesseract com português: mais disco e memória no Pi), ou leitura por visão (o proxy de IA hoje só aceita texto) | OCR no worker, num estágio de **leitura** separado do julgamento, e conferência mais rígida (OCR erra): mostrar a página lida ao lado do texto extraído em 3 questões sorteadas. Medir tamanho e RAM antes de aprovar |
+| J | **Texto-base e figuras:** itens do CEBRASPE dependem do texto; questões com imagem (gráfico, diagrama) não são avaliáveis | Anexar o texto-base à questão; imagem = não avaliável e declarada (P-04) |
+| K | **Quantas provas bastam:** as 4 bancas da amostra são de TI, mas a banca do alvo (FCC) não está nela | Pedir uma prova da FCC para o ensaio da §1, porque o formato pode ser o mais diferente de todos |
 | H | **Tempo e custo da primeira prova** | Medir no ensaio da FCC antes de fixar as metas da §9 |
 
 ---
@@ -358,7 +398,7 @@ acidente, o banco de questões que o produto escolheu não ser.
 |---|---|---|
 | Para que serve, métrica, não-objetivo | `00_PRODUTO` | §7 (métrica), §11 (decisão vinculante) |
 | **Revisões necessárias** | `00_PRODUTO` | **§5.1** ("o sistema não faz: hospeda enunciado, alternativa ou gabarito; corrige questão") e **§6.7** ("não há atribuição confiável por assunto"), mais as decisões vinculantes nº 2 ("a recuperação acontece fora") e nº 15 ("simulado não é sessão") |
-| Glossário e regras P-01 a P-16 | `01_DOMINIO` | §3 (nova subseção), §10 (D-67+) |
+| Glossário e regras P-01 a P-18 | `01_DOMINIO` | §3 (nova subseção), §10 (D-67+) |
 | Jornadas JV-1 e JV-2, falhas, orçamento | `02_JORNADAS` | novas jornadas, ao lado da J-5 |
 | Quem garante P-xx e como se testa | `03_INVARIANTES` | §3 e §9 |
 | Por que hospedar a prova; por que o §6.7 muda; direitos | `docs/00A_ADR.md` | ADR novo |
@@ -377,5 +417,6 @@ documentação técnica nasce com a sprint).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 0.3.0 | 2026-10-18 | Amostra real de 4 bancas (§5.6): gabarito multi-cargo e multi-tipo em layouts diferentes (P-17), preliminar × definitivo (P-18), prova em imagem sem OCR (ponto I), texto-base do CEBRASPE (J), banca do alvo fora da amostra (K). Questão fora do edital deixa de ser furo e sai do denominador (P-04, P-08). PDF em imagem deixa de ser recusado na hora |
 | 0.2.0 | 2026-10-18 | Respostas do usuário aos pontos em aberto. Gabarito obrigatório e critério sobre a alternativa do gabarito (§5.2). O SGE hospeda a prova e o usuário a resolve (JV-2); revisa `00_PRODUTO` §5.1 e §6.7. Nota alimenta disciplina e global, assunto só informa (P-12). Reanálise incremental derivada dos segmentos (P-13). Regras P-12 a P-16. Pontos decididos e abertos separados (§10) |
 | 0.1.0 | 2026-10-17 | Rascunho inicial: prova só no planejamento, gabarito opcional, IA por questão |
