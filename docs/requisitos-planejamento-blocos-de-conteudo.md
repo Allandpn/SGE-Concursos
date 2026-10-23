@@ -475,6 +475,16 @@ material é preso ao assunto (`V9__segmento.sql`), então plano, escada de revis
 o nó: **trocar um nó não quebra nada do que existe**. Trocar o nó só muda as sugestões de material do lado do planejamento,
 e material já fatiado ou estudado nunca é removido.
 
+**Contrato de entrega (2026-10-22, versão 0.2.0 da especificação, §11):** o worker do planejamento segue o mesmo desenho da
+prova (Sprint 24): consulta os editais pendentes, pega os dados do edital (PDF, cargo e as **decisões aprovadas**),
+entrega a revisão no formato `edital-revisao/1` (disciplinas → assuntos → partes, cada parte com `chave` estável, contexto,
+prefixo herdado e ligação a nós) ou a falha com a etapa. Exemplo real e gerador testado em `integracao/contrato/` e
+`integracao/entrega_revisao.py` do planejamento. Endereços, autenticação e armazenamento são do SGE.
+
+**Cobertura medida em 2026-10-23 (ALESC e SEFAZ-SP TIC), para a tela mostrar desde o início:** das partes, 58% e 44% têm
+material do acervo que ensina; por assunto, 14% a 19% não têm material nenhum (lacuna real do acervo). Metodologia e
+arquivos em `~/partes-edital/material/` do planejamento.
+
 **O que fica de fora:** leitura de PDF em imagem (OCR), árvore do TEC e usar as ligações para filtrar questões dentro do SGE.
 
 **Nada em `especificacao/` foi alterado.** Novas entidades (parte, decisão, execução de IA) e telas são mudança conceitual e
