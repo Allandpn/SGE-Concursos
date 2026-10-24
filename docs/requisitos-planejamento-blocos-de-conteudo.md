@@ -434,3 +434,80 @@ e refazer o material (D-66) já reaproveita os assuntos. Dois assuntos ficam com
 verdade: a Lei Complementar nº 741/2019 e os conhecimentos regionais de Santa Catarina — o
 acervo não os cobre. Ação sugerida: **nenhuma obrigatória** (requisito especulativo, só para
 quem quiser indexar apostilas de legislação e de conhecimentos de SC).
+
+## 17. Requisito novo (2026-10-22): tela de revisão do edital e vínculo das partes com a árvore do QConcursos
+
+Contexto: o planejamento prototipou a leitura do conteúdo programático do edital em **assuntos** (texto exato do edital) e
+**partes** (um assunto de estudo cada, com o contexto sob o qual aparece e, quando depende de outra palavra, o prefixo
+herdado: "Windows Server 2019 e 2022" → "Windows Server 2019" e "2022"). Cada parte é ligada a um nó da árvore de
+assuntos do QConcursos (disciplina › assunto › subassunto), onde o usuário resolve questões; a resolução continua fora do
+SGE. Validado em 9 editais reais: 65 de 66 partes conferidas à mão estavam certas; na ligação aos nós, uma amostra de 110
+partes teve cerca de 95% de acerto segundo três IAs avaliadoras, com 12 divergências (6 resolvidas pelo usuário, 6 em aberto).
+
+**Achado que motiva o pedido:** a IA erra, e erra diferente a cada modelo ou prompt (o mesmo nome existe em ramos
+diferentes: "Kanban" de estoque x de desenvolvimento ágil; "tipos de dados" de programação x de ciência de dados).
+Ajustar a IA não fecha o problema. O que fecha é **a pessoa resolver cada divergência numa tela e o sistema guardar a
+decisão**, valendo antes de qualquer IA nas próximas vezes.
+
+**Pedido:** uma tela de revisão por edital. Desenho completo em
+`docs/especificacao-revisao-edital-sge.md` do repositório do planejamento (§3 tela e fila, §4 decisões, §6 conclusão e troca
+de nó, §7 dados). O essencial:
+
+1. **Fila de revisão** com o que pede decisão, em ordem de gravidade, e contagens no topo (disciplinas, assuntos, partes,
+   ligadas por natureza exato/mais amplo/parcial, sem nó, pendências, decididas por pessoa). Tipos: linhas do edital fora de
+   qualquer disciplina, trecho sem assunto, assunto recusado pela conferência por regra, alerta de parte, parte mal dividida,
+   parte sem nó, vínculo mais amplo/parcial, nó trocado pela segunda checagem, duas execuções discordando, disciplina ligada à
+   disciplina errada, nó que mudou na árvore.
+2. **Ações:** aceitar (inclusive todos os exatos da disciplina); trocar o nó com busca e navegação na árvore, com mais de
+   um nó; marcar "a árvore não tem"; dividir, juntar ou editar a parte; descartar com motivo; comentar.
+3. **Decisões aprovadas:** chave = parte + contexto (sem a disciplina), valem antes da IA em qualquer edital; o
+   reprocessamento nunca as sobrescreve; escopo "este edital" (padrão) ou "todos", este último com **confirmação extra**
+   mostrando quantas partes de outros editais mudariam; podem ser editadas e revogadas; voltam à fila se o nó mudar na árvore.
+4. **Conclusão:** bloqueia só quando o conteúdo do edital está incerto (linhas fora de disciplina, trechos sem assunto,
+   assuntos recusados, alertas de divisão). Parte sem nó **não bloqueia**: o painel avisa ("12 partes sem filtro de
+   questões") e o aviso fica visível no plano, junto ao assunto, até ser resolvido.
+5. **Depois de concluído** o usuário pode vincular uma parte sem nó ou trocar o nó de uma já vinculada, a qualquer momento.
+6. Uso de uma pessoa só: sem autor nem revisores concorrentes (ADR-040).
+
+**Verificado no código do SGE em 2026-10-22:** o SGE não guarda hoje nó de taxonomia (o qconcursos.com aparece só como
+referência visual em `04_FRONTEND.md`); o vínculo é um dado novo. Assunto é identificado por `chaveExterna` e o segmento de
+material é preso ao assunto (`V9__segmento.sql`), então plano, escada de revisão e histórico de estudo seguem o assunto, não
+o nó: **trocar um nó não quebra nada do que existe**. Trocar o nó só muda as sugestões de material do lado do planejamento,
+e material já fatiado ou estudado nunca é removido.
+
+**Contrato de entrega (2026-10-22, versão 0.2.0 da especificação, §11):** o worker do planejamento segue o mesmo desenho da
+prova (Sprint 24): consulta os editais pendentes, pega os dados do edital (PDF, cargo e as **decisões aprovadas**),
+entrega a revisão no formato `edital-revisao/1` (disciplinas → assuntos → partes, cada parte com `chave` estável, contexto,
+prefixo herdado e ligação a nós) ou a falha com a etapa. Exemplo real e gerador testado em `integracao/contrato/` e
+`integracao/entrega_revisao.py` do planejamento. Endereços, autenticação e armazenamento são do SGE.
+
+**Cobertura medida em 2026-10-23 (ALESC e SEFAZ-SP TIC), para a tela mostrar desde o início:** das partes, 58% e 44% têm
+material do acervo que ensina; por assunto, 14% a 19% não têm material nenhum (lacuna real do acervo). Metodologia e
+arquivos em `~/partes-edital/material/` do planejamento.
+
+**O que fica de fora:** leitura de PDF em imagem (OCR), árvore do TEC e usar as ligações para filtrar questões dentro do SGE.
+
+**Nada em `especificacao/` foi alterado.** Novas entidades (parte, decisão, execução de IA) e telas são mudança conceitual e
+nascem do lado do SGE, na sprint que a incluir, pela regra de vocês (documento primeiro, versão, changelog). Este texto é o
+pedido e o desenho de origem, não implementação.
+
+## 18. Requisito novo (2026-10-24): material de consulta "Questões deste assunto", fora da escada
+
+**Decisão do usuário (planejamento):** questões comentadas, listas de exercícios e gabaritos das aulas escolhidas para um
+assunto **não entram nos segmentos**. Como todo segmento é leitura obrigatória antes da escada, elas viram um material de
+**consulta**, aberto quando o aluno quiser, nunca cobrado nem contado no tempo do assunto.
+
+**O que o planejamento entrega:** por assunto que tenha questões nas aulas escolhidas, um PDF `consulta/<chave>.pdf` (capa com a
+origem de cada página, depois as páginas de questões e gabarito, aula a aula), onde `<chave>` é a chave estável do assunto do
+contrato `edital-revisao/1`. No `entrega.json`, o assunto traz `material.consulta = {"arquivo", "paginas"}` (ausente quando não
+há questões). Exemplo real, MPPR cargo 402: 77 assuntos com consulta, 5.522 páginas no total.
+
+**O que se pede ao SGE (conceito novo):**
+1. Guardar, por assunto, no máximo um material de consulta (arquivo/link e número de páginas), separado de `segmento`.
+2. Mostrar na tela do assunto o atalho "Questões deste assunto", sem entrar na fila de leitura, na escada nem no cálculo de tempo.
+3. Reentrega com PDF novo **substitui** a consulta (não há histórico de estudo sobre ela); segmentos continuam sem ser apagados.
+
+**Fora deste pedido:** resolver questões dentro do SGE; a resolução de questões novas segue pelo QConcursos, ligada ao assunto
+pelo nó da árvore (§17).
+
+Nada em `especificacao/` foi alterado; é pedido e desenho de origem, a ser tratado pelo processo de vocês.
