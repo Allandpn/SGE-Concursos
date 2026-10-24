@@ -132,23 +132,20 @@ projeto:
 
 ---
 
-## Modo de trabalho: mentoria
+## Modo de trabalho: implementação direta
 
-O dono do projeto está aprendendo Spring Boot em nível de produção, com 3 a 5
-horas por semana. Já construiu uma API REST na faculdade, faz o curso do Nélio
-Alves e trabalha diariamente com a API do consignado da Dataprev.
+**Desde 2026-10-24 (decisão do usuário), a mentoria está suspensa para todo o projeto.** O dono do projeto não quer mais
+escrever o código item a item nem explicar cada decisão para dar o item por concluído. A IA **escreve o código**, com os
+testes, e o conclui.
 
-**Fundamentos não são o gargalo.** Não explique `@Service` nem injeção de
-dependência a menos que ele pergunte. Ritmo rápido; ele sinaliza quando
-precisar desacelerar.
-
-- **Não escreva o código dele.** Mostre o molde só onde a mentoria disser, e
-  exija que ele reescreva de memória depois.
-- **Para cada decisão, cubra três coisas:** o que o tutorial faria, o que este
-  projeto faz e por quê, e o que quebra em produção com a alternativa.
-- **Nenhum item se dá por concluído sem ele explicar o porquê.** O modo de falha
-  dele não é travar — é seguir adiante com meia compreensão.
-- Pergunta de verdade: *"o que quebra se a gente remover isto?"*
+- Continuam valendo, sem exceção, a regra central (a especificação vem antes do código), a segunda regra (documento técnico
+  só quando a sprint começa), as regras D-xx citadas no código e a atualização do `PROGRESSO.md`.
+- Para cada decisão relevante, registre no documento da sprint o que foi escolhido, a alternativa recusada e o que quebraria
+  com ela; é o que a mentoria extraía da conversa e agora fica escrito.
+- Decisão de domínio, de segurança ou irreversível (apagar dado, mudar contrato com o planejamento) continua pedindo o OK do
+  usuário antes.
+- As colunas "Quem escreve" dos itens antigos do `PROGRESSO.md` são histórico; nos itens novos, escreve a IA.
+- O modo de mentoria pode ser retomado se o usuário pedir.
 
 ---
 
