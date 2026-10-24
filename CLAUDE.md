@@ -54,7 +54,7 @@ E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
 | Documento | Responde |
 |---|---|
 | `especificacao/00_PRODUTO.md` | Para que serve, e como saberemos que funcionou |
-| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 85 regras D-xx** |
+| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 95 regras D-xx** |
 | `especificacao/02_JORNADAS.md` | Como é usado, e quanto pode custar em segundos |
 | `especificacao/03_INVARIANTES.md` | Quem garante cada regra e como se testa |
 
@@ -68,7 +68,7 @@ Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
-| `docs/00A_ADR.md` | 46 ADRs, 32 vigentes (até ADR-046 — prova hospedada) |
+| `docs/00A_ADR.md` | 47 ADRs, 33 vigentes (até ADR-047 — conferência do edital) |
 | `docs/03C_LOGGING.md` | Intacto |
 | `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta), §8C (Sprint 19: worker do material, tetos de memória do Pi 4) e §8D (Sprint 24: volume `provas`, OCR) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |
@@ -98,7 +98,7 @@ desenhada para impedir.
 
 ## As regras D-xx
 
-`01_DOMINIO.md` §10 tem as 85. `03_INVARIANTES.md` §3 diz de cada uma: que
+`01_DOMINIO.md` §10 tem as 95. `03_INVARIANTES.md` §3 diz de cada uma: que
 natureza tem, em que camada mora, como se sabe que quebrou.
 
 **Todo código que implementa uma regra a cita pelo identificador**, e o

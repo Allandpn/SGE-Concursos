@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Versão | 0.1.0 |
+| Versão | 0.2.0 (migrado) |
 | Data | 2026-10-24 |
-| Status | **Rascunho para aprovação do usuário.** Nada daqui está em `01_DOMINIO`, `02_JORNADAS`, `03_INVARIANTES` ou `docs/00A_ADR.md` ainda; a migração (como foi feita com `ESPECIFICACAO-PROVA-GABARITO.md`) só acontece depois de os pontos da §9 serem decididos |
+| Status | **Migrado em 2026-10-24** para `01_DOMINIO` v1.27.0 (§3.12, D-86 a D-95), `02_JORNADAS` v1.16.0 (J-5), `03_INVARIANTES` v1.15.0 e ADR-047, com as decisões A a F do usuário (§9). **Este arquivo fica como histórico do raciocínio e das medidas; a fonte vigente são os documentos donos.** Nos documentos donos, o que aqui se chama "revisão do edital" passou a **conferência do edital**, porque "revisão" já é o compromisso da escada |
 | Origem | Pedido do usuário (2026-10-22/23): "do edital ao estudo pronto", com revisão manual no SGE como parte central. Pedidos do planejamento em `docs/requisitos-planejamento-blocos-de-conteudo.md` §17 e §18; desenho de origem, no repositório do planejamento: `docs/especificacao-revisao-edital-sge.md` (0.3.0) e `docs/proposta-material-por-casamento.md` (0.4.0) |
 | Decisões já tomadas | A IA propõe, as regras conferem, **a pessoa resolve** · decisão aprovada vale antes da IA · um único usuário · árvore de referência = QConcursos (TEC é outra funcionalidade) · questões fora dos segmentos · material já criado nunca é apagado |
 
@@ -145,5 +145,7 @@ plataforma completa (visão de futuro, não desta funcionalidade).
 | Quebra varia entre rodadas | 199 vs 138 assuntos no mesmo edital: por isso a revisão existe e a decisão presa à chave |
 
 ## Changelog
+
+- **0.2.0 (2026-10-24)** — migrado. Decisões: A substitui o ADR-043 (fica o cabeçalho); B os assuntos nascem na conclusão; C árvore no SGE com atualização por gesto do usuário; D consulta sem entidade; E duas sprints (25 e 26); F reprocessar mostra só as pendências novas.
 
 - **0.1.0 (2026-10-24)** — primeiro rascunho, a partir dos pedidos §17 e §18 e das especificações do planejamento.

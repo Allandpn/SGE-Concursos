@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.13.0** |
+| Versão do documento | **2.14.0** |
 | Status | **Congelado** |
-| Data | 2026-10-18 |
-| Total | 46 ADRs — 32 vigentes, 13 substituídas, 1 revogada |
+| Data | 2026-10-24 |
+| Total | 47 ADRs — 33 vigentes, 13 substituídas, 1 revogada |
 
 ---
 
@@ -74,6 +74,7 @@ que custa e o que foi descartado.
 | [ADR-044](#adr-044--material-preparado-no-próprio-servidor-sem-drive) | Material preparado no próprio servidor, sem Drive | Sprint 19 |
 | [ADR-045](#adr-045--ia-pela-assinatura-do-claude-openrouter-só-por-escolha-do-usuário) | IA pela assinatura do Claude; OpenRouter só por escolha do usuário | Sprint 19 |
 | [ADR-046](#adr-046--prova-hospedada-para-verificar-o-material-e-ser-resolvida) | Prova hospedada, para verificar o material e ser resolvida | 2026-10-18 |
+| [ADR-047](#adr-047--conferência-do-edital-pela-pessoa-e-material-por-casamento) | Conferência do edital pela pessoa e material por casamento | 2026-10-24 |
 
 ### 1.2 Históricas
 
@@ -973,6 +974,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.14.0 | 2026-10-24 | **ADR-047**, pedido do usuário: a separação do edital em disciplinas, assuntos e partes e a ligação aos nós do QConcursos passam ao planejamento; o SGE guarda a conferência e as decisões da pessoa; o PDF do edital passa a ser guardado até a conclusão. Substitui em parte ADR-043. Total 47, 33 vigentes |
 | 2.13.0 | 2026-10-18 | **ADR-046**, pedido do usuário: o SGE hospeda uma prova objetiva inteira com gabarito para verificar o material e deixar o usuário resolvê-la; o planejamento lê o PDF (OCR no worker); o veredito é sobre a alternativa do gabarito; a nota alimenta M-1 por disciplina e global, assunto só informa. Revisa `00_PRODUTO` §5.1 e §6.7. Total 46, 32 vigentes |
 | 2.12.0 | 2026-10-17 | **ADR-045**, pedido do usuário: a IA (leitura de edital e preparação de material) passa pela assinatura do Claude, via Claude Code no contêiner do app; OpenRouter só quando o usuário escolher, depois de um aviso — nunca troca sozinho. Total 45, 31 vigentes |
 | 2.11.0 | 2026-10-17 | Sprint 19, pedido do usuário. **ADR-044** substitui ADR-037: o planejamento roda no Pi como segundo contêiner, o material é servido pelo SGE, a IA do planejamento passa por um proxy interno do SGE com a chave cadastrada em Ajustes; o Drive vira legado. Total 44, 30 vigentes |
@@ -1568,7 +1570,7 @@ sistema (ADR-043) precisa de um lugar onde o resultado vire "o concurso-alvo".
 
 ## ADR-043 — Análise de edital por IA, via OpenRouter
 
-**Status:** Aceita · 2026-10-15 · Sprint 18
+**Status:** Aceita · 2026-10-15 · Sprint 18 · **em parte substituída por ADR-047** (2026-10-24): fica a leitura do cabeçalho do edital (nome, banca, data, cargos); a separação em disciplinas e assuntos passa ao planejamento
 
 ### Contexto
 
@@ -1816,6 +1818,57 @@ FCC, a banca do alvo) mostrou o formato do que as bancas entregam.
 | Leitura por visão do modelo para provas em imagem | O proxy de IA só aceita texto e gastaria cota; o OCR no Pi custa ~100 s e nenhum swap |
 | Nota alimentando a escada por assunto | Um erro de atribuição da IA contaminaria o estudo; fica só como informação |
 | Reanálise da prova inteira | Gasta cota mesmo quando um assunto só mudou |
+
+---
+
+## ADR-047 — Conferência do edital pela pessoa e material por casamento
+
+**Status:** Aceita · 2026-10-24 · Sprints 25 e 26 · substitui em parte ADR-043 · complementa ADR-044
+
+### Contexto
+
+A análise do ADR-043 produz uma lista de assuntos que o usuário confirma. Medida no planejamento, a quebra varia entre rodadas
+(199 contra 138 assuntos para o mesmo edital), e o material casado por palavras com o assunto inteiro ficava impreciso. Foram
+construídos no planejamento: a quebra do assunto em **partes** literais com conferência por regra (65 de 66 certas em 9
+editais), a ligação das partes aos **nós** da árvore do QConcursos (~95%) e o casamento com os temas das apostilas pelo nó
+(84% de veredito igual entre duas IAs). O usuário pediu que a revisão manual no SGE seja central e que o que ele decidir seja
+guardado e valha antes da IA.
+
+### Decisão
+
+- **O SGE lê só o cabeçalho** do edital (nome, banca, data da prova, cargos) e recebe do cargo escolhido; **o planejamento**
+  extrai o texto, organiza em disciplinas, quebra em assuntos e partes e liga aos nós. O resultado chega pelo contrato
+  `edital-revisao/1` (rotas internas do mesmo desenho da prova: editais pendentes, dados do edital com as decisões, entregar,
+  falha, árvore do QConcursos), idempotente e versionado.
+- **O PDF do edital é guardado** num volume compartilhado com o worker, enquanto a conferência não termina (o ADR-043 não o
+  guardava).
+- **O SGE guarda a conferência**: partes, ligações, decisões, eventos e execuções (`01_DOMINIO` §3.12). A decisão fica presa à
+  chave (parte + contexto) e nunca é sobrescrita.
+- **A árvore do QConcursos vive no SGE**, carregada de um arquivo que o planejamento entrega; atualizá-la é gesto do usuário,
+  com o diff (novos, removidos, renomeados, movidos) mostrado antes.
+- **Os assuntos nascem na conclusão** da conferência (D-92).
+- **Material por casamento**: seleção por regra (completo por padrão, compacto opcional), manifesto validado pelo fatiador,
+  segunda chance pela busca por palavras só para teoria; questões e gabarito saem dos segmentos e viram o PDF de consulta
+  "Questões deste assunto", servido como arquivo junto do assunto, sem entidade própria.
+
+### Consequências
+
+- O SGE ganha tabelas e telas novas (conferência, fila, decisões, árvore); a escada, as sessões e as métricas não mudam.
+- A leitura do edital deixa de depender da chave do OpenRouter dentro da JVM: usa a IA configurada em Ajustes pelo proxy
+  interno (ADR-045), como o material.
+- Dois sistemas passam a depender de um contrato versionado; mudança incompatível vira `edital-revisao/2` e o SGE recusa a
+  que não conhece.
+- O reprocessamento é seguro: não apaga decisão nem segmento.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Manter a análise do ADR-043 e acrescentar a conferência | Duas leituras do mesmo edital, com divisões que não coincidem; a chave das partes não teria como ser estável |
+| Afinar o prompt até a IA acertar | Troca o erro, não o elimina; a defesa é a pessoa resolver e a decisão ser guardada |
+| Criar os assuntos na leitura e migrar a cada correção | Assunto com chave, sessão e segmento teria de ser migrado (§3.2.2) |
+| Atualização automática da árvore | Mudaria nós sob os pés da pessoa depois de ela ter resolvido |
+| Segmentos de questões na escada | Resolver questão se faz no QConcursos, ligado ao nó; inflaria o tempo do assunto |
 
 ---
 

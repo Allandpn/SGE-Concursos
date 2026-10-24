@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.26.0 |
-| Data | 2026-10-18 |
+| Versão | 1.27.0 |
+| Data | 2026-10-24 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -44,6 +44,11 @@ Uma frase cada. Se um termo precisar de duas, é porque está mal definido.
 | **Manutenção** | O regime perpétuo depois da escada |
 | **Erro** | Um engano registrado, com causa e com a confiança que havia ao cometê-lo |
 | **Simulado** | Prova completa, cronometrada, medida por disciplina |
+| **Parte** | Pedaço de um assunto do edital, em texto literal; serve para conferir a cobertura e ligar ao nó (§3.12) |
+| **Nó** | Posição na árvore de assuntos do QConcursos, referida só por id (§3.12) |
+| **Conferência do edital** | O estado em que a pessoa resolve as divergências da leitura do edital, antes de ele virar assuntos (§3.12) |
+| **Decisão** | O que a pessoa resolveu numa divergência; vale antes da IA em qualquer reprocessamento (§3.12) |
+| **Material de consulta** | Páginas das apostilas que não são leitura obrigatória, como as questões do assunto (§3.12) |
 
 Note a separação que a v1 não tinha: **revisão é compromisso, recuperação é
 evento.** A revisão agenda; a sessão de recuperação cumpre. Confundir os dois
@@ -113,6 +118,10 @@ um segmento de material (§3.7) para o assunto certo, sem depender do `id` que
 o SGE decide na importação (`02_JORNADAS` J-1). Quando presente, é **única
 entre todos os assuntos** (D-52) — do contrário, a importação de segmentos não
 teria resposta única de para qual assunto apontar.
+
+Um assunto que nasceu da conferência de um edital (§3.12) tem **partes**: os pedaços do texto do edital em que ele se
+divide, cada uma com a sua ligação a um nó da árvore do QConcursos. A parte não é unidade de estudo: a escada, as sessões,
+o peso e a ordem seguem o assunto, nunca a parte nem o nó.
 
 O assunto **não guarda a própria fase**. Ver §8.
 
@@ -417,6 +426,11 @@ histórico de editais, e dar destino à análise de edital (§3.9)
 
 ### 3.9 A análise de edital
 
+> **Revisada na v1.27.0 (ADR-047).** O SGE continua lendo o cabeçalho do edital (nome, banca, data da prova e cargos). A
+> separação em disciplinas, assuntos e partes, e a ligação aos nós, passam ao sistema de planejamento e à **conferência do
+> edital** (§3.12). As três regras abaixo (D-61, D-62, D-63) seguem valendo; "a confirmação" de D-62 é a **conclusão da
+> conferência** (D-92).
+
 Um edital novo pode entrar pelo próprio sistema: o usuário envia o PDF, e
 uma IA lê o texto em duas etapas — primeiro identifica o concurso e os
 cargos; depois, para o cargo escolhido, separa as disciplinas e os assuntos
@@ -472,6 +486,12 @@ preparar — é derivado (D-16) dos segmentos de cada assunto, com uma exceção
 a marca **sem material no acervo** é um fato registrado (o acervo não ensina
 aquilo), e não se deriva de nada que o sistema guarde. Ela some quando o
 assunto ganha segmentos.
+
+**Material por casamento.** Quando o assunto tem partes ligadas a nós (§3.12), o planejamento casa cada parte com os temas
+das apostilas pelo mesmo nó, uma IA confirma se o tema ensina, e a escolha do que entra é regra: por padrão todo tema que
+ensina (*completo*), ou o conjunto mais curto que cobre (*compacto*). O que ficou sem tema tem uma segunda chance pela
+busca por palavras, só para teoria. Resumo e roteiro de revisão entram depois da teoria; **questões e gabarito não entram
+nos segmentos** e viram material de consulta (§3.12). Não há limite de leitura por assunto, só o tempo estimado.
 
 **Refazer o material** (D-66). A preparação pode errar a mão — trazer páginas
 do tema vizinho, ou marcar sem material o que o acervo ensina. O usuário pode
@@ -544,6 +564,67 @@ onde o julgamento da IA errou.
 
 **Texto lido por OCR** leva a marca e deixa o usuário ver a imagem da página; na dúvida, a questão
 fica não avaliável em vez de julgada sobre texto corrompido (D-85).
+
+### 3.12 Conferência do edital e material de consulta
+
+A leitura do edital pelo sistema erra: quebra um assunto de um jeito numa rodada e de outro na seguinte, liga uma parte ao
+nó vizinho, não acha o nó. Trocar de modelo só troca o erro. Por isso a qualidade não é a da IA, e sim **a facilidade de a
+pessoa resolver cada divergência e a garantia de que o que ela resolveu não se perde**. A IA propõe, as regras conferem, a
+pessoa resolve (D-86).
+
+**O que é lido.** Para o cargo escolhido, o sistema de planejamento organiza o conteúdo programático em disciplinas, assuntos
+e **partes**, e liga cada parte a até três nós da árvore do QConcursos, com a **natureza** do vínculo: *exato*, *mais amplo*
+ou *parcial*. Parte sem nó é a árvore que não tem aquilo, e é um estado válido. O texto de cada assunto é **literal do
+edital** e a parte usa só palavras do assunto; o que a regra não aceita aparece na conferência, nunca é corrigido em
+silêncio (D-88). A origem de cada ligação é guardada: `ia`, `refino` (uma segunda checagem) ou `decisão`.
+
+**A conferência.** A pessoa vê as contagens (disciplinas, assuntos, partes, por natureza, sem nó, pendências abertas,
+decididas por pessoa, aplicadas de decisão anterior) e uma fila só com o que pede decisão, na ordem de gravidade. Em cada
+item pode aceitar (também todos os exatos de uma disciplina), trocar o nó por busca, ramos ou sugestão, declarar que a
+árvore não tem, dividir, juntar ou editar a parte, descartar com motivo e comentar. O que entra na fila: linhas fora de
+qualquer disciplina; trecho do edital sem assunto; assunto recusado pela regra; alerta de parte; parte mal dividida; parte
+sem nó; vínculo mais amplo ou parcial; nó trocado pela segunda checagem; duas execuções que discordam; disciplina ligada à
+disciplina errada; nó que sumiu ou mudou na árvore.
+
+**Decisão** (D-87). Cada gesto da pessoa é uma decisão: parte e contexto (a chave de reaproveitamento, sem a disciplina),
+nós, natureza, escopo, edital de origem, versão da árvore e data. O escopo é **este edital** (padrão) ou **todos os
+editais**, e este pede confirmação extra que mostra quantas partes de outros editais mudariam. A decisão vale antes da IA e
+do refino, pode ser vista, editada e revogada numa lista própria, e duas decisões em conflito para a mesma chave abrem uma
+pendência. Reprocessar nunca sobrescreve decisão; se a IA nova discorda, isso é informação, não pendência (D-86).
+
+**Identidade** (D-89). Assunto e parte têm **chave** estável, um hash do texto normalizado. Reprocessar o mesmo edital mantém
+a chave do que não mudou. Chave que sumiu fica na fila como "não aparece mais no reprocessamento" e nunca é removida em
+silêncio. A entrega do planejamento é idempotente, e um formato que o SGE não conhece é recusado. Ao reprocessar, a tela
+mostra só as pendências novas e um contador do que a IA mudou mas a decisão preservou (D-95).
+
+**A árvore.** O nó é guardado só por id, com a versão da árvore (D-90). A árvore do QConcursos vive no SGE, carregada de um
+arquivo que o planejamento entrega, e **a pessoa decide quando atualizá-la**. Ao atualizar, o SGE compara com a versão
+anterior (nós novos, removidos, renomeados e movidos) e devolve à fila as partes cujo nó sumiu ou mudou. Nada é trocado sem
+ela ver.
+
+**Concluir** (D-91, D-92). Bloqueiam a conclusão só as divergências que deixam o **conteúdo do edital** incerto: linhas fora
+de disciplina não confirmadas, trecho sem assunto, assunto recusado pela regra e parte com alerta de divisão. Parte sem nó
+ou com vínculo mais amplo **avisa**, no painel e no plano junto ao assunto afetado, até a pessoa resolver; o estudo e o
+material seguem. A pessoa pode concluir com essas pendências e elas ficam registradas. É a conclusão que cria os assuntos
+(com chave, D-64) e ativa o concurso (D-60); antes disso a conferência pode mudar o texto e a divisão sem migrar nada.
+
+**Depois de concluída**, tudo continua possível: vincular uma parte sem nó, trocar o nó, acrescentar nós, trocar a fonte de
+uma parte. Trocar o nó atualiza na hora o atalho para as questões do assunto. Se a troca muda o material sugerido, o sistema
+**mostra o que entra e o que sai antes de aplicar**. Nada que já existe é tocado (D-93): segmento criado ou estudado nunca
+é removido, o material novo entra como sugestão e o antigo fica marcado como ligado ao nó anterior; escada, sessões,
+revisões e erros não dependem do nó. A troca é uma decisão como as outras e pode ser desfeita.
+
+**Material de consulta** (D-94). As páginas de questões comentadas, lista, questionário e gabarito das aulas que ensinaram o
+assunto são juntadas num PDF **"Questões deste assunto"**, com capa que diz de onde veio cada página. Não é segmento: não
+tem escada, não entra no turno e não conta para a leitura completa do assunto (D-54). Aparece no detalhe do assunto ao lado
+do atalho para as questões do QConcursos. O sistema só serve o arquivo; quem o monta é o planejamento.
+
+**Execuções.** Cada execução da IA guarda modelo, versão do prompt e data, e a conferência mostra qual execução gerou a
+proposta. Trocar o modelo reprocessa só o que não tem decisão humana (D-95). A taxa de aceitação por modelo e por tipo de
+divergência, que sai do uso, serve para escolher entre modelos.
+
+**O que o sistema não garante.** Que o nó escolhido seja o melhor, e que o acervo ensine toda parte: parte sem tema que sirva
+é lacuna declarada, nunca material inventado (D-65).
 
 ---
 
@@ -1284,6 +1365,8 @@ Revisão    1 ──── 1 Sessão (cumpriu)  onde vive o resultado
 Sessão     1 ──── N Erro              opcional
 Disciplina 1 ──── N ResultadoSimulado
 Concurso   N ──── N Assunto           cobertura do edital: peso, disciplina e ordem que ele deu
+Assunto    1 ──── N Parte             só os nascidos da conferência de um edital (§3.12)
+Parte      1 ──── N Nó                até 3, com natureza (os nós são da árvore do QConcursos, fora do estudo)
 ```
 
 **A única relação n:n é a cobertura do edital** (§3.8) — e ela descreve um
@@ -1384,6 +1467,16 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-83 | O gabarito é do cargo e do tipo da prova; arquivo de vários cargos é recortado pelo sistema e o recorte é mostrado ao usuário | §3.11 |
 | D-84 | Gabarito preliminar vale como provisório; o definitivo, ao mudar ou anular uma resposta, recalcula a nota e devolve as questões afetadas ao julgamento | §3.11 |
 | D-85 | Questão lida por OCR leva a marca e a imagem da página fica disponível; na dúvida fica não avaliável em vez de julgada sobre texto corrompido | §3.11 |
+| D-86 | A IA propõe, as regras conferem, a pessoa resolve; nenhuma decisão da pessoa é sobrescrita por reprocessamento, e a divergência da IA nova é informação, não pendência | §3.12 |
+| D-87 | A decisão vale antes da IA e do refino, em qualquer edital, pela chave parte + contexto; o escopo é este edital (padrão) ou todos, e "todos" pede confirmação extra com a contagem de partes de outros editais que mudariam | §3.12 |
+| D-88 | O texto do assunto é literal do edital e a parte usa só palavras do assunto; o que a regra recusa aparece na conferência e nunca é corrigido em silêncio | §3.12 |
+| D-89 | Assunto e parte têm chave estável (hash do texto normalizado); chave que sumiu na reprocessamento fica na fila e nunca é removida em silêncio; a entrega do planejamento é idempotente e formato desconhecido é recusado | §3.12 |
+| D-90 | O nó é guardado só por id, com a versão da árvore; a árvore só é atualizada quando a pessoa decide, e a atualização devolve à fila as partes cujo nó sumiu ou mudou | §3.12 |
+| D-91 | Concluir a conferência só é bloqueado por divergência que deixa o conteúdo do edital incerto; parte sem nó ou com vínculo mais amplo avisa no painel e no plano e não bloqueia | §3.12 |
+| D-92 | Os assuntos do edital nascem na conclusão da conferência (com chave, D-64), que também ativa o concurso (D-60); antes disso nada é gravado como assunto (D-62) | §3.12 |
+| D-93 | Trocar nó ou fonte de uma parte nunca apaga segmento nem toca escada, sessões, revisões e erros (D-18); o material novo entra como sugestão e o sistema mostra o que muda antes de aplicar | §3.12 |
+| D-94 | O material de consulta ("Questões deste assunto") não é segmento: não tem escada, não entra no turno e não conta para a leitura completa do assunto | §3.12 |
+| D-95 | Cada execução da IA guarda modelo, prompt e data; trocar o modelo reprocessa só o que não tem decisão humana, e a tela do reprocessamento mostra só as pendências novas e um contador do que a decisão preservou | §3.12 |
 
 ---
 
@@ -1411,6 +1504,11 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Concurso como entidade, com cobertura do edital | Concurso só como configuração do script (ADR-039) | Sem entidade não há histórico, nem dias até a prova, nem destino para a análise por IA. A cobertura guarda o que o edital disse sem duplicar o assunto |
 | Peso único por assunto, o do concurso ativo | Peso por concurso | Peso por concurso mudaria o nível-alvo da escada e todas as métricas para servir a dois editais simultâneos, que ninguém pediu |
 | Peso da análise calculado pelo sistema a partir do número de questões | Peso decidido pela IA | A IA inventaria um peso que o edital não declarou; contagem de questões é fato do edital, a regra de tercis é auditável |
+| Conferência do edital pela pessoa, com decisão guardada | Melhorar o prompt da IA até acertar | Trocar modelo ou prompt troca o erro, não o elimina, e overfitting a casos conhecidos não generaliza. A decisão presa à chave faz a correção valer para sempre |
+| Parte como pedaço literal do assunto, com nó da árvore do QConcursos como pivô | Casar o assunto inteiro com o acervo por palavras | O assunto é grosso; o nó dá um critério verificável (84% de veredito igual entre duas IAs) e é também o filtro das questões |
+| Os assuntos nascem na conclusão da conferência | Criar na leitura e migrar a cada correção | A conferência pode mudar o texto e a divisão; criar antes obrigaria a migrar assunto com chave, sessão e segmento |
+| Árvore do QConcursos no SGE, atualizada quando a pessoa decide | Árvore servida pelo planejamento a cada consulta, ou atualização automática | A tela precisa de busca rápida; e uma troca de nós sob os pés da pessoa mudaria o que ela já resolveu |
+| Questões e gabarito como material de consulta, fora dos segmentos | Segmentos de questões na escada | Resolver questão é feito no QConcursos, ligado ao nó; misturar com leitura inflaria o tempo do assunto e a contagem de leitura (D-54) |
 
 ---
 
@@ -1456,6 +1554,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.27.0 | 2026-10-24 | Pedido do usuário ("do edital ao estudo pronto", com a revisão manual no SGE como parte central). **§3.12** (conferência do edital e material de consulta) e **D-86 a D-95**, migradas de `docs/ESPECIFICACAO-REVISAO-EDITAL.md` v0.1.0: a IA propõe e a pessoa resolve, a decisão é guardada presa à chave e vale antes da IA, os assuntos nascem na conclusão da conferência, a árvore do QConcursos é atualizada quando a pessoa decide, questões e gabarito viram material de consulta fora dos segmentos. **§1** ganha cinco termos; **§3.2** ganha partes; **§3.9** passa a ler só o cabeçalho (ADR-047); **§3.10** ganha o material por casamento; **§9** ganha as relações de parte e nó. "Revisão" continua sendo o compromisso da escada: o novo conceito se chama conferência. 95 regras |
 | 1.26.0 | 2026-10-18 | Pedido do usuário: o objetivo final é gabaritar a prova. **§3.11** (prova hospedada e verificação do material) e **D-67 a D-85**, migradas de `docs/ESPECIFICACAO-PROVA-GABARITO.md` v0.4.0: o veredito é sobre a alternativa do gabarito, a nota entra em M-1 por disciplina e global, o desempenho por assunto só informa, a reanálise é incremental e derivada. **§3.6** remete à prova hospedada. Revisa `00_PRODUTO` §5.1 e §6.7 (v1.8.0). 85 regras |
 | 1.25.0 | 2026-10-17 | Pedido do usuário, depois da primeira preparação real (SEFAZ SC 2026): parte das faixas trazia o tema vizinho. **D-66** (§3.10): refazer o material de um assunto ou do concurso arquiva segmentos e descarta a marca sem material, sem apagar nada. **D-50** passa a valer entre os segmentos ativos — os segmentos novos repetem as ordens dos arquivados. 66 regras |
 | 1.24.0 | 2026-10-17 | Pedido do usuário: "subir o edital, escolher o cargo, e o sistema faz todo o resto". Nova **§3.10**: o material de leitura é preparado pelo sistema de planejamento rodando no mesmo servidor, sem toque humano (ADR-044). **D-64** (§3.8, §3.9): concurso e assunto confirmados ganham identificador e chave externa na confirmação — fim do casamento por nome e do concurso duplicado quando o material chegava (o concurso da análise nascia sem identificador e a importação criava outro). **D-65**: o que o acervo não ensina vira marca visível com motivo, nunca material inventado. 65 regras |

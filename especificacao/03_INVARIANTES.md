@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.14.0 |
-| Data | 2026-10-18 |
+| Versão | 1.15.0 |
+| Data | 2026-10-24 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 85 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 95 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 85 regras, classificadas
+## 3. As 95 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -197,8 +197,18 @@ conceitual — envelhecer por motivo errado.
 | D-83  | Comportamento | S | Teste com os arquivos reais (FGV, IDECAN, FCC, CEBRASPE): o recorte do gabarito é o do cargo e tipo da prova e é mostrado |
 | D-84  | Derivação | S | Teste: definitivo que altera ou anula uma resposta recalcula a nota e devolve as questões afetadas ao julgamento |
 | D-85  | Comportamento | S + I | Teste: questão lida por OCR leva a marca; texto duvidoso torna a questão não avaliável |
+| D-86  | Comportamento | S | Teste: reprocessar um edital com decisão da pessoa não altera a decisão; a ligação nova que discorda aparece como informação e não como pendência |
+| D-87  | Comportamento | S | Teste: decisão de escopo "edital" não vale em outro edital; de escopo "todos" vale; sem a confirmação extra não grava "todos"; a decisão é aplicada antes da IA |
+| D-88  | Comportamento | S | Teste com os casos reais de edital: o texto do assunto é literal; o que a regra recusa chega à fila e nenhum texto é reescrito |
+| D-89  | Invariante | **P** + S | Chave única por edital no banco; teste: a mesma entrega duas vezes não duplica; chave que sumiu fica na fila e não é apagada; `edital-revisao/2` é recusado |
+| D-90  | Comportamento | S + I | Teste: atualizar a árvore só ocorre por pedido; nó removido, renomeado ou movido devolve a parte à fila; nada muda sem o gesto |
+| D-91  | Comportamento | S + I | Teste: concluir é recusado com divergência de conteúdo aberta e aceito com parte sem nó; o aviso aparece no painel e no plano |
+| D-92  | Comportamento | S | Teste: antes da conclusão não existe assunto novo nem concurso ativo; concluir cria assuntos com chave e ativa o concurso |
+| D-93  | Comportamento | S | Teste de ausência: trocar nó ou fonte não remove segmento nem altera escada, sessões, revisões e erros; o material novo entra como sugestão; o que muda é mostrado antes de aplicar |
+| D-94  | Derivação | S | Teste: o material de consulta não conta para a leitura completa (D-54) nem aparece no turno |
+| D-95  | Comportamento | S | Teste: trocar o modelo reprocessa só o que não tem decisão humana; a tela do reprocessamento lista só as pendências novas e o contador de decisões preservadas |
 
-**Contagem:** 21 invariantes · 7 derivações · 49 comportamentos · 9 políticas — 86 linhas para 85 regras.
+**Contagem:** 22 invariantes · 8 derivações · 57 comportamentos · 9 políticas — 96 linhas para 95 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -375,7 +385,7 @@ movido — e a tabela vira ficção que ninguém confere.
 | O que se pergunta | Como se responde |
 |---|---|
 | Onde D-07 é implementada? | Varredura por `D-07` no código |
-| Alguma regra ficou sem implementação? | Varredura das 85 contra o resultado |
+| Alguma regra ficou sem implementação? | Varredura das 95 contra o resultado |
 | Esta restrição corresponde a quê? | O identificador está no nome dela |
 
 ### 9.1 Citação como metadado, não como comentário
@@ -385,7 +395,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 85 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 95 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -508,6 +518,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.15.0 | 2026-10-24 | **D-86 a D-95** com `01_DOMINIO.md` v1.27.0 (conferência do edital e material de consulta). Uma invariante (D-89), uma derivação (D-94), oito comportamentos. Contagem: 96 linhas para 95 regras |
 | 1.14.0 | 2026-10-18 | **D-67 a D-85** com `01_DOMINIO.md` v1.26.0 (prova hospedada e verificação do material). Três invariantes (D-72, D-73, D-80), duas derivações (D-79, D-84), duas políticas (D-67, D-69), doze comportamentos. Contagem: 86 linhas para 85 regras |
 | 1.13.0 | 2026-10-17 | **D-66** com `01_DOMINIO.md` v1.25.0 (refazer material). **D-50** passa a índice único parcial sobre os segmentos ativos. Contagem: 67 linhas para 66 regras |
 | 1.12.0 | 2026-10-17 | **D-64 e D-65** com `01_DOMINIO.md` v1.24.0 (identidade dada na confirmação; material preparado pelo sistema). As duas Comportamento/`S`. Contagem: 66 linhas para 65 regras |

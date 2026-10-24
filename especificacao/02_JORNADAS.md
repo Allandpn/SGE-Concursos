@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.15.0 |
-| Data | 2026-10-18 |
+| Versão | 1.16.0 |
+| Data | 2026-10-24 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -371,7 +371,7 @@ os próximos meses. Não tem orçamento de segundos; tem orçamento de
 **atenção**: a revisão da proposta é o momento em que um erro de leitura
 ainda custa um toque, e não meses.
 
-**Edital novo, pelo próprio sistema** (`01_DOMINIO` §3.9, ADR-043):
+**Edital novo, pelo próprio sistema** (`01_DOMINIO` §3.9 e §3.12, ADR-043 e ADR-047):
 
 1. Em **Concursos**, toca "Novo edital" e escolhe o PDF.
 2. O sistema lê o texto e mostra o que achou: nome do concurso, banca, data
@@ -379,30 +379,35 @@ ainda custa um toque, e não meses.
    dois minutos; dá para sair da tela e voltar — a análise fica guardada e
    continua de onde parou.
 3. Escolhe o **cargo**.
-4. O sistema separa disciplinas e assuntos daquele cargo e mostra a
-   **proposta**, por disciplina:
-   - o número de questões e o **peso** calculado (D-61) — ou "peso não
-     determinado", quando o edital não traz o quadro;
-   - cada assunto, na ordem do edital, marcado **novo** ou **já existe:
-     <nome>** — o que já existe mantém escada e histórico;
-   - no topo, o resumo: quantos novos, quantos em comum, quantos assuntos
-     atuais ficam fora do edital (continuam como estão).
-5. Revisa: desmarca o que não quer, troca o peso de uma disciplina, desfaz
-   uma correspondência errada ("tratar como novo"), corrige nome e data da
-   prova.
-6. **Confirma.** Só aqui algo é gravado (D-62): disciplinas e assuntos novos
-   nascem, os em comum recebem peso e ordem do edital, e o concurso vira o
+4. O sistema de planejamento, em segundo plano, separa disciplinas, assuntos e **partes** daquele cargo e liga cada parte a um
+   nó da árvore do QConcursos (`01_DOMINIO` §3.12). Dá para sair da tela e voltar; se uma etapa falha, o edital volta a
+   "pendente" com a etapa e o motivo, e há "Tentar de novo".
+5. Abre a **conferência do edital**. No topo, as contagens: disciplinas · assuntos · partes · exatas, mais amplas e parciais ·
+   sem nó · **pendências abertas** · decididas por você · aplicadas de decisão anterior. Duas visões: **por disciplina**, como
+   o edital, e a **fila**, só com o que pede decisão, do mais grave ao menos. Em cada item aparecem a parte, o trecho do
+   edital de onde saiu, o nó proposto com o caminho completo e quantos filhos ele tem, a natureza do vínculo e o que a IA e a
+   regra disseram.
+6. Resolve: **aceitar** (um toque; há "aceitar todos os exatos da disciplina"), **trocar o nó** (busca por texto, navegação
+   por ramos, sugestões do sistema; aceita mais de um), **a árvore não tem**, **dividir, juntar ou editar** a parte,
+   **descartar** com motivo, comentar. Cada gesto é uma decisão; o escopo é "este edital", ou "todos os editais" com uma
+   confirmação que diz quantas partes de outros editais mudariam. As decisões ficam numa lista própria, onde se vê, edita e
+   revoga.
+7. **Concluir.** Só bloqueiam as divergências que deixam o conteúdo do edital incerto (linha fora de disciplina, trecho sem
+   assunto, assunto recusado pela regra, parte com alerta de divisão). Parte sem nó ou com vínculo mais amplo **avisa** —
+   "12 partes sem filtro de questões" — no painel e no plano, junto ao assunto, e não impede o estudo. É aqui que algo é
+   gravado (D-62, D-92): disciplinas e assuntos novos nascem, os em comum recebem peso e ordem do edital, e o concurso vira o
    alvo (D-60).
-7. **Pronto.** Os assuntos já estão no turno. O material de leitura é
-   preparado sozinho, em segundo plano (`01_DOMINIO` §3.10): em Concursos, o
-   concurso-alvo mostra "Material: 12 de 40 prontos · 3 sem material no
-   acervo · 25 a preparar", e cada assunto sem material no acervo mostra o
-   motivo no detalhe. Nada a fazer — é só acompanhamento. Se o material de um
-   assunto vier ruim, o detalhe dele tem **Refazer o material**; Concursos tem o
-   mesmo para o concurso inteiro, com confirmação (`01_DOMINIO` D-66). **Ver por
-   assunto** abre a lista do concurso-alvo: cada assunto com a situação do
-   material, quantos segmentos, quantos minutos e páginas de leitura, e, nos que
-   o acervo não ensina, o motivo; um filtro mostra só os sem material.
+8. **Pronto.** Os assuntos já estão no turno. O material é preparado sozinho, em segundo plano (`01_DOMINIO` §3.10): em
+   Concursos, o concurso-alvo mostra "Material: 12 de 40 prontos · 3 sem material no acervo · 25 a preparar". **Ver por
+   assunto** abre a lista do concurso-alvo: cada assunto com a situação (*completo*, *parcial*, *sem material*, *recusado*),
+   o tempo estimado de leitura, os segmentos e as **lacunas por parte**, com o motivo; um filtro mostra só os sem material.
+   O detalhe do assunto tem **Questões deste assunto** (consulta, fora do turno e da escada) ao lado do atalho para as
+   questões do QConcursos, e **Refazer o material** (D-66).
+9. **Depois, a qualquer hora.** A conferência continua aberta: vincular uma parte sem nó, trocar o nó, acrescentar nós ou
+   trocar a fonte de uma parte. Antes de aplicar, o sistema mostra **o que entra e o que sai** do material sugerido; nada do
+   que já existe é removido (D-93). **Atualizar a árvore** do QConcursos é um gesto seu, em Ajustes: ele mostra os nós novos,
+   removidos, renomeados e movidos, e devolve à fila as partes afetadas (D-90).
+10. **Reprocessar** o edital mostra só as pendências novas e um contador "a IA mudou, a sua decisão foi mantida" (D-95).
 
 A IA fica em **Ajustes → IA** (ADR-045): o token da **assinatura do Claude**
 (gerado uma vez com `claude setup-token`) e o modelo, e, como segunda opção, a
@@ -701,6 +706,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.16.0 | 2026-10-24 | **J-5 refeita do passo 4 em diante** com `01_DOMINIO.md` v1.27.0: a proposta de assuntos dá lugar à **conferência do edital** (partes, nós do QConcursos, fila de divergências, decisões com escopo, conclusão que grava), ao acompanhamento do material por parte e ao material de consulta. Atualizar a árvore passa a ser gesto do usuário. Pedido do usuário |
 | 1.15.0 | 2026-10-18 | **J-6** (verificar o material com uma prova e gabarito) e **J-7** (resolver a prova), com `01_DOMINIO` v1.26.0 (§3.11, D-67 a D-85). Telas e orçamento detalhados no documento da sprint |
 | 1.14.0 | 2026-10-17 | J-5 passo 7: lista do material por assunto (situação, minutos, páginas, motivo) |
 | 1.13.0 | 2026-10-17 | J-5 passo 7: refazer o material de um assunto ou do concurso (D-66) |
