@@ -490,3 +490,24 @@ arquivos em `~/partes-edital/material/` do planejamento.
 **Nada em `especificacao/` foi alterado.** Novas entidades (parte, decisão, execução de IA) e telas são mudança conceitual e
 nascem do lado do SGE, na sprint que a incluir, pela regra de vocês (documento primeiro, versão, changelog). Este texto é o
 pedido e o desenho de origem, não implementação.
+
+## 18. Requisito novo (2026-10-24): material de consulta "Questões deste assunto", fora da escada
+
+**Decisão do usuário (planejamento):** questões comentadas, listas de exercícios e gabaritos das aulas escolhidas para um
+assunto **não entram nos segmentos**. Como todo segmento é leitura obrigatória antes da escada, elas viram um material de
+**consulta**, aberto quando o aluno quiser, nunca cobrado nem contado no tempo do assunto.
+
+**O que o planejamento entrega:** por assunto que tenha questões nas aulas escolhidas, um PDF `consulta/<chave>.pdf` (capa com a
+origem de cada página, depois as páginas de questões e gabarito, aula a aula), onde `<chave>` é a chave estável do assunto do
+contrato `edital-revisao/1`. No `entrega.json`, o assunto traz `material.consulta = {"arquivo", "paginas"}` (ausente quando não
+há questões). Exemplo real, MPPR cargo 402: 77 assuntos com consulta, 5.522 páginas no total.
+
+**O que se pede ao SGE (conceito novo):**
+1. Guardar, por assunto, no máximo um material de consulta (arquivo/link e número de páginas), separado de `segmento`.
+2. Mostrar na tela do assunto o atalho "Questões deste assunto", sem entrar na fila de leitura, na escada nem no cálculo de tempo.
+3. Reentrega com PDF novo **substitui** a consulta (não há histórico de estudo sobre ela); segmentos continuam sem ser apagados.
+
+**Fora deste pedido:** resolver questões dentro do SGE; a resolução de questões novas segue pelo QConcursos, ligada ao assunto
+pelo nó da árvore (§17).
+
+Nada em `especificacao/` foi alterado; é pedido e desenho de origem, a ser tratado pelo processo de vocês.
