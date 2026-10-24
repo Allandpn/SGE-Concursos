@@ -37,7 +37,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 22 | Peso por incidência da banca | Peso do assunto vindo da estatística histórica da banca, não só do quadro do edital (entrada do planejamento) | não começou |
 | 23 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; nota de corte (o simulado no formato da prova passou para a Sprint 24) | não começou |
 | 24 | Prova e gabarito | O planejamento lê a prova (OCR quando é imagem) e entrega questões e gabarito; o sistema julga se o material sustenta a alternativa do gabarito (cobertura) e o usuário resolve a prova, com nota em M-1 por disciplina e global. Especificação migrada (`01_DOMINIO` §3.11, D-67 a D-85, J-6, J-7, ADR-046); `docs/ESPECIFICACAO-PROVA-GABARITO.md` guarda o raciocínio e a amostra | **em andamento** — `docs/SPRINT-24-PROVA-GABARITO.md` |
-| 25 | Conferência do edital: recebimento e tela | O planejamento entrega a leitura do edital (`edital-revisao/1`): disciplinas, assuntos, partes e ligação aos nós do QConcursos; o SGE guarda, mostra a fila de divergências e deixa a pessoa resolver, concluir (cria os assuntos) e atualizar a árvore. Especificação migrada (`01_DOMINIO` §3.12, D-86 a D-95, J-5 refeita, ADR-047); `docs/ESPECIFICACAO-REVISAO-EDITAL.md` guarda o raciocínio | não começou |
+| 25 | Conferência do edital: recebimento e tela | O planejamento entrega a leitura do edital (`edital-revisao/1`): disciplinas, assuntos, partes e ligação aos nós do QConcursos; o SGE guarda, mostra a fila de divergências e deixa a pessoa resolver, concluir (cria os assuntos) e atualizar a árvore. Especificação migrada (`01_DOMINIO` §3.12, D-86 a D-95, J-5 refeita, ADR-047); `docs/ESPECIFICACAO-REVISAO-EDITAL.md` guarda o raciocínio — `docs/SPRINT-25-CONFERENCIA-EDITAL.md` | **em andamento** — ver §20B |
 | 26 | Decisões com escopo e material por casamento | Decisões "este edital" e "todos", reprocessamento que preserva a decisão, o worker prepara o material por casamento (completo/compacto, segunda chance) e entrega "Questões deste assunto"; depende da Sprint 25 funcionar com dado real | não começou |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
@@ -1044,6 +1044,27 @@ nasce da prova.
 
 ---
 
+## 20B. Sprint 25 · Conferência do edital
+
+**Documento técnico:** `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.0.0 · **Especificação:** `01_DOMINIO` §3.12, D-86 a D-95; ADR-047.
+Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`).
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 25.0 | Documento técnico | Claude | **feito** |
+| 25.1 | `V17`: tabelas, restrições, gatilho de `edital_evento`, migração das análises `PRONTA` | Claude | a fazer |
+| 25.2 | Árvore do QConcursos: carga, diferença, busca e navegação | Claude | a fazer |
+| 25.3 | Análise só com o cabeçalho; guardar o PDF; cargo leva a `SEPARANDO_ASSUNTOS` | Claude | a fazer |
+| 25.4 | Rotas internas do edital e gravação da entrega | Claude | a fazer |
+| 25.5 | Chave e conferência por regra em Java, com vetores compartilhados com o planejamento | Claude | a fazer |
+| 25.6 | Conferência: contagens, fila derivada, ações, decisões e eventos | Claude | a fazer |
+| 25.7 | Concluir; aviso no painel e no plano | Claude | a fazer |
+| 25.8 | Adotar versão da árvore, com o impacto | Claude | a fazer |
+| 25.9 | Telas, compose com o volume `editais`, adendo do `03E` | Claude | a fazer |
+| 25.10 | Pi: edital real (MPPR) de ponta a ponta | Claude + usuário | a fazer |
+
+---
+
 ## 21. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
@@ -1062,6 +1083,7 @@ nasce da prova.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.70.0 | 2026-10-24 | **Sprint 25 aberta** (§20B). Documento técnico `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.0.0, contra `01_DOMINIO` v1.27.0: `V17` (árvore, leitura entregue, decisões, eventos só de inserção), rotas internas `/internal/editais` e `/internal/arvores`, conferência com fila derivada, concluir cria os assuntos, adotar árvore por gesto. Fica para a Sprint 26: escopo "todos", reprocessar, material e consulta. Nenhum código ainda |
 | 1.69.0 | 2026-10-24 | **Especificação da conferência do edital migrada** (`docs/ESPECIFICACAO-REVISAO-EDITAL.md` v0.1.0, decisões A a F do usuário): `01_DOMINIO` v1.27.0 (§3.12, D-86 a D-95), `02_JORNADAS` v1.16.0 (J-5 refeita do passo 4 em diante), `03_INVARIANTES` v1.15.0, ADR-047. Mapa ganha as sprints 25 e 26, uma linha cada (documento técnico só quando começarem). Nenhum código |
 | 1.68.0 | 2026-10-18 | **Ensaio da FCC (24.8) rodado e a cadeia do material auditada.** Segmentador do planejamento (`35f7fe2`, em `main` e no Pi): tolera marcador de OCR mal lido ("(8)", "(Cc)"), recupera a questão cujo número o OCR perdeu e aceita "22." sozinho; de 34 para 56 questões com texto em 60. Prova id 2 (TJ-CE, Infraestrutura de TI, tipo 4): 60 questões, gabarito casado, 39 avaliáveis, 4 sem texto, 10 com OCR duvidoso, 7 fora do edital. **Julgamento: 6 respondíveis, 5 parciais, 28 não respondíveis.** **CORREÇÃO (mesmo dia): o edital-alvo (SEFAZ SC 2026, Auditor, Ciências da Computação) NÃO é o da prova (TJ-CE, Infraestrutura de TI), então a prova não é régua justa e o placar não mede a cobertura do alvo; só ~12 das 33 são falha real contra o edital-alvo.** **Auditoria (`docs/AUDITORIA-CADEIA-MATERIAL.md` 1.0.1)**: das 33 questões furadas, no máximo 4 são ausência real do acervo (NTP, PgBouncer, restore do SQL Server, DAI); o mecanismo da cadeia continua verdadeiro — consulta de ~12 termos em OU casa 24% do índice, orçamento fixo de 6 arquivos × 12 páginas, filtro de curso por radical exclui os cursos certos, 3 assuntos sem segmento. OCR do acervo não é a causa (1,8% de páginas vazias). `docs/RELATORIO-SEGUNDA-OPINIAO.md` reúne o sistema, o diagnóstico e as sugestões para revisão externa. **Fase 2 (corrigir a cadeia) aguarda decisão e exige nova exceção de escrita no planejamento e documento antes do código.** Pendente: conferir ~20 vereditos à mão; limpar `/tmp/ensaio-fcc` no Pi |
 | 1.67.0 | 2026-10-18 | **Sprint 24 implantada no Pi**, com o seu aval: merge da branch `prova-gabarito` em `main` do planejamento (`32b074e`) e push; pastas do volume `provas` com os donos certos; `git pull` nos dois clones; `docker compose up -d --build app planejamento` (~minutos: Maven no app e Tesseract no worker). Conferido: app saudável, `V16` aplicada, `GET /api/provas` → `200 []`, rota interna `401` sem token, Tesseract 5.5.0 com `por` no worker, `/internal/provas/pendentes` chamado pelo worker com o token real → `[]`, uma volta completa do worker sem erro. Memória do Pi em uso: 1,3 GB (o VNC desligado liberou ~130 MB). Falta o ensaio com a prova da FCC (24.8) e as telas (24.7) |
