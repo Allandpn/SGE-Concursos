@@ -72,6 +72,10 @@ public class AnaliseEdital {
 
     private Long concursoId;
 
+    /** A pessoa pediu para ler o edital de novo; o worker recomeça do zero e a entrega apaga a marca (docs/SPRINT-26 §3). */
+    @Column(nullable = false)
+    private boolean reprocessar;
+
     @Setter(AccessLevel.NONE)
     @CreationTimestamp
     @Column(updatable = false)

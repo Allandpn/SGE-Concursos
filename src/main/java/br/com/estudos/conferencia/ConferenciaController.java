@@ -80,6 +80,12 @@ public class ConferenciaController {
         return service.avisosDoConcurso(concursoId);
     }
 
+    @PostMapping(BASE + "/conferencia/reprocessar")
+    @Operation(summary = "Lê o edital de novo", description = "O planejamento refaz a leitura e a entrega se funde na conferência pela chave; nada que você decidiu muda (D-86, D-89). Só com a conferência aberta.")
+    public void reprocessar(@PathVariable Long id) {
+        service.reprocessar(id);
+    }
+
     @PostMapping(BASE + "/conferencia/concluir")
     @Operation(summary = "Conclui a conferência", description = "Cria disciplinas, assuntos e concurso e ativa o concurso (D-62, D-92). Recusa com divergência que bloqueia (D-91).")
     public Map<String, Object> concluir(@PathVariable Long id) {

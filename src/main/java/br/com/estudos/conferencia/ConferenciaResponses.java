@@ -25,11 +25,12 @@ public final class ConferenciaResponses {
         Pendencias pendencias,
         @Schema(description = "Partes que a pessoa aceitou ou decidiu") int decididasPorPessoa,
         @Schema(description = "Partes que já vieram resolvidas por uma decisão anterior") int aplicadasDeDecisaoAnterior,
+        @Schema(description = "Partes já decididas por você em que a IA, na última leitura, propôs outro nó: a sua decisão foi mantida (D-95)") int iaMudou,
         @Schema(description = "Nenhuma pendência bloqueia (D-91)") boolean podeConcluir) {}
 
     public record Parte(
         Long id, String chave, int ordem, String texto, String contexto, String herdado, String natureza, String origem,
-        String estado, boolean aparece, boolean noMudou, String comentario,
+        String estado, boolean aparece, boolean noMudou, boolean iaMudou, String comentario,
         @Schema(description = "Os nós da ligação vigente") List<No> nos,
         @Schema(description = "Os nós que o sistema propôs e a pessoa não adotou") List<No> propostos,
         String propNatureza) {}

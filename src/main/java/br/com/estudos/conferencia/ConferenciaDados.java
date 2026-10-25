@@ -24,7 +24,7 @@ final class ConferenciaDados {
 
     record Parte(long id, long assuntoEditalId, String chave, int ordem, String texto, String contexto, String herdado,
                  String natureza, String origem, String estado, long arvoreVersaoId, boolean aparece, boolean noMudou,
-                 String comentario, String propNatureza, List<Long> nos, List<Long> propostos) {
+                 String comentario, String propNatureza, boolean iaMudou, List<Long> nos, List<Long> propostos) {
         boolean ativa() {
             return aparece && !"DESCARTADA".equals(estado);
         }
@@ -87,7 +87,7 @@ final class ConferenciaDados {
             }, analiseId);
         consultar(jdbc, """
             SELECT p.id, p.assunto_edital_id, p.chave, p.ordem, p.texto, p.contexto, p.herdado, p.natureza, p.origem, p.estado,
-                   p.arvore_versao_id, p.aparece, p.no_mudou, p.comentario, p.prop_natureza
+                   p.arvore_versao_id, p.aparece, p.no_mudou, p.comentario, p.prop_natureza, p.ia_mudou
               FROM edital_parte p
               JOIN edital_assunto a ON a.id = p.assunto_edital_id
               JOIN edital_disciplina dd ON dd.id = a.disciplina_id
@@ -95,7 +95,7 @@ final class ConferenciaDados {
             rs -> d.partes.add(new Parte(rs.getLong("id"), rs.getLong("assunto_edital_id"), rs.getString("chave"),
                 rs.getInt("ordem"), rs.getString("texto"), rs.getString("contexto"), rs.getString("herdado"),
                 rs.getString("natureza"), rs.getString("origem"), rs.getString("estado"), rs.getLong("arvore_versao_id"),
-                rs.getBoolean("aparece"), rs.getBoolean("no_mudou"), rs.getString("comentario"), rs.getString("prop_natureza"),
+                rs.getBoolean("aparece"), rs.getBoolean("no_mudou"), rs.getString("comentario"), rs.getString("prop_natureza"), rs.getBoolean("ia_mudou"),
                 nos.getOrDefault(rs.getLong("id"), List.of()), propostos.getOrDefault(rs.getLong("id"), List.of()))), analiseId);
         consultar(jdbc, "SELECT id, disciplina_id, tipo, estado, motivo, linhas FROM edital_trecho WHERE analise_id = ? ORDER BY id",
             rs -> d.trechos.add(new Trecho(rs.getLong("id"), (Long) rs.getObject("disciplina_id"), rs.getString("tipo"),

@@ -121,11 +121,11 @@ public class EntregaEditalTest extends ConferenciaTestBase {
     }
 
     @Test
-    void entregaOutraVezDepoisDeEmConferencia_409NaoReprocessaAinda() throws Exception {
+    void entregaDiferenteDepoisDeEmConferencia_semPedirReprocessar_409() throws Exception {
         mockMvc.perform(internoPost("/internal/editais/{id}/revisao", entrega("qconcursos-2026-10-19", 121), analiseId)).andExpect(status().isOk());
         mockMvc.perform(internoPost("/internal/editais/{id}/revisao", entrega("qconcursos-2026-10-19", 122), analiseId))
             .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.codigo").value("REPROCESSAR_NA_26"));
+            .andExpect(jsonPath("$.codigo").value("ETAPA_INVALIDA"));
     }
 
     @Test

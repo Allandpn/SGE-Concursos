@@ -89,7 +89,8 @@ public class ConferenciaService {
         int anteriores = (int) ativas.stream().filter(p -> "DECISAO".equals(p.origem())).count();
         return new Resumo(analiseId, analise.getStatus().name(), analise.getCargoEscolhido(), analise.getConcursoNome(), execucao,
             dados.disciplinas.size(), (int) dados.assuntos.stream().filter(Ass::aparece).count(), ativas.size(), porNatureza, semNo,
-            new Pendencias(bloqueiam, fila.size() - bloqueiam), porPessoa, anteriores, bloqueiam == 0);
+            new Pendencias(bloqueiam, fila.size() - bloqueiam), porPessoa, anteriores,
+            (int) ativas.stream().filter(ConferenciaDados.Parte::iaMudou).count(), bloqueiam == 0);
     }
 
     @Transactional(readOnly = true)
@@ -186,7 +187,7 @@ public class ConferenciaService {
         for (var p : d.partesDe(a.id())) {
             var mapa = nosPorVersao.getOrDefault(p.arvoreVersaoId(), Map.of());
             partes.add(new Parte(p.id(), p.chave(), p.ordem(), p.texto(), p.contexto(), p.herdado(), p.natureza(), p.origem(),
-                p.estado(), p.aparece(), p.noMudou(), p.comentario(), resolver(p.nos(), mapa), resolver(p.propostos(), mapa), p.propNatureza()));
+                p.estado(), p.aparece(), p.noMudou(), p.iaMudou(), p.comentario(), resolver(p.nos(), mapa), resolver(p.propostos(), mapa), p.propNatureza()));
         }
         return new Assunto(a.id(), a.chave(), a.ordem(), a.texto(), ConferenciaDados.lista(json, a.erros()),
             ConferenciaDados.lista(json, a.alertas()), a.aceito(), a.aparece(), partes);
@@ -216,6 +217,22 @@ public class ConferenciaService {
         conferencia(analiseId);
         var d = ConferenciaDados.ler(jdbc, analiseId);
         return assunto(d, assuntoDe(d, assuntoEditalId), nosDe(d));
+    }
+
+    /**
+     * "Reprocessar" (docs/SPRINT-26 §3): a leitura é refeita pelo planejamento e a entrega se funde na conferência pela chave
+     * (D-89). Nada é apagado e nada que a pessoa decidiu muda (D-86). Só com a conferência ainda aberta.
+     */
+    @Transactional
+    public void reprocessar(Long analiseId) {
+        var analise = analises.findById(analiseId).orElseThrow(() -> new NotFoundException("Análise não encontrada.", "ANALISE_INEXISTENTE"));
+        if (analise.getStatus() != StatusAnaliseEdital.EM_CONFERENCIA) {
+            throw new BusinessRuleException("Só se reprocessa uma conferência aberta: a análise está em " + analise.getStatus() + ".", "ETAPA_INVALIDA");
+        }
+        analise.setReprocessar(true);
+        analise.setStatus(StatusAnaliseEdital.SEPARANDO_ASSUNTOS);
+        analises.save(analise);
+        evento(analiseId, null, "REPROCESSAR", Map.of("status", "EM_CONFERENCIA"), Map.of("status", "SEPARANDO_ASSUNTOS"));
     }
 
     // ================================================================ avisos depois de concluída (docs §9)

@@ -10,7 +10,7 @@ public final class EditalInterno {
     private EditalInterno() {}
 
     /** Um edital com o cargo escolhido, esperando o planejamento. {@code slug} é a sugestão; o definitivo nasce na conclusão (D-64). */
-    public record Pendente(Long id, String slug, String cargo, String nomeArquivo) {}
+    public record Pendente(Long id, String slug, String cargo, String nomeArquivo, boolean reprocessar) {}
 
     /** A decisão da pessoa que vale antes da IA (contrato edital-revisao/1 §11.3). */
     public record Decisao(String parte, String contexto, List<Long> nos, String natureza, String escopo, String edital,
@@ -22,7 +22,7 @@ public final class EditalInterno {
     public record FalhaRequest(String etapa, String disciplina, String mensagem) {}
 
     public record ResumoEntrega(Long execucaoId, boolean repetida, int disciplinas, int assuntos, int partes,
-                                int partesSemNo, int trechosAbertos) {}
+                                int partesSemNo, int trechosAbertos, int partesNovas, int partesQueSumiram, int iaMudou) {}
 
     /** O corpo da entrega, já lido (o contrato é o JSON de edital-revisao/1). */
     public record Entrega(JsonNode json, String hash) {}
