@@ -47,6 +47,9 @@ public final class ConferenciaResponses {
         String tipo, int gravidade, boolean bloqueia, Long disciplinaId, String disciplina, Long assuntoId, String assunto,
         Long parteId, String parte, Long trechoId, List<String> detalhe) {}
 
+    /** O que "valer para todos os editais" mudaria: partes de outros editais, ainda por conferir, com a chave igual. */
+    public record EscopoTodos(int partes, List<String> exemplos) {}
+
     public record Trecho(Long id, Long disciplinaId, String tipo, String estado, String motivo, List<String> linhas) {}
 
     /** Uma parte do assunto como o edital a dividiu, com o aviso que ainda pede atenção (docs §9). */

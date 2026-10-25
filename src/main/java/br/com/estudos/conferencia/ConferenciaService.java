@@ -285,12 +285,14 @@ public class ConferenciaService {
     // ================================================================ ações sobre partes
 
     @Transactional
-    public Assunto aceitar(Long analiseId, Long parteId) {
+    public Assunto aceitar(Long analiseId, Long parteId, ConferenciaPedidos.Escopo escopo) {
         var analise = conferencia(analiseId);
         var p = parte(analiseId, parteId);
         if (p.nos().isEmpty()) {
             throw new ValidationException("A parte não tem nó para aceitar; escolha um ou declare que a árvore não tem.", "PARTE_SEM_NO", "parteId");
         }
+        exigirConfirmacaoTodos(analise, p, p.nos(), p.natureza(), escopo);
+        var tipoDeEscopo = escopo == null || escopo.escopo() == null ? "EDITAL" : escopo.escopo();
         if (p.noMudou()) { // reconfirmar o nó depois de a pessoa adotar a árvore nova (D-90)
             long vigente = vigente();
             for (var no : p.nos()) {
@@ -299,11 +301,13 @@ public class ConferenciaService {
                 }
             }
             jdbc.update("UPDATE edital_parte SET estado = 'ACEITA', no_mudou = false, arvore_versao_id = ? WHERE id = ?", vigente, parteId);
-            registrarDecisao(analise, p, p.nos(), p.natureza(), vigente);
+            registrarDecisao(analise, p, p.nos(), p.natureza(), vigente, tipoDeEscopo);
+            aplicarEmOutrosEditais(analise, p, p.nos(), p.natureza(), tipoDeEscopo);
             evento(analiseId, parteId, "RECONFIRMAR_NO", Map.of("nos", p.nos()), Map.of("arvore", vigente));
         } else if ("PROPOSTA".equals(p.estado())) {
             jdbc.update("UPDATE edital_parte SET estado = 'ACEITA' WHERE id = ?", parteId);
-            registrarDecisao(analise, p, p.nos(), p.natureza(), p.arvoreVersaoId());
+            registrarDecisao(analise, p, p.nos(), p.natureza(), p.arvoreVersaoId(), tipoDeEscopo);
+            aplicarEmOutrosEditais(analise, p, p.nos(), p.natureza(), tipoDeEscopo);
             evento(analiseId, parteId, "ACEITAR", Map.of("estado", p.estado()), Map.of("estado", "ACEITA"));
         }
         return assuntoResposta(analiseId, p.assuntoEditalId());
@@ -338,6 +342,8 @@ public class ConferenciaService {
         }
         long vigente = vigente();
         validarNos(nos, pedido.natureza(), vigente);
+        exigirConfirmacaoTodos(analise, p, nos, pedido.natureza(), new ConferenciaPedidos.Escopo(pedido.escopo(), pedido.confirmarTodos()));
+        var tipoDeEscopo = pedido.escopo() == null ? "EDITAL" : pedido.escopo();
         guardarPropostos(p);
         jdbc.update("DELETE FROM edital_parte_no WHERE parte_id = ? AND NOT proposto", parteId);
         for (int i = 0; i < nos.size(); i++) {
@@ -345,22 +351,26 @@ public class ConferenciaService {
         }
         jdbc.update("UPDATE edital_parte SET natureza = ?, origem = 'PESSOA', estado = 'DECIDIDA', no_mudou = false, arvore_versao_id = ? WHERE id = ?",
             pedido.natureza(), vigente, parteId);
-        registrarDecisao(analise, p, nos, pedido.natureza(), vigente);
+        registrarDecisao(analise, p, nos, pedido.natureza(), vigente, tipoDeEscopo);
+        aplicarEmOutrosEditais(analise, p, nos, pedido.natureza(), tipoDeEscopo);
         evento(analiseId, parteId, "TROCAR_NOS", Map.of("nos", p.nos(), "natureza", String.valueOf(p.natureza())),
             Map.of("nos", nos, "natureza", pedido.natureza()));
         return assuntoResposta(analiseId, p.assuntoEditalId());
     }
 
     @Transactional
-    public Assunto semNo(Long analiseId, Long parteId) {
+    public Assunto semNo(Long analiseId, Long parteId, ConferenciaPedidos.Escopo escopo) {
         var analise = conferencia(analiseId);
         var p = parte(analiseId, parteId);
+        exigirConfirmacaoTodos(analise, p, List.of(), null, escopo);
+        var tipoDeEscopo = escopo == null || escopo.escopo() == null ? "EDITAL" : escopo.escopo();
         guardarPropostos(p);
         jdbc.update("DELETE FROM edital_parte_no WHERE parte_id = ? AND NOT proposto", parteId);
         long vigente = vigente();
         jdbc.update("UPDATE edital_parte SET natureza = NULL, origem = 'PESSOA', estado = 'DECIDIDA', no_mudou = false, arvore_versao_id = ? WHERE id = ?",
             vigente, parteId);
-        registrarDecisao(analise, p, List.of(), null, vigente);
+        registrarDecisao(analise, p, List.of(), null, vigente, tipoDeEscopo);
+        aplicarEmOutrosEditais(analise, p, List.of(), null, tipoDeEscopo);
         evento(analiseId, parteId, "SEM_NO", Map.of("nos", p.nos()), Map.of("nos", List.of()));
         return assuntoResposta(analiseId, p.assuntoEditalId());
     }
@@ -641,18 +651,102 @@ public class ConferenciaService {
     }
 
     private void registrarDecisao(AnaliseEdital analise, ConferenciaDados.Parte p, List<Long> nos, String natureza, long versaoId) {
+        registrarDecisao(analise, p, nos, natureza, versaoId, "EDITAL");
+    }
+
+    // ---------------------------------------------------------------- escopo "todos os editais" (D-87)
+
+    /**
+     * As partes de outros editais que "valer para todos" mudaria: mesma chave (as palavras da parte e do contexto), ainda por
+     * conferir (a decisão da pessoa nunca é tocada, D-86) e com ligação diferente da nova.
+     */
+    List<Long> afetadasEmOutrosEditais(long analiseId, ConferenciaDados.Parte p, List<Long> nos, String natureza) {
+        var chave = RegrasEdital.chaveNormalizada(p.nome());
+        var chaveContexto = RegrasEdital.chaveNormalizada(p.contexto() == null ? "" : p.contexto());
+        var saida = new ArrayList<Long>();
+        var linhas = jdbc.queryForList("""
+            SELECT p.id, p.texto, p.herdado, p.contexto, p.natureza FROM edital_parte p
+              JOIN edital_assunto a ON a.id = p.assunto_edital_id JOIN edital_disciplina d ON d.id = a.disciplina_id
+             WHERE d.analise_id <> ? AND p.aparece AND p.estado = 'PROPOSTA'""", analiseId);
+        for (var l : linhas) {
+            var herdado = (String) l.get("herdado");
+            var nome = herdado == null || herdado.isBlank() ? (String) l.get("texto") : herdado + " " + l.get("texto");
+            var contexto = (String) l.get("contexto");
+            if (!chave.equals(RegrasEdital.chaveNormalizada(nome)) || !chaveContexto.equals(RegrasEdital.chaveNormalizada(contexto == null ? "" : contexto))) continue;
+            long id = ((Number) l.get("id")).longValue();
+            var atuais = jdbc.queryForList("SELECT no_id FROM edital_parte_no WHERE parte_id = ? AND NOT proposto ORDER BY ordem", Long.class, id);
+            boolean igual = new java.util.HashSet<>(atuais).equals(new java.util.HashSet<>(nos))
+                && java.util.Objects.equals(natureza, nos.isEmpty() ? null : l.get("natureza"));
+            if (!igual) saida.add(id);
+        }
+        return saida;
+    }
+
+    /** O que "valer para todos" mudaria, para a tela mostrar antes de a pessoa confirmar. */
+    @Transactional(readOnly = true)
+    public ConferenciaResponses.EscopoTodos previaDeTodos(Long analiseId, Long parteId, List<Long> nos, String natureza) {
+        conferencia(analiseId);
+        var p = parte(analiseId, parteId);
+        var afetadas = afetadasEmOutrosEditais(analiseId, p, nos == null ? List.of() : nos, natureza);
+        var exemplos = new ArrayList<String>();
+        for (var id : afetadas.stream().limit(5).toList()) {
+            exemplos.add(jdbc.queryForObject("""
+                SELECT c.nome || ' · ' || p.texto FROM edital_parte p
+                  JOIN edital_assunto a ON a.id = p.assunto_edital_id JOIN edital_disciplina d ON d.id = a.disciplina_id
+                  JOIN analise_edital c ON c.id = d.analise_id WHERE p.id = ?""".replace("c.nome", "COALESCE(c.concurso_nome, c.nome_arquivo)"), String.class, id));
+        }
+        return new ConferenciaResponses.EscopoTodos(afetadas.size(), exemplos);
+    }
+
+    private void exigirConfirmacaoTodos(AnaliseEdital analise, ConferenciaDados.Parte p, List<Long> nos, String natureza, ConferenciaPedidos.Escopo escopo) {
+        if (escopo == null || escopo.escopo() == null || "EDITAL".equals(escopo.escopo())) return;
+        if (!"TODOS".equals(escopo.escopo())) {
+            throw new ValidationException("O escopo é EDITAL ou TODOS.", "ESCOPO_INVALIDO", "escopo");
+        }
+        if (!Boolean.TRUE.equals(escopo.confirmarTodos())) {
+            int n = afetadasEmOutrosEditais(analise.getId(), p, nos, natureza).size();
+            throw new BusinessRuleException("Valer para todos os editais muda " + n + " parte(s) de outros editais, ainda por conferir. Confirme para continuar.",
+                "CONFIRMACAO_TODOS");
+        }
+    }
+
+    /** Escopo TODOS: as partes de outros editais, ainda por conferir, recebem a ligação e ficam decididas (origem DECISAO). */
+    private void aplicarEmOutrosEditais(AnaliseEdital analise, ConferenciaDados.Parte p, List<Long> nos, String natureza, String escopo) {
+        if (!"TODOS".equals(escopo)) return;
+        long vigente = vigente();
+        for (var id : afetadasEmOutrosEditais(analise.getId(), p, nos, natureza)) {
+            var analiseDaParte = jdbc.queryForObject("""
+                SELECT d.analise_id FROM edital_parte x JOIN edital_assunto a ON a.id = x.assunto_edital_id
+                  JOIN edital_disciplina d ON d.id = a.disciplina_id WHERE x.id = ?""", Long.class, id);
+            jdbc.update("DELETE FROM edital_parte_no WHERE parte_id = ? AND NOT proposto", id);
+            for (int i = 0; i < nos.size(); i++) {
+                jdbc.update("INSERT INTO edital_parte_no (parte_id, proposto, ordem, no_id) VALUES (?, false, ?, ?)", id, i + 1, nos.get(i));
+            }
+            jdbc.update("UPDATE edital_parte SET natureza = ?, origem = 'DECISAO', estado = 'DECIDIDA', no_mudou = false, arvore_versao_id = ? WHERE id = ?",
+                nos.isEmpty() ? null : natureza, vigente, id);
+            evento(analiseDaParte, id, "DECISAO_TODOS", Map.of("origem", "análise " + analise.getId()), Map.of("nos", nos));
+        }
+    }
+
+    private void registrarDecisao(AnaliseEdital analise, ConferenciaDados.Parte p, List<Long> nos, String natureza, long versaoId, String escopo) {
         var texto = p.nome();
         var contexto = p.contexto() == null ? "" : p.contexto();
         var chave = RegrasEdital.chaveNormalizada(texto);
         var chaveContexto = RegrasEdital.chaveNormalizada(contexto);
-        var ids = jdbc.queryForList("""
-            SELECT id FROM edital_decisao WHERE ativa AND escopo = 'EDITAL' AND analise_id = ? AND parte_chave_norm = ? AND contexto_norm = ?""",
-            Long.class, analise.getId(), chave, chaveContexto);
+        boolean todos = "TODOS".equals(escopo);
+        var ids = todos
+            ? jdbc.queryForList("SELECT id FROM edital_decisao WHERE ativa AND escopo = 'TODOS' AND parte_chave_norm = ? AND contexto_norm = ?", Long.class, chave, chaveContexto)
+            : jdbc.queryForList("SELECT id FROM edital_decisao WHERE ativa AND escopo = 'EDITAL' AND analise_id = ? AND parte_chave_norm = ? AND contexto_norm = ?",
+                Long.class, analise.getId(), chave, chaveContexto);
+        if (todos) { // promover a TODOS substitui a decisão só deste edital para a mesma chave
+            jdbc.update("UPDATE edital_decisao SET ativa = false, revogada_em = now() WHERE ativa AND escopo = 'EDITAL' AND analise_id = ? AND parte_chave_norm = ? AND contexto_norm = ?",
+                analise.getId(), chave, chaveContexto);
+        }
         var nosJson = json.writeValueAsString(nos);
         if (ids.isEmpty()) {
             jdbc.update("""
                 INSERT INTO edital_decisao (parte_texto, contexto_texto, parte_chave_norm, contexto_norm, nos, natureza, escopo, analise_id, arvore_versao_id)
-                VALUES (?, ?, ?, ?, ?, ?, 'EDITAL', ?, ?)""", texto, contexto, chave, chaveContexto, nosJson, natureza, analise.getId(), versaoId);
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", texto, contexto, chave, chaveContexto, nosJson, natureza, todos ? "TODOS" : "EDITAL", analise.getId(), versaoId);
         } else {
             jdbc.update("UPDATE edital_decisao SET nos = ?, natureza = ?, arvore_versao_id = ? WHERE id = ?", nosJson, natureza, versaoId, ids.get(0));
         }

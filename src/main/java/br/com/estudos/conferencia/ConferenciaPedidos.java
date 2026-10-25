@@ -10,7 +10,10 @@ public final class ConferenciaPedidos {
     private ConferenciaPedidos() {}
 
     /** Até 3 nós e a natureza do vínculo (EXATO, MAIS_AMPLO ou PARCIAL). */
-    public record Nos(List<Long> nos, String natureza) {}
+    public record Nos(List<Long> nos, String natureza, String escopo, Boolean confirmarTodos) {}
+
+    /** {@code escopo}: EDITAL (padrão) ou TODOS os editais, que pede {@code confirmarTodos = true} (D-87). */
+    public record Escopo(String escopo, Boolean confirmarTodos) {}
 
     public record TextoDaParte(String texto, String contexto, String herdado) {}
 

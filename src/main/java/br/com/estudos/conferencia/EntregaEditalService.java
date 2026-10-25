@@ -79,16 +79,16 @@ public class EntregaEditalService {
             analise.getBanca(), analise.getPdfArquivo(), rotulo, decisoesDe(analise));
     }
 
-    /** Só as ativas do escopo EDITAL desta análise; as de escopo TODOS entram na Sprint 26 (D-87). */
+    /** As ativas deste edital e as de todos os editais; a ordem põe as de TODOS antes, para a deste edital valer por último (D-87). */
     private List<Decisao> decisoesDe(AnaliseEdital analise) {
         return jdbc.query("""
             SELECT d.parte_texto, d.contexto_texto, d.nos, d.natureza, d.escopo, d.criada_em, v.rotulo
               FROM edital_decisao d JOIN arvore_versao v ON v.id = d.arvore_versao_id
-             WHERE d.ativa AND d.escopo = 'EDITAL' AND d.analise_id = ?
-             ORDER BY d.id""",
+             WHERE d.ativa AND ((d.escopo = 'EDITAL' AND d.analise_id = ?) OR d.escopo = 'TODOS')
+             ORDER BY CASE d.escopo WHEN 'TODOS' THEN 0 ELSE 1 END, d.id""",
             (rs, i) -> new Decisao(rs.getString("parte_texto"), vazioParaNulo(rs.getString("contexto_texto")),
                 ids(rs.getString("nos")), minusculo(rs.getString("natureza")), rs.getString("escopo"),
-                "analise-" + analise.getId(), rs.getString("rotulo"), rs.getTimestamp("criada_em").toInstant().toString(),
+                "TODOS".equals(rs.getString("escopo")) ? "todos" : "analise-" + analise.getId(), rs.getString("rotulo"), rs.getTimestamp("criada_em").toInstant().toString(),
                 "decisão da pessoa"), analise.getId());
     }
 

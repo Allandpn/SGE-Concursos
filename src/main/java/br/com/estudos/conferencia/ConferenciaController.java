@@ -96,8 +96,8 @@ public class ConferenciaController {
 
     @PostMapping(BASE + "/partes/{parteId}/aceitar")
     @Operation(summary = "Aceita a ligação proposta")
-    public Assunto aceitar(@PathVariable Long id, @PathVariable Long parteId) {
-        return service.aceitar(id, parteId);
+    public Assunto aceitar(@PathVariable Long id, @PathVariable Long parteId, @RequestBody(required = false) ConferenciaPedidos.Escopo escopo) {
+        return service.aceitar(id, parteId, escopo);
     }
 
     @PutMapping(BASE + "/partes/{parteId}/nos")
@@ -108,8 +108,8 @@ public class ConferenciaController {
 
     @PostMapping(BASE + "/partes/{parteId}/sem-no")
     @Operation(summary = "A árvore não tem", description = "A parte fica sem filtro de questões e aparece como lacuna; não bloqueia o estudo.")
-    public Assunto semNo(@PathVariable Long id, @PathVariable Long parteId) {
-        return service.semNo(id, parteId);
+    public Assunto semNo(@PathVariable Long id, @PathVariable Long parteId, @RequestBody(required = false) ConferenciaPedidos.Escopo escopo) {
+        return service.semNo(id, parteId, escopo);
     }
 
     @PutMapping(BASE + "/partes/{parteId}")
@@ -128,6 +128,14 @@ public class ConferenciaController {
     @Operation(summary = "Junta a parte com outra do mesmo assunto")
     public Assunto juntar(@PathVariable Long id, @PathVariable Long parteId, @RequestBody Juntar pedido) {
         return service.juntar(id, parteId, pedido);
+    }
+
+    @GetMapping(BASE + "/partes/{parteId}/escopo-todos")
+    @Operation(summary = "O que valer para todos os editais mudaria", description = "Quantas partes de outros editais, ainda por conferir, receberiam esta ligação (D-87). A tela mostra antes de pedir a confirmação.")
+    public ConferenciaResponses.EscopoTodos previaDeTodos(@PathVariable Long id, @PathVariable Long parteId,
+                                                          @RequestParam(value = "nos", required = false) List<Long> nos,
+                                                          @RequestParam(value = "natureza", required = false) String natureza) {
+        return service.previaDeTodos(id, parteId, nos, natureza);
     }
 
     @PostMapping(BASE + "/partes/{parteId}/descartar")
