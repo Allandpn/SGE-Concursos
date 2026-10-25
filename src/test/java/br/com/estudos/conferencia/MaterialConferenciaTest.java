@@ -99,6 +99,18 @@ class MaterialConferenciaTest extends ConferenciaTestBase {
     }
 
     @Test
+    void materialDaConferenciaNoDetalheDoAssunto_204AntesDeEntregarE200Depois() throws Exception {
+        long assuntoId = jdbc.queryForObject("SELECT assunto_id FROM edital_assunto WHERE chave = 'a1a1a1a1a1a1a1a1'", Long.class);
+        mockMvc.perform(get("/api/assuntos/{a}/material-da-conferencia", assuntoId)).andExpect(status().isNoContent());
+        mockMvc.perform(internoPost("/internal/editais/{id}/material", entrega("a1a1a1a1a1a1a1a1", "COMPLETO"), id)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/assuntos/{a}/material-da-conferencia", assuntoId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.situacao").value("COMPLETO"))
+            .andExpect(jsonPath("$.consulta").value("consulta/a1a1a1a1a1a1a1a1.pdf"))
+            .andExpect(jsonPath("$.consultaPaginas").value(12));
+    }
+
+    @Test
     void entregaInvalida_assuntoAlheio404_situacaoDesconhecida422() throws Exception {
         mockMvc.perform(internoPost("/internal/editais/{id}/material", entrega("0000000000000000", "COMPLETO"), id))
             .andExpect(status().isNotFound()).andExpect(jsonPath("$.codigo").value("ASSUNTO_INEXISTENTE"));

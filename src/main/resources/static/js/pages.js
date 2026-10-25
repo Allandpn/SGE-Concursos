@@ -116,6 +116,7 @@ document.addEventListener('alpine:init', () => {
     fila: [],
     reestudos: [],
     blocoConteudo: null,
+    seloEdital: null, // §9 da Sprint 25: parte do edital sem filtro de questões, no assunto em foco
     blocoContinuacao: false,
     segmentoSugerido: null,
     alertaRepresamento: false,
@@ -170,6 +171,7 @@ document.addEventListener('alpine:init', () => {
         this.fila = plano.filaRecuperacao;
         this.reestudos = plano.reestudos;
         this.blocoConteudo = plano.blocoConteudo;
+        this.carregarSelo();
         this.blocoContinuacao = plano.blocoContinuacao;
         this.segmentoSugerido = plano.segmentoSugerido;
         this.alertaRepresamento = plano.alertaRepresamento;
@@ -184,6 +186,25 @@ document.addEventListener('alpine:init', () => {
         this.erro = e.message;
       } finally {
         this.carregando = false;
+      }
+    },
+
+    // Aviso discreto, nunca bloqueia: o assunto em foco tem parte sem filtro de questões ou com vínculo largo.
+    async carregarSelo() {
+      this.seloEdital = null;
+      const id = this.blocoConteudo?.id;
+      if (!id) return;
+      try {
+        const partes = await api(`/assuntos/${id}/partes-do-edital`);
+        const semFiltro = partes.filter((p) => p.aviso === 'SEM_NO' || p.aviso === 'NO_MUDOU').length;
+        const largo = partes.filter((p) => p.aviso === 'MAIS_AMPLO' || p.aviso === 'PARCIAL').length;
+        if (!semFiltro && !largo) return;
+        const texto = [];
+        if (semFiltro) texto.push(semFiltro === 1 ? '1 parte sem filtro de questões' : `${semFiltro} partes sem filtro de questões`);
+        if (largo) texto.push(largo === 1 ? '1 vínculo largo' : `${largo} vínculos largos`);
+        this.seloEdital = { texto: texto.join(' · '), analiseId: partes[0].analiseId };
+      } catch (e) {
+        this.seloEdital = null; // auxiliar: sem o selo, a tela segue
       }
     },
 
@@ -539,6 +560,7 @@ document.addEventListener('alpine:init', () => {
     erroRefazer: null,
     retencao: [],
     partesEdital: [], // 01_DOMINIO §3.12 — as partes do edital deste assunto e o aviso de cada uma
+    materialConferencia: null, // o que o planejamento entregou do material (situação, lacunas por parte, consulta)
     carregando: false,
     semDados: false,
 
@@ -587,6 +609,11 @@ document.addEventListener('alpine:init', () => {
       } catch (e) {
         this.partesEdital = [];
       }
+      try {
+        this.materialConferencia = await api(`/assuntos/${assuntoId}/material-da-conferencia`);
+      } catch (e) {
+        this.materialConferencia = null;
+      }
 
       // M-2, adicionado na Sprint 14 (04_FRONTEND §7B) — mesmo princípio
       // de auxiliar, não bloqueia o detalhe se falhar.
@@ -600,6 +627,15 @@ document.addEventListener('alpine:init', () => {
 
     get temSegmentos() {
       return this.segmentos.length > 0;
+    },
+
+    // O casamento por partes (Sprint 26): "parcial · 2 h 30".
+    textoCasamento(a) {
+      const rotulo = { COMPLETO: 'completo', PARCIAL: 'parcial', SEM_MATERIAL: 'sem material', RECUSADO: 'recusado pelo fatiador' }[a.situacaoDoCasamento];
+      if (!a.minutosEstimados) return `Casamento por partes: ${rotulo}`;
+      const h = Math.floor(a.minutosEstimados / 60);
+      const tempo = a.minutosEstimados < 60 ? `${a.minutosEstimados} min` : (a.minutosEstimados % 60 ? `${h} h ${a.minutosEstimados % 60} min` : `${h} h`);
+      return `Casamento por partes: ${rotulo} · ${tempo}`;
     },
 
     // D-66: arquiva os segmentos (e descarta a lacuna) para o material ser preparado
@@ -989,6 +1025,12 @@ document.addEventListener('alpine:init', () => {
       if (min < 60) return `${min} min`;
       const h = Math.floor(min / 60);
       return min % 60 ? `${h} h ${min % 60} min` : `${h} h`;
+    },
+
+    // O casamento por partes (Sprint 26): "parcial · 2 h 30".
+    textoCasamento(a) {
+      const rotulo = { COMPLETO: 'completo', PARCIAL: 'parcial', SEM_MATERIAL: 'sem material', RECUSADO: 'recusado pelo fatiador' }[a.situacaoDoCasamento];
+      return a.minutosEstimados ? `Casamento por partes: ${rotulo} · ${this.minutosTexto(a.minutosEstimados)}` : `Casamento por partes: ${rotulo}`;
     },
 
     textoAssuntoMaterial(a) {

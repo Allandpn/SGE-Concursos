@@ -171,6 +171,9 @@
             <!-- D-55: o material do bloco abre direto daqui (o SGE guarda o link, nunca o abre ele mesmo) -->
             <a x-show="linkMaterial" :href="linkMaterial" target="_blank" rel="noopener"
               class="flex min-h-11 items-center border-t border-gray-200 px-3 text-sm font-medium text-primary-700 underline">Abrir material</a>
+            <!-- Sprint 25 §9: aviso discreto da conferência; leva a ela e não bloqueia nada -->
+            <a x-show="seloEdital" :href="seloEdital ? '#/concursos/analise/' + seloEdital.analiseId + '/conferencia' : '#'"
+              class="block border-t border-gray-100 px-3 py-2 text-xs text-alerta-600 underline" x-text="seloEdital?.texto"></a>
           </div>
         </div>
 
@@ -494,6 +497,17 @@
               </li>
             </template>
           </ul>
+        </div>
+
+        <!-- D-94: as questões das aulas que ensinaram o assunto — consulta, fora do turno e da escada -->
+        <div x-show="materialConferencia" class="space-y-1 rounded border border-gray-200 bg-white p-3 text-sm">
+          <p class="text-xs font-medium text-gray-500">Material por partes do edital</p>
+          <p x-text="materialConferencia ? textoCasamento({situacaoDoCasamento: materialConferencia.situacao, minutosEstimados: materialConferencia.minutos}) : ''"></p>
+          <ul x-show="materialConferencia && materialConferencia.lacunas.length" class="ml-4 list-disc text-xs text-gray-600">
+            <template x-for="l in (materialConferencia?.lacunas ?? [])" :key="l"><li x-text="l"></li></template>
+          </ul>
+          <a x-show="materialConferencia && materialConferencia.consulta" :href="materialConferencia ? '/material/' + materialConferencia.consulta : '#'"
+             target="_blank" rel="noopener" class="inline-block text-primary-700 underline">Questões deste assunto (consulta)</a>
         </div>
 
         <!-- D-65: o acervo não ensina este assunto -->
@@ -933,6 +947,12 @@
                             <span class="block text-xs"
                                   :class="a.situacao === 'SEM_MATERIAL' ? 'text-red-700' : (a.situacao === 'A_PREPARAR' ? 'text-gray-500' : 'text-gray-600')"
                                   x-text="textoAssuntoMaterial(a)"></span>
+                            <span x-show="a.situacaoDoCasamento" class="block text-xs text-gray-600" x-text="textoCasamento(a)"></span>
+                            <ul x-show="a.lacunasPorParte && a.lacunasPorParte.length" class="ml-3 list-disc text-xs text-gray-500">
+                              <template x-for="l in (a.lacunasPorParte ?? [])" :key="l"><li x-text="l"></li></template>
+                            </ul>
+                            <a x-show="a.consulta" :href="'/material/' + a.consulta" target="_blank" rel="noopener" class="block text-xs text-primary-700 underline"
+                               x-text="'Questões deste assunto (consulta' + (a.consultaPaginas ? ', ' + a.consultaPaginas + ' págs.' : '') + ')'"></a>
                           </li>
                         </template>
                       </ul>

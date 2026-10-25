@@ -43,11 +43,14 @@ public class ConferenciaController {
     private final ConferenciaService service;
     private final ConclusaoConferenciaService conclusao;
     private final DecisaoService decisoes;
+    private final MaterialDaConferencia materialDaConferencia;
 
-    public ConferenciaController(ConferenciaService service, ConclusaoConferenciaService conclusao, DecisaoService decisoes) {
+    public ConferenciaController(ConferenciaService service, ConclusaoConferenciaService conclusao, DecisaoService decisoes,
+                                 MaterialDaConferencia materialDaConferencia) {
         this.service = service;
         this.conclusao = conclusao;
         this.decisoes = decisoes;
+        this.materialDaConferencia = materialDaConferencia;
     }
 
     @GetMapping(BASE + "/conferencia")
@@ -72,6 +75,14 @@ public class ConferenciaController {
     @Operation(summary = "As partes do edital de um assunto", description = "Com o nó de cada uma e o aviso que ainda pede atenção. Vazio se o assunto não nasceu de uma conferência.")
     public List<ConferenciaResponses.ParteDoAssunto> partesDoAssunto(@PathVariable Long assuntoId) {
         return service.partesDoAssunto(assuntoId);
+    }
+
+    @GetMapping("/assuntos/{assuntoId}/material-da-conferencia")
+    @Operation(summary = "O que o planejamento entregou do material do assunto", description = "Situação do casamento, tempo estimado, lacunas por parte e o PDF \"Questões deste assunto\" (consulta, fora da escada, D-94). 204 se o assunto não nasceu de uma conferência ou o material ainda está a preparar.")
+    public org.springframework.http.ResponseEntity<MaterialDaConferencia.Info> materialDaConferencia(@PathVariable Long assuntoId) {
+        var info = materialDaConferencia.porAssunto(List.of(assuntoId)).get(assuntoId);
+        return info == null || info.situacao() == null
+            ? org.springframework.http.ResponseEntity.noContent().build() : org.springframework.http.ResponseEntity.ok(info);
     }
 
     @GetMapping("/concursos/{concursoId}/avisos-de-conferencia")
