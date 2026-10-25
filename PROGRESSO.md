@@ -1046,15 +1046,15 @@ nasce da prova.
 
 ## 20B. Sprint 25 · Conferência do edital
 
-**Documento técnico:** `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.0.0 · **Especificação:** `01_DOMINIO` §3.12, D-86 a D-95; ADR-047.
+**Documento técnico:** `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.1.0 · **Especificação:** `01_DOMINIO` §3.12, D-86 a D-95; ADR-047.
 Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`).
 
 | | Item | Quem escreve | Estado |
 |---|---|---|---|
 | 25.0 | Documento técnico | Claude | **feito** |
-| 25.1 | `V17`: tabelas, restrições, gatilho de `edital_evento`, migração das análises `PRONTA` | Claude | a fazer |
-| 25.2 | Árvore do QConcursos: carga, diferença, busca e navegação | Claude | a fazer |
-| 25.3 | Análise só com o cabeçalho; guardar o PDF; cargo leva a `SEPARANDO_ASSUNTOS` | Claude | a fazer |
+| 25.1 | `V17`: tabelas, restrições, gatilho de `edital_evento`, migração das análises `PRONTA` | Claude | **feito** |
+| 25.2 | Árvore do QConcursos: carga, diferença, busca e navegação | Claude | **feito** |
+| 25.3 | Análise só com o cabeçalho; guardar o PDF; cargo leva a `SEPARANDO_ASSUNTOS` | Claude | **feito** |
 | 25.4 | Rotas internas do edital e gravação da entrega | Claude | a fazer |
 | 25.5 | Chave e conferência por regra em Java, com vetores compartilhados com o planejamento | Claude | a fazer |
 | 25.6 | Conferência: contagens, fila derivada, ações, decisões e eventos | Claude | a fazer |
@@ -1083,6 +1083,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.71.0 | 2026-10-24 | **Itens 25.1 a 25.3 feitos.** `V17` aplicada (árvore, leitura entregue, decisões, eventos só de inserção); a análise lê só o cabeçalho e guarda o PDF no volume `editais`; a conclusão virou `ConclusaoEditalService` (D-64 testado); árvore do QConcursos com carga idempotente, diferença entre versões, busca e navegação (`/api/arvore`, `/internal/arvores`). **Achado:** os ids de disciplina e de assunto do QConcursos colidem (50 ids); no planejamento 24 assuntos eram sobrescritos por disciplinas na ligação. Corrigido com id de disciplina negado nos dois lados. `SPRINT-25` v1.1.0 |
 | 1.70.0 | 2026-10-24 | **Sprint 25 aberta** (§20B). Documento técnico `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.0.0, contra `01_DOMINIO` v1.27.0: `V17` (árvore, leitura entregue, decisões, eventos só de inserção), rotas internas `/internal/editais` e `/internal/arvores`, conferência com fila derivada, concluir cria os assuntos, adotar árvore por gesto. Fica para a Sprint 26: escopo "todos", reprocessar, material e consulta. Nenhum código ainda |
 | 1.69.0 | 2026-10-24 | **Especificação da conferência do edital migrada** (`docs/ESPECIFICACAO-REVISAO-EDITAL.md` v0.1.0, decisões A a F do usuário): `01_DOMINIO` v1.27.0 (§3.12, D-86 a D-95), `02_JORNADAS` v1.16.0 (J-5 refeita do passo 4 em diante), `03_INVARIANTES` v1.15.0, ADR-047. Mapa ganha as sprints 25 e 26, uma linha cada (documento técnico só quando começarem). Nenhum código |
 | 1.68.0 | 2026-10-18 | **Ensaio da FCC (24.8) rodado e a cadeia do material auditada.** Segmentador do planejamento (`35f7fe2`, em `main` e no Pi): tolera marcador de OCR mal lido ("(8)", "(Cc)"), recupera a questão cujo número o OCR perdeu e aceita "22." sozinho; de 34 para 56 questões com texto em 60. Prova id 2 (TJ-CE, Infraestrutura de TI, tipo 4): 60 questões, gabarito casado, 39 avaliáveis, 4 sem texto, 10 com OCR duvidoso, 7 fora do edital. **Julgamento: 6 respondíveis, 5 parciais, 28 não respondíveis.** **CORREÇÃO (mesmo dia): o edital-alvo (SEFAZ SC 2026, Auditor, Ciências da Computação) NÃO é o da prova (TJ-CE, Infraestrutura de TI), então a prova não é régua justa e o placar não mede a cobertura do alvo; só ~12 das 33 são falha real contra o edital-alvo.** **Auditoria (`docs/AUDITORIA-CADEIA-MATERIAL.md` 1.0.1)**: das 33 questões furadas, no máximo 4 são ausência real do acervo (NTP, PgBouncer, restore do SQL Server, DAI); o mecanismo da cadeia continua verdadeiro — consulta de ~12 termos em OU casa 24% do índice, orçamento fixo de 6 arquivos × 12 páginas, filtro de curso por radical exclui os cursos certos, 3 assuntos sem segmento. OCR do acervo não é a causa (1,8% de páginas vazias). `docs/RELATORIO-SEGUNDA-OPINIAO.md` reúne o sistema, o diagnóstico e as sugestões para revisão externa. **Fase 2 (corrigir a cadeia) aguarda decisão e exige nova exceção de escrita no planejamento e documento antes do código.** Pendente: conferir ~20 vereditos à mão; limpar `/tmp/ensaio-fcc` no Pi |

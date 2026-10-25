@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.1.0 |
 | Data | 2026-10-24 |
 | Subordinado a | `01_DOMINIO` v1.27.0 §3.12 e D-86 a D-95; `02_JORNADAS` v1.16.0 J-5; `03_INVARIANTES` v1.15.0; ADR-047 |
 | Contraparte | `docs/especificacao-revisao-edital-sge.md` §11 (contrato `edital-revisao/1`) e `integracao/entrega_revisao.py`, no repositório do planejamento |
@@ -60,15 +60,20 @@ são consultas; só o que a pessoa decidiu e o que o planejamento entregou são 
 | `no_arvore` | `versao_id`, `no_id` (id do QConcursos), `nome`, `pai_id` (nulo = disciplina da árvore), `ordem`, `raiz_id` | PK (`versao_id`, `no_id`); índice (`versao_id`, `pai_id`); índice de busca por `unaccent_imutavel(lower(nome))` (V2) |
 | `no_arvore_diferenca` | `versao_id`, `no_id`, `tipo` (`NOVO`, `REMOVIDO`, `RENOMEADO`, `MOVIDO`), `nome_anterior`, `pai_anterior_id` | PK (`versao_id`, `no_id`, `tipo`); calculada ao carregar, contra a versão vigente naquele momento |
 
-O caminho de um nó **não é coluna**: sobe-se por `pai_id` (profundidade pequena) na consulta. `raiz_id` existe só para a busca
-poder dizer a disciplina sem subir a árvore.
+O caminho de um nó **não é coluna**: sobe-se por `pai_id` (profundidade pequena), em memória (a versão vigente cabe em poucos MB; a
+busca e o caminho dispensam o banco). `raiz_id` existe só para dizer a disciplina sem subir a árvore.
+
+**Id de disciplina é negado.** No QConcursos o id da disciplina e o do assunto vêm de espaços diferentes e colidem (50 ids na árvore de
+2026-10-19, ex.: 273 é a disciplina Antropologia e também "Arquitetura de Banco de Dados"). `no_id` guarda `-id` para a disciplina e o
+id original para o assunto; o arquivo da árvore não muda, quem o carrega aplica o sinal, e o planejamento entrega os nós já assim
+(`Arvore` em `casar_taxonomia.py`, achado de 2026-10-24). A busca nunca devolve a disciplina sozinha como alvo de ligação.
 
 ### 2.3 A leitura entregue
 
 | Tabela | Colunas principais | Restrições |
 |---|---|---|
 | `edital_execucao` | `id`, `analise_id`, `modelo`, `prompt_versao`, `arvore_versao_id`, `executada_em`, `recebida_em`, `hash` | `ux_edital_execucao_d89` (`analise_id`, `hash`): a mesma entrega duas vezes é uma só |
-| `edital_disciplina` | `id`, `analise_id`, `ordem`, `nome`, `restricao`, `comum`, `qconcursos_ids` (texto JSON), `tentativas` | FK; `ux_edital_disciplina` (`analise_id`, `nome`) |
+| `edital_disciplina` | `id`, `analise_id`, `ordem`, `nome`, `restricao`, `comum`, `questoes` (do quadro de provas, se o planejamento entregar), `peso_pessoa` (nulo = o que D-61 calcula das questões), `qconcursos_ids` (texto JSON, ids de disciplina negados), `tentativas` | FK; `ux_edital_disciplina` (`analise_id`, `nome`) |
 | `edital_assunto` | `id`, `disciplina_id`, `chave`, `ordem`, `texto`, `erros` (JSON), `alertas` (JSON), `aceito` (boolean: aceitou assim mesmo), `aparece` (boolean), `assunto_id` (nulo até concluir) | `ux_edital_assunto_d89` (`disciplina_id`, `chave`); FK opcional para `assunto` |
 | `edital_parte` | `id`, `edital_assunto_id`, `chave`, `ordem`, `texto`, `contexto`, `herdado`, `natureza`, `origem` (`IA`, `REFINO`, `DECISAO`, `PESSOA`), `estado` (`PROPOSTA`, `ACEITA`, `DECIDIDA`, `DESCARTADA`), `arvore_versao_id`, `aparece`, `prop_natureza`, `prop_origem`, `execucao_id`, `comentario` | `ux_edital_parte_d89` (`edital_assunto_id`, `chave`); CHECK da natureza em (`EXATO`, `MAIS_AMPLO`, `PARCIAL`) ou nula quando não há nó |
 | `edital_parte_no` | `parte_id`, `ordem`, `no_id`, `proposto` (boolean: nó da IA que a pessoa não adotou) | PK (`parte_id`, `ordem`, `proposto`); no máximo 3 nós por parte e lado (CHECK em `ordem`) |
@@ -119,7 +124,7 @@ Editar a parte muda o texto, logo a **chave**: a edição cria uma parte nova (`
 | `GET /internal/editais/{id}/dados` | `pdf` (caminho relativo ao volume), `slug`, `cargo`, `arvoreVigente` (rótulo) e `decisoes`: as ativas, `escopo = EDITAL` desta análise (as `TODOS` entram na 26) no formato do contrato §11.3 |
 | `POST /internal/editais/{id}/revisao` | entrega `edital-revisao/1`. Idempotente pelo hash do corpo (D-89); versão do contrato desconhecida → `422 CONTRATO_DESCONHECIDO`; nó que não existe na árvore da execução → `422 NO_INEXISTENTE`; árvore da execução não carregada → `409 ARVORE_NAO_CARREGADA`. Grava a execução, as disciplinas, os assuntos, as partes e os trechos; devolve o resumo. Em `SEPARANDO_ASSUNTOS` vai a `EM_CONFERENCIA`; em `EM_CONFERENCIA` (nova execução) entra pelo caminho da Sprint 26 e aqui responde `409 REPROCESSAR_NA_26` |
 | `POST /internal/editais/{id}/falha` | `{etapa, disciplina?, mensagem}` → `FALHOU`, `etapa_falha` e `erro` |
-| `POST /internal/arvores` | `{rotulo, fonte, data, disciplinas:[...]}` (o formato do `taxonomia/qconcursos-*.json`); carrega uma versão **sem torná-la vigente** e calcula a diferença contra a vigente. A primeira versão carregada vira vigente sozinha. Idempotente pelo `rotulo` |
+| `POST /internal/arvores` | `{rotulo?, fonte, data, disciplinas:[...]}` (o formato do `taxonomia/qconcursos-*.json`; `rotulo` padrão `fonte-data`; ids de disciplina originais, o SGE nega); carrega uma versão **sem torná-la vigente** e calcula a diferença contra a vigente. A primeira versão carregada vira vigente sozinha. Idempotente pelo `rotulo` |
 
 ## 5. Rotas públicas
 
@@ -134,6 +139,7 @@ Editar a parte muda o texto, logo a **chave**: a edição cria uma parte nova (`
 | `POST .../partes/{id}/dividir` · `/juntar` · `PUT .../partes/{id}` | corpo com os textos; recalcula a chave e a conferência por regra (§3) e devolve o assunto atualizado |
 | `POST .../partes/{id}/descartar` · `POST .../partes/{id}/comentario` | descartar com motivo; comentário livre |
 | `POST .../disciplinas/{id}/aceitar-exatos` | aceita de uma vez as partes `EXATO` ainda `PROPOSTA` |
+| `PUT .../disciplinas/{id}/peso` | a pessoa troca o peso da disciplina (D-62); sem isso vale D-61: `questoes` do quadro de provas, ou `MEDIO` "não determinado" quando o edital não entrega (hoje o `edital-revisao/1` não traz `questoes`; campo opcional a acrescentar) |
 | `POST .../assuntos/{id}/aceitar` | aceita o assunto recusado pela regra assim mesmo (`aceito = true`) |
 | `POST .../trechos/{id}/resolver` | `DESCARTAR` (com motivo) ou `INCLUIR` (como assunto ou disciplina) |
 | `POST .../concluir` | §7 |
@@ -258,4 +264,5 @@ Escopo "todos os editais", reprocessamento, mapa de disciplinas editável, mater
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-10-24 | Id de disciplina negado (colisão de 50 ids na árvore real); peso da disciplina (`peso_pessoa`, `questoes`); busca em memória. Itens 25.1 a 25.3 feitos |
 | 1.0.0 | 2026-10-24 | Primeira versão, contra `01_DOMINIO` v1.27.0 |
