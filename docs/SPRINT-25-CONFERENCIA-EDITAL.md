@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.1.0 |
+| Versão | 1.2.0 |
 | Data | 2026-10-24 |
 | Subordinado a | `01_DOMINIO` v1.27.0 §3.12 e D-86 a D-95; `02_JORNADAS` v1.16.0 J-5; `03_INVARIANTES` v1.15.0; ADR-047 |
 | Contraparte | `docs/especificacao-revisao-edital-sge.md` §11 (contrato `edital-revisao/1`) e `integracao/entrega_revisao.py`, no repositório do planejamento |
@@ -103,13 +103,15 @@ O SGE precisa recalcular, quando a pessoa **edita, divide ou junta** uma parte, 
 1. **`chave`** da parte: `sha1(base + "|" + ocorrência)[:16]`, com `base` = disciplina, assunto, herdado, texto e contexto, cada um
    passado por `normalizar` e unidos por `|`. A do assunto: `sha1("assunto|" + base + "|" + ocorrência)[:16]`.
 2. **`normalizar`**: NFKD sem acento, minúsculas, junta palavra quebrada por hífen de fim de linha, só `[a-z0-9]` e espaço.
-3. **Cobertura**: toda palavra do assunto (sem as vazias de `partes_edital.VAZIAS`, com o plural simples tirado) está numa parte
+3. **Conferência do assunto** (`partes_edital.conferir_assunto`, porte em `RegrasEdital.conferirAssunto`; precisa do `texto` da disciplina, que a entrega passou a levar): o assunto é trecho do edital; sem parte é erro; **cobertura**: toda palavra do assunto (sem as vazias de `partes_edital.VAZIAS`, com o plural simples tirado) está numa parte
    ou no contexto. **Fidelidade**: a parte só usa palavras do assunto.
 
 A fonte da verdade é `integracao/partes_edital.py` e `integracao/entrega_revisao.py`. **Os dois lados testam com o mesmo arquivo de
-casos** (vetores de `normalizar`, `palavras` e das duas chaves, mais as divergências reais de
-`integracao/casos-de-teste/divergencias-conferencia-2026-10-22.json`); mudar a regra em um lado quebra o teste do outro. O arquivo
-vive no planejamento e é copiado para `src/test/resources/conferencia/` na hora de implementar (25.5).
+casos**, `integracao/casos-de-teste/vetores-conferencia.json`, gerado por `integracao/vetores_conferencia.py` (vetores de `normalizar`,
+`palavras`, das duas chaves e 11 conferências de assunto): o teste de lá exige que o arquivo seja o que o código gera, o daqui
+(`RegrasEditalTest`, cópia em `src/test/resources/conferencia/vetores.json`) exige as mesmas respostas em Java. Mudar a regra em um
+lado quebra o teste do outro. Editar o **texto** do assunto refaz a conferência do assunto; os trechos sem assunto ficam como
+entregues até o reprocessamento (Sprint 26).
 
 Editar a parte muda o texto, logo a **chave**: a edição cria uma parte nova (`origem = PESSOA`) e marca a antiga `aparece = false` com
 `estado = DESCARTADA`. A decisão que existia para o texto antigo continua presa a ele.
@@ -264,5 +266,6 @@ Escopo "todos os editais", reprocessamento, mapa de disciplinas editável, mater
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.2.0 | 2026-10-24 | A entrega leva o `texto` da disciplina (a conferência do assunto precisa dele); vetores compartilhados. Itens 25.4 e 25.5 feitos |
 | 1.1.0 | 2026-10-24 | Id de disciplina negado (colisão de 50 ids na árvore real); peso da disciplina (`peso_pessoa`, `questoes`); busca em memória. Itens 25.1 a 25.3 feitos |
 | 1.0.0 | 2026-10-24 | Primeira versão, contra `01_DOMINIO` v1.27.0 |
