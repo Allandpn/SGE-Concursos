@@ -19,10 +19,10 @@ import br.com.estudos.shared.ConferenciaTestBase;
  * A árvore do QConcursos (01_DOMINIO §3.12, D-90; docs/SPRINT-25-CONFERENCIA-EDITAL.md §2.2, §4, §5): id de disciplina
  * negado (colide com o de assunto), carga idempotente que não troca a versão vigente, diferença entre versões, busca.
  */
-class ArvoreTest extends ConferenciaTestBase {
+public class ArvoreTest extends ConferenciaTestBase {
 
     /** A disciplina 273 e o assunto 273 existem juntos, como no QConcursos real. */
-    static final String V1 = """
+    public static final String V1 = """
         {"fonte": "qconcursos", "data": "2026-10-19", "quantidade_nos": 7, "disciplinas": [
           {"id": 10, "nome": "Banco de Dados", "ordem": 1, "filhos": [
             {"id": 273, "nome": "Arquitetura de Banco de Dados", "ordem": 1, "filhos": []},
@@ -33,7 +33,7 @@ class ArvoreTest extends ConferenciaTestBase {
             {"id": 5, "nome": "Cultura", "ordem": 1, "filhos": []}]}]}""";
 
     /** Renomeia 121, remove 5, move 122 para baixo de 273 (assunto) e cria 6. */
-    static final String V2 = """
+    public static final String V2 = """
         {"fonte": "qconcursos", "data": "2026-11-20", "quantidade_nos": 7, "disciplinas": [
           {"id": 10, "nome": "Banco de Dados", "ordem": 1, "filhos": [
             {"id": 273, "nome": "Arquitetura de Banco de Dados", "ordem": 1, "filhos": [

@@ -194,6 +194,26 @@ public class AnaliseEditalService {
             analise.getCriadoEm(), analise.getAtualizadoEm());
     }
 
+    // ---------------------------------------------------------------- o planejamento
+
+    private static final java.util.Set<String> ETAPAS_DO_PLANEJAMENTO = java.util.Set.of("EXTRACAO", "ORGANIZACAO", "QUEBRA", "LIGACAO");
+
+    /**
+     * O planejamento não conseguiu ler o edital (docs/SPRINT-25-CONFERENCIA-EDITAL.md §4): a análise vira FALHOU com a
+     * etapa e a mensagem, e "tentar de novo" a devolve a ele.
+     */
+    @Transactional
+    public void falhaDoPlanejamento(Long id, String etapa, String disciplina, String mensagem) {
+        var analise = buscar(id);
+        exigir(analise, StatusAnaliseEdital.SEPARANDO_ASSUNTOS);
+        if (etapa == null || !ETAPAS_DO_PLANEJAMENTO.contains(etapa)) {
+            throw new ValidationException("Etapa desconhecida: " + etapa + ".", "ETAPA_DESCONHECIDA", "etapa");
+        }
+        var texto = cortar(mensagem, 2000);
+        var completo = disciplina == null || disciplina.isBlank() ? texto : "[" + cortar(disciplina, 150) + "] " + texto;
+        falhar(analise, etapa, completo == null ? "O planejamento não informou o motivo." : completo);
+    }
+
     // ---------------------------------------------------------------- apoio
 
     private List<String> cargosDe(AnaliseEdital analise) {
