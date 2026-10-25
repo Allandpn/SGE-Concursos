@@ -42,6 +42,7 @@ public class ConcursoService {
     private final CoberturaEditalRepository coberturaRepository;
     private final AssuntoRepository assuntoRepository;
     private final MaterialService materialService;
+    private final br.com.estudos.conferencia.MaterialDaConferencia materialDaConferencia;
     private final Clock clock;
 
     public ConcursoService(
@@ -49,11 +50,13 @@ public class ConcursoService {
             CoberturaEditalRepository coberturaRepository,
             AssuntoRepository assuntoRepository,
             MaterialService materialService,
+            br.com.estudos.conferencia.MaterialDaConferencia materialDaConferencia,
             Clock clock) {
         this.concursoRepository = concursoRepository;
         this.coberturaRepository = coberturaRepository;
         this.assuntoRepository = assuntoRepository;
         this.materialService = materialService;
+        this.materialDaConferencia = materialDaConferencia;
         this.clock = clock;
     }
 
@@ -121,12 +124,13 @@ public class ConcursoService {
             .filter(c -> c.getAssunto().isAtivo())
             .toList();
         var estados = materialService.estados(cobertura.stream().map(c -> c.getAssunto().getId()).toList());
+        var viaConferencia = materialDaConferencia.porAssunto(cobertura.stream().map(c -> c.getAssunto().getId()).toList());
         var assuntos = cobertura.stream()
             .map(c -> {
                 var estado = estados.get(c.getAssunto().getId());
                 return new PlanejamentoConcursoResponse.Assunto(
                     c.getDisciplina().getNome(), c.getAssunto().getNome(), c.getPeso(), c.getOrdem(),
-                    c.getAssunto().getChaveExterna(), estado.segmentos(), estado.lacuna());
+                    c.getAssunto().getChaveExterna(), estado.segmentos(), estado.lacuna(), viaConferencia.containsKey(c.getAssunto().getId()));
             })
             .toList();
         return new PlanejamentoConcursoResponse(
@@ -148,15 +152,20 @@ public class ConcursoService {
         var ids = cobertura.stream().map(c -> c.getAssunto().getId()).toList();
         var estados = materialService.estados(ids);
         var volumes = materialService.volumes(ids);
+        var daConferencia = materialDaConferencia.porAssunto(ids);
         return cobertura.stream()
             .map(c -> {
                 var assuntoId = c.getAssunto().getId();
                 var estado = estados.get(assuntoId);
                 var volume = volumes.getOrDefault(assuntoId, new MaterialService.Volume(0, 0));
                 var semMaterial = estado.situacao() == MaterialService.Situacao.SEM_MATERIAL;
+                var info = daConferencia.get(assuntoId);
                 return new MaterialAssuntoResponse(
                     assuntoId, c.getDisciplina().getNome(), c.getAssunto().getNome(), estado.situacao(),
-                    estado.segmentos(), volume.minutos(), volume.paginas(), semMaterial ? estado.lacuna() : null);
+                    estado.segmentos(), volume.minutos(), volume.paginas(), semMaterial ? estado.lacuna() : null,
+                    info == null ? null : info.situacao(), info == null ? null : info.minutos(),
+                    info == null ? java.util.List.of() : info.lacunas(), info == null ? null : info.consulta(),
+                    info == null ? null : info.consultaPaginas());
             })
             .toList();
     }

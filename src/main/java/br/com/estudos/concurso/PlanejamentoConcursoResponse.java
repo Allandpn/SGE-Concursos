@@ -25,6 +25,7 @@ public record PlanejamentoConcursoResponse(
         int ordem,
         @Schema(description = "Identidade do assunto para o planejamento (D-64); vazia só em assunto antigo de importação sem chave") String chaveExterna,
         @Schema(description = "Quantos segmentos o assunto já tem — o planejamento pula quem já tem material") int segmentos,
-        @Schema(description = "Motivo registrado de o acervo não ensinar o assunto (D-65); nulo sem lacuna") String lacuna
+        @Schema(description = "Motivo registrado de o acervo não ensinar o assunto (D-65); nulo sem lacuna") String lacuna,
+        @Schema(description = "O assunto nasceu de uma conferência de edital: o material dele vem do casamento por partes (Sprint 26), não da busca por palavras") boolean viaConferencia
     ) {}
 }

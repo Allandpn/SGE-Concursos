@@ -29,16 +29,30 @@ public class EditalInternoController {
 
     private final EntregaEditalService entrega;
     private final AnaliseEditalService analises;
+    private final EditalMaterialService material;
 
-    public EditalInternoController(EntregaEditalService entrega, AnaliseEditalService analises) {
+    public EditalInternoController(EntregaEditalService entrega, AnaliseEditalService analises, EditalMaterialService material) {
         this.entrega = entrega;
         this.analises = analises;
+        this.material = material;
     }
 
     @GetMapping("/pendentes")
     @Operation(summary = "Editais que esperam o planejamento", description = "Análises com o cargo escolhido, em SEPARANDO_ASSUNTOS.")
     public List<Pendente> pendentes() {
         return entrega.pendentes();
+    }
+
+    @GetMapping("/material/pendentes")
+    @Operation(summary = "Assuntos de uma conferência concluída que esperam material", description = "No máximo um edital por vez, com as partes que a pessoa conferiu (os nós dela, não os da IA) e se o assunto já tem segmentos.")
+    public List<EditalMaterialService.MaterialPendente> materialPendente() {
+        return material.pendentes();
+    }
+
+    @PostMapping("/{id}/material")
+    @Operation(summary = "Entrega o material de cada assunto", description = "Situação (COMPLETO, PARCIAL, SEM_MATERIAL, RECUSADO), tempo, lacunas por parte e o PDF de consulta. Idempotente; assunto de outra análise: 404.")
+    public java.util.Map<String, Object> entregarMaterial(@PathVariable Long id, @RequestBody tools.jackson.databind.JsonNode corpo) {
+        return java.util.Map.of("atualizados", material.entregar(id, corpo));
     }
 
     @GetMapping("/{id}/dados")
