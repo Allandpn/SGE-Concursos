@@ -86,12 +86,16 @@ services:
       # Sprint 24 (ADR-046): provas e gabaritos. O app grava em entrada/ (uid 1001) e serve as
       # imagens de paginas/ (o worker grava lá, uid 1000). docs/03E_DEPLOYMENT.md §8D.
       PROVAS_DIR: /dados/provas
+      # Sprint 25 (ADR-047): o PDF do edital fica aqui até a conferência terminar. O app grava (uid 1001); o
+      # worker só lê. docs/03E_DEPLOYMENT.md §8E.
+      EDITAIS_DIR: /dados/editais
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - /var/log/estudos:/var/log/estudos
       - /mnt/ssd/material:/dados/material:ro
       - /mnt/ssd/provas:/dados/provas
+      - /mnt/ssd/editais:/dados/editais
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
       interval: 30s
@@ -118,6 +122,8 @@ services:
       MATERIAL_DIR: /dados/material
       # Sprint 24: o worker lê entrada/ e escreve em paginas/ (as imagens para o usuário conferir o OCR).
       PROVAS_DIR: /dados/provas
+      # Sprint 25: o worker lê o PDF do edital pelo caminho que o SGE devolve em /internal/editais/{id}/dados.
+      EDITAIS_DIR: /dados/editais
       INTERVALO_SEG: "300"
       TZ: America/Sao_Paulo
     volumes:
@@ -127,3 +133,5 @@ services:
       - /mnt/ssd/material:/dados/material
       # Provas: entrada/ é do app (uid 1001), paginas/ é do worker (uid 1000).
       - /mnt/ssd/provas:/dados/provas
+      # Editais em conferência: o app grava (uid 1001); aqui só leitura.
+      - /mnt/ssd/editais:/dados/editais:ro

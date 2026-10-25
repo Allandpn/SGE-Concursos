@@ -465,6 +465,22 @@
           <button type="button" @click="irErros()" class="flex-1 rounded border border-gray-200 bg-white p-2 text-center text-sm hover:bg-gray-50">Erros</button>
         </div>
 
+        <!-- 01_DOMINIO §3.12: as partes do edital e o nó de cada uma; aviso quando ainda falta filtro de questões -->
+        <div x-show="partesEdital.length > 0" class="space-y-2">
+          <h3 class="text-sm font-medium text-gray-500">O que o edital pede</h3>
+          <ul class="space-y-2">
+            <template x-for="p in partesEdital" :key="p.parteId">
+              <li class="rounded border border-gray-200 bg-white p-2 text-sm">
+                <span x-text="[p.herdado, p.texto].filter(Boolean).join(' ')"></span>
+                <span class="block text-xs text-gray-500" x-text="p.nos.length ? p.nos.map(n => n.caminho.join(' › ')).join(' · ') : 'sem nó na árvore do QConcursos'"></span>
+                <span x-show="p.aviso" class="mt-1 inline-block rounded-full bg-alerta-50 px-2 py-0.5 text-xs text-alerta-600"
+                      x-text="{SEM_NO: 'sem filtro de questões', MAIS_AMPLO: 'vínculo mais amplo', PARCIAL: 'vínculo parcial', NO_MUDOU: 'o nó mudou na árvore'}[p.aviso]"></span>
+              </li>
+            </template>
+          </ul>
+          <a :href="'#/concursos/analise/' + partesEdital[0]?.analiseId + '/conferencia'" class="inline-block text-xs text-primary-700 underline">Abrir a conferência</a>
+        </div>
+
         <div x-show="temSegmentos" class="space-y-2">
           <h3 class="text-sm font-medium text-gray-500">Material</h3>
           <ul class="space-y-2">
@@ -715,6 +731,37 @@
       </div>
     </template>
 
+    <!-- Ajustes → Árvore do QConcursos (D-90): atualizar é gesto seu, e o impacto vem antes -->
+    <div id="arvore-ajustes" x-data="arvoreAjustes()" class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
+      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Árvore do QConcursos</h2>
+      <p x-show="erro" class="text-xs text-red-600" x-text="erro"></p>
+      <p x-show="!carregando && versoes.length === 0" class="text-sm text-gray-600">Nenhuma versão carregada. O planejamento a entrega ao ler o primeiro edital.</p>
+      <ul class="space-y-2">
+        <template x-for="v in versoes" :key="v.id">
+          <li class="rounded border border-gray-100 p-2 text-sm">
+            <span class="font-medium" x-text="v.rotulo"></span>
+            <span x-show="v.vigente" class="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">em uso</span>
+            <span class="block text-xs text-gray-500" x-text="v.quantidadeNos + ' nós · carregada em ' + dataInstante(v.carregadaEm)"></span>
+            <span x-show="!v.vigente" class="block text-xs text-gray-600"
+                  x-text="'contra a em uso: ' + v.diferencas.NOVO + ' novos · ' + v.diferencas.REMOVIDO + ' removidos · ' + v.diferencas.RENOMEADO + ' renomeados · ' + v.diferencas.MOVIDO + ' movidos'"></span>
+            <button type="button" x-show="!v.vigente" :disabled="trabalhando"
+                    class="mt-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50"
+                    @click="ver(v)">Ver o que muda</button>
+            <template x-if="impacto && impacto.versao.id === v.id">
+              <div class="mt-2 rounded bg-gray-50 p-2 text-xs text-gray-700">
+                <p x-text="impacto.partesAfetadas + ' partes voltam à fila para reconfirmar (' + impacto.porTipo.REMOVIDO + ' com nó removido, ' + impacto.porTipo.MOVIDO + ' com nó movido).'"></p>
+                <p x-text="impacto.partesRenomeadas + ' partes só mudam de nome e seguem. ' + impacto.decisoesAfetadas + ' decisões pedem reconfirmação.'"></p>
+                <p class="mt-1">Nenhum nó é trocado sozinho.</p>
+                <button type="button" :disabled="trabalhando"
+                        class="mt-2 min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white hover:bg-primary-800"
+                        @click="adotar(v)">Adotar esta versão</button>
+              </div>
+            </template>
+          </li>
+        </template>
+      </ul>
+    </div>
+
     <!-- Ajustes → IA (ADR-045): assinatura do Claude, OpenRouter como segunda opção -->
     <div class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
       <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">IA</h2>
@@ -856,6 +903,11 @@
               <p class="mt-1 text-xs text-gray-500" x-text="'Alvo desde ' + dataInstante(ativo.ativadoEm) + ' · ' + ativo.totalAssuntos + (ativo.totalAssuntos === 1 ? ' assunto no edital' : ' assuntos no edital')"></p>
               <!-- 01_DOMINIO §3.10: o material chega sozinho; aqui é só acompanhamento -->
               <p x-show="ativo.material" class="mt-1 text-xs text-gray-600" x-text="textoMaterial(ativo.material)"></p>
+              <!-- 01_DOMINIO §3.12: o que a conferência deixou por resolver; não bloqueia nada -->
+              <p x-show="textoAvisos" class="mt-1 text-xs text-alerta-600">
+                <span x-text="textoAvisos"></span>
+                <a :href="'#/concursos/analise/' + avisos.analiseId + '/conferencia'" class="ml-1 underline">Conferir</a>
+              </p>
               <!-- D-66: preparar de novo o material do concurso inteiro -->
               <button type="button" x-show="ativo.material && (ativo.material.prontos + ativo.material.semMaterial) > 0"
                       class="mt-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-primary-700 hover:bg-gray-50"
@@ -927,7 +979,7 @@
     </template>
   </section>
 
-  <!-- Tela Novo edital — PDF → cargo → revisão → confirmação (02_JORNADAS J-5, 04_FRONTEND §7J) -->
+  <!-- Tela Novo edital — PDF → cargo → leitura pelo planejamento → conferência (02_JORNADAS J-5, 04_FRONTEND §7J) -->
   <section id="pagina-edital" x-data="paginaEdital()" hidden>
 
     <a href="#/concursos" class="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900">← Concursos</a>
@@ -939,7 +991,7 @@
     <template x-if="modo === 'novo'">
       <div class="space-y-4">
         <h2 class="text-lg font-semibold">Novo edital</h2>
-        <p class="text-sm text-gray-600">Envie o PDF do edital. Uma IA lê o texto, lista os cargos e, para o cargo que você escolher, separa as disciplinas e os assuntos. Nada é gravado até você revisar e confirmar.</p>
+        <p class="text-sm text-gray-600">Envie o PDF do edital. Uma IA lê o cabeçalho e lista os cargos; para o cargo que você escolher, o planejamento separa as disciplinas, os assuntos e as partes e liga cada parte à árvore de assuntos do QConcursos. Nada vira assunto até você conferir e concluir.</p>
         <div>
           <label for="arquivo-edital" class="mb-1 block text-sm text-gray-600">PDF do edital</label>
           <input id="arquivo-edital" type="file" accept="application/pdf,.pdf" @change="escolherArquivo($event)"
@@ -967,13 +1019,14 @@
 
         <template x-if="analise.status === 'LENDO_EDITAL' || analise.status === 'SEPARANDO_ASSUNTOS'">
           <div class="rounded border border-primary-100 bg-primary-50 p-4 text-sm text-gray-800">
-            <p class="font-medium" x-text="analise.status === 'LENDO_EDITAL' ? 'Lendo o edital…' : 'Separando os assuntos de ' + analise.cargoEscolhido + '…'"></p>
-            <p class="mt-1">Pode levar um ou dois minutos. Dá para sair desta tela: a análise continua e fica em Concursos.</p>
+            <p class="font-medium" x-text="analise.status === 'LENDO_EDITAL' ? 'Lendo o edital…' : 'Lendo o conteúdo programático de ' + analise.cargoEscolhido + '…'"></p>
+            <p class="mt-1">Pode levar alguns minutos. Dá para sair desta tela: a leitura continua e fica em Concursos.</p>
           </div>
         </template>
 
         <template x-if="analise.status === 'FALHOU'">
           <div class="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+            <p x-show="analise.etapaFalha" class="text-xs uppercase text-red-500" x-text="'Etapa: ' + analise.etapaFalha"></p>
             <p x-text="analise.erro"></p>
             <button type="button" class="mt-2 underline" :disabled="enviando" @click="tentarDeNovo()">Tentar de novo</button>
           </div>
@@ -995,83 +1048,329 @@
               </template>
             </fieldset>
             <button type="button" :disabled="!cargo || enviando" @click="escolherCargo()"
-                    class="w-full rounded bg-primary-700 px-4 py-3 font-medium text-white hover:bg-primary-800 disabled:opacity-50">Separar os assuntos deste cargo</button>
+                    class="w-full rounded bg-primary-700 px-4 py-3 font-medium text-white hover:bg-primary-800 disabled:opacity-50">Ler o conteúdo deste cargo</button>
           </div>
         </template>
 
-        <template x-if="analise.status === 'PRONTA' && rev">
-          <div class="space-y-5">
-            <h2 class="text-lg font-semibold">Revise antes de confirmar</h2>
-            <div class="grid gap-3">
-              <div>
-                <label for="rev-nome" class="mb-1 block text-sm text-gray-600">Concurso</label>
-                <input id="rev-nome" type="text" x-model="rev.nome" class="w-full rounded border border-gray-300 px-3 py-2">
-              </div>
-              <div>
-                <label for="rev-cargo" class="mb-1 block text-sm text-gray-600">Cargo</label>
-                <input id="rev-cargo" type="text" x-model="rev.cargo" class="w-full rounded border border-gray-300 px-3 py-2">
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label for="rev-banca" class="mb-1 block text-sm text-gray-600">Banca</label>
-                  <input id="rev-banca" type="text" x-model="rev.banca" class="w-full rounded border border-gray-300 px-3 py-2">
-                </div>
-                <div>
-                  <label for="rev-data" class="mb-1 block text-sm text-gray-600">Data da prova</label>
-                  <input id="rev-data" type="date" x-model="rev.dataProva" class="w-full rounded border border-gray-300 px-3 py-2">
-                </div>
-              </div>
-            </div>
-
-            <p class="rounded border border-gray-200 bg-white p-3 text-sm text-gray-700" x-text="textoResumo"></p>
-
-            <template x-for="(d, i) in rev.disciplinas" :key="i">
-              <div class="rounded border border-gray-200 bg-white">
-                <div class="flex items-start justify-between gap-3 border-b border-gray-100 p-3">
-                  <div>
-                    <p class="font-medium" x-text="d.nome"></p>
-                    <p class="text-xs text-gray-500"
-                       x-text="(d.questoes ? d.questoes + ' questões' : 'sem quadro de questões — peso não determinado') + (d.disciplinaExistenteNome ? ' · já existe' : ' · disciplina nova')"></p>
-                  </div>
-                  <div>
-                    <label :for="'peso-' + i" class="sr-only">Peso</label>
-                    <select :id="'peso-' + i" x-model="d.peso" class="rounded border border-gray-300 px-2 py-1 text-sm">
-                      <option value="ALTO">Alto</option>
-                      <option value="MEDIO">Médio</option>
-                      <option value="BAIXO">Baixo</option>
-                    </select>
-                  </div>
-                </div>
-                <ul class="divide-y divide-gray-100">
-                  <template x-for="(a, j) in d.assuntos" :key="j">
-                    <li class="flex items-start gap-3 p-3">
-                      <input type="checkbox" :id="'inc-' + i + '-' + j" x-model="a.incluir" class="mt-1">
-                      <label :for="'inc-' + i + '-' + j" class="flex-1 text-sm" :class="a.incluir ? '' : 'text-gray-400 line-through'">
-                        <span class="block" x-text="a.nome"></span>
-                        <span x-show="!a.assuntoExistenteId" class="mt-1 inline-block rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-800">novo</span>
-                        <span x-show="a.assuntoExistenteId" class="mt-1 block text-xs text-gray-600"
-                              x-text="'já existe: ' + a.assuntoExistenteNome + ' (' + a.disciplinaAtualNome + ') — mantém escada e histórico'"></span>
-                      </label>
-                      <button type="button" x-show="a.assuntoExistenteId" @click="tratarComoNovo(a)"
-                              class="shrink-0 text-xs text-primary-700 underline">tratar como novo</button>
-                    </li>
-                  </template>
-                </ul>
-              </div>
-            </template>
-
-            <button type="button" :disabled="enviando" @click="confirmar()"
-                    class="w-full rounded bg-primary-700 px-4 py-3 font-medium text-white hover:bg-primary-800 disabled:opacity-50"
-                    x-text="enviando ? 'Confirmando…' : 'Confirmar e ativar'"></button>
+        <template x-if="analise.status === 'EM_CONFERENCIA'">
+          <div class="space-y-3 rounded border border-primary-100 bg-primary-50 p-4 text-sm text-gray-800">
+            <p class="font-medium">O edital foi lido. Falta conferir.</p>
+            <p>A IA propôs; você resolve o que ficou em dúvida e conclui. Só aí os assuntos passam a existir.</p>
+            <a :href="'#/concursos/analise/' + analise.id + '/conferencia'"
+               class="block rounded bg-primary-700 px-4 py-3 text-center font-medium text-white hover:bg-primary-800">Conferir o edital</a>
           </div>
         </template>
 
         <template x-if="analise.status === 'CONFIRMADA'">
           <div class="rounded border border-primary-100 bg-primary-50 p-4 text-sm">
             <p>Concurso confirmado e ativado.</p>
-            <a href="#/concursos" class="mt-2 inline-block underline">Ver concursos</a>
+            <a :href="'#/concursos/analise/' + analise.id + '/conferencia'" class="mt-2 inline-block underline">Voltar à conferência</a>
+            <a href="#/concursos" class="mt-2 ml-3 inline-block underline">Ver concursos</a>
           </div>
         </template>
+      </div>
+    </template>
+  </section>
+
+  <!-- Tela Conferência do edital — a IA propõe, a regra confere, você resolve (01_DOMINIO §3.12, D-86 a D-92; SPRINT-25 §10) -->
+  <section id="pagina-conferencia" x-data="paginaConferencia()" hidden>
+
+    <a href="#/concursos" class="mb-4 inline-block text-sm text-gray-500 hover:text-gray-900">← Concursos</a>
+
+    <template x-if="carregando"><p class="text-gray-500">Carregando...</p></template>
+
+    <template x-if="!carregando && erro">
+      <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <p x-text="erro"></p>
+        <button type="button" class="mt-2 underline" @click="recarregar()">Tentar de novo</button>
+      </div>
+    </template>
+
+    <template x-if="erroAcao">
+      <div class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" role="alert" x-text="erroAcao"></div>
+    </template>
+
+    <template x-if="!carregando && !erro && resumo">
+      <div class="space-y-4">
+
+        <div class="rounded border border-gray-200 bg-white p-3">
+          <h2 class="font-semibold" x-text="resumo.concursoNome ?? 'Edital'"></h2>
+          <p class="text-sm text-gray-600" x-text="resumo.cargo"></p>
+          <p class="mt-1 text-xs text-gray-500" x-show="resumo.execucao"
+             x-text="resumo.execucao ? 'Lido em ' + (resumo.execucao.data ?? '') + ' · árvore ' + resumo.execucao.arvore + (resumo.execucao.modelo ? ' · ' + resumo.execucao.modelo : '') : ''"></p>
+          <dl class="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Disciplinas</dt><dd class="text-base font-semibold" x-text="resumo.disciplinas"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Assuntos</dt><dd class="text-base font-semibold" x-text="resumo.assuntos"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Partes</dt><dd class="text-base font-semibold" x-text="resumo.partes"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Exatas</dt><dd class="text-base font-semibold" x-text="resumo.porNatureza.EXATO"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Mais amplas</dt><dd class="text-base font-semibold" x-text="resumo.porNatureza.MAIS_AMPLO"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Parciais</dt><dd class="text-base font-semibold" x-text="resumo.porNatureza.PARCIAL"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Sem nó</dt><dd class="text-base font-semibold" x-text="resumo.semNo"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Decididas por você</dt><dd class="text-base font-semibold" x-text="resumo.decididasPorPessoa"></dd></div>
+            <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">De decisão anterior</dt><dd class="text-base font-semibold" x-text="resumo.aplicadasDeDecisaoAnterior"></dd></div>
+          </dl>
+          <p class="mt-3 text-sm" :class="resumo.pendencias.bloqueiam ? 'text-red-700' : 'text-green-700'"
+             x-text="resumo.pendencias.bloqueiam
+               ? resumo.pendencias.bloqueiam + ' pendência(s) bloqueiam a conclusão (conteúdo do edital incerto) e ' + resumo.pendencias.avisam + ' só avisam.'
+               : 'Nada bloqueia a conclusão' + (resumo.pendencias.avisam ? '; ' + resumo.pendencias.avisam + ' aviso(s) seguem abertos e não impedem o estudo.' : '.')"></p>
+        </div>
+
+        <nav class="flex gap-2 text-sm" aria-label="Visões da conferência">
+          <button type="button" class="min-h-11 flex-1 rounded border px-2" :class="aba === 'fila' ? 'border-primary-700 bg-primary-50 font-medium' : 'border-gray-300 bg-white'"
+                  @click="aba = 'fila'" x-text="'Fila (' + fila.length + ')'"></button>
+          <button type="button" class="min-h-11 flex-1 rounded border px-2" :class="aba === 'disciplinas' ? 'border-primary-700 bg-primary-50 font-medium' : 'border-gray-300 bg-white'"
+                  @click="aba = 'disciplinas'">Por disciplina</button>
+          <button type="button" class="min-h-11 flex-1 rounded border px-2" :class="aba === 'decisoes' ? 'border-primary-700 bg-primary-50 font-medium' : 'border-gray-300 bg-white'"
+                  @click="abrirDecisoes()">Decisões</button>
+        </nav>
+
+        <!-- ------------------------------------------------ Fila -->
+        <div x-show="aba === 'fila'" class="space-y-2">
+          <p x-show="fila.length === 0" class="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600">Nada pede decisão agora.</p>
+          <template x-for="(it, i) in fila" :key="i">
+            <div class="rounded border bg-white p-3" :class="it.bloqueia ? 'border-red-200' : 'border-gray-200'">
+              <p class="text-xs font-medium uppercase" :class="it.bloqueia ? 'text-red-700' : 'text-gray-500'" x-text="rotuloTipo(it.tipo) + (it.bloqueia ? ' · bloqueia' : '')"></p>
+              <p class="text-xs text-gray-500" x-show="it.disciplina" x-text="it.disciplina"></p>
+              <p class="mt-1 text-sm" x-text="it.parte ?? it.assunto ?? (it.detalhe[0] ?? '')"></p>
+              <p x-show="it.parte && it.assunto" class="text-xs text-gray-500" x-text="'em: ' + it.assunto"></p>
+              <button type="button" class="mt-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" @click="abrirItem(it)">Resolver</button>
+            </div>
+          </template>
+        </div>
+
+        <!-- ------------------------------------------------ Por disciplina -->
+        <div x-show="aba === 'disciplinas'" class="space-y-3">
+          <template x-for="d in disciplinas" :key="d.id">
+            <div class="rounded border border-gray-200 bg-white">
+              <div class="flex items-start justify-between gap-2 border-b border-gray-100 p-3">
+                <div>
+                  <p class="font-medium" x-text="d.nome"></p>
+                  <p class="text-xs text-gray-500" x-text="(d.questoes ? d.questoes + ' questões' : 'sem quadro de questões — peso não determinado') + (d.restricao ? ' · ' + d.restricao : '')"></p>
+                </div>
+                <div>
+                  <label :for="'peso-d-' + d.id" class="sr-only">Peso</label>
+                  <select :id="'peso-d-' + d.id" class="rounded border border-gray-300 px-2 py-1 text-sm" :value="d.peso" @change="trocarPeso(d, $event.target.value)">
+                    <option value="ALTO">Alto</option><option value="MEDIO">Médio</option><option value="BAIXO">Baixo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="p-3">
+                <button type="button" class="mb-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="aceitarExatos(d)">Aceitar todos os exatos</button>
+                <template x-for="a in d.assuntos" :key="a.id">
+                  <div class="border-t border-gray-100 py-2" x-show="a.aparece">
+                    <button type="button" class="flex w-full items-start justify-between gap-2 text-left" @click="alternarAssunto(a.id)">
+                      <span class="text-sm" x-text="a.texto"></span>
+                      <span class="shrink-0 text-xs" :class="a.erros.length && !a.aceito ? 'text-red-700' : 'text-gray-400'"
+                            x-text="a.erros.length && !a.aceito ? 'recusado' : (abertas[a.id] ? '▲' : '▼')"></span>
+                    </button>
+                    <ul x-show="abertas[a.id]" class="mt-2 space-y-1">
+                      <template x-for="p in a.partes.filter(x => x.aparece && x.estado !== 'DESCARTADA')" :key="p.id">
+                        <li class="rounded bg-gray-50 p-2">
+                          <p class="text-sm" x-text="[p.herdado, p.texto].filter(Boolean).join(' ')"></p>
+                          <p x-show="p.contexto" class="text-xs text-gray-500" x-text="'sob: ' + p.contexto"></p>
+                          <p class="text-xs text-gray-600" x-text="p.nos.length ? p.nos.map(n => n.caminho ? n.caminho.join(' › ') : 'nó ' + n.id).join(' · ') : 'sem nó'"></p>
+                          <p class="mt-1 text-xs">
+                            <span class="rounded-full bg-white px-2 py-0.5" x-text="rotuloNatureza(p.natureza)"></span>
+                            <span class="rounded-full bg-white px-2 py-0.5" x-text="rotuloEstado(p)"></span>
+                          </p>
+                          <button type="button" class="mt-1 min-h-11 text-sm text-primary-700 underline" @click="abrirParte(p, a)">Abrir</button>
+                        </li>
+                      </template>
+                    </ul>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- ------------------------------------------------ Decisões -->
+        <div x-show="aba === 'decisoes'" class="space-y-2">
+          <p x-show="decisoes.length === 0" class="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600">Nenhuma decisão ainda. Cada vez que você aceita ou troca um nó, a decisão fica guardada e vale antes da IA.</p>
+          <template x-for="d in decisoes" :key="d.id">
+            <div class="rounded border border-gray-200 bg-white p-3">
+              <p class="text-sm font-medium" x-text="d.parte"></p>
+              <p x-show="d.contexto" class="text-xs text-gray-500" x-text="'sob: ' + d.contexto"></p>
+              <p class="text-xs text-gray-600" x-text="d.nos.length ? d.nos.map(n => n.caminho ? n.caminho.join(' › ') : 'nó ' + n.id).join(' · ') : 'a árvore não tem'"></p>
+              <p class="text-xs text-gray-500" x-text="rotuloNatureza(d.natureza) + ' · só este edital · ' + d.arvore"></p>
+              <p x-show="d.precisaReconfirmar" class="mt-1 text-xs text-alerta-600">Um nó saiu ou mudou na árvore: reconfirme.</p>
+              <div class="mt-2 flex gap-2">
+                <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="abrirDecisao(d)">Editar</button>
+                <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-red-700" @click="revogar(d)">Revogar</button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <div class="border-t border-gray-200 pt-4">
+          <p x-show="resumo.status === 'CONFIRMADA'" class="text-sm text-gray-600">Esta conferência já foi concluída. Tudo continua possível: trocar nós, vincular o que ficou sem nó.</p>
+          <button type="button" x-show="resumo.status === 'EM_CONFERENCIA'" :disabled="trabalhando || !resumo.podeConcluir"
+                  class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white hover:bg-primary-800 disabled:opacity-50"
+                  @click="concluir()" x-text="resumo.podeConcluir ? 'Concluir e ativar o concurso' : 'Resolva o que bloqueia para concluir'"></button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ------------------------------------------------ Painel de uma parte, de um assunto ou de um trecho -->
+    <template x-if="painel">
+      <div class="fixed inset-0 z-30 flex items-end justify-center bg-black/40 md:items-center" @keydown.escape.window="fechar()">
+        <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-lg bg-white p-4 md:rounded-lg" role="dialog" aria-modal="true">
+          <div class="mb-3 flex items-start justify-between gap-2">
+            <h3 class="font-semibold" x-text="painel.titulo"></h3>
+            <button type="button" class="min-h-11 min-w-11 text-gray-500" aria-label="Fechar" @click="fechar()">✕</button>
+          </div>
+          <p x-show="erroPainel" class="mb-2 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700" role="alert" x-text="erroPainel"></p>
+
+          <!-- parte: visão geral -->
+          <template x-if="painel.tipo === 'parte' && painel.modo === 'ver'"><div class="space-y-3">
+            <p class="text-xs text-gray-500" x-text="'No edital: ' + painel.assunto.texto"></p>
+            <p class="text-sm" x-text="[painel.parte.herdado, painel.parte.texto].filter(Boolean).join(' ')"></p>
+            <p x-show="painel.parte.contexto" class="text-xs text-gray-500" x-text="'sob: ' + painel.parte.contexto"></p>
+            <div>
+              <p class="text-xs font-medium text-gray-500">Nó proposto</p>
+              <p class="text-sm" x-text="painel.parte.nos.length ? painel.parte.nos.map(n => (n.caminho ? n.caminho.join(' › ') : 'nó ' + n.id) + (n.filhos ? ' (' + n.filhos + ' filhos)' : '')).join(' · ') : 'sem nó'"></p>
+              <p class="text-xs text-gray-500" x-text="rotuloNatureza(painel.parte.natureza) + ' · ' + rotuloOrigem(painel.parte.origem) + ' · ' + rotuloEstado(painel.parte)"></p>
+              <p x-show="painel.parte.propostos.length" class="mt-1 text-xs text-gray-500"
+                 x-text="'O sistema tinha proposto: ' + painel.parte.propostos.map(n => n.caminho ? n.caminho.join(' › ') : 'nó ' + n.id).join(' · ')"></p>
+              <p x-show="painel.parte.noMudou" class="mt-1 text-xs text-alerta-600">O nó saiu ou mudou na árvore: aceite de novo se ainda serve, ou escolha outro.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white disabled:opacity-50" :disabled="trabalhando || !painel.parte.nos.length" @click="aceitar()">Aceitar</button>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="iniciarTrocaDeNo()">Trocar o nó</button>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" :disabled="trabalhando" @click="semNo()">A árvore não tem</button>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="painel.modo = 'editar'; formulario = {texto: painel.parte.texto, contexto: painel.parte.contexto ?? '', herdado: painel.parte.herdado ?? ''}">Editar o texto</button>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="painel.modo = 'dividir'; formulario = {partes: [painel.parte.texto, '']}">Dividir</button>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" x-show="painel.assunto.partes.filter(x => x.aparece && x.estado !== 'DESCARTADA' && x.id !== painel.parte.id).length"
+                      @click="painel.modo = 'juntar'; formulario = {outra: '', texto: painel.parte.texto}">Juntar com outra</button>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-red-700" @click="painel.modo = 'descartar'; formulario = {motivo: ''}">Descartar</button>
+            </div>
+            <div>
+              <label for="comentario-parte" class="mb-1 block text-xs text-gray-500">Comentário</label>
+              <textarea id="comentario-parte" rows="2" class="w-full rounded border border-gray-300 p-2 text-sm" x-model="formulario.comentario" @change="comentar()"></textarea>
+            </div>
+          </div></template>
+
+          <!-- trocar o nó / editar decisão -->
+          <template x-if="painel.modo === 'nos'"><div class="space-y-3">
+            <div>
+              <label for="busca-no" class="mb-1 block text-sm text-gray-600">Buscar na árvore do QConcursos</label>
+              <input id="busca-no" type="search" class="w-full rounded border border-gray-300 px-3 py-2" x-model="picker.q" @input.debounce.300ms="buscar()" placeholder="ex.: window function">
+            </div>
+            <ul class="max-h-48 space-y-1 overflow-y-auto">
+              <template x-for="n in picker.resultados" :key="n.id">
+                <li><button type="button" class="w-full rounded border border-gray-200 p-2 text-left text-sm hover:bg-gray-50" @click="alternarNo(n)"
+                            x-text="n.caminho.join(' › ') + ' (' + n.filhos + ' filhos)'"></button></li>
+              </template>
+            </ul>
+            <div>
+              <p class="text-xs font-medium text-gray-500">Ou navegue pelos ramos</p>
+              <p class="text-xs text-gray-500" x-text="picker.ramo.length ? picker.ramo.map(r => r.nome).join(' › ') : 'Disciplinas'"></p>
+              <button type="button" x-show="picker.ramo.length" class="min-h-11 text-sm text-primary-700 underline" @click="subir()">← subir</button>
+              <ul class="max-h-40 space-y-1 overflow-y-auto">
+                <template x-for="n in picker.filhos" :key="n.id">
+                  <li class="flex gap-1">
+                    <button type="button" class="flex-1 rounded border border-gray-200 p-2 text-left text-sm hover:bg-gray-50" @click="descer(n)" x-text="n.nome + (n.filhos ? ' ›' : '')"></button>
+                    <button type="button" x-show="n.id > 0" class="rounded border border-gray-300 px-2 text-xs text-primary-700" @click="alternarNo(n)">escolher</button>
+                  </li>
+                </template>
+              </ul>
+            </div>
+            <div>
+              <p class="text-xs font-medium text-gray-500">Escolhidos (até 3)</p>
+              <p x-show="!picker.selecionados.length" class="text-sm text-gray-500">Nenhum ainda.</p>
+              <template x-for="n in picker.selecionados" :key="n.id">
+                <p class="text-sm"><button type="button" class="mr-1 text-red-700" aria-label="Tirar" @click="alternarNo(n)">✕</button><span x-text="n.caminho ? n.caminho.join(' › ') : n.nome"></span></p>
+              </template>
+            </div>
+            <div>
+              <label for="natureza-no" class="mb-1 block text-sm text-gray-600">O nó cobre a parte…</label>
+              <select id="natureza-no" class="w-full rounded border border-gray-300 px-3 py-2" x-model="picker.natureza">
+                <option value="EXATO">exatamente</option>
+                <option value="MAIS_AMPLO">é mais amplo que a parte</option>
+                <option value="PARCIAL">cobre só parte dela</option>
+              </select>
+            </div>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="trabalhando || !picker.selecionados.length" @click="gravarNos()">Gravar o nó</button>
+          </div></template>
+
+          <!-- editar / dividir / juntar / descartar a parte -->
+          <template x-if="painel.modo === 'editar'"><div class="space-y-3">
+            <div><label for="ed-texto" class="mb-1 block text-sm text-gray-600">Texto da parte</label><input id="ed-texto" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.texto"></div>
+            <div><label for="ed-herdado" class="mb-1 block text-sm text-gray-600">Prefixo herdado</label><input id="ed-herdado" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.herdado"></div>
+            <div><label for="ed-contexto" class="mb-1 block text-sm text-gray-600">Contexto (a cabeça sob a qual aparece)</label><input id="ed-contexto" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.contexto"></div>
+            <p class="text-xs text-gray-500">A conferência por regra roda de novo com o texto que você escrever.</p>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando" @click="salvarEdicao()">Salvar</button>
+          </div></template>
+          <template x-if="painel.modo === 'dividir'"><div class="space-y-3">
+            <p class="text-sm text-gray-600">Escreva cada pedaço. Cada um herda o nó, para você só conferir.</p>
+            <template x-for="(t, i) in formulario.partes" :key="i">
+              <input class="w-full rounded border border-gray-300 px-3 py-2" :aria-label="'Pedaço ' + (i + 1)" x-model="formulario.partes[i]">
+            </template>
+            <button type="button" class="min-h-11 text-sm text-primary-700 underline" @click="formulario.partes.push('')">+ mais um pedaço</button>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando" @click="dividir()">Dividir</button>
+          </div></template>
+          <template x-if="painel.modo === 'juntar'"><div class="space-y-3">
+            <div>
+              <label for="jt-outra" class="mb-1 block text-sm text-gray-600">Juntar com</label>
+              <select id="jt-outra" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.outra">
+                <option value="">Escolha…</option>
+                <template x-for="o in painel.assunto.partes.filter(x => x.aparece && x.estado !== 'DESCARTADA' && x.id !== painel.parte.id)" :key="o.id">
+                  <option :value="o.id" x-text="[o.herdado, o.texto].filter(Boolean).join(' ')"></option>
+                </template>
+              </select>
+            </div>
+            <div><label for="jt-texto" class="mb-1 block text-sm text-gray-600">Texto da parte juntada</label><input id="jt-texto" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.texto"></div>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando || !formulario.outra" @click="juntar()">Juntar</button>
+          </div></template>
+          <template x-if="painel.modo === 'descartar'"><div class="space-y-3">
+            <div><label for="ds-motivo" class="mb-1 block text-sm text-gray-600">Motivo (fora do cargo, observação, repetição…)</label><input id="ds-motivo" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.motivo"></div>
+            <button type="button" class="w-full min-h-12 rounded bg-red-700 px-4 py-3 font-medium text-white" :disabled="trabalhando || !formulario.motivo" @click="descartar()">Descartar a parte</button>
+          </div></template>
+
+          <!-- assunto recusado ou com alerta -->
+          <template x-if="painel.tipo === 'assunto'"><div class="space-y-3">
+            <p class="text-sm" x-text="painel.assunto.texto"></p>
+            <ul class="list-disc space-y-1 pl-5 text-sm text-red-700">
+              <template x-for="e in painel.assunto.erros" :key="e"><li x-text="e"></li></template>
+            </ul>
+            <ul class="list-disc space-y-1 pl-5 text-sm text-gray-700">
+              <template x-for="e in painel.assunto.alertas" :key="e"><li x-text="e"></li></template>
+            </ul>
+            <div x-show="painel.modo !== 'texto'" class="grid grid-cols-2 gap-2">
+              <button type="button" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white" :disabled="trabalhando" @click="aceitarAssunto()">Aceitar assim mesmo</button>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="painel.modo = 'texto'; formulario = {texto: painel.assunto.texto}">Corrigir o texto</button>
+            </div>
+            <div x-show="painel.modo === 'texto'" class="space-y-2">
+              <label for="as-texto" class="block text-sm text-gray-600">Texto do assunto, como está no edital</label>
+              <textarea id="as-texto" rows="3" class="w-full rounded border border-gray-300 p-2 text-sm" x-model="formulario.texto"></textarea>
+              <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando" @click="corrigirAssunto()">Salvar</button>
+            </div>
+            <button type="button" class="min-h-11 text-sm text-primary-700 underline" @click="abrirPartesDoAssunto()">Ver as partes deste assunto</button>
+          </div></template>
+
+          <!-- trecho do edital sem assunto, ou linhas fora de disciplina -->
+          <template x-if="painel.tipo === 'trecho'"><div class="space-y-3">
+            <p class="max-h-40 overflow-y-auto rounded bg-gray-50 p-2 text-sm" x-text="(painel.item.detalhe ?? []).join(' ')"></p>
+            <div>
+              <label for="tr-motivo" class="mb-1 block text-sm text-gray-600">Descartar — motivo</label>
+              <input id="tr-motivo" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.motivo" placeholder="observação, outro cargo…">
+              <button type="button" class="mt-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-red-700" :disabled="trabalhando || !formulario.motivo" @click="resolverTrecho('DESCARTAR')">Descartar</button>
+            </div>
+            <div class="border-t border-gray-100 pt-3">
+              <label for="tr-texto" class="mb-1 block text-sm text-gray-600">Ou incluir como assunto</label>
+              <textarea id="tr-texto" rows="2" class="w-full rounded border border-gray-300 p-2 text-sm" x-model="formulario.texto"></textarea>
+              <div x-show="!painel.item.disciplinaId" class="mt-2">
+                <label for="tr-disc" class="mb-1 block text-sm text-gray-600">Em qual disciplina?</label>
+                <select id="tr-disc" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.disciplinaId">
+                  <option value="">Uma disciplina nova…</option>
+                  <template x-for="d in disciplinas" :key="d.id"><option :value="d.id" x-text="d.nome"></option></template>
+                </select>
+                <input x-show="!formulario.disciplinaId" class="mt-2 w-full rounded border border-gray-300 px-3 py-2" placeholder="Nome da disciplina nova" aria-label="Nome da disciplina nova" x-model="formulario.novaDisciplina">
+              </div>
+              <button type="button" class="mt-2 min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white" :disabled="trabalhando || !formulario.texto" @click="resolverTrecho('INCLUIR')">Incluir como assunto</button>
+            </div>
+          </div></template>
+        </div>
       </div>
     </template>
   </section>

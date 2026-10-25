@@ -13,6 +13,7 @@ function renderizarRotaAtual() {
   const elAjustes = document.getElementById('pagina-ajustes');
   const elConcursos = document.getElementById('pagina-concursos');
   const elEdital = document.getElementById('pagina-edital');
+  const elConferencia = document.getElementById('pagina-conferencia');
   const matchRecuperar = hash.match(/^#\/recuperar\/(\d+)$/);
   const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards)\/(\d+)$/);
   const matchAssuntoDetalhe = hash.match(/^#\/assuntos\/(\d+)$/);
@@ -23,6 +24,7 @@ function renderizarRotaAtual() {
   const matchConcursos = hash === '#/concursos';
   const matchEditalNovo = hash === '#/concursos/novo';
   const matchAnalise = hash.match(/^#\/concursos\/analise\/(\d+)$/);
+  const matchConferencia = hash.match(/^#\/concursos\/analise\/(\d+)\/conferencia$/);
 
   elHoje.hidden = true;
   elRecuperar.hidden = true;
@@ -34,6 +36,11 @@ function renderizarRotaAtual() {
   elAjustes.hidden = true;
   elConcursos.hidden = true;
   elEdital.hidden = true;
+  elConferencia.hidden = true;
+  // A conferência tem mais coisa por linha: usa a largura da tela em computador; o resto segue como celular.
+  const principal = document.querySelector('main');
+  principal.classList.toggle('max-w-md', !matchConferencia);
+  principal.classList.toggle('max-w-3xl', !!matchConferencia);
   Alpine.$data(elEdital).parar(); // a consulta periódica da análise só vive na tela dela
 
   if (matchRecuperar) {
@@ -63,6 +70,9 @@ function renderizarRotaAtual() {
   } else if (matchEditalNovo) {
     elEdital.hidden = false;
     Alpine.$data(elEdital).abrirNovo();
+  } else if (matchConferencia) {
+    elConferencia.hidden = false;
+    Alpine.$data(elConferencia).abrir(Number(matchConferencia[1]));
   } else if (matchAnalise) {
     elEdital.hidden = false;
     Alpine.$data(elEdital).abrir(Number(matchAnalise[1]));

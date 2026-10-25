@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.4.0 |
+| Versão | 1.5.0 |
 | Data | 2026-10-24 |
 | Subordinado a | `01_DOMINIO` v1.27.0 §3.12 e D-86 a D-95; `02_JORNADAS` v1.16.0 J-5; `03_INVARIANTES` v1.15.0; ADR-047 |
 | Contraparte | `docs/especificacao-revisao-edital-sge.md` §11 (contrato `edital-revisao/1`) e `integracao/entrega_revisao.py`, no repositório do planejamento |
@@ -202,7 +202,7 @@ conferência passa a valer na versão vigente (`arvore_versao_id` da parte e da 
 questões") e no detalhe do assunto afetado. Fica como derivação (D-16): conta as partes do assunto cujo estado é essas filas.
 O plano do turno (Hoje) mostra um selo discreto no assunto afetado; sem bloquear nada.
 
-## 10. Telas (SPA estática, Alpine + Tailwind, zero build)
+## 10. Telas (SPA estática, Alpine + Tailwind, zero build) — feitas no item 25.9
 
 Uma tela nova, **Conferência do edital**, aberta a partir de Concursos. `pages.js` ganha o bloco; `router.js` a rota; `sw.js` e
 `CASCA_VERSAO` são atualizados (`04_FRONTEND` §7F).
@@ -270,6 +270,7 @@ Escopo "todos os editais", reprocessamento, mapa de disciplinas editável, mater
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.5.0 | 2026-10-24 | Item 25.9 feito: tela Conferência (`#/concursos/analise/{id}/conferencia`: contagens, fila, por disciplina, decisões, painel de parte/assunto/trecho com seletor de nó), "O que o edital pede" no detalhe do assunto, aviso em Concursos, Árvore do QConcursos em Ajustes, volume `editais` no compose e `03E` §8E. Conferido num Chromium real contra o app com a árvore e o edital reais do MPPR (19.673 nós; 300 partes). **Fica para depois:** o selo discreto no assunto afetado dentro de Hoje (§9) |
 | 1.4.0 | 2026-10-24 | §8 como foi feito: impacto antes (GET e POST sem confirmar), reconfirmar por aceitar ou trocar nó, `precisaReconfirmar` nas decisões. Item 25.8 feito |
 | 1.3.0 | 2026-10-24 | A decisão guarda o texto da parte e do contexto como a pessoa os viu (o planejamento os normaliza); a disciplina guarda `texto` e `referencias`; `ALERTA_DE_PARTE` por assunto; ao editar, os alertas da IA se perdem e os da regra voltam. Itens 25.6 e 25.7 feitos |
 | 1.2.0 | 2026-10-24 | A entrega leva o `texto` da disciplina (a conferência do assunto precisa dele); vetores compartilhados. Itens 25.4 e 25.5 feitos |

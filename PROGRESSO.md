@@ -1046,7 +1046,7 @@ nasce da prova.
 
 ## 20B. Sprint 25 · Conferência do edital
 
-**Documento técnico:** `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.4.0 · **Especificação:** `01_DOMINIO` §3.12, D-86 a D-95; ADR-047.
+**Documento técnico:** `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.5.0 · **Especificação:** `01_DOMINIO` §3.12, D-86 a D-95; ADR-047.
 Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`).
 
 | | Item | Quem escreve | Estado |
@@ -1060,7 +1060,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 | 25.6 | Conferência: contagens, fila derivada, ações, decisões e eventos | Claude | **feito** |
 | 25.7 | Concluir; aviso no painel e no plano | Claude | **feito** |
 | 25.8 | Adotar versão da árvore, com o impacto | Claude | **feito** |
-| 25.9 | Telas, compose com o volume `editais`, adendo do `03E` | Claude | a fazer |
+| 25.9 | Telas, compose com o volume `editais`, adendo do `03E` | Claude | **feito** |
 | 25.10 | Pi: edital real (MPPR) de ponta a ponta | Claude + usuário | a fazer |
 
 ---
@@ -1083,6 +1083,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.75.0 | 2026-10-24 | **Item 25.9 feito: as telas.** Conferência do edital (contagens, fila, por disciplina, decisões, painel com seletor de nó por busca e por ramos), "O que o edital pede" no detalhe do assunto, aviso em Concursos, Árvore do QConcursos em Ajustes (impacto antes de adotar), volume `editais` no compose, `03E` v1.5.0 (§8E). Conferido num Chromium real contra o app com a árvore e o edital reais do MPPR: o edital entrou em 2,2 s (138 assuntos, 300 partes) e a árvore tem **19.673 nós** — os 50 que a colisão de ids escondia agora existem. Achado de interface: expressão do Alpine dentro de `x-show` é avaliada mesmo escondida; os blocos do painel viraram `x-if`. Falta o 25.10 (Pi) e o selo em Hoje. `SPRINT-25` v1.5.0 |
 | 1.74.0 | 2026-10-24 | **Item 25.8 feito.** Atualizar a árvore do QConcursos por gesto: impacto antes (partes cujo nó saiu ou mudou de pai, renomeados, decisões), adotar só com confirmação, a parte afetada volta à fila para reconfirmar e nenhum nó é trocado sozinho (D-90). `SimuladoListagemTest` passou a limpar o simulado que commita (a ordem dos testes fazia `SimuladoDominioTest` falhar no contêiner). Suíte completa: 315 testes, 1 falha de ordem corrigida. `SPRINT-25` v1.4.0 |
 | 1.73.0 | 2026-10-24 | **Itens 25.6 e 25.7 feitos.** A conferência: resumo, edital por disciplina, fila derivada (bloqueantes primeiro), aceitar, trocar nós, "a árvore não tem", editar, dividir, juntar, descartar e comentar parte, aceitar assunto, corrigir texto do assunto, peso da disciplina, trechos sem assunto, decisões (ver, editar, revogar) e histórico só de inserção. **Concluir** recusa com bloqueio (D-91), cria disciplinas e assuntos com chave (D-64) e ativa o concurso (D-92); depois disso a conferência continua aberta. 15 testes novos. `SPRINT-25` v1.3.0 |
 | 1.72.0 | 2026-10-24 | **Itens 25.4 e 25.5 feitos.** `/internal/editais` (pendentes, dados com as decisões, entrega `edital-revisao/1` idempotente pelo hash, falha com a etapa) grava a leitura como veio; nó fora da árvore, contrato desconhecido e árvore não carregada são recusados sem gravar nada. `RegrasEdital` (normalizar, palavras, chaves de parte e de assunto, conferência por regra) é porte do Python e passa nos mesmos vetores (`vetores-conferencia.json`, gerado no planejamento). A entrega do planejamento passou a levar o `texto` da disciplina. `SPRINT-25` v1.2.0 |

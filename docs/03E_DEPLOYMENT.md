@@ -5,9 +5,9 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.4.0** |
+| Versão do documento | **1.5.0** |
 | Status | **Congelado** |
-| Data | 2026-10-14 |
+| Data | 2026-10-24 |
 
 ---
 
@@ -661,10 +661,43 @@ outros sistemas rodando, num contêiner de teste com teto de 700 MB e 2 núcleos
 
 ---
 
+## 8E. Adendo — Sprint 25: conferência do edital (ADR-047)
+
+O SGE guarda o PDF do edital enquanto a conferência está aberta, e o planejamento o lê para separar o
+conteúdo programático em disciplinas, assuntos e partes. Um acréscimo de infraestrutura: o volume `editais`.
+
+**O volume `editais`**, montado como `/dados/editais` (`EDITAIS_DIR`): o app (uid **1001**) grava
+`<análise>/edital.pdf` ao receber o envio e o apaga quando a conferência é concluída; o worker (uid 1000) o monta
+**só para leitura**, pelo caminho que `GET /internal/editais/{id}/dados` devolve.
+
+### 8E.1 Instalação
+
+1. **Pasta, com o dono certo:** `sudo mkdir -p /mnt/ssd/editais && sudo chown 1001:1001 /mnt/ssd/editais`
+2. **Atualizar e reconstruir** (a `V17` aplica na subida do app):
+   `cd /opt/estudos && sudo git pull --ff-only && sudo docker compose up -d --build app planejamento`
+3. **Carregar a árvore do QConcursos:** o worker a entrega ao ler o primeiro edital (`POST /internal/arvores`); em Ajustes →
+   Árvore do QConcursos aparece a versão carregada e as novas, e **atualizar é decisão sua**.
+
+### 8E.2 Checklist (é o ensaio do item 25.10)
+
+- [ ] `ls -ld /mnt/ssd/editais` mostra o dono 1001.
+- [ ] `docker compose ps` com `app` saudável; as 17 migrações aplicadas.
+- [ ] Novo edital: enviar o PDF cria `/mnt/ssd/editais/<id>/edital.pdf`; ao escolher o cargo, a análise vai a *Lendo o conteúdo
+      programático* e o worker a pega (`/internal/editais/pendentes`).
+- [ ] A leitura chega em *Conferir o edital* com as contagens; a fila mostra primeiro o que bloqueia.
+- [ ] Aceitar, trocar o nó e dividir uma parte gravam decisões (aba Decisões) e histórico.
+- [ ] Concluir cria os assuntos com chave, ativa o concurso e **apaga** o PDF do volume.
+- [ ] Em Concursos, o aviso "N partes sem filtro de questões" aparece e leva à conferência; no detalhe do assunto aparece
+      "O que o edital pede".
+- [ ] Adotar uma árvore nova mostra o impacto antes e devolve à fila só as partes cujo nó saiu ou mudou de pai.
+
+---
+
 ## 9. Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.5.0 | 2026-10-24 | §8E, adendo da Sprint 25 (ADR-047): volume `editais` (o app grava o PDF do edital, uid 1001; o worker só lê), instalação e checklist do ensaio. Desenho das seções 0–8D intacto |
 | 1.4.0 | 2026-10-18 | §8D, adendo da Sprint 24 (ADR-046): volume `provas` com dois donos (app uid 1001 grava `entrada/`, worker uid 1000 grava `paginas/`), Tesseract na imagem do worker (medido neste Pi: +150 MB, pico ~85 MB, ~8 s por página), instalação e checklist do ensaio. Desenho das seções 0–8C intacto |
 | 1.3.2 | 2026-10-17 | §8C item 4: nomes com acento chegam em cp1252 quando copiados com `pscp` do Windows; como conferir e corrigir. Achado na primeira instalação real |
 | 1.3.1 | 2026-10-17 | §8C: IA pela assinatura do Claude (ADR-045) — `claude setup-token`, Claude Code na imagem do app, teto do app em 1,2 GB, custo em cota; checklist atualizado |

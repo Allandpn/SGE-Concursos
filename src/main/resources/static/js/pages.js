@@ -538,6 +538,7 @@ document.addEventListener('alpine:init', () => {
     refeito: false,
     erroRefazer: null,
     retencao: [],
+    partesEdital: [], // 01_DOMINIO §3.12 — as partes do edital deste assunto e o aviso de cada uma
     carregando: false,
     semDados: false,
 
@@ -578,6 +579,13 @@ document.addEventListener('alpine:init', () => {
         } catch (e) {
           this.lacuna = null;
         }
+      }
+
+      // Sprint 25 — as partes do edital; auxiliar, vazio se o assunto não nasceu de uma conferência.
+      try {
+        this.partesEdital = await api(`/assuntos/${assuntoId}/partes-do-edital`);
+      } catch (e) {
+        this.partesEdital = [];
       }
 
       // M-2, adicionado na Sprint 14 (04_FRONTEND §7B) — mesmo princípio
@@ -899,6 +907,7 @@ document.addEventListener('alpine:init', () => {
     porAssunto: null,
     soSemMaterial: false,
     carregandoLista: false,
+    avisos: null, // Sprint 25 — o que a conferência deixou por resolver no concurso-alvo
 
     async init() {
       this.carregando = true;
@@ -913,6 +922,14 @@ document.addEventListener('alpine:init', () => {
         this.ia = ia;
         // Só as que ainda pedem algo do usuário; confirmada já está no histórico.
         this.analises = analises.filter((a) => a.status !== 'CONFIRMADA');
+        this.avisos = null;
+        if (this.ativo) {
+          try {
+            this.avisos = await api(`/concursos/${this.ativo.id}/avisos-de-conferencia`);
+          } catch (e) {
+            this.avisos = null; // auxiliar: sem o aviso, a tela segue
+          }
+        }
       } catch (e) {
         this.erro = e.message;
       } finally {
@@ -922,6 +939,17 @@ document.addEventListener('alpine:init', () => {
 
     get ativo() {
       return this.concursos.find((c) => c.ativo) ?? null;
+    },
+
+    // "12 partes sem filtro de questões" — não bloqueia nada, fica até a pessoa resolver.
+    get textoAvisos() {
+      const a = this.avisos;
+      if (!a || !a.analiseId) return '';
+      const partes = [];
+      if (a.partesSemNo) partes.push(`${a.partesSemNo} ${a.partesSemNo === 1 ? 'parte sem filtro' : 'partes sem filtro'} de questões`);
+      if (a.vinculosAmplosOuParciais) partes.push(`${a.vinculosAmplosOuParciais} ${a.vinculosAmplosOuParciais === 1 ? 'vínculo' : 'vínculos'} largo(s) ou parcial(is)`);
+      if (a.nosQueMudaram) partes.push(`${a.nosQueMudaram} ${a.nosQueMudaram === 1 ? 'nó mudou' : 'nós mudaram'} na árvore`);
+      return partes.join(' · ');
     },
 
     get anteriores() {
@@ -994,8 +1022,8 @@ document.addEventListener('alpine:init', () => {
       return {
         LENDO_EDITAL: 'Lendo o edital…',
         ESCOLHER_CARGO: 'Escolha o cargo',
-        SEPARANDO_ASSUNTOS: 'Separando os assuntos…',
-        PRONTA: 'Pronta para revisar',
+        SEPARANDO_ASSUNTOS: 'Lendo o conteúdo programático…',
+        EM_CONFERENCIA: 'Conferir o edital',
         FALHOU: 'Falhou — toque para tentar de novo',
       }[status] ?? status;
     },
@@ -1044,7 +1072,6 @@ document.addEventListener('alpine:init', () => {
     enviando: false,
     arquivo: null,
     cargo: null,
-    rev: null, // proposta em revisão — criada uma vez, nunca sobrescrita pela consulta
     timer: null,
 
     abrirNovo() {
@@ -1062,7 +1089,6 @@ document.addEventListener('alpine:init', () => {
       this.modo = 'analise';
       if (this.id !== id) {
         this.analise = null;
-        this.rev = null;
         this.cargo = null;
       }
       this.id = id;
@@ -1090,7 +1116,6 @@ document.addEventListener('alpine:init', () => {
     // Enquanto a IA trabalha, consulta a cada 3 s — só se a tela ainda é esta.
     aplicar(analise) {
       this.analise = analise;
-      if (analise.status === 'PRONTA' && !this.rev) this.rev = this.montarRevisao(analise);
       if (analise.cargos?.length === 1 && !this.cargo) this.cargo = analise.cargos[0];
       this.parar();
       if (['LENDO_EDITAL', 'SEPARANDO_ASSUNTOS'].includes(analise.status)
@@ -1145,67 +1170,333 @@ document.addEventListener('alpine:init', () => {
         this.enviando = false;
       }
     },
+  }));
 
-    montarRevisao(a) {
-      return {
-        nome: a.concursoNome ?? '',
-        cargo: a.cargoEscolhido ?? '',
-        banca: a.banca ?? '',
-        dataProva: a.dataProva ?? '',
-        disciplinas: a.proposta.map((d) => ({
-          ...d,
-          assuntos: d.assuntos.map((s) => ({ ...s, incluir: true })),
-        })),
-      };
-    },
+  // Ajustes → Árvore do QConcursos (D-90): atualizar é gesto da pessoa, e o impacto vem antes.
+  Alpine.data('arvoreAjustes', () => ({
+    versoes: [],
+    impacto: null,
+    carregando: true,
+    trabalhando: false,
+    erro: null,
 
-    // Resumo da revisão: recalculado na tela conforme o usuário desmarca.
-    get textoResumo() {
-      if (!this.rev || !this.analise?.resumo) return '';
-      let novos = 0;
-      let emComum = 0;
-      for (const d of this.rev.disciplinas) {
-        for (const s of d.assuntos) {
-          if (!s.incluir) continue;
-          if (s.assuntoExistenteId) emComum++; else novos++;
-        }
-      }
-      const fora = this.analise.resumo.foraDoEdital + (this.analise.resumo.emComum - emComum);
-      return `${novos} ${novos === 1 ? 'assunto novo' : 'assuntos novos'} · ${emComum} em comum (mantêm escada e histórico) · `
-        + `${fora} fora do edital (continuam como estão)`;
-    },
-
-    tratarComoNovo(assunto) {
-      assunto.assuntoExistenteId = null;
-      assunto.assuntoExistenteNome = null;
-    },
-
-    async confirmar() {
-      this.enviando = true;
-      this.erroAcao = null;
-      const corpo = {
-        nome: this.rev.nome,
-        cargo: this.rev.cargo || null,
-        banca: this.rev.banca || null,
-        dataProva: this.rev.dataProva || null,
-        disciplinas: this.rev.disciplinas.map((d) => ({
-          nome: d.nome,
-          disciplinaExistenteId: d.disciplinaExistenteId,
-          peso: d.peso,
-          assuntos: d.assuntos.filter((s) => s.incluir)
-            .map((s) => ({ nome: s.nome, assuntoExistenteId: s.assuntoExistenteId })),
-        })),
-      };
+    async init() {
+      this.carregando = true;
+      this.erro = null;
       try {
-        await api(`/editais/analises/${this.id}/confirmar`, { method: 'POST', body: JSON.stringify(corpo) });
-        this.rev = null;
+        this.versoes = await api('/arvore/versoes');
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    async ver(v) {
+      this.trabalhando = true;
+      this.erro = null;
+      try {
+        this.impacto = await api(`/arvore/versoes/${v.id}/impacto`);
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+
+    async adotar(v) {
+      if (!window.confirm(`Adotar a árvore ${v.rotulo}? As partes cujo nó saiu ou mudou de lugar voltam à fila para você reconfirmar. Nenhum nó é trocado sozinho.`)) return;
+      this.trabalhando = true;
+      this.erro = null;
+      try {
+        await api(`/arvore/versoes/${v.id}/adotar?confirmar=true`, { method: 'POST' });
+        this.impacto = null;
+        await this.init();
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+  }));
+
+  // Conferência do edital (01_DOMINIO §3.12, D-86 a D-92; docs/SPRINT-25-CONFERENCIA-EDITAL.md §10).
+  // A IA propõe, a regra confere, a pessoa resolve; cada gesto vira decisão.
+  Alpine.data('paginaConferencia', () => ({
+    id: null,
+    resumo: null,
+    disciplinas: [],
+    fila: [],
+    decisoes: [],
+    aba: 'fila',
+    abertas: {},
+    carregando: false,
+    trabalhando: false,
+    erro: null,
+    erroAcao: null,
+    erroPainel: null,
+    painel: null, // { tipo: 'parte'|'assunto'|'trecho'|'decisao', modo, ... }
+    formulario: {},
+    picker: { q: '', resultados: [], ramo: [], filhos: [], selecionados: [], natureza: 'EXATO' },
+    buscaSeq: 0,
+
+    async abrir(id) {
+      if (this.id !== id) { this.resumo = null; this.painel = null; this.abertas = {}; }
+      this.id = id;
+      this.erroAcao = null;
+      await this.recarregar(true);
+    },
+
+    async recarregar(inicial = false) {
+      this.carregando = inicial && !this.resumo;
+      this.erro = null;
+      try {
+        const base = `/editais/analises/${this.id}/conferencia`;
+        const [resumo, disciplinas, fila] = await Promise.all([api(base), api(`${base}/disciplinas`), api(`${base}/fila`)]);
+        this.resumo = resumo;
+        this.disciplinas = disciplinas;
+        this.fila = fila;
+        if (inicial) this.aba = fila.length ? 'fila' : 'disciplinas';
+        if (this.painel) this.atualizarPainel();
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.carregando = false;
+      }
+    },
+
+    // Roda uma ação, mostra o erro como veio e recarrega o que depende dela.
+    async agir(fazer, { fecharPainel = false } = {}) {
+      this.trabalhando = true;
+      this.erroAcao = null;
+      this.erroPainel = null;
+      try {
+        await fazer();
+        await this.recarregar();
+        if (fecharPainel) this.painel = null;
+        return true;
+      } catch (e) {
+        if (this.painel) this.erroPainel = e.message; else this.erroAcao = e.message;
+        return false;
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+
+    pedido(caminho, metodo, corpo) {
+      return api(`/editais/analises/${this.id}${caminho}`, { method: metodo, body: corpo === undefined ? undefined : JSON.stringify(corpo) });
+    },
+
+    // ------------------------------------------------ rótulos
+    rotuloTipo(tipo) {
+      return {
+        LINHA_FORA: 'Linhas fora de qualquer disciplina', SEM_ASSUNTO: 'Trecho do edital sem assunto',
+        ASSUNTO_RECUSADO: 'Assunto recusado pela conferência', ALERTA_DE_PARTE: 'Alerta na divisão do assunto',
+        PARTE_SEM_NO: 'Parte sem nó', VINCULO_AMPLO_OU_PARCIAL: 'Vínculo mais amplo ou parcial',
+        NO_TROCADO_NO_REFINO: 'Nó trocado pela segunda checagem', NO_MUDOU_NA_ARVORE: 'O nó mudou na árvore',
+        NAO_APARECE_MAIS: 'Não aparece mais no reprocessamento',
+      }[tipo] ?? tipo;
+    },
+    rotuloNatureza(n) {
+      return { EXATO: 'exato', MAIS_AMPLO: 'mais amplo', PARCIAL: 'parcial' }[n] ?? 'sem vínculo';
+    },
+    rotuloOrigem(o) {
+      return { IA: 'proposto pela IA', REFINO: 'trocado na segunda checagem', DECISAO: 'vindo de uma decisão sua anterior', PESSOA: 'escolhido por você' }[o] ?? o;
+    },
+    rotuloEstado(p) {
+      if (p.noMudou) return 'reconfirmar';
+      return { PROPOSTA: 'por conferir', ACEITA: 'aceita', DECIDIDA: 'decidida', DESCARTADA: 'descartada' }[p.estado] ?? p.estado;
+    },
+
+    alternarAssunto(id) { this.abertas = { ...this.abertas, [id]: !this.abertas[id] }; },
+
+    // ------------------------------------------------ painel
+    fechar() { this.painel = null; this.erroPainel = null; },
+
+    achar(assuntoId) {
+      for (const d of this.disciplinas) for (const a of d.assuntos) if (a.id === assuntoId) return { d, a };
+      return null;
+    },
+
+    abrirParte(parte, assunto) {
+      this.erroPainel = null;
+      this.formulario = { comentario: parte.comentario ?? '' };
+      this.painel = { tipo: 'parte', modo: 'ver', titulo: 'Parte do edital', parte, assunto };
+    },
+
+    abrirItem(it) {
+      this.erroPainel = null;
+      if (it.parteId) {
+        const achado = this.achar(it.assuntoId);
+        const parte = achado?.a.partes.find((p) => p.id === it.parteId);
+        if (parte) this.abrirParte(parte, achado.a);
+      } else if (it.assuntoId) {
+        this.abrirAssunto(this.achar(it.assuntoId).a);
+      } else {
+        this.formulario = { motivo: '', texto: (it.detalhe ?? []).join(' '), disciplinaId: '', novaDisciplina: '' };
+        this.painel = { tipo: 'trecho', modo: 'ver', titulo: this.rotuloTipo(it.tipo), item: it };
+      }
+    },
+
+    abrirAssunto(assunto) {
+      this.formulario = {};
+      this.painel = { tipo: 'assunto', modo: 'ver', titulo: 'Assunto do edital', assunto };
+    },
+
+    abrirPartesDoAssunto() {
+      this.abertas = { ...this.abertas, [this.painel.assunto.id]: true };
+      this.aba = 'disciplinas';
+      this.painel = null;
+    },
+
+    // Depois de cada ação o painel aponta para o dado novo (a parte pode ter sido trocada por outra).
+    atualizarPainel() {
+      const p = this.painel;
+      if (p.tipo === 'parte') {
+        const achado = this.achar(p.assunto.id);
+        const parte = achado?.a.partes.find((x) => x.id === p.parte.id);
+        if (!achado || !parte || !parte.aparece || parte.estado === 'DESCARTADA') { this.painel = null; return; }
+        p.assunto = achado.a;
+        p.parte = parte;
+      } else if (p.tipo === 'assunto') {
+        const achado = this.achar(p.assunto.id);
+        if (achado) p.assunto = achado.a;
+      } else if (p.tipo === 'trecho' && !this.fila.some((i) => i.trechoId === p.item.trechoId)) {
+        this.painel = null;
+      }
+    },
+
+    // ------------------------------------------------ ações sobre a parte
+    aceitar() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/aceitar`, 'POST'), { fecharPainel: true }); },
+    semNo() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/sem-no`, 'POST'), { fecharPainel: true }); },
+    comentar() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/comentario`, 'POST', { texto: this.formulario.comentario })); },
+    descartar() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/descartar`, 'POST', { motivo: this.formulario.motivo }), { fecharPainel: true }); },
+    salvarEdicao() {
+      const f = this.formulario;
+      return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}`, 'PUT', { texto: f.texto, contexto: f.contexto || null, herdado: f.herdado || null }), { fecharPainel: true });
+    },
+    dividir() {
+      const partes = this.formulario.partes.filter((t) => t.trim()).map((texto) => ({ texto }));
+      return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/dividir`, 'POST', { partes }), { fecharPainel: true });
+    },
+    juntar() {
+      const f = this.formulario;
+      return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/juntar`, 'POST', { outraParteId: Number(f.outra), texto: f.texto }), { fecharPainel: true });
+    },
+
+    // ------------------------------------------------ ações sobre assunto, disciplina e trecho
+    aceitarAssunto() { return this.agir(() => this.pedido(`/assuntos/${this.painel.assunto.id}/aceitar`, 'POST'), { fecharPainel: true }); },
+    corrigirAssunto() { return this.agir(() => this.pedido(`/assuntos/${this.painel.assunto.id}`, 'PUT', { texto: this.formulario.texto }), { fecharPainel: true }); },
+    aceitarExatos(d) { return this.agir(() => this.pedido(`/disciplinas/${d.id}/aceitar-exatos`, 'POST')); },
+    trocarPeso(d, peso) { return this.agir(() => this.pedido(`/disciplinas/${d.id}/peso`, 'PUT', { peso })); },
+    resolverTrecho(acao) {
+      const f = this.formulario;
+      const corpo = acao === 'DESCARTAR'
+        ? { acao, motivo: f.motivo }
+        : { acao, texto: f.texto, disciplinaId: f.disciplinaId ? Number(f.disciplinaId) : null, novaDisciplina: f.novaDisciplina || null };
+      return this.agir(() => this.pedido(`/trechos/${this.painel.item.trechoId}/resolver`, 'POST', corpo), { fecharPainel: true });
+    },
+
+    async concluir() {
+      if (!window.confirm('Concluir a conferência? Os assuntos passam a existir, o concurso vira o alvo e o material é preparado. Você continua podendo trocar nós depois.')) return;
+      this.trabalhando = true;
+      this.erroAcao = null;
+      try {
+        await this.pedido('/conferencia/concluir', 'POST');
         window.location.hash = '#/concursos';
       } catch (e) {
         this.erroAcao = e.message;
         window.scrollTo(0, 0);
+        await this.recarregar();
       } finally {
-        this.enviando = false;
+        this.trabalhando = false;
       }
+    },
+
+    // ------------------------------------------------ seletor de nó
+    async iniciarTrocaDeNo() {
+      const p = this.painel.parte;
+      this.picker = { q: '', resultados: [], ramo: [], filhos: [], selecionados: p.nos.filter((n) => n.nome).map((n) => ({ ...n })), natureza: p.natureza ?? 'EXATO' };
+      this.painel.modo = 'nos';
+      await this.carregarRamo();
+      // O que o sistema propôs e a pessoa não adotou entra como sugestão para a busca.
+      if (p.propostos.length) this.picker.resultados = p.propostos.filter((n) => n.nome);
+    },
+
+    async carregarRamo() {
+      try {
+        const topo = this.picker.ramo.at(-1);
+        this.picker.filhos = topo ? await api(`/arvore/nos/${topo.id}/filhos`) : await api('/arvore/raizes');
+      } catch (e) {
+        this.erroPainel = e.message;
+      }
+    },
+    async descer(n) { this.picker.ramo.push(n); await this.carregarRamo(); },
+    async subir() { this.picker.ramo.pop(); await this.carregarRamo(); },
+
+    async buscar() {
+      const q = this.picker.q.trim();
+      const seq = ++this.buscaSeq;
+      if (q.length < 2) { this.picker.resultados = []; return; }
+      try {
+        const achados = await api(`/arvore/busca?q=${encodeURIComponent(q)}&limite=30`);
+        if (seq === this.buscaSeq) this.picker.resultados = achados;
+      } catch (e) {
+        this.erroPainel = e.message;
+      }
+    },
+
+    alternarNo(n) {
+      const i = this.picker.selecionados.findIndex((x) => x.id === n.id);
+      if (i >= 0) { this.picker.selecionados.splice(i, 1); return; }
+      if (this.picker.selecionados.length >= 3) { this.erroPainel = 'Uma parte liga a até 3 nós.'; return; }
+      this.erroPainel = null;
+      this.picker.selecionados.push(n.caminho ? n : { ...n, caminho: [...this.picker.ramo.map((r) => r.nome), n.nome] });
+    },
+
+    gravarNos() {
+      const corpo = { nos: this.picker.selecionados.map((n) => n.id), natureza: this.picker.natureza };
+      if (this.painel.tipo === 'decisao') {
+        return this.agirDecisao(() => api(`/decisoes/${this.painel.decisao.id}`, { method: 'PUT', body: JSON.stringify({ ...corpo, comentario: this.painel.decisao.comentario }) }));
+      }
+      return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/nos`, 'PUT', corpo), { fecharPainel: true });
+    },
+
+    // ------------------------------------------------ decisões
+    async abrirDecisoes() {
+      this.aba = 'decisoes';
+      await this.carregarDecisoes();
+    },
+    async carregarDecisoes() {
+      try {
+        this.decisoes = await api('/decisoes');
+      } catch (e) {
+        this.erroAcao = e.message;
+      }
+    },
+    async agirDecisao(fazer) {
+      this.trabalhando = true;
+      this.erroPainel = null;
+      try {
+        await fazer();
+        this.painel = null;
+        await this.carregarDecisoes();
+        await this.recarregar();
+      } catch (e) {
+        if (this.painel) this.erroPainel = e.message; else this.erroAcao = e.message;
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+    async abrirDecisao(d) {
+      this.erroPainel = null;
+      this.painel = { tipo: 'decisao', modo: 'nos', titulo: 'Decisão: ' + d.parte, decisao: d };
+      this.picker = { q: '', resultados: [], ramo: [], filhos: [], selecionados: d.nos.filter((n) => n.nome).map((n) => ({ ...n })), natureza: d.natureza ?? 'EXATO' };
+      await this.carregarRamo();
+    },
+    revogar(d) {
+      if (!window.confirm(`Revogar a decisão sobre "${d.parte}"? Ela deixa de valer antes da IA; as partes já ligadas não mudam.`)) return;
+      return this.agirDecisao(() => api(`/decisoes/${d.id}`, { method: 'DELETE' }));
     },
   }));
 });
