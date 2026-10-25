@@ -31,6 +31,20 @@ class SimuladoListagemTest extends IntegracaoTestBase {
     @Autowired
     private DisciplinaService disciplinaService;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    private Long simuladoCriado;
+
+    /** Commita de verdade (sem @Transactional), então limpa: SimuladoDominioTest conta os simulados do banco compartilhado. */
+    @org.junit.jupiter.api.AfterEach
+    void limpar() {
+        if (simuladoCriado == null) return;
+        jdbc.update("delete from resultado_simulado where simulado_id = ?", simuladoCriado);
+        jdbc.update("delete from simulado where id = ?", simuladoCriado);
+        simuladoCriado = null;
+    }
+
     @Test
     void lista_semLazyInitializationException() throws Exception {
         var disciplina = disciplinaService.criar(
@@ -42,7 +56,8 @@ class SimuladoListagemTest extends IntegracaoTestBase {
                     {"data": "2026-06-01", "duracaoMinutos": 240,
                      "resultados": [{"disciplinaId": %d, "formato": "MULTIPLA_ESCOLHA", "questoesCorretas": 10, "questoesTotal": 20}]}
                     """.formatted(disciplina.getId())))
-            .andExpect(status().isCreated());
+            .andExpect(status().isCreated())
+            .andDo(r -> simuladoCriado = ((Number) com.jayway.jsonpath.JsonPath.read(r.getResponse().getContentAsString(), "$.id")).longValue());
 
         var resposta = mockMvc.perform(get("/api/simulados"))
             .andExpect(status().isOk())
