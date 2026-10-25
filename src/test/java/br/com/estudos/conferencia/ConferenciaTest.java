@@ -161,6 +161,16 @@ class ConferenciaTest extends ConferenciaTestBase {
     }
 
     @Test
+    void aceitarAmplos_aceitaSoMaisAmploEParcialDaDisciplina() throws Exception {
+        long disc1 = jdbc.queryForObject("SELECT id FROM edital_disciplina WHERE nome = 'Banco de Dados'", Long.class);
+        mockMvc.perform(post("/api/editais/analises/{id}/disciplinas/{d}/aceitar-amplos", id, disc1)).andExpect(jsonPath("$.aceitas").value(1)); // a p2
+        assertEquals("ACEITA", jdbc.queryForObject("SELECT estado FROM edital_parte WHERE chave = 'p2p2p2p2p2p2p2p2'", String.class));
+        assertEquals("PROPOSTA", jdbc.queryForObject("SELECT estado FROM edital_parte WHERE chave = 'p1p1p1p1p1p1p1p1'", String.class), "a exata não entra no atalho dos amplos");
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM edital_evento WHERE tipo = 'ACEITAR_AMPLOS'", Integer.class));
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM edital_decisao WHERE ativa", Integer.class));
+    }
+
+    @Test
     void editarParte_criaParteNovaRefazAConferenciaDoAssunto() throws Exception {
         long p1 = parteId("p1p1p1p1p1p1p1p1");
         var resposta = putJson("/api/editais/analises/{id}/partes/{p}", "{\"texto\": \"window functions inventadas\", \"herdado\": \"SQL\"}", id, p1);

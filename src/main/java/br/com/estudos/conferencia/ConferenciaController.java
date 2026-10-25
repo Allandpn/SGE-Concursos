@@ -171,6 +171,13 @@ public class ConferenciaController {
         return Map.of("aceitas", aceitas.size(), "partes", aceitas);
     }
 
+    @PostMapping(BASE + "/disciplinas/{disciplinaId}/aceitar-amplos")
+    @Operation(summary = "Aceita de uma vez os vínculos mais amplos ou parciais da disciplina", description = "É aceitar o nó largo de propósito: o atalho para as questões do QConcursos continua valendo. Uma decisão por parte.")
+    public Map<String, Object> aceitarAmplos(@PathVariable Long id, @PathVariable Long disciplinaId) {
+        var aceitas = service.aceitarAmplos(id, disciplinaId);
+        return Map.of("aceitas", aceitas.size(), "partes", aceitas);
+    }
+
     @PutMapping(BASE + "/disciplinas/{disciplinaId}/peso")
     @Operation(summary = "Troca o peso da disciplina", description = "D-62; sem isso vale o que D-61 calcula das questões do quadro de provas.")
     public void peso(@PathVariable Long id, @PathVariable Long disciplinaId, @RequestBody Peso pedido) {

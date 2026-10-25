@@ -315,16 +315,26 @@ public class ConferenciaService {
 
     @Transactional
     public List<Long> aceitarExatos(Long analiseId, Long disciplinaId) {
+        return aceitarPorNatureza(analiseId, disciplinaId, List.of("EXATO"), "ACEITAR_EXATOS");
+    }
+
+    /** O atalho dos vínculos largos: a pessoa aceita o nó mais amplo ou parcial de uma vez (docs/SPRINT-26 §5). */
+    @Transactional
+    public List<Long> aceitarAmplos(Long analiseId, Long disciplinaId) {
+        return aceitarPorNatureza(analiseId, disciplinaId, List.of("MAIS_AMPLO", "PARCIAL"), "ACEITAR_AMPLOS");
+    }
+
+    private List<Long> aceitarPorNatureza(Long analiseId, Long disciplinaId, List<String> naturezas, String tipoDeEvento) {
         var analise = conferencia(analiseId);
         var d = ConferenciaDados.ler(jdbc, analiseId);
         if (!d.disciplinaPorId.containsKey(disciplinaId)) throw new NotFoundException("Disciplina não encontrada nesta análise.", "DISCIPLINA_INEXISTENTE");
         var aceitas = new ArrayList<Long>();
         for (var a : d.assuntosDe(disciplinaId)) {
             for (var p : d.partesDe(a.id())) {
-                if (p.ativa() && "PROPOSTA".equals(p.estado()) && "EXATO".equals(p.natureza()) && !p.nos().isEmpty() && !p.noMudou()) {
+                if (p.ativa() && "PROPOSTA".equals(p.estado()) && p.natureza() != null && naturezas.contains(p.natureza()) && !p.nos().isEmpty() && !p.noMudou()) {
                     jdbc.update("UPDATE edital_parte SET estado = 'ACEITA' WHERE id = ?", p.id());
                     registrarDecisao(analise, p, p.nos(), p.natureza(), p.arvoreVersaoId());
-                    evento(analiseId, p.id(), "ACEITAR_EXATOS", Map.of("estado", "PROPOSTA"), Map.of("estado", "ACEITA"));
+                    evento(analiseId, p.id(), tipoDeEvento, Map.of("estado", "PROPOSTA"), Map.of("estado", "ACEITA"));
                     aceitas.add(p.id());
                 }
             }
