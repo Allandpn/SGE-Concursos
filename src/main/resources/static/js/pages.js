@@ -1308,6 +1308,7 @@ document.addEventListener('alpine:init', () => {
         if (e.codigo === 'ETAPA_INVALIDA' && this.id) {
           // Reprocessando: a conferência volta quando o planejamento entregar. Consulta de novo em alguns segundos.
           this.lendo = true;
+          this.resumo = null; // o que estava na tela é da leitura antiga: some até a nova chegar
           clearTimeout(this.timerLeitura);
           this.timerLeitura = setTimeout(() => this.recarregar(), 5000);
         } else {
