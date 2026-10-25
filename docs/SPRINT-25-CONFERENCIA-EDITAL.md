@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.3.0 |
+| Versão | 1.4.0 |
 | Data | 2026-10-24 |
 | Subordinado a | `01_DOMINIO` v1.27.0 §3.12 e D-86 a D-95; `02_JORNADAS` v1.16.0 J-5; `03_INVARIANTES` v1.15.0; ADR-047 |
 | Contraparte | `docs/especificacao-revisao-edital-sge.md` §11 (contrato `edital-revisao/1`) e `integracao/entrega_revisao.py`, no repositório do planejamento |
@@ -186,11 +186,15 @@ Antes da conclusão **nenhum** assunto, disciplina ou concurso existe por causa 
 
 ## 8. A árvore e o gesto de atualizar (D-90)
 
-`POST /api/arvore/versoes/{id}/adotar` tem duas etapas no mesmo endpoint: sem `confirmar=true`, devolve o **impacto** (partes cujo nó
-saiu, foi renomeado ou foi movido, por edital); com ele, adota. Adotar: a versão passa a `vigente`; para cada parte com nó na
-versão antiga, se o nó **sumiu** ou foi **movido** → `NO_MUDOU_NA_ARVORE` (a parte volta à fila, nada é trocado); se foi
-**renomeado** → só segue (o caminho se lê da versão nova); o `arvore_versao_id` da parte passa para a nova nos casos sem mudança.
-A pessoa nunca vê um nó trocado sem ter pedido.
+`GET /api/arvore/versoes/{id}/impacto` mostra o que mudaria; `POST /api/arvore/versoes/{id}/adotar` sem `confirmar=true` devolve o
+mesmo impacto (`adotada: false`) e **não muda nada**; com ele, adota. O impacto: partes cujo nó **saiu** (`REMOVIDO`) ou **mudou de
+pai** (`MOVIDO`), por tipo e por edital, as partes cujo nó só foi **renomeado** (seguem), as decisões afetadas e até 20 exemplos.
+
+Adotar: a versão vira vigente; a parte cujo nó saiu ou foi movido ganha `no_mudou` e volta à fila (`NO_MUDOU_NA_ARVORE`) **sem que
+nenhum nó seja trocado**; a parte não tocada passa para a versão nova (o caminho se lê dela, então o nome novo aparece). **Reconfirmar**
+é aceitar a parte (`POST .../aceitar`: o nó tem de existir na árvore vigente, senão `422 NO_MUDOU`) ou trocar o nó. Todo gesto da
+conferência passa a valer na versão vigente (`arvore_versao_id` da parte e da decisão acompanham). A lista de decisões marca
+`precisaReconfirmar` quando um nó da decisão saiu ou foi movido na árvore vigente. Um evento `ARVORE_ADOTADA` por edital afetado.
 
 ## 9. Aviso no painel e no plano
 
@@ -266,6 +270,7 @@ Escopo "todos os editais", reprocessamento, mapa de disciplinas editável, mater
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.4.0 | 2026-10-24 | §8 como foi feito: impacto antes (GET e POST sem confirmar), reconfirmar por aceitar ou trocar nó, `precisaReconfirmar` nas decisões. Item 25.8 feito |
 | 1.3.0 | 2026-10-24 | A decisão guarda o texto da parte e do contexto como a pessoa os viu (o planejamento os normaliza); a disciplina guarda `texto` e `referencias`; `ALERTA_DE_PARTE` por assunto; ao editar, os alertas da IA se perdem e os da regra voltam. Itens 25.6 e 25.7 feitos |
 | 1.2.0 | 2026-10-24 | A entrega leva o `texto` da disciplina (a conferência do assunto precisa dele); vetores compartilhados. Itens 25.4 e 25.5 feitos |
 | 1.1.0 | 2026-10-24 | Id de disciplina negado (colisão de 50 ids na árvore real); peso da disciplina (`peso_pessoa`, `questoes`); busca em memória. Itens 25.1 a 25.3 feitos |

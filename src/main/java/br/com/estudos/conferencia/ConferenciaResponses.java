@@ -50,5 +50,6 @@ public final class ConferenciaResponses {
 
     public record DecisaoResponse(
         Long id, String parte, String contexto, List<No> nos, String natureza, String escopo, Long analiseId, String arvore,
-        boolean ativa, String criadaEm, String revogadaEm, String comentario) {}
+        boolean ativa, String criadaEm, String revogadaEm, String comentario,
+        @Schema(description = "Algum nó saiu ou mudou de pai na árvore vigente: reconfirmar (D-90)") boolean precisaReconfirmar) {}
 }

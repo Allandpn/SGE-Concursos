@@ -60,7 +60,9 @@ public class DecisaoService {
         var atual = buscar(id);
         if (!atual.ativa()) throw new ValidationException("A decisão foi revogada; crie outra pela conferência.", "DECISAO_REVOGADA", "id");
         var nos = pedido.nos() == null ? new ArrayList<Long>() : new ArrayList<>(new LinkedHashSet<>(pedido.nos()));
-        long versao = jdbc.queryForObject("SELECT arvore_versao_id FROM edital_decisao WHERE id = ?", Long.class, id);
+        var vigente = arvore.idDaVigente();
+        if (vigente == null) throw new NotFoundException("Nenhuma árvore do QConcursos foi carregada ainda.", "ARVORE_NAO_CARREGADA");
+        long versao = vigente;
         if (nos.size() > 3) throw new ValidationException("Uma decisão liga a até 3 nós.", "NOS_INVALIDOS", "nos");
         if (!nos.isEmpty() && !List.of("EXATO", "MAIS_AMPLO", "PARCIAL").contains(pedido.natureza())) {
             throw new ValidationException("A natureza do vínculo é EXATO, MAIS_AMPLO ou PARCIAL.", "NATUREZA_INVALIDA", "natureza");
@@ -68,8 +70,8 @@ public class DecisaoService {
         for (var no : nos) {
             if (no < 0 || !arvore.existe(no, versao)) throw new ValidationException("O nó " + no + " não serve nesta árvore.", "NO_INEXISTENTE", "nos");
         }
-        jdbc.update("UPDATE edital_decisao SET nos = ?, natureza = ?, comentario = ? WHERE id = ?",
-            json.writeValueAsString(nos), nos.isEmpty() ? null : pedido.natureza(), pedido.comentario(), id);
+        jdbc.update("UPDATE edital_decisao SET nos = ?, natureza = ?, comentario = ?, arvore_versao_id = ? WHERE id = ?",
+            json.writeValueAsString(nos), nos.isEmpty() ? null : pedido.natureza(), pedido.comentario(), versao, id);
         jdbc.update("INSERT INTO edital_evento (analise_id, parte_id, tipo, antes, depois) VALUES (?, NULL, 'DECISAO_EDITADA', ?, ?)",
             atual.analiseId(), json.writeValueAsString(java.util.Map.of("decisao", id)), json.writeValueAsString(java.util.Map.of("nos", nos)));
         return buscar(id);
@@ -91,9 +93,18 @@ public class DecisaoService {
         var nos = new ArrayList<br.com.estudos.arvore.ArvoreResponses.No>();
         for (var id : ids) nos.add(resolvidos.getOrDefault(id, new br.com.estudos.arvore.ArvoreResponses.No(id, null, List.of(), 0, 0, null)));
         var contexto = (String) l.get("contexto_texto");
+        var vigente = arvore.idDaVigente();
+        boolean reconfirmar = false;
+        if (vigente != null && vigente != versao) {
+            for (var id : ids) {
+                var tipo = arvore.tipoDeMudanca(id, versao, vigente);
+                if ("REMOVIDO".equals(tipo) || "MOVIDO".equals(tipo)) reconfirmar = true;
+            }
+        }
         return new DecisaoResponse(((Number) l.get("id")).longValue(), (String) l.get("parte_texto"), contexto == null || contexto.isEmpty() ? null : contexto,
             nos, (String) l.get("natureza"), (String) l.get("escopo"), ((Number) l.get("analise_id")).longValue(), (String) l.get("rotulo"),
             (Boolean) l.get("ativa"), String.valueOf(((java.sql.Timestamp) l.get("criada_em")).toInstant()),
-            l.get("revogada_em") == null ? null : String.valueOf(((java.sql.Timestamp) l.get("revogada_em")).toInstant()), (String) l.get("comentario"));
+            l.get("revogada_em") == null ? null : String.valueOf(((java.sql.Timestamp) l.get("revogada_em")).toInstant()), (String) l.get("comentario"),
+            reconfirmar);
     }
 }

@@ -227,9 +227,19 @@ public class ConferenciaService {
         if (p.nos().isEmpty()) {
             throw new ValidationException("A parte não tem nó para aceitar; escolha um ou declare que a árvore não tem.", "PARTE_SEM_NO", "parteId");
         }
-        if ("PROPOSTA".equals(p.estado())) {
+        if (p.noMudou()) { // reconfirmar o nó depois de a pessoa adotar a árvore nova (D-90)
+            long vigente = vigente();
+            for (var no : p.nos()) {
+                if (!arvore.existe(no, vigente)) {
+                    throw new ValidationException("O nó " + no + " saiu da árvore atual; escolha outro.", "NO_MUDOU", "nos");
+                }
+            }
+            jdbc.update("UPDATE edital_parte SET estado = 'ACEITA', no_mudou = false, arvore_versao_id = ? WHERE id = ?", vigente, parteId);
+            registrarDecisao(analise, p, p.nos(), p.natureza(), vigente);
+            evento(analiseId, parteId, "RECONFIRMAR_NO", Map.of("nos", p.nos()), Map.of("arvore", vigente));
+        } else if ("PROPOSTA".equals(p.estado())) {
             jdbc.update("UPDATE edital_parte SET estado = 'ACEITA' WHERE id = ?", parteId);
-            registrarDecisao(analise, p, p.nos(), p.natureza());
+            registrarDecisao(analise, p, p.nos(), p.natureza(), p.arvoreVersaoId());
             evento(analiseId, parteId, "ACEITAR", Map.of("estado", p.estado()), Map.of("estado", "ACEITA"));
         }
         return assuntoResposta(analiseId, p.assuntoEditalId());
@@ -245,7 +255,7 @@ public class ConferenciaService {
             for (var p : d.partesDe(a.id())) {
                 if (p.ativa() && "PROPOSTA".equals(p.estado()) && "EXATO".equals(p.natureza()) && !p.nos().isEmpty() && !p.noMudou()) {
                     jdbc.update("UPDATE edital_parte SET estado = 'ACEITA' WHERE id = ?", p.id());
-                    registrarDecisao(analise, p, p.nos(), p.natureza());
+                    registrarDecisao(analise, p, p.nos(), p.natureza(), p.arvoreVersaoId());
                     evento(analiseId, p.id(), "ACEITAR_EXATOS", Map.of("estado", "PROPOSTA"), Map.of("estado", "ACEITA"));
                     aceitas.add(p.id());
                 }
@@ -262,14 +272,16 @@ public class ConferenciaService {
         if (nos.isEmpty()) {
             throw new ValidationException("Escolha ao menos um nó, ou declare que a árvore não tem.", "NOS_OBRIGATORIOS", "nos");
         }
-        validarNos(nos, pedido.natureza(), p.arvoreVersaoId());
+        long vigente = vigente();
+        validarNos(nos, pedido.natureza(), vigente);
         guardarPropostos(p);
         jdbc.update("DELETE FROM edital_parte_no WHERE parte_id = ? AND NOT proposto", parteId);
         for (int i = 0; i < nos.size(); i++) {
             jdbc.update("INSERT INTO edital_parte_no (parte_id, proposto, ordem, no_id) VALUES (?, false, ?, ?)", parteId, i + 1, nos.get(i));
         }
-        jdbc.update("UPDATE edital_parte SET natureza = ?, origem = 'PESSOA', estado = 'DECIDIDA', no_mudou = false WHERE id = ?", pedido.natureza(), parteId);
-        registrarDecisao(analise, p, nos, pedido.natureza());
+        jdbc.update("UPDATE edital_parte SET natureza = ?, origem = 'PESSOA', estado = 'DECIDIDA', no_mudou = false, arvore_versao_id = ? WHERE id = ?",
+            pedido.natureza(), vigente, parteId);
+        registrarDecisao(analise, p, nos, pedido.natureza(), vigente);
         evento(analiseId, parteId, "TROCAR_NOS", Map.of("nos", p.nos(), "natureza", String.valueOf(p.natureza())),
             Map.of("nos", nos, "natureza", pedido.natureza()));
         return assuntoResposta(analiseId, p.assuntoEditalId());
@@ -281,8 +293,10 @@ public class ConferenciaService {
         var p = parte(analiseId, parteId);
         guardarPropostos(p);
         jdbc.update("DELETE FROM edital_parte_no WHERE parte_id = ? AND NOT proposto", parteId);
-        jdbc.update("UPDATE edital_parte SET natureza = NULL, origem = 'PESSOA', estado = 'DECIDIDA', no_mudou = false WHERE id = ?", parteId);
-        registrarDecisao(analise, p, List.of(), null);
+        long vigente = vigente();
+        jdbc.update("UPDATE edital_parte SET natureza = NULL, origem = 'PESSOA', estado = 'DECIDIDA', no_mudou = false, arvore_versao_id = ? WHERE id = ?",
+            vigente, parteId);
+        registrarDecisao(analise, p, List.of(), null, vigente);
         evento(analiseId, parteId, "SEM_NO", Map.of("nos", p.nos()), Map.of("nos", List.of()));
         return assuntoResposta(analiseId, p.assuntoEditalId());
     }
@@ -556,7 +570,13 @@ public class ConferenciaService {
 
     // ---------------------------------------------------------------- decisões e eventos
 
-    private void registrarDecisao(AnaliseEdital analise, ConferenciaDados.Parte p, List<Long> nos, String natureza) {
+    private long vigente() {
+        var id = arvore.idDaVigente();
+        if (id == null) throw new NotFoundException("Nenhuma árvore do QConcursos foi carregada ainda.", "ARVORE_NAO_CARREGADA");
+        return id;
+    }
+
+    private void registrarDecisao(AnaliseEdital analise, ConferenciaDados.Parte p, List<Long> nos, String natureza, long versaoId) {
         var texto = p.nome();
         var contexto = p.contexto() == null ? "" : p.contexto();
         var chave = RegrasEdital.chaveNormalizada(texto);
@@ -568,9 +588,9 @@ public class ConferenciaService {
         if (ids.isEmpty()) {
             jdbc.update("""
                 INSERT INTO edital_decisao (parte_texto, contexto_texto, parte_chave_norm, contexto_norm, nos, natureza, escopo, analise_id, arvore_versao_id)
-                VALUES (?, ?, ?, ?, ?, ?, 'EDITAL', ?, ?)""", texto, contexto, chave, chaveContexto, nosJson, natureza, analise.getId(), p.arvoreVersaoId());
+                VALUES (?, ?, ?, ?, ?, ?, 'EDITAL', ?, ?)""", texto, contexto, chave, chaveContexto, nosJson, natureza, analise.getId(), versaoId);
         } else {
-            jdbc.update("UPDATE edital_decisao SET nos = ?, natureza = ?, arvore_versao_id = ? WHERE id = ?", nosJson, natureza, p.arvoreVersaoId(), ids.get(0));
+            jdbc.update("UPDATE edital_decisao SET nos = ?, natureza = ?, arvore_versao_id = ? WHERE id = ?", nosJson, natureza, versaoId, ids.get(0));
         }
     }
 

@@ -220,6 +220,29 @@ public class ArvoreService {
         return saida;
     }
 
+    /**
+     * O que aconteceu com um nó entre duas versões: REMOVIDO (não existe na nova), MOVIDO (outro pai), RENOMEADO (outro
+     * nome) ou nulo (igual). Só remoção e mudança de pai pedem que a pessoa reconfirme a ligação (D-90).
+     */
+    @Transactional(readOnly = true)
+    public String tipoDeMudanca(long noId, long deVersao, long paraVersao) {
+        if (deVersao == paraVersao) return null;
+        var antes = snapshot(deVersao).no(noId);
+        if (antes.isEmpty()) return null;
+        var depois = snapshot(paraVersao).no(noId);
+        if (depois.isEmpty()) return "REMOVIDO";
+        if (!java.util.Objects.equals(antes.get().paiId(), depois.get().paiId())) return "MOVIDO";
+        return antes.get().nome().equals(depois.get().nome()) ? null : "RENOMEADO";
+    }
+
+    /** Troca a versão vigente (a única que é): quem chama já mostrou o impacto à pessoa (D-90). */
+    @Transactional
+    public void tornarVigente(long versaoId) {
+        versao(versaoId);
+        jdbc.update("UPDATE arvore_versao SET vigente = false WHERE vigente AND id <> ?", versaoId);
+        jdbc.update("UPDATE arvore_versao SET vigente = true WHERE id = ?", versaoId);
+    }
+
     @Transactional(readOnly = true)
     public boolean existe(long noId, Long versaoId) {
         return snapshot(versaoId).no(noId).isPresent();
