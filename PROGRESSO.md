@@ -38,7 +38,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 23 | Registro de baixo atrito e prova real | Registrar lote em dois toques a partir de Hoje; discursiva/estudo de caso; nota de corte (o simulado no formato da prova passou para a Sprint 24) | não começou |
 | 24 | Prova e gabarito | O planejamento lê a prova (OCR quando é imagem) e entrega questões e gabarito; o sistema julga se o material sustenta a alternativa do gabarito (cobertura) e o usuário resolve a prova, com nota em M-1 por disciplina e global. Especificação migrada (`01_DOMINIO` §3.11, D-67 a D-85, J-6, J-7, ADR-046); `docs/ESPECIFICACAO-PROVA-GABARITO.md` guarda o raciocínio e a amostra | **em andamento** — `docs/SPRINT-24-PROVA-GABARITO.md` |
 | 25 | Conferência do edital: recebimento e tela | O planejamento entrega a leitura do edital (`edital-revisao/1`): disciplinas, assuntos, partes e ligação aos nós do QConcursos; o SGE guarda, mostra a fila de divergências e deixa a pessoa resolver, concluir (cria os assuntos) e atualizar a árvore. Especificação migrada (`01_DOMINIO` §3.12, D-86 a D-95, J-5 refeita, ADR-047); `docs/ESPECIFICACAO-REVISAO-EDITAL.md` guarda o raciocínio — `docs/SPRINT-25-CONFERENCIA-EDITAL.md` | **em andamento** — ver §20B |
-| 26 | Decisões com escopo e material por casamento | Decisões "este edital" e "todos", reprocessamento que preserva a decisão, o worker prepara o material por casamento (completo/compacto, segunda chance) e entrega "Questões deste assunto"; depende da Sprint 25 funcionar com dado real | não começou |
+| 26 | Decisões com escopo e material por casamento | Decisões "este edital" e "todos", reprocessamento que preserva a decisão, o worker prepara o material por casamento (completo/compacto, segunda chance) e entrega "Questões deste assunto"; depende da Sprint 25 funcionar com dado real | **em andamento** — ver §20C |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -1065,6 +1065,23 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 ---
 
+## 20C. Sprint 26 · Reprocessar, decisões para todos os editais e material por casamento
+
+**Documento técnico:** `docs/SPRINT-26-REPROCESSAR-E-MATERIAL.md` v1.1.0 · **Especificação:** `01_DOMINIO` §3.10 e §3.12, D-86 a D-95; ADR-047.
+
+| | Item | Quem escreve | Estado |
+|---|---|---|---|
+| 26.0 | Documento técnico | Claude | **feito** |
+| 26.1 | `V18` e reprocessar: fusão da entrega pela chave, contador "a IA mudou" | Claude | **feito** |
+| 26.2 | Escopo "todos os editais" com a confirmação extra e a contagem | Claude | **feito** |
+| 26.3 | Atalho "aceitar todos os mais amplos" | Claude | **feito** |
+| 26.4 | Rotas internas do material, `material_*`, telas e consulta | Claude | **feito** |
+| 26.5 | Ciclo do material no worker (planejamento) | Claude | **feito** |
+| 26.6 | Selo da conferência em Hoje | Claude | **feito** |
+| 26.7 | Pi: reprocessar o MPPR e preparar o material | Claude + usuário | a fazer |
+
+---
+
 ## 21. Como este arquivo se mantém honesto
 
 1. **Item só vira "feito" quando o teste dele passa** — não quando o arquivo
@@ -1083,6 +1100,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.76.0 | 2026-10-25 | **Sprint 26, itens 26.0 a 26.6.** `V18`. **Reprocessar** funde a leitura nova pela chave sem tocar parte decidida ou aceita (a proposta nova vira sugestão e conta em "a IA mudou"); o que sumiu é marcado, nunca removido; o que a pessoa criou fica. **Valer para todos os editais** pede confirmação com a contagem e nunca toca parte já decidida; as decisões `TODOS` vão nos dados de qualquer edital. **Aceitar todos os mais amplos**. **Material por casamento**: rotas `/internal/editais/material/*`, situação, lacunas por parte e PDF de consulta na tela, `viaConferencia` no planejamento (o ciclo antigo do worker pula esses assuntos), ciclo novo no worker. Selo em Hoje. `SPRINT-26` v1.1.0 |
 | 1.75.0 | 2026-10-24 | **Item 25.9 feito: as telas.** Conferência do edital (contagens, fila, por disciplina, decisões, painel com seletor de nó por busca e por ramos), "O que o edital pede" no detalhe do assunto, aviso em Concursos, Árvore do QConcursos em Ajustes (impacto antes de adotar), volume `editais` no compose, `03E` v1.5.0 (§8E). Conferido num Chromium real contra o app com a árvore e o edital reais do MPPR: o edital entrou em 2,2 s (138 assuntos, 300 partes) e a árvore tem **19.673 nós** — os 50 que a colisão de ids escondia agora existem. Achado de interface: expressão do Alpine dentro de `x-show` é avaliada mesmo escondida; os blocos do painel viraram `x-if`. Falta o 25.10 (Pi) e o selo em Hoje. `SPRINT-25` v1.5.0 |
 | 1.74.0 | 2026-10-24 | **Item 25.8 feito.** Atualizar a árvore do QConcursos por gesto: impacto antes (partes cujo nó saiu ou mudou de pai, renomeados, decisões), adotar só com confirmação, a parte afetada volta à fila para reconfirmar e nenhum nó é trocado sozinho (D-90). `SimuladoListagemTest` passou a limpar o simulado que commita (a ordem dos testes fazia `SimuladoDominioTest` falhar no contêiner). Suíte completa: 315 testes, 1 falha de ordem corrigida. `SPRINT-25` v1.4.0 |
 | 1.73.0 | 2026-10-24 | **Itens 25.6 e 25.7 feitos.** A conferência: resumo, edital por disciplina, fila derivada (bloqueantes primeiro), aceitar, trocar nós, "a árvore não tem", editar, dividir, juntar, descartar e comentar parte, aceitar assunto, corrigir texto do assunto, peso da disciplina, trechos sem assunto, decisões (ver, editar, revogar) e histórico só de inserção. **Concluir** recusa com bloqueio (D-91), cria disciplinas e assuntos com chave (D-64) e ativa o concurso (D-92); depois disso a conferência continua aberta. 15 testes novos. `SPRINT-25` v1.3.0 |

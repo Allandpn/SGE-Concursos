@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.1.0 |
 | Data | 2026-10-25 |
 | Subordinado a | `01_DOMINIO` v1.27.0 §3.10 e §3.12, D-86 a D-95; `03_INVARIANTES` v1.15.0; ADR-047 |
 | Antecedente | `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.5.0 (feita e em produção) |
@@ -43,8 +43,9 @@ Reprocessar (botão na conferência) ─► análise volta a SEPARANDO_ASSUNTOS 
 
 ## 3. Reprocessar (D-89, D-95)
 
-- `POST /api/editais/analises/{id}/conferencia/reprocessar`: só em `EM_CONFERENCIA` ou `CONFIRMADA`; marca `reprocessar = true` e a
-  análise vai a `SEPARANDO_ASSUNTOS`. Nenhuma linha é apagada. Em `CONFIRMADA`, os assuntos já criados ficam como estão.
+- `POST /api/editais/analises/{id}/conferencia/reprocessar`: só em `EM_CONFERENCIA` (com a conferência já concluída, os assuntos existem e
+  uma leitura nova não os cria: fica para quando houver uso real que peça); marca `reprocessar = true` e a análise vai a
+  `SEPARANDO_ASSUNTOS`. Nenhuma linha é apagada.
 - O worker, ao ver `reprocessar`, descarta a pasta de trabalho do edital (a leitura recomeça) e aplica as decisões ativas.
 - **A entrega se funde** (substitui o `409 REPROCESSAR_NA_26` da Sprint 25), pela chave, em disciplina → assunto → parte:
 
@@ -93,10 +94,12 @@ e as lacunas por parte; no detalhe do assunto, "Questões deste assunto (consult
 
 ## 7. Planejamento (o worker)
 
-`edital_worker.py` ganha o segundo ciclo: para o edital com material pendente, monta a pasta de trabalho a partir da conferência
+`edital_worker.py` ganha o segundo ciclo (`MaterialDoEdital`): para o edital com material pendente, monta a pasta de trabalho a partir da conferência
 (`partes.json` e `nos.json` com o que a pessoa **conferiu**, vindos de `/material/pendentes`, não os da IA), roda `casar`, `confirmar`,
 `manifestos`, `segunda` e `consulta` (`preparar_edital.py`), corta os segmentos (`dias/montar_bloco.py`), importa os segmentos e entrega
-a situação. As etapas de IA esperam a assinatura voltar (nunca viram veredito, D-75). Insumos: `catalogo.db` e `ligacao/fichas-nos.jsonl`
+a situação. As etapas de IA esperam a assinatura voltar (nunca viram veredito, D-75). O ciclo antigo do worker (busca por palavras) **pula** o assunto que
+nasceu de uma conferência (`viaConferencia` no `/planejamento`): para ele o material é o casamento por partes; o ciclo antigo segue só para
+concurso que não veio de conferência. A chave do assunto vai pronta no pedido, para a contagem de assuntos repetidos não mudar. Insumos: `catalogo.db` e `ligacao/fichas-nos.jsonl`
 em `MATERIAL_DIR`, e o índice do acervo.
 
 ## 8. Selo em Hoje
@@ -118,16 +121,16 @@ que leva ao detalhe do assunto; vem de `GET /api/assuntos/{id}/partes-do-edital`
 
 ## 10. Itens e ordem
 
-| # | Item | Depende de |
-|---|---|---|
-| 26.0 | Este documento | — |
-| 26.1 | `V18` e reprocessar: botão, fusão da entrega, contador | 26.0 |
-| 26.2 | Escopo "todos os editais" com a confirmação extra | 26.1 |
-| 26.3 | Atalho "aceitar todos os mais amplos" | — |
-| 26.4 | Rotas internas do material e `material_*` no SGE; telas (por assunto, consulta) | 26.0 |
-| 26.5 | O ciclo do material no worker (planejamento) | 26.4 |
-| 26.6 | Selo em Hoje | — |
-| 26.7 | Pi: reprocessar o MPPR e preparar o material do concurso | todos |
+| # | Item | Depende de | Estado |
+|---|---|---|---|
+| 26.0 | Este documento | — | **feito** |
+| 26.1 | `V18` e reprocessar: botão, fusão da entrega, contador | 26.0 | **feito** |
+| 26.2 | Escopo "todos os editais" com a confirmação extra | 26.1 | **feito** |
+| 26.3 | Atalho "aceitar todos os mais amplos" | — | **feito** |
+| 26.4 | Rotas internas do material e `material_*` no SGE; telas (por assunto, consulta) | 26.0 | **feito** |
+| 26.5 | O ciclo do material no worker (planejamento) | 26.4 | **feito** (testes com etapas falsas; falta o Pi) |
+| 26.6 | Selo em Hoje | — | **feito** |
+| 26.7 | Pi: reprocessar o MPPR e preparar o material do concurso | todos | a fazer |
 
 ## 11. Riscos
 
@@ -141,4 +144,5 @@ que leva ao detalhe do assunto; vem de `GET /api/assuntos/{id}/partes-do-edital`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-10-25 | Itens 26.0 a 26.6 feitos. Reprocessar só com a conferência aberta; o ciclo antigo do worker pula o assunto de conferência; chave do assunto vai pronta ao planejamento; consulta servida em `/material/consulta/` e `GET /api/assuntos/{id}/material-da-conferencia` |
 | 1.0.0 | 2026-10-25 | Primeira versão, contra `01_DOMINIO` v1.27.0 |
