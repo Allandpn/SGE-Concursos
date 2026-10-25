@@ -82,11 +82,11 @@ public class EntregaEditalService {
     /** Só as ativas do escopo EDITAL desta análise; as de escopo TODOS entram na Sprint 26 (D-87). */
     private List<Decisao> decisoesDe(AnaliseEdital analise) {
         return jdbc.query("""
-            SELECT d.parte_chave_norm, d.contexto_norm, d.nos, d.natureza, d.escopo, d.criada_em, v.rotulo
+            SELECT d.parte_texto, d.contexto_texto, d.nos, d.natureza, d.escopo, d.criada_em, v.rotulo
               FROM edital_decisao d JOIN arvore_versao v ON v.id = d.arvore_versao_id
              WHERE d.ativa AND d.escopo = 'EDITAL' AND d.analise_id = ?
              ORDER BY d.id""",
-            (rs, i) -> new Decisao(rs.getString("parte_chave_norm"), vazioParaNulo(rs.getString("contexto_norm")),
+            (rs, i) -> new Decisao(rs.getString("parte_texto"), vazioParaNulo(rs.getString("contexto_texto")),
                 ids(rs.getString("nos")), minusculo(rs.getString("natureza")), rs.getString("escopo"),
                 "analise-" + analise.getId(), rs.getString("rotulo"), rs.getTimestamp("criada_em").toInstant().toString(),
                 "decisão da pessoa"), analise.getId());
@@ -136,11 +136,12 @@ public class EntregaEditalService {
                 throw new ValidationException("Disciplina sem nome ou repetida: " + nome + ".", "ENTREGA_INVALIDA", "disciplinas");
             }
             long disciplinaId = jdbc.queryForObject("""
-                INSERT INTO edital_disciplina (analise_id, ordem, nome, restricao, comum, questoes, qconcursos_ids, tentativas)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id""", Long.class, analiseId, ++ordemDisciplina, cortar(nome, 250),
+                INSERT INTO edital_disciplina (analise_id, ordem, nome, restricao, comum, questoes, qconcursos_ids, texto, referencias, tentativas)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id""", Long.class, analiseId, ++ordemDisciplina, cortar(nome, 250),
                 cortar(texto(d.get("restricao")), 250), d.path("comum").asBoolean(false),
                 d.path("questoes").isNumber() ? d.get("questoes").asInt() : null,
                 json.writeValueAsString(d.path("qconcursos").isArray() ? d.get("qconcursos") : json.createArrayNode()),
+                d.path("texto").isString() ? d.get("texto").asString() : null, lista(d.get("referencias")),
                 d.path("tentativas").isNumber() ? d.get("tentativas").asInt() : 1);
             for (var a : d.path("assuntos")) inserirAssunto(disciplinaId, a, versaoId, execucaoId);
             for (var t : d.path("trechos_sem_assunto")) inserirTrecho(analiseId, disciplinaId, "SEM_ASSUNTO", t);

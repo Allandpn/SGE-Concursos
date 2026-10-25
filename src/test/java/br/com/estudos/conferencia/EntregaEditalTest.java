@@ -22,7 +22,7 @@ import br.com.estudos.shared.enums.StatusAnaliseEdital;
  * A entrega do planejamento (contrato edital-revisao/1; 01_DOMINIO §3.12, D-88, D-89;
  * docs/SPRINT-25-CONFERENCIA-EDITAL.md §4), com o formato que o planejamento realmente gera.
  */
-class EntregaEditalTest extends ConferenciaTestBase {
+public class EntregaEditalTest extends ConferenciaTestBase {
 
     @Autowired private AnaliseEditalRepository analises;
 
@@ -40,7 +40,7 @@ class EntregaEditalTest extends ConferenciaTestBase {
     }
 
     /** Duas disciplinas, três assuntos: uma parte exata, uma "mais ampla", uma sem nó; um assunto recusado e um trecho sem assunto. */
-    static String entrega(String execucaoArvore, long noDaParte) {
+    public static String entrega(String execucaoArvore, long noDaParte) {
         return """
             {"contrato": "edital-revisao/1",
              "concurso": {"slug": "mppr-2024", "cargo": "Analista TI"},
@@ -49,6 +49,7 @@ class EntregaEditalTest extends ConferenciaTestBase {
              "disciplinas": [
                {"nome": "Banco de Dados", "restricao": null, "comum": false, "paginas": [3], "linhas": [10, 20],
                 "qconcursos": [-10], "tentativas": 1,
+                "texto": "Banco de Dados SQL: window function, álgebra relacional Arquitetura de BD",
                 "assuntos": [
                   {"chave": "a1a1a1a1a1a1a1a1", "ordem": 1, "texto": "SQL: window function, álgebra relacional", "erros": [], "alertas": [],
                    "partes": [
@@ -62,7 +63,7 @@ class EntregaEditalTest extends ConferenciaTestBase {
                       "ligacao": null}]}],
                 "trechos_sem_assunto": ["Observação solta do edital"], "referencias": []},
                {"nome": "Antropologia", "restricao": "Cargo B", "comum": true, "paginas": [4], "linhas": [21, 30],
-                "qconcursos": [-273], "tentativas": 2,
+                "qconcursos": [-273], "tentativas": 2, "texto": "Antropologia Cultura",
                 "assuntos": [
                   {"chave": "a3a3a3a3a3a3a3a3", "ordem": 1, "texto": "Cultura", "erros": [], "alertas": ["contexto de outro assunto"],
                    "partes": [

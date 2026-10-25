@@ -211,6 +211,15 @@ public class ArvoreService {
         return resposta(s, no);
     }
 
+    /** Vários nós de uma vez, na versão pedida; o que não existe nela fica de fora do mapa. */
+    @Transactional(readOnly = true)
+    public Map<Long, No> nosPorId(java.util.Collection<Long> ids, Long versaoId) {
+        var s = snapshot(versaoId);
+        var saida = new LinkedHashMap<Long, No>();
+        for (var id : ids) s.no(id).ifPresent(n -> saida.put(id, resposta(s, n)));
+        return saida;
+    }
+
     @Transactional(readOnly = true)
     public boolean existe(long noId, Long versaoId) {
         return snapshot(versaoId).no(noId).isPresent();

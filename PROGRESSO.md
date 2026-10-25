@@ -1046,7 +1046,7 @@ nasce da prova.
 
 ## 20B. Sprint 25 · Conferência do edital
 
-**Documento técnico:** `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.2.0 · **Especificação:** `01_DOMINIO` §3.12, D-86 a D-95; ADR-047.
+**Documento técnico:** `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.3.0 · **Especificação:** `01_DOMINIO` §3.12, D-86 a D-95; ADR-047.
 Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`).
 
 | | Item | Quem escreve | Estado |
@@ -1057,8 +1057,8 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 | 25.3 | Análise só com o cabeçalho; guardar o PDF; cargo leva a `SEPARANDO_ASSUNTOS` | Claude | **feito** |
 | 25.4 | Rotas internas do edital e gravação da entrega | Claude | **feito** |
 | 25.5 | Chave e conferência por regra em Java, com vetores compartilhados com o planejamento | Claude | **feito** |
-| 25.6 | Conferência: contagens, fila derivada, ações, decisões e eventos | Claude | a fazer |
-| 25.7 | Concluir; aviso no painel e no plano | Claude | a fazer |
+| 25.6 | Conferência: contagens, fila derivada, ações, decisões e eventos | Claude | **feito** |
+| 25.7 | Concluir; aviso no painel e no plano | Claude | **feito** |
 | 25.8 | Adotar versão da árvore, com o impacto | Claude | a fazer |
 | 25.9 | Telas, compose com o volume `editais`, adendo do `03E` | Claude | a fazer |
 | 25.10 | Pi: edital real (MPPR) de ponta a ponta | Claude + usuário | a fazer |
@@ -1083,6 +1083,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.73.0 | 2026-10-24 | **Itens 25.6 e 25.7 feitos.** A conferência: resumo, edital por disciplina, fila derivada (bloqueantes primeiro), aceitar, trocar nós, "a árvore não tem", editar, dividir, juntar, descartar e comentar parte, aceitar assunto, corrigir texto do assunto, peso da disciplina, trechos sem assunto, decisões (ver, editar, revogar) e histórico só de inserção. **Concluir** recusa com bloqueio (D-91), cria disciplinas e assuntos com chave (D-64) e ativa o concurso (D-92); depois disso a conferência continua aberta. 15 testes novos. `SPRINT-25` v1.3.0 |
 | 1.72.0 | 2026-10-24 | **Itens 25.4 e 25.5 feitos.** `/internal/editais` (pendentes, dados com as decisões, entrega `edital-revisao/1` idempotente pelo hash, falha com a etapa) grava a leitura como veio; nó fora da árvore, contrato desconhecido e árvore não carregada são recusados sem gravar nada. `RegrasEdital` (normalizar, palavras, chaves de parte e de assunto, conferência por regra) é porte do Python e passa nos mesmos vetores (`vetores-conferencia.json`, gerado no planejamento). A entrega do planejamento passou a levar o `texto` da disciplina. `SPRINT-25` v1.2.0 |
 | 1.71.0 | 2026-10-24 | **Itens 25.1 a 25.3 feitos.** `V17` aplicada (árvore, leitura entregue, decisões, eventos só de inserção); a análise lê só o cabeçalho e guarda o PDF no volume `editais`; a conclusão virou `ConclusaoEditalService` (D-64 testado); árvore do QConcursos com carga idempotente, diferença entre versões, busca e navegação (`/api/arvore`, `/internal/arvores`). **Achado:** os ids de disciplina e de assunto do QConcursos colidem (50 ids); no planejamento 24 assuntos eram sobrescritos por disciplinas na ligação. Corrigido com id de disciplina negado nos dois lados. `SPRINT-25` v1.1.0 |
 | 1.70.0 | 2026-10-24 | **Sprint 25 aberta** (§20B). Documento técnico `docs/SPRINT-25-CONFERENCIA-EDITAL.md` v1.0.0, contra `01_DOMINIO` v1.27.0: `V17` (árvore, leitura entregue, decisões, eventos só de inserção), rotas internas `/internal/editais` e `/internal/arvores`, conferência com fila derivada, concluir cria os assuntos, adotar árvore por gesto. Fica para a Sprint 26: escopo "todos", reprocessar, material e consulta. Nenhum código ainda |

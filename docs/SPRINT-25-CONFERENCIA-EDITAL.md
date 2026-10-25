@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.2.0 |
+| Versão | 1.3.0 |
 | Data | 2026-10-24 |
 | Subordinado a | `01_DOMINIO` v1.27.0 §3.12 e D-86 a D-95; `02_JORNADAS` v1.16.0 J-5; `03_INVARIANTES` v1.15.0; ADR-047 |
 | Contraparte | `docs/especificacao-revisao-edital-sge.md` §11 (contrato `edital-revisao/1`) e `integracao/entrega_revisao.py`, no repositório do planejamento |
@@ -161,7 +161,7 @@ do edital.
 | `LINHA_FORA` | 1 | sim | `estado ≠ ABERTO` |
 | `SEM_ASSUNTO` | 1 | sim | `estado ≠ ABERTO` |
 | `ASSUNTO_RECUSADO` | 2 | sim | `erros` vazio ou `aceito` |
-| `PARTE_COM_ALERTA` | 3 | sim | parte aceita, ou `alertas` tratados por edição/divisão |
+| `ALERTA_DE_PARTE` | 3 | sim | o assunto é aceito (`aceito`), ou a edição/divisão deixa o assunto sem alertas (a entrega traz o alerta por assunto, não por parte) |
 | `PARTE_SEM_NO` | 4 | não | tem nó, ou foi declarada "a árvore não tem" |
 | `VINCULO_AMPLO_OU_PARCIAL` | 5 | não | parte `ACEITA` ou `DECIDIDA` |
 | `NO_TROCADO_NO_REFINO` | 5 | não | idem (origem `REFINO` com `antes`) |
@@ -266,6 +266,7 @@ Escopo "todos os editais", reprocessamento, mapa de disciplinas editável, mater
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-10-24 | A decisão guarda o texto da parte e do contexto como a pessoa os viu (o planejamento os normaliza); a disciplina guarda `texto` e `referencias`; `ALERTA_DE_PARTE` por assunto; ao editar, os alertas da IA se perdem e os da regra voltam. Itens 25.6 e 25.7 feitos |
 | 1.2.0 | 2026-10-24 | A entrega leva o `texto` da disciplina (a conferência do assunto precisa dele); vetores compartilhados. Itens 25.4 e 25.5 feitos |
 | 1.1.0 | 2026-10-24 | Id de disciplina negado (colisão de 50 ids na árvore real); peso da disciplina (`peso_pessoa`, `questoes`); busca em memória. Itens 25.1 a 25.3 feitos |
 | 1.0.0 | 2026-10-24 | Primeira versão, contra `01_DOMINIO` v1.27.0 |

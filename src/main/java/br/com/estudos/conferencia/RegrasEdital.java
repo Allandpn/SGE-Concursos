@@ -67,9 +67,23 @@ public final class RegrasEdital {
      */
     public static String chaveDaParte(String disciplina, String assunto, String herdado, String texto, String contexto,
                                       Map<String, Integer> vistas) {
-        var base = String.join("|", normalizar(disciplina), normalizar(assunto), normalizar(herdado), normalizar(texto), normalizar(contexto));
+        var base = baseDaParte(disciplina, assunto, herdado, texto, contexto);
         int n = vistas.merge(base, 1, Integer::sum);
-        return sha1(base + "|" + n);
+        return chaveDaBase(base, n);
+    }
+
+    /** A parte normalizada, sem a ocorrência: o que duas partes idênticas no mesmo assunto têm em comum. */
+    public static String baseDaParte(String disciplina, String assunto, String herdado, String texto, String contexto) {
+        return String.join("|", normalizar(disciplina), normalizar(assunto), normalizar(herdado), normalizar(texto), normalizar(contexto));
+    }
+
+    public static String chaveDaBase(String base, int ocorrencia) {
+        return sha1(base + "|" + ocorrencia);
+    }
+
+    /** A chave de reaproveitamento de uma decisão: as palavras do texto, ordenadas (a disciplina fica de fora). */
+    public static String chaveNormalizada(String texto) {
+        return String.join(" ", new TreeSet<>(palavras(texto)));
     }
 
     /** Chave estável do assunto: disciplina e texto normalizados, mais a ocorrência se o edital o repete. */

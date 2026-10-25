@@ -91,6 +91,10 @@ CREATE TABLE edital_disciplina (
     -- Peso escolhido pela pessoa; nulo = o que a regra D-61 calcula das questões na conclusão.
     peso_pessoa     VARCHAR(10),
     qconcursos_ids  TEXT NOT NULL DEFAULT '[]',
+    -- O texto da disciplina e as referências ("todo o conteúdo de X"): a conferência por regra, refeita quando a
+    -- pessoa edita uma parte, precisa deles.
+    texto           TEXT,
+    referencias     TEXT NOT NULL DEFAULT '[]',
     tentativas      INTEGER NOT NULL DEFAULT 1,
     CONSTRAINT fk_edital_disciplina_analise FOREIGN KEY (analise_id) REFERENCES analise_edital (id),
     CONSTRAINT ux_edital_disciplina UNIQUE (analise_id, nome),
@@ -174,6 +178,10 @@ CREATE TABLE edital_trecho (
 -- ---------------------------------------------------------------- decisões e histórico (D-86, D-87)
 CREATE TABLE edital_decisao (
     id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    -- A parte e o contexto como a pessoa os viu (o planejamento os normaliza ao casar) e a chave de reaproveitamento
+    -- normalizada (palavras ordenadas), sem a disciplina.
+    parte_texto       TEXT NOT NULL,
+    contexto_texto    TEXT NOT NULL DEFAULT '',
     parte_chave_norm  TEXT NOT NULL,
     contexto_norm     TEXT NOT NULL DEFAULT '',
     nos               TEXT NOT NULL DEFAULT '[]',
