@@ -23,8 +23,8 @@ import br.com.estudos.shared.enums.StatusAnaliseEdital;
 
 /**
  * Uma análise de edital (01_DOMINIO §3.9): processo, não estado de estudo.
- * Guarda o texto extraído para repetir uma etapa sem reenviar o PDF, e a
- * proposta — que só vira cadastro na confirmação (D-62).
+ * Guarda o texto extraído para repetir a leitura do cabeçalho sem reenviar o PDF; a leitura do
+ * planejamento fica nas tabelas da conferência (V17) e só vira cadastro na conclusão (D-62, D-92).
  */
 @Entity
 @Table
@@ -50,8 +50,8 @@ public class AnaliseEdital {
     @Enumerated(EnumType.STRING)
     private StatusAnaliseEdital status;
 
-    @Enumerated(EnumType.STRING)
-    private StatusAnaliseEdital etapaFalha;
+    /** Etapa que falhou: LENDO_EDITAL, SEPARANDO_ASSUNTOS ou uma das etapas do planejamento (EXTRACAO, ORGANIZACAO, QUEBRA, LIGACAO). */
+    private String etapaFalha;
 
     @Column(columnDefinition = "TEXT")
     private String erro;
@@ -67,9 +67,8 @@ public class AnaliseEdital {
 
     private String cargoEscolhido;
 
-    /** JSON: {@link PropostaEdital}. */
-    @Column(columnDefinition = "TEXT")
-    private String proposta;
+    /** Caminho do PDF no volume {@code editais}, enquanto a conferência está aberta. */
+    private String pdfArquivo;
 
     private Long concursoId;
 

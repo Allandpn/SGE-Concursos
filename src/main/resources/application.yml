@@ -57,6 +57,9 @@ estudos:
     dir: ${MATERIAL_DIR:/dados/material}
   provas:
     dir: ${PROVAS_DIR:/dados/provas}
+  # ADR-047 — o PDF do edital fica aqui até a conferência terminar (docs/SPRINT-25-CONFERENCIA-EDITAL.md §2.5)
+  editais:
+    dir: ${EDITAIS_DIR:/dados/editais}
 
 management:
   endpoints:

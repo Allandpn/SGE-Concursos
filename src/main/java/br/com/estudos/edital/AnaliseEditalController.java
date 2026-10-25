@@ -17,20 +17,16 @@ import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import br.com.estudos.concurso.ConcursoResponse;
-import br.com.estudos.concurso.ConcursoService;
 
 @RestController
 @RequestMapping("/api/editais")
-@Tag(name = "Edital novo", description = "Análise de edital por IA via OpenRouter — a IA extrai, o sistema decide, nada é gravado sem confirmar (ADR-043)")
+@Tag(name = "Edital novo", description = "Edital novo: o SGE lê o cabeçalho; a conferência é do planejamento e da pessoa (ADR-043, ADR-047)")
 public class AnaliseEditalController {
 
     private final AnaliseEditalService service;
-    private final ConcursoService concursoService;
 
-    public AnaliseEditalController(AnaliseEditalService service, ConcursoService concursoService) {
+    public AnaliseEditalController(AnaliseEditalService service) {
         this.service = service;
-        this.concursoService = concursoService;
     }
 
     @GetMapping("/ia")
@@ -40,7 +36,7 @@ public class AnaliseEditalController {
     }
 
     @PostMapping(value = "/analises", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Envia o PDF do edital", description = "Extrai o texto e começa a etapa 1 (concurso e cargos) em segundo plano. 202.")
+    @Operation(summary = "Envia o PDF do edital", description = "Guarda o PDF, extrai o texto e lê o cabeçalho (concurso e cargos) em segundo plano. 202.")
     public ResponseEntity<AnaliseEditalResponse> iniciar(@RequestParam("arquivo") MultipartFile arquivo) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(service.resposta(service.iniciar(arquivo)));
     }
@@ -52,26 +48,20 @@ public class AnaliseEditalController {
     }
 
     @GetMapping("/analises/{id}")
-    @Operation(summary = "Estado de uma análise", description = "Com status PRONTA, traz a proposta e o resumo.")
+    @Operation(summary = "Estado de uma análise", description = "Estado da análise; a conferência tem rotas próprias (docs/SPRINT-25-CONFERENCIA-EDITAL.md §5).")
     public AnaliseEditalResponse buscar(@PathVariable Long id) {
         return service.resposta(service.buscar(id));
     }
 
     @PostMapping("/analises/{id}/cargo")
-    @Operation(summary = "Escolhe o cargo", description = "Só em ESCOLHER_CARGO. Começa a etapa 2 (disciplinas e assuntos). 202.")
+    @Operation(summary = "Escolhe o cargo", description = "Só em ESCOLHER_CARGO. Passa a SEPARANDO_ASSUNTOS: o planejamento pega a análise. 202.")
     public ResponseEntity<AnaliseEditalResponse> escolherCargo(@PathVariable Long id, @RequestBody EscolhaCargoRequest corpo) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(service.resposta(service.escolherCargo(id, corpo.cargo())));
     }
 
     @PostMapping("/analises/{id}/tentar-de-novo")
-    @Operation(summary = "Repete a etapa que falhou", description = "Só em FALHOU, com o texto já guardado. 202.")
+    @Operation(summary = "Repete a etapa que falhou", description = "Só em FALHOU. Repete o cabeçalho aqui, ou devolve a análise ao planejamento. 202.")
     public ResponseEntity<AnaliseEditalResponse> tentarDeNovo(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(service.resposta(service.tentarDeNovo(id)));
-    }
-
-    @PostMapping("/analises/{id}/confirmar")
-    @Operation(summary = "Confirma a proposta revisada", description = "D-62: a única escrita no cadastro. Cria o que é novo, aplica a cobertura (D-60) e ativa o concurso.")
-    public ConcursoResponse confirmar(@PathVariable Long id, @RequestBody ConfirmacaoEditalRequest corpo) {
-        return concursoService.resposta(service.confirmar(id, corpo).getId());
     }
 }

@@ -46,7 +46,12 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // resolução. O veredito é um fato registrado (D-73); a nota não é guardada
                 // aqui (D-16) — M-1 continua entrando por resultado_simulado. Nenhuma
                 // guarda fase, turno ou plano.
-                "prova", "questao", "alternativa", "veredito_questao", "tentativa_prova", "resposta_prova");
+                "prova", "questao", "alternativa", "veredito_questao", "tentativa_prova", "resposta_prova",
+                // Sprint 25 (ADR-047): a árvore do QConcursos e a leitura do edital entregue pelo planejamento,
+                // mais as decisões e o histórico da pessoa. A fila de revisão e as contagens são consultas
+                // (D-16); nada aqui guarda fase, turno ou plano.
+                "arvore_versao", "no_arvore", "no_arvore_diferenca", "edital_execucao", "edital_disciplina",
+                "edital_assunto", "edital_parte", "edital_parte_no", "edital_trecho", "edital_decisao", "edital_evento");
         assertEquals(esperado, tabelasDoSchema());
     }
 
