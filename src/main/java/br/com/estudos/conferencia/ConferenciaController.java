@@ -68,6 +68,18 @@ public class ConferenciaController {
         return service.fila(id);
     }
 
+    @GetMapping("/assuntos/{assuntoId}/partes-do-edital")
+    @Operation(summary = "As partes do edital de um assunto", description = "Com o nó de cada uma e o aviso que ainda pede atenção. Vazio se o assunto não nasceu de uma conferência.")
+    public List<ConferenciaResponses.ParteDoAssunto> partesDoAssunto(@PathVariable Long assuntoId) {
+        return service.partesDoAssunto(assuntoId);
+    }
+
+    @GetMapping("/concursos/{concursoId}/avisos-de-conferencia")
+    @Operation(summary = "O que ainda pede atenção no edital do concurso", description = "Partes sem filtro de questões, vínculos largos e nós que mudaram (docs §9). Não bloqueia nada.")
+    public ConferenciaResponses.AvisosDoConcurso avisos(@PathVariable Long concursoId) {
+        return service.avisosDoConcurso(concursoId);
+    }
+
     @PostMapping(BASE + "/conferencia/concluir")
     @Operation(summary = "Conclui a conferência", description = "Cria disciplinas, assuntos e concurso e ativa o concurso (D-62, D-92). Recusa com divergência que bloqueia (D-91).")
     public Map<String, Object> concluir(@PathVariable Long id) {

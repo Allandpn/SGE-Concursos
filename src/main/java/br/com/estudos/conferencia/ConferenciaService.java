@@ -218,6 +218,53 @@ public class ConferenciaService {
         return assunto(d, assuntoDe(d, assuntoEditalId), nosDe(d));
     }
 
+    // ================================================================ avisos depois de concluída (docs §9)
+
+    /** As partes de um assunto já cadastrado, com o aviso de cada uma; vazio se o assunto não nasceu de uma conferência. */
+    @Transactional(readOnly = true)
+    public List<ConferenciaResponses.ParteDoAssunto> partesDoAssunto(Long assuntoId) {
+        var analises = jdbc.queryForList("""
+            SELECT d.analise_id, a.id FROM edital_assunto a JOIN edital_disciplina d ON d.id = a.disciplina_id
+             WHERE a.assunto_id = ? ORDER BY d.analise_id DESC LIMIT 1""", assuntoId);
+        if (analises.isEmpty()) return List.of();
+        long analiseId = ((Number) analises.get(0).get("analise_id")).longValue();
+        long assuntoEditalId = ((Number) analises.get(0).get("id")).longValue();
+        var d = ConferenciaDados.ler(jdbc, analiseId);
+        var mapas = nosDe(d);
+        var saida = new ArrayList<ConferenciaResponses.ParteDoAssunto>();
+        for (var p : d.partesDe(assuntoEditalId)) {
+            if (!p.ativa()) continue;
+            var mapa = mapas.getOrDefault(p.arvoreVersaoId(), Map.of());
+            saida.add(new ConferenciaResponses.ParteDoAssunto(p.id(), analiseId, p.texto(), p.contexto(), p.herdado(), p.natureza(),
+                resolver(p.nos(), mapa), aviso(p)));
+        }
+        return saida;
+    }
+
+    /** O que ainda pede atenção no edital do concurso: partes sem filtro de questões, vínculos largos, nós que mudaram. */
+    @Transactional(readOnly = true)
+    public ConferenciaResponses.AvisosDoConcurso avisosDoConcurso(Long concursoId) {
+        var ids = jdbc.queryForList("SELECT id FROM analise_edital WHERE concurso_id = ? ORDER BY id DESC LIMIT 1", Long.class, concursoId);
+        if (ids.isEmpty()) return new ConferenciaResponses.AvisosDoConcurso(concursoId, null, 0, 0, 0);
+        var d = ConferenciaDados.ler(jdbc, ids.get(0));
+        int semNo = 0, amplos = 0, mudaram = 0;
+        for (var p : d.partes) {
+            if (!p.ativa()) continue;
+            var a = aviso(p);
+            if ("SEM_NO".equals(a)) semNo++;
+            else if ("MAIS_AMPLO".equals(a) || "PARCIAL".equals(a)) amplos++;
+            else if ("NO_MUDOU".equals(a)) mudaram++;
+        }
+        return new ConferenciaResponses.AvisosDoConcurso(concursoId, ids.get(0), semNo, amplos, mudaram);
+    }
+
+    private static String aviso(ConferenciaDados.Parte p) {
+        if (p.noMudou()) return "NO_MUDOU";
+        if (p.nos().isEmpty()) return "SEM_NO";
+        if ("MAIS_AMPLO".equals(p.natureza()) || "PARCIAL".equals(p.natureza())) return p.natureza();
+        return null;
+    }
+
     // ================================================================ ações sobre partes
 
     @Transactional

@@ -48,6 +48,16 @@ public final class ConferenciaResponses {
 
     public record Trecho(Long id, Long disciplinaId, String tipo, String estado, String motivo, List<String> linhas) {}
 
+    /** Uma parte do assunto como o edital a dividiu, com o aviso que ainda pede atenção (docs §9). */
+    public record ParteDoAssunto(
+        Long parteId, Long analiseId, String texto, String contexto, String herdado, String natureza, List<No> nos,
+        @Schema(description = "SEM_NO, MAIS_AMPLO, PARCIAL ou NO_MUDOU; nulo = sem aviso") String aviso) {}
+
+    public record AvisosDoConcurso(
+        Long concursoId, Long analiseId,
+        @Schema(description = "Partes sem filtro de questões: sem nó (a árvore não tem, ou ainda por decidir)") int partesSemNo,
+        int vinculosAmplosOuParciais, int nosQueMudaram) {}
+
     public record DecisaoResponse(
         Long id, String parte, String contexto, List<No> nos, String natureza, String escopo, Long analiseId, String arvore,
         boolean ativa, String criadaEm, String revogadaEm, String comentario,
