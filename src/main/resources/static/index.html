@@ -1090,6 +1090,14 @@
       <div class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" role="alert" x-text="erroAcao"></div>
     </template>
 
+    <!-- a leitura está sendo refeita pelo planejamento (Reprocessar): nada se perde, a tela volta sozinha -->
+    <template x-if="lendo">
+      <div class="rounded border border-primary-100 bg-primary-50 p-4 text-sm text-gray-800">
+        <p class="font-medium">Lendo o edital de novo…</p>
+        <p class="mt-1">O que você decidiu fica como está. Quando terminar, a conferência volta com o que é novo.</p>
+      </div>
+    </template>
+
     <template x-if="!carregando && !erro && resumo">
       <div class="space-y-4">
 
@@ -1109,6 +1117,10 @@
             <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">Decididas por você</dt><dd class="text-base font-semibold" x-text="resumo.decididasPorPessoa"></dd></div>
             <div class="rounded bg-gray-50 p-2"><dt class="text-gray-500">De decisão anterior</dt><dd class="text-base font-semibold" x-text="resumo.aplicadasDeDecisaoAnterior"></dd></div>
           </dl>
+          <p x-show="resumo.iaMudou" class="mt-3 text-sm text-gray-700"
+             x-text="resumo.iaMudou + (resumo.iaMudou === 1 ? ' parte: a IA mudou, a sua decisão foi mantida.' : ' partes: a IA mudou, a sua decisão foi mantida.')"></p>
+          <button type="button" x-show="resumo.status === 'EM_CONFERENCIA'" :disabled="trabalhando"
+                  class="mt-3 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" @click="reprocessar()">Ler o edital de novo</button>
           <p class="mt-3 text-sm" :class="resumo.pendencias.bloqueiam ? 'text-red-700' : 'text-green-700'"
              x-text="resumo.pendencias.bloqueiam
                ? resumo.pendencias.bloqueiam + ' pendência(s) bloqueiam a conclusão (conteúdo do edital incerto) e ' + resumo.pendencias.avisam + ' só avisam.'
@@ -1156,6 +1168,7 @@
               </div>
               <div class="p-3">
                 <button type="button" class="mb-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="aceitarExatos(d)">Aceitar todos os exatos</button>
+                <button type="button" class="mb-2 ml-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="aceitarAmplos(d)">Aceitar todos os mais amplos</button>
                 <template x-for="a in d.assuntos" :key="a.id">
                   <div class="border-t border-gray-100 py-2" x-show="a.aparece">
                     <button type="button" class="flex w-full items-start justify-between gap-2 text-left" @click="alternarAssunto(a.id)">
@@ -1244,6 +1257,10 @@
                       @click="painel.modo = 'juntar'; formulario = {outra: '', texto: painel.parte.texto}">Juntar com outra</button>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-red-700" @click="painel.modo = 'descartar'; formulario = {motivo: ''}">Descartar</button>
             </div>
+            <label class="flex items-start gap-2 text-sm text-gray-700">
+              <input type="checkbox" class="mt-1" x-model="formulario.paraTodos">
+              <span>Valer para <strong>todos os editais</strong> (vale antes da IA em qualquer edital; peço confirmação antes)</span>
+            </label>
             <div>
               <label for="comentario-parte" class="mb-1 block text-xs text-gray-500">Comentário</label>
               <textarea id="comentario-parte" rows="2" class="w-full rounded border border-gray-300 p-2 text-sm" x-model="formulario.comentario" @change="comentar()"></textarea>
@@ -1290,6 +1307,10 @@
                 <option value="PARCIAL">cobre só parte dela</option>
               </select>
             </div>
+            <label x-show="painel.tipo === 'parte'" class="flex items-start gap-2 text-sm text-gray-700">
+              <input type="checkbox" class="mt-1" x-model="formulario.paraTodos">
+              <span>Valer para <strong>todos os editais</strong></span>
+            </label>
             <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="trabalhando || !picker.selecionados.length" @click="gravarNos()">Gravar o nó</button>
           </div></template>
 

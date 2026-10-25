@@ -1235,6 +1235,8 @@ document.addEventListener('alpine:init', () => {
     erro: null,
     erroAcao: null,
     erroPainel: null,
+    lendo: false, // o planejamento está refazendo a leitura (Reprocessar)
+    timerLeitura: null,
     painel: null, // { tipo: 'parte'|'assunto'|'trecho'|'decisao', modo, ... }
     formulario: {},
     picker: { q: '', resultados: [], ramo: [], filhos: [], selecionados: [], natureza: 'EXATO' },
@@ -1253,13 +1255,22 @@ document.addEventListener('alpine:init', () => {
       try {
         const base = `/editais/analises/${this.id}/conferencia`;
         const [resumo, disciplinas, fila] = await Promise.all([api(base), api(`${base}/disciplinas`), api(`${base}/fila`)]);
+        this.lendo = false;
+        clearTimeout(this.timerLeitura);
         this.resumo = resumo;
         this.disciplinas = disciplinas;
         this.fila = fila;
         if (inicial) this.aba = fila.length ? 'fila' : 'disciplinas';
         if (this.painel) this.atualizarPainel();
       } catch (e) {
-        this.erro = e.message;
+        if (e.codigo === 'ETAPA_INVALIDA' && this.id) {
+          // Reprocessando: a conferência volta quando o planejamento entregar. Consulta de novo em alguns segundos.
+          this.lendo = true;
+          clearTimeout(this.timerLeitura);
+          this.timerLeitura = setTimeout(() => this.recarregar(), 5000);
+        } else {
+          this.erro = e.message;
+        }
       } finally {
         this.carregando = false;
       }
@@ -1320,7 +1331,7 @@ document.addEventListener('alpine:init', () => {
 
     abrirParte(parte, assunto) {
       this.erroPainel = null;
-      this.formulario = { comentario: parte.comentario ?? '' };
+      this.formulario = { comentario: parte.comentario ?? '', paraTodos: false };
       this.painel = { tipo: 'parte', modo: 'ver', titulo: 'Parte do edital', parte, assunto };
     },
 
@@ -1367,8 +1378,31 @@ document.addEventListener('alpine:init', () => {
     },
 
     // ------------------------------------------------ ações sobre a parte
-    aceitar() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/aceitar`, 'POST'), { fecharPainel: true }); },
-    semNo() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/sem-no`, 'POST'), { fecharPainel: true }); },
+    // D-87: "todos os editais" mostra antes quantas partes de outros editais mudariam e só segue com a confirmação.
+    async escopo(nos, natureza) {
+      if (!this.formulario.paraTodos) return { escopo: 'EDITAL' };
+      const q = new URLSearchParams();
+      (nos ?? []).forEach((n) => q.append('nos', n));
+      if (natureza) q.set('natureza', natureza);
+      const previa = await this.pedido(`/partes/${this.painel.parte.id}/escopo-todos?${q}`, 'GET');
+      const quantas = previa.partes === 1 ? '1 parte de outro edital' : `${previa.partes} partes de outros editais`;
+      const exemplos = previa.exemplos.length ? `\n\nPor exemplo:\n- ${previa.exemplos.join('\n- ')}` : '';
+      if (!window.confirm(`Valer para todos os editais muda ${quantas}, que ainda não foram conferidas. O que você já decidiu em outros editais não muda.${exemplos}\n\nConfirmar?`)) {
+        throw new Error('Você escolheu não valer para todos os editais.');
+      }
+      return { escopo: 'TODOS', confirmarTodos: true };
+    },
+    aceitar() {
+      return this.agir(async () => this.pedido(`/partes/${this.painel.parte.id}/aceitar`, 'POST',
+        await this.escopo(this.painel.parte.nos.map((n) => n.id), this.painel.parte.natureza)), { fecharPainel: true });
+    },
+    semNo() {
+      return this.agir(async () => this.pedido(`/partes/${this.painel.parte.id}/sem-no`, 'POST', await this.escopo([], null)), { fecharPainel: true });
+    },
+    reprocessar() {
+      if (!window.confirm('Ler o edital de novo? O que você decidiu fica como está; a IA propõe só o que é novo.')) return;
+      return this.agir(() => this.pedido('/conferencia/reprocessar', 'POST'));
+    },
     comentar() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/comentario`, 'POST', { texto: this.formulario.comentario })); },
     descartar() { return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/descartar`, 'POST', { motivo: this.formulario.motivo }), { fecharPainel: true }); },
     salvarEdicao() {
@@ -1388,6 +1422,10 @@ document.addEventListener('alpine:init', () => {
     aceitarAssunto() { return this.agir(() => this.pedido(`/assuntos/${this.painel.assunto.id}/aceitar`, 'POST'), { fecharPainel: true }); },
     corrigirAssunto() { return this.agir(() => this.pedido(`/assuntos/${this.painel.assunto.id}`, 'PUT', { texto: this.formulario.texto }), { fecharPainel: true }); },
     aceitarExatos(d) { return this.agir(() => this.pedido(`/disciplinas/${d.id}/aceitar-exatos`, 'POST')); },
+    aceitarAmplos(d) {
+      if (!window.confirm(`Aceitar de uma vez os vínculos mais amplos ou parciais de ${d.nome}? Você aceita o nó largo: as questões do QConcursos continuam a um toque, só que mais abrangentes.`)) return;
+      return this.agir(() => this.pedido(`/disciplinas/${d.id}/aceitar-amplos`, 'POST'));
+    },
     trocarPeso(d, peso) { return this.agir(() => this.pedido(`/disciplinas/${d.id}/peso`, 'PUT', { peso })); },
     resolverTrecho(acao) {
       const f = this.formulario;
@@ -1459,7 +1497,8 @@ document.addEventListener('alpine:init', () => {
       if (this.painel.tipo === 'decisao') {
         return this.agirDecisao(() => api(`/decisoes/${this.painel.decisao.id}`, { method: 'PUT', body: JSON.stringify({ ...corpo, comentario: this.painel.decisao.comentario }) }));
       }
-      return this.agir(() => this.pedido(`/partes/${this.painel.parte.id}/nos`, 'PUT', corpo), { fecharPainel: true });
+      return this.agir(async () => this.pedido(`/partes/${this.painel.parte.id}/nos`, 'PUT',
+        { ...corpo, ...(await this.escopo(corpo.nos, corpo.natureza)) }), { fecharPainel: true });
     },
 
     // ------------------------------------------------ decisões
