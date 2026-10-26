@@ -1278,7 +1278,8 @@
               <p x-show="painel.parte.noMudou" class="mt-1 text-xs text-alerta-600">O nó saiu ou mudou na árvore: aceite de novo se ainda serve, ou escolha outro.</p>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white disabled:opacity-50" :disabled="trabalhando || !painel.parte.nos.length" @click="aceitar()">Aceitar</button>
+              <button type="button" x-show="painel.parte.nos.length" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white disabled:opacity-50" :disabled="trabalhando" @click="aceitar()">Aceitar</button>
+              <p x-show="!painel.parte.nos.length" class="col-span-2 rounded bg-gray-50 p-2 text-sm text-gray-700">Esta parte não tem nó. Escolha um nó (<strong>Trocar o nó</strong>) ou, se a árvore do QConcursos não tem o assunto, toque em <strong>A árvore não tem</strong>.</p>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="iniciarTrocaDeNo()">Trocar o nó</button>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" :disabled="trabalhando" @click="semNo()">A árvore não tem</button>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="painel.modo = 'editar'; formulario = {texto: painel.parte.texto, contexto: painel.parte.contexto ?? '', herdado: painel.parte.herdado ?? ''}">Editar o texto</button>
