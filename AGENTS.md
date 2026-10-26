@@ -1,0 +1,264 @@
+# Instruções para agentes de IA neste repositório
+
+> **Para qualquer agente de IA** (Claude Code, Codex, Cursor…): este arquivo é a fonte única das instruções. O `CLAUDE.md` só aponta
+> para cá. Trabalhe pelo documento, não pelo modelo: o plano de cada sprint está em `docs/SPRINT-*.md` e `PROGRESSO.md` diz qual é o
+> próximo passo, então um modelo mais barato consegue executar o que um mais caro desenhou.
+
+Sistema pessoal de gestão de estudos para concursos — **qualquer edital**,
+usado como **app no celular e no tablet e como web** (uma SPA instalável,
+ADR-038). Um usuário hoje; decisões que encareceriam multiusuário depois são
+evitadas (ADR-040).
+Java 21 · Spring Boot · PostgreSQL · Docker no Raspberry Pi · Tailscale.
+
+---
+
+## A regra que vale mais que todas as outras
+
+**`especificacao/` é a fonte única de verdade. O código é consequência dela.**
+
+- Se algo **não está** na especificação, **não implemente**.
+- Se está, implemente **exatamente como está**.
+- Achou que a especificação está errada? **Corrija o documento primeiro**,
+  incremente a versão, registre no changelog — e só então mexa no código.
+- Contradição entre documentos é **defeito de documentação**: reporte, não
+  contorne.
+
+---
+
+## A segunda regra: a documentação técnica é escrita por sprint
+
+A especificação **conceitual** está completa. A **técnica** não, e é
+deliberado.
+
+- Não escreva documento técnico de sprint futura.
+- Não implemente nada de sprint futura.
+- Documento técnico nasce quando a sprint começa, contra a especificação
+  conceitual vigente naquele momento.
+
+O motivo: a especificação conceitual foi revisada oito vezes e melhorou em
+todas. Escrever agora as nove reescritas técnicas seria produzir retrabalho para
+a próxima revisão.
+
+---
+
+## Onde o projeto está
+
+**Leia `PROGRESSO.md` primeiro, sempre.** Ele tem o mapa das sprints (16 feitas, as seguintes em uma linha cada), a sprint
+corrente detalhada item a item, e a *Definition of Done* dela.
+
+Se você não sabe qual é o próximo passo, a resposta está lá — não a invente.
+E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
+
+---
+
+## Os documentos
+
+### Conceituais — completos, precedência nesta ordem
+
+| Documento | Responde |
+|---|---|
+| `especificacao/00_PRODUTO.md` | Para que serve, e como saberemos que funcionou |
+| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 95 regras D-xx** |
+| `especificacao/02_JORNADAS.md` | Como é usado, e quanto pode custar em segundos |
+| `especificacao/03_INVARIANTES.md` | Quem garante cada regra e como se testa |
+
+### Técnicos — escritos sprint a sprint
+
+O documento técnico de uma sprint nasce **quando ela começa**, contra a
+especificação conceitual vigente naquele momento. O da Sprint 1 é
+`docs/SPRINT-1-BANCO.md`.
+
+Herdados da v2 e ainda válidos:
+
+| Documento | Situação |
+|---|---|
+| `docs/00A_ADR.md` | 47 ADRs, 33 vigentes (até ADR-047 — conferência do edital) |
+| `docs/03C_LOGGING.md` | Intacto |
+| `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta), §8C (Sprint 19: worker do material, tetos de memória do Pi 4) e §8D (Sprint 24: volume `provas`, OCR) |
+| `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |
+| `docs/09_CODE_STYLE.md` | Intacto |
+
+Tudo o mais é escrito quando a sprint que precisa dele começar.
+
+---
+
+## Cada tipo de artefato tem um dono
+
+| Definir… | Dono |
+|---|---|
+| tese, métrica, não-objetivo | `00_PRODUTO.md` |
+| entidade, regra de domínio, parâmetro conceitual | `01_DOMINIO.md` |
+| jornada, tela, orçamento de tempo | `02_JORNADAS.md` |
+| quem garante uma regra, e como se testa | `03_INVARIANTES.md` |
+| decisão de arquitetura | `docs/00A_ADR.md` |
+| coluna, restrição, índice | documento de banco da sprint |
+| endpoint | documento de API da sprint |
+| estilo de código | `docs/09_CODE_STYLE.md` |
+
+Definir a mesma coisa em dois lugares é o único erro que esta documentação foi
+desenhada para impedir.
+
+---
+
+## As regras D-xx
+
+`01_DOMINIO.md` §10 tem as 95. `03_INVARIANTES.md` §3 diz de cada uma: que
+natureza tem, em que camada mora, como se sabe que quebrou.
+
+**Todo código que implementa uma regra a cita pelo identificador**, e o
+identificador vai no nome da restrição correspondente. É assim que se apura se
+alguma regra ficou órfã (`03_INVARIANTES` §9).
+
+As que mais custam se forem esquecidas:
+
+| Regra | O que é |
+|---|---|
+| **D-05** | No máximo **uma** revisão pendente por assunto. Unicidade na persistência, **nunca** verificação prévia no serviço |
+| **D-45** | A mesma tentativa de registro conta uma vez. Identificador vem do cliente, gerado ao abrir a tela |
+| **D-16** | A fase do assunto é **derivada**. Não existe coluna de fase, e o teste estrutural precisa provar isso |
+| **D-07** | `SUCESSO` sobe · `PARCIAL` repete · `FALHA` regride **e volta para a fila de estudo** |
+| **D-18** | Nada é apagado. Mas **sem filtro global de leitura** — quebraria D-42 |
+
+---
+
+## Os cinco princípios
+
+De `03_INVARIANTES` §10. Se tudo o mais se perdesse, estes reconstituiriam o
+projeto:
+
+1. Toda informação derivável **não é persistida**.
+2. Toda invariante mora na camada mais baixa que a comporte **sem distorção** —
+   não é "quanto mais baixo, melhor".
+3. Nenhuma política desce para a persistência.
+4. Todo comportamento relevante tem teste, com **data congelada** quando
+   depender de prazo.
+5. Nenhuma interface é responsável por integridade.
+
+---
+
+## Modo de trabalho: implementação direta
+
+**Desde 2026-10-24 (decisão do usuário), a mentoria está suspensa para todo o projeto.** O dono do projeto não quer mais
+escrever o código item a item nem explicar cada decisão para dar o item por concluído. A IA **escreve o código**, com os
+testes, e o conclui.
+
+- Continuam valendo, sem exceção, a regra central (a especificação vem antes do código), a segunda regra (documento técnico
+  só quando a sprint começa), as regras D-xx citadas no código e a atualização do `PROGRESSO.md`.
+- Para cada decisão relevante, registre no documento da sprint o que foi escolhido, a alternativa recusada e o que quebraria
+  com ela; é o que a mentoria extraía da conversa e agora fica escrito.
+- Decisão de domínio, de segurança ou irreversível (apagar dado, mudar contrato com o planejamento) continua pedindo o OK do
+  usuário antes.
+- As colunas "Quem escreve" dos itens antigos do `PROGRESSO.md` são histórico; nos itens novos, escreve a IA.
+- O modo de mentoria pode ser retomado se o usuário pedir.
+
+---
+
+## Como o projeto chegou aqui
+
+A especificação anterior partia de um modelo **sem resultado de recuperação**, e
+nove dos vinte documentos técnicos dela não sobreviveram. O código foi
+descartado — nada estava em produção, então recriar o schema já correto saiu
+mais limpo que corrigi-lo por migração.
+
+Isso explica por que a especificação conceitual é densa e a técnica é magra: a
+primeira foi revisada oito vezes; a segunda nasce por sprint, de propósito.
+
+**Em que ponto estamos: `PROGRESSO.md`.**
+
+---
+
+## Três coisas que parecem erro e não são
+
+Herdadas da tentativa anterior, e continuam valendo:
+
+1. **`BIND_ADDRESS: 0.0.0.0` no compose** com `server.address: 127.0.0.1` no
+   `application.yml`. Dentro do contêiner o bind precisa ser `0.0.0.0`; o
+   confinamento vem do `127.0.0.1:8080:8080` do host. Não "corrija" nenhum.
+2. **`unaccent_imutavel`**, wrapper de função que já existe. `unaccent()` é
+   `STABLE`; índice por expressão exige `IMMUTABLE`.
+3. **Lacunas na numeração de ids.** A sequência avança mesmo em inserção
+   recusada. Nada depende de ids contíguos.
+
+---
+
+## Canal com o projeto de planejamento (`Plano-de-Estudos-Automatizado`)
+
+Dois sistemas separados, cada um com sua IA, cada um só escrevendo no
+próprio repositório — **nunca** acesso de escrita cruzado. A troca acontece
+por leitura pública do repositório do outro, no início do trabalho que
+tocar a integração (D-50 a D-53, `Segmento`, `chaveExterna`, ADR-037, ou
+qualquer coisa envolvendo o projeto de planejamento).
+
+- **Nosso canal de saída, pra eles:** `docs/requisitos-planejamento-blocos-de-conteudo.md`
+  — só cresce, nunca é reescrito por cima; toda seção nova leva data e é
+  marcada "Requisito novo" ou "Requisito especulativo" (assim quem lê
+  distingue pedido fechado de ideia em aberto).
+- **O canal deles, pra nós — leia antes de assumir que algo mudou lá:**
+  `docs/requisitos-sge-integracao.md` e
+  `docs/arquitetura-integracao-planejamento-sge.md`, em
+  `github.com/Allandpn/Plano-de-Estudos-Automatizado` (leitura pública via
+  GitHub, nunca clone com credencial de escrita).
+- **Nada lido de lá vira código ou muda `01_DOMINIO.md` sozinho.** Uma
+  seção nova no canal deles é sugestão a avaliar com o usuário — mesmo
+  processo de qualquer mudança de domínio: documento primeiro, decisão
+  discutida, só depois código (regra central deste arquivo).
+- Se algo que eles relatam como implementado precisar embasar uma decisão
+  real daqui, confira o commit real do lado deles antes de tratar como
+  fato — relato não é o mesmo que verificado.
+- **Exceção registrada (2026-10-14), pedida pelo usuário:** esta sessão
+  trabalhou no repositório do planejamento (clone local em
+  `G:\Git\Panejamento_Estudos`, branch `integracao-sge`), seguindo o
+  `CLAUDE.md` de lá. A regra acima continua valendo; outra exceção precisa
+  de novo pedido explícito.
+- **Outra exceção (2026-10-17), pedida pelo usuário:** a Sprint 19 escreveu o
+  worker do material no repositório do planejamento (branch
+  `material-automatico`). Também vale só para aquele pedido.
+- **Outra exceção (2026-10-17), pedida pelo usuário:** corrigir a busca de candidatos do
+  worker por disciplina (`integracao/acervo.py`, `worker.py`; branch
+  `candidatos-por-disciplina`), depois da auditoria das 12 lacunas do SEFAZ SC. Também vale
+  só para aquele pedido.
+- **Outra exceção (2026-10-18), pedida pelo usuário:** os itens 24.5 e 24.6 da Sprint 24 (leitura da
+  prova por OCR, gabarito, atribuição e julgamento) escrevem no repositório do planejamento (branch
+  `prova-gabarito`). Vale só para esses dois itens.
+
+---
+
+## Ao terminar qualquer tarefa
+
+- [ ] a regra implementada está **citada** no código pelo identificador;
+- [ ] teste correspondente escrito e passando;
+- [ ] nada de sprint futura implementado;
+- [ ] item marcado no `PROGRESSO.md`, se concluiu algum;
+- [ ] documentação atualizada **se** algo divergiu — documento primeiro.
+
+---
+
+## Operação: comandos, caminhos e armadilhas
+
+Vale para qualquer agente. A especificação e o `PROGRESSO.md` continuam sendo a fonte de verdade; isto é o "como rodar".
+
+**Testes** (Postgres real via Testcontainers; o host do Pi não tem Java nem Maven). Rode o Maven num contêiner com o socket do Docker:
+`docker run --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=localhost
+-e TESTCONTAINERS_RYUK_DISABLED=true -v "$PWD":/app -v ~/.m2-estudos:/root/.m2 -w /app maven:3.9-eclipse-temurin-21 mvn -B -q test`
+(`-Dtest=Classe` para uma só; a suíte inteira leva uns 20 min no Pi e tem ~340 testes). `mvn test -Psem-docker` pula os de banco.
+Rode a suíte inteira antes de enviar: testes que dependem da ordem já apareceram (um teste que commita deve limpar o que cria).
+
+**App local para olhar a tela** (a porta 8080 é a do app de verdade): `postgres:17-alpine` numa porta livre e `mvn spring-boot:run` no mesmo
+contêiner com `SERVER_PORT=18080`, `DB_URL`, `DB_USER`, `DB_PASSWORD`, `INTERNAL_TOKEN`, `EDITAIS_DIR`. Para testar a tela de verdade, use
+Chromium headless (Playwright): expressão do Alpine dentro de `x-show` é avaliada mesmo escondida — bloco que usa dado que pode faltar vai em
+`x-if`.
+
+**Regras que já custaram caro:**
+- **Migração Flyway** é imutável depois de aplicada; a numeração segue (`V18__…`). `ddl-auto: validate`: entidade e schema têm de bater.
+- **Toda mudança em arquivo estático** pede novo `CASCA_VERSAO` em `static/sw.js` (senão os aparelhos ficam com a casca velha).
+- **Nada derivável é guardado** (D-16): a fila da conferência e as contagens são consultas.
+- **O id de disciplina da árvore do QConcursos é negado** (colide com o de assunto); o arquivo da árvore não muda, quem carrega aplica o sinal.
+- **`List.of(...).contains(null)` lança NPE**: cuidado ao testar um valor que pode ser nulo.
+- **Texto da regra em dois lugares** (`RegrasEdital` em Java, `partes_edital.py` no planejamento): os dois testam o mesmo arquivo de vetores.
+
+**Implantar no Pi** (só com o OK do usuário): backup do banco, `git pull --ff-only git@github.com:Allandpn/SGE-Concursos.git main` em
+`/opt/estudos` (o remoto https não tem credencial), `docker compose up -d --build app planejamento`, conferir saúde, a última migração e que a
+rota interna responde 401 sem token. **Nunca leia o `.env`.** O acesso do usuário é `tailscale serve`; hoje também na porta 8443 porque o
+gateway do Guardian ocupa a 443.
+
+**Custo**: o app chama IA pela assinatura do usuário (ADR-045); ensaie em pouco antes de rodar em edital inteiro.
