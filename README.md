@@ -84,7 +84,8 @@ sudo tailscale serve --bg 8080
 ```
 
 Publica em `https://raspberrypi.<tailnet>.ts.net`, **apenas dentro da
-tailnet**, com TLS da Tailscale.
+tailnet**, com TLS da Tailscale. **No Pi deste projeto o endereço é o da porta 8443** (o Pi-hole ocupa a 443; ver
+`docs/03E_DEPLOYMENT.md` §4.4).
 
 > **`tailscale serve`, nunca `tailscale funnel`.** `funnel` expõe o serviço
 > para a internet pública — o oposto de ADR-015. A aplicação não tem

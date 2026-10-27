@@ -258,7 +258,7 @@ Chromium headless (Playwright): expressão do Alpine dentro de `x-show` é avali
 
 **Implantar no Pi** (só com o OK do usuário): backup do banco, `git pull --ff-only git@github.com:Allandpn/SGE-Concursos.git main` em
 `/opt/estudos` (o remoto https não tem credencial), `docker compose up -d --build app planejamento`, conferir saúde, a última migração e que a
-rota interna responde 401 sem token. **Nunca leia o `.env`.** O acesso do usuário é `tailscale serve`; hoje também na porta 8443 porque o
-gateway do Guardian ocupa a 443.
+rota interna responde 401 sem token. **Nunca leia o `.env`.** O acesso do usuário é `tailscale serve` **só na porta 8443**: o Pi-hole (`pihole-FTL`)
+ocupa `0.0.0.0:443` e o `tailscaled` não consegue abri-la no IPv4 da tailnet (`docs/03E_DEPLOYMENT.md` §4.4).
 
 **Custo**: o app chama IA pela assinatura do usuário (ADR-045); ensaie em pouco antes de rodar em edital inteiro.

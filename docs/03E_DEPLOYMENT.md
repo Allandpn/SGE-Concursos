@@ -5,9 +5,9 @@ Documento novo na v2 — na v1 não havia infraestrutura para documentar.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **1.5.0** |
+| Versão do documento | **1.6.0** |
 | Status | **Congelado** |
-| Data | 2026-10-24 |
+| Data | 2026-10-27 |
 
 ---
 
@@ -226,6 +226,12 @@ sudo tailscale serve --bg 8080
 
 Isso publica em `https://raspberrypi.<tailnet>.ts.net`, **apenas dentro da
 tailnet**, com TLS fornecido pela Tailscale.
+
+> **O endereço do app neste Pi é `https://raspberrypi.<tailnet>.ts.net:8443`** (2026-10-27). O Pi-hole (`pihole-FTL`) escuta em
+> `0.0.0.0:443` e impede o `tailscaled` de abrir a 443 no IPv4 da tailnet: o endereço sem porta falha em parte dos aparelhos
+> ("Sem conexão com o servidor"). Por isso `tailscale serve` publica só na 8443 (`sudo tailscale serve --bg --https=8443 8080`) e a
+> 443 fica desligada (`--https=443 off`). Instalar o app e ligar os avisos sempre por este endereço: o navegador guarda a instalação e
+> a inscrição de push por origem.
 
 > **`tailscale serve`, nunca `tailscale funnel`.** `funnel` expõe o serviço para
 > a **internet pública** — o oposto de ADR-015. Não há autenticação na aplicação;
@@ -456,7 +462,7 @@ Acrescentado sem mudar o desenho congelado acima — só o que a Sprint 16
    `http://<ip-tailscale>:8080`. Use só `tailscale serve` (§4.4); a
    "alternativa mais simples" do fim de §4.4 deixa de servir para celular e
    tablet.
-2. **Instalar no aparelho:** abrir `https://raspberrypi.<tailnet>.ts.net` no
+2. **Instalar no aparelho:** abrir `https://raspberrypi.<tailnet>.ts.net:8443` (§4.4) no
    navegador do celular/tablet (Tailscale ligado) → "Adicionar à tela
    inicial" / "Instalar app".
 3. **Importação automática por concurso-alvo (ADR-039).** O cron do
@@ -508,7 +514,7 @@ Na ordem; cada item é verificável.
       http://localhost:8080/actuator/health` responde `UP`.
 - [ ] As 12 migrações aplicaram (`V12` = concurso e análise de edital):
       `docker compose logs app | grep -i flyway`.
-- [ ] `tailscale serve --bg 8080` ativo; `https://raspberrypi.<tailnet>.ts.net`
+- [ ] `tailscale serve` ativo na 8443 (§4.4); `https://raspberrypi.<tailnet>.ts.net:8443`
       abre a tela Hoje no celular.
 - [ ] Web instalada na tela inicial; app Android instalado (APK do GitHub
       Actions de `Allandpn/-eAgora`) e apontado para o mesmo endereço
@@ -697,6 +703,7 @@ conteúdo programático em disciplinas, assuntos e partes. Um acréscimo de infr
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.6.0 | 2026-10-27 | §4.4: o endereço do app neste Pi é a porta 8443; a 443 fica desligada porque o `pihole-FTL` a ocupa em `0.0.0.0` e o `tailscaled` não consegue abri-la no IPv4 da tailnet (achado ao investigar "Sem conexão com o servidor") |
 | 1.5.0 | 2026-10-24 | §8E, adendo da Sprint 25 (ADR-047): volume `editais` (o app grava o PDF do edital, uid 1001; o worker só lê), instalação e checklist do ensaio. Desenho das seções 0–8D intacto |
 | 1.4.0 | 2026-10-18 | §8D, adendo da Sprint 24 (ADR-046): volume `provas` com dois donos (app uid 1001 grava `entrada/`, worker uid 1000 grava `paginas/`), Tesseract na imagem do worker (medido neste Pi: +150 MB, pico ~85 MB, ~8 s por página), instalação e checklist do ensaio. Desenho das seções 0–8C intacto |
 | 1.3.2 | 2026-10-17 | §8C item 4: nomes com acento chegam em cp1252 quando copiados com `pscp` do Windows; como conferir e corrigir. Achado na primeira instalação real |

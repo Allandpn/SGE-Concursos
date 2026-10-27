@@ -15,13 +15,11 @@ class ApiError extends Error {
 // - ERRO_SERVIDOR: resposta de erro que não é application/problem+json
 //   (502 do proxy, página HTML de erro).
 // Nenhum dos dois limpa o que foi digitado — quem chama decide (04_FRONTEND §5).
-// Diz qual endereço falhou e, no endereço do tailnet, sugere o outro (o app instalado no celular guarda só um deles).
+// Diz qual endereço falhou e o que costuma resolver: no endereço da tailnet, quase sempre é o Tailscale desligado no aparelho.
 function mensagemSemConexao() {
-  const { host, hostname, port, protocol } = window.location;
-  const base = `Sem conexão com ${host}. Confira a rede e tente de novo.`;
-  if (!hostname.endsWith('.ts.net')) return base;
-  const outro = port === '8443' ? `${protocol}//${hostname}` : `${protocol}//${hostname}:8443`;
-  return `${base} Se continuar, tente pelo outro endereço: ${outro}`;
+  const { host, hostname } = window.location;
+  const base = `Sem conexão com ${host}.`;
+  return hostname.endsWith('.ts.net') ? `${base} Confira se o Tailscale está ligado neste aparelho e tente de novo.` : `${base} Confira a rede e tente de novo.`;
 }
 
 async function api(caminho, opcoes = {}) {
