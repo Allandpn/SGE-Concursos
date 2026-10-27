@@ -48,9 +48,11 @@ public class EntregaEditalService {
     private final AnaliseEditalRepository analises;
     private final ArvoreService arvore;
     private final ConcursoService concursos;
+    private final br.com.estudos.push.AvisoDeProcesso avisos;
 
     public EntregaEditalService(JdbcTemplate jdbc, JsonMapper json, AnaliseEditalRepository analises,
-                                ArvoreService arvore, ConcursoService concursos) {
+                                ArvoreService arvore, ConcursoService concursos, br.com.estudos.push.AvisoDeProcesso avisos) {
+        this.avisos = avisos;
         this.jdbc = jdbc;
         this.json = json;
         this.analises = analises;
@@ -190,6 +192,7 @@ public class EntregaEditalService {
         analise.setErro(null);
         analise.setReprocessar(false);
         analises.save(analise);
+        avisos.conferenciaPronta(analiseId);
         return resumo(analiseId, execucaoId, false, fusao);
     }
 

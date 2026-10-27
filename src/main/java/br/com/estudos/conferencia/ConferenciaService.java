@@ -58,8 +58,11 @@ public class ConferenciaService {
     private final JsonMapper json;
     private final AnaliseEditalRepository analises;
     private final ArvoreService arvore;
+    private final br.com.estudos.push.AvisoDeProcesso avisos;
 
-    public ConferenciaService(JdbcTemplate jdbc, JsonMapper json, AnaliseEditalRepository analises, ArvoreService arvore) {
+    public ConferenciaService(JdbcTemplate jdbc, JsonMapper json, AnaliseEditalRepository analises, ArvoreService arvore,
+                              br.com.estudos.push.AvisoDeProcesso avisos) {
+        this.avisos = avisos;
         this.jdbc = jdbc;
         this.json = json;
         this.analises = analises;
@@ -272,6 +275,7 @@ public class ConferenciaService {
         analise.setReprocessar(true);
         analise.setStatus(StatusAnaliseEdital.SEPARANDO_ASSUNTOS);
         analises.save(analise);
+        avisos.novaRodadaDaConferencia(analiseId);
         evento(analiseId, null, "REPROCESSAR", Map.of("status", "EM_CONFERENCIA"), Map.of("status", "SEPARANDO_ASSUNTOS"));
     }
 

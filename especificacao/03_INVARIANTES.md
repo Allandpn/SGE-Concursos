@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.15.0 |
-| Data | 2026-10-24 |
+| Versão | 1.16.0 |
+| Data | 2026-10-27 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 95 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 96 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 95 regras, classificadas
+## 3. As 96 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -207,8 +207,9 @@ conceitual — envelhecer por motivo errado.
 | D-93  | Comportamento | S | Teste de ausência: trocar nó ou fonte não remove segmento nem altera escada, sessões, revisões e erros; o material novo entra como sugestão; o que muda é mostrado antes de aplicar |
 | D-94  | Derivação | S | Teste: o material de consulta não conta para a leitura completa (D-54) nem aparece no turno |
 | D-95  | Comportamento | S | Teste: trocar o modelo reprocessa só o que não tem decisão humana; a tela do reprocessamento lista só as pendências novas e o contador de decisões preservadas |
+| D-96  | Comportamento | S | Teste: sem inscrição não envia; com inscrição envia exatamente nos dois eventos, uma vez por edital e rodada; nenhum outro caminho envia; inscrição rejeitada pelo serviço (404/410) é removida |
 
-**Contagem:** 22 invariantes · 8 derivações · 57 comportamentos · 9 políticas — 96 linhas para 95 regras.
+**Contagem:** 22 invariantes · 8 derivações · 58 comportamentos · 9 políticas — 97 linhas para 96 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -395,7 +396,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 95 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 96 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -518,6 +519,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.16.0 | 2026-10-27 | **D-96** com `01_DOMINIO.md` v1.28.0 (avisos de processo). Um comportamento. Contagem: 97 linhas para 96 regras |
 | 1.15.0 | 2026-10-24 | **D-86 a D-95** com `01_DOMINIO.md` v1.27.0 (conferência do edital e material de consulta). Uma invariante (D-89), uma derivação (D-94), oito comportamentos. Contagem: 96 linhas para 95 regras |
 | 1.14.0 | 2026-10-18 | **D-67 a D-85** com `01_DOMINIO.md` v1.26.0 (prova hospedada e verificação do material). Três invariantes (D-72, D-73, D-80), duas derivações (D-79, D-84), duas políticas (D-67, D-69), doze comportamentos. Contagem: 86 linhas para 85 regras |
 | 1.13.0 | 2026-10-17 | **D-66** com `01_DOMINIO.md` v1.25.0 (refazer material). **D-50** passa a índice único parcial sobre os segmentos ativos. Contagem: 67 linhas para 66 regras |

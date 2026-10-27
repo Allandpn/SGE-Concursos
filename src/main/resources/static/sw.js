@@ -7,7 +7,7 @@
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-10-27-2';
+const CASCA_VERSAO = 'casca-2026-10-27-3';
 
 const CASCA = [
   './',
@@ -64,5 +64,34 @@ self.addEventListener('fetch', (evento) => {
       })
       .catch(() => caches.match(evento.request)
         .then((emCache) => emCache || (evento.request.mode === 'navigate' ? caches.match('index.html') : undefined))),
+  );
+});
+
+// Avisos de processo concluído (D-96, ADR-048): a carga vem cifrada do servidor como {titulo, corpo, url}.
+self.addEventListener('push', (evento) => {
+  let dados = {};
+  try {
+    dados = evento.data ? evento.data.json() : {};
+  } catch (e) {
+    dados = { corpo: evento.data ? evento.data.text() : '' };
+  }
+  evento.waitUntil(self.registration.showNotification(dados.titulo || 'eAgora', {
+    body: dados.corpo || '',
+    icon: 'icons/icon-192.png',
+    badge: 'icons/icon-192.png',
+    data: { url: dados.url || '/#/hoje' },
+  }));
+});
+
+self.addEventListener('notificationclick', (evento) => {
+  evento.notification.close();
+  const alvo = new URL((evento.notification.data && evento.notification.data.url) || '/#/hoje', self.location.origin).href;
+  evento.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
+      for (const janela of janelas) {
+        if ('focus' in janela) return janela.focus().then((c) => (c && 'navigate' in c ? c.navigate(alvo) : c));
+      }
+      return clients.openWindow(alvo);
+    }),
   );
 });

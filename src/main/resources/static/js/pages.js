@@ -831,6 +831,93 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 
+  // Ajustes → Avisos neste aparelho (D-96, ADR-048, docs/SPRINT-27 §5): liga e desliga o Web Push deste aparelho.
+  // Auxiliar: se algo falhar aqui, o resto de Ajustes segue.
+  Alpine.data('avisosAjustes', () => ({
+    suporte: typeof navigator !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+    permissao: typeof Notification !== 'undefined' ? Notification.permission : 'denied',
+    ligado: false,
+    trabalhando: false,
+    mensagem: null,
+    erro: null,
+
+    async init() {
+      if (!this.suporte) return;
+      try {
+        const registro = await navigator.serviceWorker.ready;
+        const inscricao = await registro.pushManager.getSubscription();
+        this.ligado = !!inscricao;
+        if (inscricao) await this.avisarServidor(inscricao); // mantém o servidor em dia se ele perdeu a inscrição (idempotente)
+      } catch (e) {
+        this.ligado = false;
+      }
+    },
+
+    chaveParaBytes(chave) {
+      const base64 = (chave + '='.repeat((4 - (chave.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+      return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    },
+
+    avisarServidor(inscricao) {
+      const { endpoint, keys } = inscricao.toJSON();
+      return api('/push/inscricoes', { method: 'POST', body: JSON.stringify({ endpoint, keys }) });
+    },
+
+    async agir(fazer) {
+      this.trabalhando = true;
+      this.erro = null;
+      this.mensagem = null;
+      try {
+        await fazer();
+      } catch (e) {
+        this.erro = e.message || 'Não deu certo. Tente de novo.';
+      } finally {
+        this.trabalhando = false;
+        if (typeof Notification !== 'undefined') this.permissao = Notification.permission;
+      }
+    },
+
+    ligar() {
+      return this.agir(async () => {
+        const permissao = await Notification.requestPermission();
+        if (permissao !== 'granted') throw new Error('Sem a permissão do navegador não dá para ligar os avisos.');
+        const { chavePublica } = await api('/push/chave');
+        const registro = await navigator.serviceWorker.ready;
+        let inscricao;
+        try {
+          inscricao = await registro.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this.chaveParaBytes(chavePublica) });
+        } catch (e) {
+          throw new Error('O navegador não conseguiu se inscrever no serviço de push. Confira a conexão e as notificações do site, e tente de novo.');
+        }
+        await this.avisarServidor(inscricao);
+        this.ligado = true;
+        this.mensagem = 'Avisos ligados. Use "Enviar aviso de teste" para conferir.';
+      });
+    },
+
+    desligar() {
+      return this.agir(async () => {
+        const registro = await navigator.serviceWorker.ready;
+        const inscricao = await registro.pushManager.getSubscription();
+        if (inscricao) {
+          await api('/push/inscricoes', { method: 'DELETE', body: JSON.stringify({ endpoint: inscricao.endpoint }) });
+          await inscricao.unsubscribe();
+        }
+        this.ligado = false;
+        this.mensagem = 'Avisos desligados neste aparelho.';
+      });
+    },
+
+    testar() {
+      return this.agir(async () => {
+        const r = await api('/push/teste', { method: 'POST' });
+        if (r.enviados > 0) this.mensagem = 'Aviso enviado. Se não aparecer em alguns segundos, confira as notificações do navegador.';
+        else if (r.removidos > 0) { this.ligado = false; this.mensagem = 'O serviço de push recusou este aparelho. Ligue os avisos de novo.'; }
+        else this.erro = 'O serviço de push não aceitou o aviso agora. Tente de novo em instantes.';
+      });
+    },
+  }));
+
   Alpine.data('paginaAjustes', () => ({
     carregando: true,
     erro: null,

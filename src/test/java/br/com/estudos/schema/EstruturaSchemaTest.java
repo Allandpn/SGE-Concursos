@@ -53,7 +53,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 "arvore_versao", "no_arvore", "no_arvore_diferenca", "edital_execucao", "edital_disciplina",
                 "edital_assunto", "edital_parte", "edital_parte_no", "edital_trecho", "edital_decisao", "edital_evento",
                 // Redesenho do fluxo (passo B): o destino que a pessoa deu a uma lacuna do material.
-                "edital_lacuna_decisao");
+                "edital_lacuna_decisao",
+                // Sprint 27 (ADR-048): a chave VAPID e os aparelhos inscritos nos avisos de processo concluído.
+                "push_config", "push_inscricao");
         assertEquals(esperado, tabelasDoSchema());
     }
 

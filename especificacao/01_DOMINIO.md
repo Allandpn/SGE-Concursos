@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.27.0 |
-| Data | 2026-10-24 |
+| Versão | 1.28.0 |
+| Data | 2026-10-27 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -625,6 +625,22 @@ divergência, que sai do uso, serve para escolher entre modelos.
 
 **O que o sistema não garante.** Que o nó escolhido seja o melhor, e que o acervo ensine toda parte: parte sem tema que sirva
 é lacuna declarada, nunca material inventado (D-65).
+
+### 3.13 Avisos de processo
+
+O sistema espera por processos longos que não dependem da pessoa: a leitura do edital (minutos) e o preparo do material (horas).
+Quem espera não fica olhando a tela, e a faixa em Hoje só ajuda quando o app está aberto. Por isso existe um **aviso de processo
+concluído**, e só ele.
+
+- **Dois eventos**, cada um no máximo **uma vez por edital e por rodada**: a conferência ficou pronta para a pessoa (leitura
+  entregue) e o material do concurso ficou pronto (nada mais a preparar).
+- **Opcional, desligado por padrão e por aparelho**: a pessoa liga em Ajustes, neste aparelho, e pode desligar quando quiser.
+- **Nunca sobre o estudo**: sem lembrete, sem "você não abriu", sem atraso, sem sequência de dias (`00_PRODUTO` §8.2 e §8.5). O
+  texto diz o que aconteceu, não o que falta.
+- **Nunca é a única via**: o mesmo fato aparece na tela (faixa em Hoje, Concursos). Aviso perdido não perde informação.
+- O aviso leva à tela do fato (conferência ou Concursos) e não carrega dado de estudo.
+
+**O que o sistema não garante.** Que o aviso chegue: o serviço de push do navegador pode atrasar ou descartar.
 
 ---
 
@@ -1477,6 +1493,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-93 | Trocar nó ou fonte de uma parte nunca apaga segmento nem toca escada, sessões, revisões e erros (D-18); o material novo entra como sugestão e o sistema mostra o que muda antes de aplicar | §3.12 |
 | D-94 | O material de consulta ("Questões deste assunto") não é segmento: não tem escada, não entra no turno e não conta para a leitura completa do assunto | §3.12 |
 | D-95 | Cada execução da IA guarda modelo, prompt e data; trocar o modelo reprocessa só o que não tem decisão humana, e a tela do reprocessamento mostra só as pendências novas e um contador do que a decisão preservou | §3.12 |
+| D-96 | O sistema só avisa de processo concluído (conferência pronta, material pronto), no máximo uma vez por edital e rodada, por escolha da pessoa e por aparelho; nunca avisa de estudo, atraso ou sequência, e o mesmo fato sempre aparece na tela | §3.13 |
 
 ---
 
@@ -1554,6 +1571,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.28.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.9.0. **§3.13** (avisos de processo) e **D-96**: o sistema avisa só de processo concluído, opcional e por aparelho, nunca do estudo |
 | 1.27.0 | 2026-10-24 | Pedido do usuário ("do edital ao estudo pronto", com a revisão manual no SGE como parte central). **§3.12** (conferência do edital e material de consulta) e **D-86 a D-95**, migradas de `docs/ESPECIFICACAO-REVISAO-EDITAL.md` v0.1.0: a IA propõe e a pessoa resolve, a decisão é guardada presa à chave e vale antes da IA, os assuntos nascem na conclusão da conferência, a árvore do QConcursos é atualizada quando a pessoa decide, questões e gabarito viram material de consulta fora dos segmentos. **§1** ganha cinco termos; **§3.2** ganha partes; **§3.9** passa a ler só o cabeçalho (ADR-047); **§3.10** ganha o material por casamento; **§9** ganha as relações de parte e nó. "Revisão" continua sendo o compromisso da escada: o novo conceito se chama conferência. 95 regras |
 | 1.26.0 | 2026-10-18 | Pedido do usuário: o objetivo final é gabaritar a prova. **§3.11** (prova hospedada e verificação do material) e **D-67 a D-85**, migradas de `docs/ESPECIFICACAO-PROVA-GABARITO.md` v0.4.0: o veredito é sobre a alternativa do gabarito, a nota entra em M-1 por disciplina e global, o desempenho por assunto só informa, a reanálise é incremental e derivada. **§3.6** remete à prova hospedada. Revisa `00_PRODUTO` §5.1 e §6.7 (v1.8.0). 85 regras |
 | 1.25.0 | 2026-10-17 | Pedido do usuário, depois da primeira preparação real (SEFAZ SC 2026): parte das faixas trazia o tema vizinho. **D-66** (§3.10): refazer o material de um assunto ou do concurso arquiva segmentos e descarta a marca sem material, sem apagar nada. **D-50** passa a valer entre os segmentos ativos — os segmentos novos repetem as ordens dos arquivados. 66 regras |

@@ -35,8 +35,10 @@ public class EditalMaterialService {
     private final JdbcTemplate jdbc;
     private final JsonMapper json;
     private final MaterialService material;
+    private final br.com.estudos.push.AvisoDeProcesso avisos;
 
-    public EditalMaterialService(JdbcTemplate jdbc, JsonMapper json, MaterialService material) {
+    public EditalMaterialService(JdbcTemplate jdbc, JsonMapper json, MaterialService material, br.com.estudos.push.AvisoDeProcesso avisos) {
+        this.avisos = avisos;
         this.jdbc = jdbc;
         this.json = json;
         this.material = material;
@@ -105,6 +107,7 @@ public class EditalMaterialService {
             if (atualizados == 0) throw new NotFoundException("O assunto " + chave + " não é desta análise.", "ASSUNTO_INEXISTENTE");
             n += atualizados;
         }
+        avisos.materialPronto(analiseId);
         return n;
     }
 }

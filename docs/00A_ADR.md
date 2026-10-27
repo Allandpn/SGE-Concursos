@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.14.0** |
+| Versão do documento | **2.15.0** |
 | Status | **Congelado** |
-| Data | 2026-10-24 |
-| Total | 47 ADRs — 33 vigentes, 13 substituídas, 1 revogada |
+| Data | 2026-10-27 |
+| Total | 48 ADRs — 34 vigentes, 13 substituídas, 1 revogada |
 
 ---
 
@@ -75,6 +75,7 @@ que custa e o que foi descartado.
 | [ADR-045](#adr-045--ia-pela-assinatura-do-claude-openrouter-só-por-escolha-do-usuário) | IA pela assinatura do Claude; OpenRouter só por escolha do usuário | Sprint 19 |
 | [ADR-046](#adr-046--prova-hospedada-para-verificar-o-material-e-ser-resolvida) | Prova hospedada, para verificar o material e ser resolvida | 2026-10-18 |
 | [ADR-047](#adr-047--conferência-do-edital-pela-pessoa-e-material-por-casamento) | Conferência do edital pela pessoa e material por casamento | 2026-10-24 |
+| [ADR-048](#adr-048--aviso-de-processo-concluído-por-web-push-próprio) | Aviso de processo concluído por Web Push próprio | 2026-10-27 |
 
 ### 1.2 Históricas
 
@@ -974,6 +975,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.15.0 | 2026-10-27 | **ADR-048**, pedido do usuário: aviso de processo concluído (edital lido, material pronto) por Web Push próprio, sem biblioteca nova, com `00_PRODUTO` v1.9.0 e `01_DOMINIO` v1.28.0 (D-96). Total 48, 34 vigentes |
 | 2.14.0 | 2026-10-24 | **ADR-047**, pedido do usuário: a separação do edital em disciplinas, assuntos e partes e a ligação aos nós do QConcursos passam ao planejamento; o SGE guarda a conferência e as decisões da pessoa; o PDF do edital passa a ser guardado até a conclusão. Substitui em parte ADR-043. Total 47, 33 vigentes |
 | 2.13.0 | 2026-10-18 | **ADR-046**, pedido do usuário: o SGE hospeda uma prova objetiva inteira com gabarito para verificar o material e deixar o usuário resolvê-la; o planejamento lê o PDF (OCR no worker); o veredito é sobre a alternativa do gabarito; a nota alimenta M-1 por disciplina e global, assunto só informa. Revisa `00_PRODUTO` §5.1 e §6.7. Total 46, 32 vigentes |
 | 2.12.0 | 2026-10-17 | **ADR-045**, pedido do usuário: a IA (leitura de edital e preparação de material) passa pela assinatura do Claude, via Claude Code no contêiner do app; OpenRouter só quando o usuário escolher, depois de um aviso — nunca troca sozinho. Total 45, 31 vigentes |
@@ -1869,6 +1871,47 @@ guardado e valha antes da IA.
 | Criar os assuntos na leitura e migrar a cada correção | Assunto com chave, sessão e segmento teria de ser migrado (§3.2.2) |
 | Atualização automática da árvore | Mudaria nós sob os pés da pessoa depois de ela ter resolvido |
 | Segmentos de questões na escada | Resolver questão se faz no QConcursos, ligado ao nó; inflaria o tempo do assunto |
+
+---
+
+## ADR-048 — Aviso de processo concluído por Web Push próprio
+
+**Status:** Aceita · 2026-10-27 · Sprint 27 · pedido do usuário · complementa ADR-038 e ADR-041
+
+### Contexto
+
+O preparo do material de um edital leva horas (cerca de 5 h no MPPR) e a leitura do edital, minutos. A faixa em Hoje só ajuda com
+o app aberto. `00_PRODUTO` §8.5 recusava push; o usuário pediu o aviso só para esses dois fatos (v1.9.0, D-96). No celular o
+usuário usa o app instalado pelo navegador (PWA, ADR-038); o app Android nativo (ADR-041) não é o cliente em uso para isso. O
+Guardian, no mesmo Pi e no mesmo celular, já entrega Web Push por conta própria.
+
+### Decisão
+
+- **Web Push padrão** (RFC 8030, cifra RFC 8291 `aes128gcm`, VAPID RFC 8292) enviado pelo próprio SGE, **sem biblioteca nova**:
+  a JCA do Java traz EC P-256, AES-GCM e HMAC; o envio usa `java.net.http`. O serviço de push do navegador só vê bytes cifrados.
+- **Chave VAPID** gerada na primeira necessidade e guardada no banco (`push_config`), nunca devolvida pela API além da chave
+  pública. **Inscrições** em `push_inscricao`, uma por aparelho.
+- **O endereço da inscrição vem do navegador**, então só se envia a serviços de push conhecidos (lista fechada de domínios,
+  `https`, porta 443): sem isso seria SSRF.
+- **Inscrição que o serviço rejeita (404/410) é removida.** Falha de rede não remove.
+- **Só dois eventos disparam** (D-96), cada um uma vez por edital e rodada; a rodada é uma marca na análise, zerada quando o
+  material é refeito ou o edital é reprocessado.
+- O SGE continua sem login (ADR-015): quem alcança o app pode se inscrever. Aviso não carrega dado de estudo.
+
+### Consequências
+
+- Exige HTTPS (o `tailscale serve` já dá) e saída do Pi para os serviços de push. No iOS só funciona com o app instalado.
+- A cifra é código nosso: foi conferida por um teste que decifra como o navegador e, uma vez, contra o `webpush.py` do Guardian.
+- O app Android nativo não recebe o aviso; se o usuário passar a usá-lo para isso, vira trabalho do repositório dele.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Biblioteca `web-push` para Java | Puxa BouncyCastle e um cliente HTTP assíncrono para algo que a JCA já faz |
+| ntfy.sh, Telegram ou e-mail | Conta e app novos fora do SGE; e-mail continua fora do produto (§8.5) |
+| Servidor de push do Guardian | Acoplaria dois sistemas por causa de um aviso; o Guardian é de outro projeto |
+| Notificar no app Android nativo | Outro repositório, sem edição aqui; o usuário usa o app instalado pelo navegador |
 
 ---
 

@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.16.0 |
-| Data | 2026-10-24 |
+| Versão | 1.17.0 |
+| Data | 2026-10-27 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -126,6 +126,21 @@ ataca sem virar cobrança:
    notificação.
 5. **Servidor fora do alcance não vira alarme:** sem resposta do servidor, a
    notificação diz só que é a hora do turno, sem números.
+
+### 2.3 Os avisos do processo do edital
+
+Subir um edital tem esperas que não dependem de quem sobe: a leitura (minutos) e o preparo do material (horas). Dois avisos
+cobrem essas esperas (`01_DOMINIO` §3.13, D-96):
+
+1. **"Edital lido, pronto para conferir."** Leva à conferência.
+2. **"Material pronto."** Leva a Concursos.
+
+Regras, na mesma linha de §2.2: **opcionais e desligados por padrão**, ligados em **Ajustes → Avisos neste aparelho** (um botão
+liga, outro desliga, um terceiro manda um aviso de teste); **no máximo uma vez por edital e por rodada**; **o texto diz o que
+aconteceu, não o que falta**; e o fato **sempre aparece também na tela** (a faixa de Hoje, Concursos). Sem permissão do
+navegador, ou sem suporte, a tela diz isso e o resto segue.
+
+---
 
 ---
 
@@ -407,7 +422,9 @@ ainda custa um toque, e não meses.
    trocar a fonte de uma parte. Antes de aplicar, o sistema mostra **o que entra e o que sai** do material sugerido; nada do
    que já existe é removido (D-93). **Atualizar a árvore** do QConcursos é um gesto seu, em Ajustes: ele mostra os nós novos,
    removidos, renomeados e movidos, e devolve à fila as partes afetadas (D-90).
-10. **Reprocessar** o edital mostra só as pendências novas e um contador "a IA mudou, a sua decisão foi mantida" (D-95).
+10. **Avisos.** Com os avisos ligados neste aparelho (§2.3), o sistema avisa quando a conferência está pronta (passo 5) e quando o
+   material fica pronto (passo 8); sem eles, a faixa de Hoje diz o mesmo.
+11. **Reprocessar** o edital mostra só as pendências novas e um contador "a IA mudou, a sua decisão foi mantida" (D-95).
 
 A IA fica em **Ajustes → IA** (ADR-045): o token da **assinatura do Claude**
 (gerado uma vez com `claude setup-token`) e o modelo, e, como segunda opção, a
@@ -706,6 +723,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.17.0 | 2026-10-27 | **§2.3** (os avisos do processo do edital) e um passo novo em J-5, com `01_DOMINIO` v1.28.0 (D-96) e `00_PRODUTO` v1.9.0. Ajustes ganha "Avisos neste aparelho" |
 | 1.16.0 | 2026-10-24 | **J-5 refeita do passo 4 em diante** com `01_DOMINIO.md` v1.27.0: a proposta de assuntos dá lugar à **conferência do edital** (partes, nós do QConcursos, fila de divergências, decisões com escopo, conclusão que grava), ao acompanhamento do material por parte e ao material de consulta. Atualizar a árvore passa a ser gesto do usuário. Pedido do usuário |
 | 1.15.0 | 2026-10-18 | **J-6** (verificar o material com uma prova e gabarito) e **J-7** (resolver a prova), com `01_DOMINIO` v1.26.0 (§3.11, D-67 a D-85). Telas e orçamento detalhados no documento da sprint |
 | 1.14.0 | 2026-10-17 | J-5 passo 7: lista do material por assunto (situação, minutos, páginas, motivo) |

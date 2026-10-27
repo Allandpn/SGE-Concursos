@@ -44,6 +44,7 @@ public class ConcursoService {
     private final MaterialService materialService;
     private final br.com.estudos.conferencia.MaterialDaConferencia materialDaConferencia;
     private final Clock clock;
+    private final br.com.estudos.push.AvisoDeProcesso avisos;
 
     public ConcursoService(
             ConcursoRepository concursoRepository,
@@ -51,7 +52,9 @@ public class ConcursoService {
             AssuntoRepository assuntoRepository,
             MaterialService materialService,
             br.com.estudos.conferencia.MaterialDaConferencia materialDaConferencia,
-            Clock clock) {
+            Clock clock,
+            br.com.estudos.push.AvisoDeProcesso avisos) {
+        this.avisos = avisos;
         this.concursoRepository = concursoRepository;
         this.coberturaRepository = coberturaRepository;
         this.assuntoRepository = assuntoRepository;
@@ -175,6 +178,7 @@ public class ConcursoService {
     public void refazerMaterial(Long id) {
         concursoRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Concurso não encontrado.", "CONCURSO_INEXISTENTE"));
+        avisos.novaRodadaDoMaterial(id);
         materialService.refazer(coberturaRepository.listarDoConcurso(id).stream()
             .filter(c -> c.getAssunto().isAtivo())
             .map(c -> c.getAssunto().getId())

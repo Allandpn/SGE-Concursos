@@ -775,6 +775,25 @@
       </div>
     </template>
 
+    <!-- Ajustes → Avisos neste aparelho (D-96, ADR-048): só dois avisos de processo, opcionais, por aparelho -->
+    <div id="avisos-ajustes" x-data="avisosAjustes()" class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
+      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Avisos neste aparelho</h2>
+      <p class="text-sm text-gray-700">Só dois avisos: <strong>edital lido, pronto para conferir</strong> e <strong>material pronto</strong>. Nunca sobre estudo, atraso ou sequência de dias.</p>
+      <p x-show="!suporte" class="rounded bg-gray-50 p-2 text-sm text-gray-700">Este navegador não consegue mostrar avisos. No iPhone, instale o app na tela inicial primeiro.</p>
+      <p x-show="suporte && permissao === 'denied'" class="rounded bg-alerta-50 p-2 text-sm text-gray-800">O navegador está bloqueando as notificações deste app. Libere nas configurações do site e volte aqui.</p>
+      <p x-show="suporte && ligado" class="text-sm font-medium text-green-800">Ligados neste aparelho.</p>
+      <p x-show="mensagem" class="text-sm text-gray-700" x-text="mensagem"></p>
+      <p x-show="erro" class="text-sm text-red-700" role="alert" x-text="erro"></p>
+      <div x-show="suporte" class="flex flex-wrap gap-2">
+        <button type="button" x-show="!ligado" :disabled="trabalhando || permissao === 'denied'"
+                class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white hover:bg-primary-800 disabled:opacity-50" @click="ligar()">Ligar avisos</button>
+        <button type="button" x-show="ligado" :disabled="trabalhando"
+                class="min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" @click="testar()">Enviar aviso de teste</button>
+        <button type="button" x-show="ligado" :disabled="trabalhando"
+                class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="desligar()">Desligar</button>
+      </div>
+    </div>
+
     <!-- Ajustes → Árvore do QConcursos (D-90): atualizar é gesto seu, e o impacto vem antes -->
     <div id="arvore-ajustes" x-data="arvoreAjustes()" class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
       <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Árvore do QConcursos</h2>
