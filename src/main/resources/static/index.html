@@ -1200,10 +1200,10 @@
           <div class="mt-3 rounded p-3 text-sm" :class="resumo.pendencias.bloqueiam ? 'bg-red-50 text-red-800' : (resumo.pendencias.avisam ? 'bg-primary-50 text-gray-800' : 'bg-green-50 text-green-800')">
             <p class="font-medium" x-text="resumo.pendencias.bloqueiam
               ? 'Faltam ' + resumo.pendencias.bloqueiam + ' decisões que impedem concluir'
-              : (resumo.pendencias.avisam ? 'Falta decidir ' + resumo.pendencias.avisam + (resumo.pendencias.avisam === 1 ? ' item' : ' itens') + ' — nada impede de concluir' : 'Tudo conferido')"></p>
+              : (resumo.pendencias.avisam ? 'Falta decidir ' + resumo.pendencias.avisam + (resumo.pendencias.avisam === 1 ? ' item' : ' itens') + ' — nada impede de concluir' : (resumo.status === 'CONFIRMADA' ? 'Conferência concluída' : 'Tudo conferido'))"></p>
             <p class="mt-1 text-xs" x-text="resumo.pendencias.bloqueiam
               ? 'São trechos que deixam o conteúdo do edital incerto. Resolva-os na fila.'
-              : (resumo.pendencias.avisam ? 'Cada um é um assunto do edital que o QConcursos não tem igual: é mais largo, cobre só uma parte ou não existe. Pode deixar para depois: dá para trocar a qualquer hora.' : 'Você pode concluir.')"></p>
+              : (resumo.pendencias.avisam ? 'Cada um é um assunto do edital que o QConcursos não tem igual: é mais largo, cobre só uma parte ou não existe. Pode deixar para depois: dá para trocar a qualquer hora.' : (resumo.status === 'CONFIRMADA' ? 'Nada pede decisão. Dá para escolher outro assunto do QConcursos para qualquer parte quando quiser.' : 'Você pode concluir.'))"></p>
             <button type="button" x-show="resumo.pendencias.bloqueiam + resumo.pendencias.avisam > 0" class="mt-2 min-h-11 rounded border border-gray-300 bg-white px-3 text-sm text-primary-700" @click="aba = 'fila'">Ver o que falta</button>
           </div>
           <p x-show="aceitos.length" class="mt-2 text-sm text-gray-700">
@@ -1305,8 +1305,9 @@
                 </div>
               </div>
               <div class="p-3">
-                <button type="button" class="mb-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="aceitarExatos(d)">Aceitar todos os iguais</button>
-                <button type="button" class="mb-2 ml-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="aceitarAmplos(d)">Aceitar todos os mais largos</button>
+                <button type="button" x-show="porAceitar(d).iguais > 0" class="mb-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="aceitarExatos(d)" x-text="'Aceitar os ' + porAceitar(d).iguais + ' iguais'"></button>
+                <button type="button" x-show="porAceitar(d).largos > 0" class="mb-2 ml-2 min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="aceitarAmplos(d)" x-text="'Aceitar os ' + porAceitar(d).largos + ' mais largos'"></button>
+                <p x-show="porAceitar(d).iguais + porAceitar(d).largos === 0" class="mb-2 text-xs text-gray-500">Tudo desta disciplina já está aceito.</p>
                 <template x-for="a in d.assuntos" :key="a.id">
                   <div class="border-t border-gray-100 py-2" x-show="a.aparece">
                     <button type="button" class="flex w-full items-start justify-between gap-2 text-left" @click="alternarAssunto(a.id)">
@@ -1386,7 +1387,8 @@
               <p x-show="painel.parte.noMudou" class="mt-1 text-xs text-alerta-600">O nó saiu ou mudou na árvore: aceite de novo se ainda serve, ou escolha outro.</p>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" x-show="painel.parte.nos.length" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white disabled:opacity-50" :disabled="trabalhando" @click="aceitar()">Aceitar</button>
+              <button type="button" x-show="painel.parte.nos.length && (painel.parte.estado === 'PROPOSTA' || painel.parte.noMudou)" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white disabled:opacity-50" :disabled="trabalhando" @click="aceitar()">Aceitar</button>
+              <p x-show="painel.parte.nos.length && painel.parte.estado !== 'PROPOSTA' && !painel.parte.noMudou" class="col-span-2 rounded bg-green-50 p-2 text-sm text-green-900">Esta parte já está aceita. Para mudar, escolha outro assunto do QConcursos.</p>
               <p x-show="!painel.parte.nos.length" class="col-span-2 rounded bg-gray-50 p-2 text-sm text-gray-700">O QConcursos não tem um assunto igual a este. Escolha o mais próximo (<strong>Escolher outro assunto</strong>) ou, se não houver nenhum, toque em <strong>O QConcursos não tem</strong>.</p>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="iniciarTrocaDeNo()">Escolher outro assunto</button>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" :disabled="trabalhando" @click="semNo()">O QConcursos não tem</button>

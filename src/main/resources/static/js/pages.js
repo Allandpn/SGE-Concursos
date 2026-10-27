@@ -1590,6 +1590,19 @@ document.addEventListener('alpine:init', () => {
     },
     aceitarGrupo(g) { return this.aceitarAmplos({ id: g.disciplinaId, nome: g.nome }); },
 
+    // O que ainda falta aceitar na disciplina: sem isso o botão de "aceitar todos" não faria nada e a pessoa não saberia por quê.
+    porAceitar(d) {
+      let iguais = 0, largos = 0;
+      for (const a of d.assuntos) {
+        if (!a.aparece) continue;
+        for (const p of a.partes) {
+          if (!p.aparece || p.estado !== 'PROPOSTA' || !p.nos.length) continue;
+          if (p.natureza === 'EXATO') iguais++; else if (p.natureza === 'MAIS_AMPLO' || p.natureza === 'PARCIAL') largos++;
+        }
+      }
+      return { iguais, largos };
+    },
+
     // Uma frase que diz o que o sistema achou, no lugar dos termos internos.
     explicacao(it) {
       if (!it.parteId) return '';
