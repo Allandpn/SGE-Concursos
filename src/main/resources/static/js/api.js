@@ -15,6 +15,15 @@ class ApiError extends Error {
 // - ERRO_SERVIDOR: resposta de erro que não é application/problem+json
 //   (502 do proxy, página HTML de erro).
 // Nenhum dos dois limpa o que foi digitado — quem chama decide (04_FRONTEND §5).
+// Diz qual endereço falhou e, no endereço do tailnet, sugere o outro (o app instalado no celular guarda só um deles).
+function mensagemSemConexao() {
+  const { host, hostname, port, protocol } = window.location;
+  const base = `Sem conexão com ${host}. Confira a rede e tente de novo.`;
+  if (!hostname.endsWith('.ts.net')) return base;
+  const outro = port === '8443' ? `${protocol}//${hostname}` : `${protocol}//${hostname}:8443`;
+  return `${base} Se continuar, tente pelo outro endereço: ${outro}`;
+}
+
 async function api(caminho, opcoes = {}) {
   let resposta;
   try {
@@ -23,7 +32,7 @@ async function api(caminho, opcoes = {}) {
       ...opcoes,
     });
   } catch (e) {
-    throw new ApiError('Sem conexão com o servidor. Confira a rede e tente de novo.', 'REDE_INDISPONIVEL', null, 0);
+    throw new ApiError(mensagemSemConexao(), 'REDE_INDISPONIVEL', null, 0);
   }
   if (!resposta.ok) {
     const tipo = resposta.headers.get('Content-Type') || '';

@@ -26,6 +26,15 @@ const ROTULOS_PARAMETRO = {
   duracao_bloco_min: 'Duração sugerida do bloco (min)',
 };
 
+// Dá destino a uma lacuna do material (POR_FORA, IGNORADA ou null para desfazer); devolve o material do assunto atualizado.
+function destinoDaLacuna(assuntoId, parte, decisao) {
+  return api(`/assuntos/${assuntoId}/lacunas`, { method: 'PUT', body: JSON.stringify({ parte, decisao }) });
+}
+
+function textoLacuna(l) {
+  return l.motivo && !l.decisao ? `${l.parte}: ${l.motivo}` : l.parte;
+}
+
 document.addEventListener('alpine:init', () => {
 
   // IA em uso e o aviso de assinatura parada (ADR-045, docs/SPRINT-19-MATERIAL-AUTOMATICO.md
@@ -142,9 +151,30 @@ document.addEventListener('alpine:init', () => {
       await this.carregar();
     },
 
+    // O material do concurso-alvo (01_DOMINIO §3.10): contagem enquanto prepara; o aviso de pronto some quando a pessoa o dispensa.
+    get materialEmPreparo() {
+      const m = this.concurso?.material;
+      if (!m || !m.aPreparar) return null;
+      return { feitos: m.prontos + m.semMaterial, total: m.prontos + m.semMaterial + m.aPreparar };
+    },
+    get materialPronto() {
+      const m = this.concurso?.material;
+      if (!m || m.aPreparar || !(m.prontos + m.semMaterial) || this.materialVisto) return null;
+      return m;
+    },
+    materialVisto: false,
+    chaveMaterialVisto() { return `materialVisto:${this.concurso?.id}`; },
+    lerMaterialVisto() {
+      try { this.materialVisto = localStorage.getItem(this.chaveMaterialVisto()) === '1'; } catch (e) { this.materialVisto = false; }
+    },
+    dispensarMaterialPronto() {
+      this.materialVisto = true;
+      try { localStorage.setItem(this.chaveMaterialVisto(), '1'); } catch (e) { /* só uma conveniência deste aparelho */ }
+    },
+
     carregarConcurso() {
       api('/concursos/ativo')
-        .then((c) => { this.concurso = c; this.concursoCarregado = true; })
+        .then((c) => { this.concurso = c; this.concursoCarregado = true; this.lerMaterialVisto(); })
         .catch(() => { this.concursoCarregado = false; });
     },
 
@@ -568,6 +598,14 @@ document.addEventListener('alpine:init', () => {
     // GET /api/assuntos/{id} (§7B do doc técnico), os dados do próprio
     // assunto vêm do store escrito pela lista — só os segmentos são um
     // fetch novo.
+    async destinoLacunaDoAssunto(l, decisao) {
+      try {
+        this.materialConferencia = await destinoDaLacuna(this.assuntoId, l.parte, decisao);
+      } catch (e) {
+        window.alert(e.message);
+      }
+    },
+
     async abrir(assuntoId) {
       const item = Alpine.store('assuntoDetalhe').item;
       this.semDados = !item || item.assunto.id !== assuntoId;
@@ -983,7 +1021,7 @@ document.addEventListener('alpine:init', () => {
       if (!a || !a.analiseId) return '';
       const partes = [];
       if (a.partesSemNo) partes.push(`${a.partesSemNo} ${a.partesSemNo === 1 ? 'parte sem filtro' : 'partes sem filtro'} de questões`);
-      if (a.vinculosAmplosOuParciais) partes.push(`${a.vinculosAmplosOuParciais} ${a.vinculosAmplosOuParciais === 1 ? 'vínculo' : 'vínculos'} largo(s) ou parcial(is)`);
+      if (a.vinculosAmplosOuParciais) partes.push(`${a.vinculosAmplosOuParciais} ${a.vinculosAmplosOuParciais === 1 ? 'assunto' : 'assuntos'} do QConcursos mais largo(s) ou parcial(is)`);
       if (a.nosQueMudaram) partes.push(`${a.nosQueMudaram} ${a.nosQueMudaram === 1 ? 'nó mudou' : 'nós mudaram'} na árvore`);
       return partes.join(' · ');
     },
@@ -1031,6 +1069,14 @@ document.addEventListener('alpine:init', () => {
     textoCasamento(a) {
       const rotulo = { COMPLETO: 'completo', PARCIAL: 'parcial', SEM_MATERIAL: 'sem material', RECUSADO: 'recusado pelo fatiador' }[a.situacaoDoCasamento];
       return a.minutosEstimados ? `Casamento por partes: ${rotulo} · ${this.minutosTexto(a.minutosEstimados)}` : `Casamento por partes: ${rotulo}`;
+    },
+
+    async destinoLacuna(a, l, decisao) {
+      try {
+        a.lacunasPorParte = (await destinoDaLacuna(a.assuntoId, l.parte, decisao)).lacunas;
+      } catch (e) {
+        window.alert(e.message);
+      }
     },
 
     textoAssuntoMaterial(a) {

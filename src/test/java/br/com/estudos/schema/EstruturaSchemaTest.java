@@ -51,7 +51,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // mais as decisões e o histórico da pessoa. A fila de revisão e as contagens são consultas
                 // (D-16); nada aqui guarda fase, turno ou plano.
                 "arvore_versao", "no_arvore", "no_arvore_diferenca", "edital_execucao", "edital_disciplina",
-                "edital_assunto", "edital_parte", "edital_parte_no", "edital_trecho", "edital_decisao", "edital_evento");
+                "edital_assunto", "edital_parte", "edital_parte_no", "edital_trecho", "edital_decisao", "edital_evento",
+                // Redesenho do fluxo (passo B): o destino que a pessoa deu a uma lacuna do material.
+                "edital_lacuna_decisao");
         assertEquals(esperado, tabelasDoSchema());
     }
 

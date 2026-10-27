@@ -293,7 +293,7 @@ public class ConferenciaService {
             if (!p.ativa()) continue;
             var mapa = mapas.getOrDefault(p.arvoreVersaoId(), Map.of());
             saida.add(new ConferenciaResponses.ParteDoAssunto(p.id(), analiseId, p.texto(), p.contexto(), p.herdado(), p.natureza(),
-                resolver(p.nos(), mapa), aviso(p)));
+                resolver(p.nos(), mapa), aviso(p, mapas)));
         }
         return saida;
     }
@@ -304,10 +304,11 @@ public class ConferenciaService {
         var ids = jdbc.queryForList("SELECT id FROM analise_edital WHERE concurso_id = ? ORDER BY id DESC LIMIT 1", Long.class, concursoId);
         if (ids.isEmpty()) return new ConferenciaResponses.AvisosDoConcurso(concursoId, null, 0, 0, 0);
         var d = ConferenciaDados.ler(jdbc, ids.get(0));
+        var mapas = nosDe(d);
         int semNo = 0, amplos = 0, mudaram = 0;
         for (var p : d.partes) {
             if (!p.ativa()) continue;
-            var a = aviso(p);
+            var a = aviso(p, mapas);
             if ("SEM_NO".equals(a)) semNo++;
             else if ("MAIS_AMPLO".equals(a) || "PARCIAL".equals(a)) amplos++;
             else if ("NO_MUDOU".equals(a)) mudaram++;
@@ -315,10 +316,11 @@ public class ConferenciaService {
         return new ConferenciaResponses.AvisosDoConcurso(concursoId, ids.get(0), semNo, amplos, mudaram);
     }
 
-    private static String aviso(ConferenciaDados.Parte p) {
+    /** Mais amplo com nó pequeno não é aviso: é a mesma regra que a fila usa para aceitar sozinho (docs/REDESENHO-FLUXO §4). */
+    private static String aviso(ConferenciaDados.Parte p, Map<Long, Map<Long, No>> nos) {
         if (p.noMudou()) return "NO_MUDOU";
         if (p.nos().isEmpty()) return "SEM_NO";
-        if ("MAIS_AMPLO".equals(p.natureza()) || "PARCIAL".equals(p.natureza())) return p.natureza();
+        if ("PARCIAL".equals(p.natureza()) || ("MAIS_AMPLO".equals(p.natureza()) && noLargo(p, nos))) return p.natureza();
         return null;
     }
 

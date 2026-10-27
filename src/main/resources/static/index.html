@@ -79,6 +79,24 @@
       </a>
     </template>
 
+    <!-- docs/REDESENHO-FLUXO §5: o material tem rosto — contagem enquanto prepara, uma linha quando fica pronto -->
+    <template x-if="materialEmPreparo">
+      <a href="#/concursos" class="mb-4 block rounded border border-primary-100 bg-primary-50 px-3 py-2 text-sm text-gray-800">
+        <span class="block font-medium" x-text="'Preparando o material: ' + materialEmPreparo.feitos + ' de ' + materialEmPreparo.total + ' assuntos'"></span>
+        <span class="block text-xs text-gray-600">Leva algumas horas. Pode usar o app normalmente; o material aparece em cada assunto quando fica pronto.</span>
+      </a>
+    </template>
+    <template x-if="materialPronto">
+      <div class="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
+        <p class="font-medium" x-text="'O material de ' + concurso.nome + ' está pronto'"></p>
+        <p class="text-xs" x-text="materialPronto.prontos + (materialPronto.prontos === 1 ? ' assunto com material' : ' assuntos com material') + (materialPronto.semMaterial ? ' · ' + materialPronto.semMaterial + ' sem material no acervo (veja o que fazer em cada um)' : '')"></p>
+        <div class="mt-1 flex gap-3">
+          <a href="#/concursos" class="py-2 underline">Ver por assunto</a>
+          <button type="button" class="py-2 underline" @click="dispensarMaterialPronto()">Entendi</button>
+        </div>
+      </div>
+    </template>
+
     <template x-if="carregando">
       <p class="text-gray-500">Carregando...</p>
     </template>
@@ -100,8 +118,8 @@
           <p x-show="alertaRepresamento">Enquanto drena, nenhum assunto novo é sugerido.</p>
         </div>
 
-        <!-- ADR-045: a assinatura do Claude parou; trocar para o OpenRouter é decisão do usuário -->
-        <div x-show="$store.ia.assinaturaParou" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
+        <!-- ADR-045: a assinatura do Claude parou; trocar para o OpenRouter é decisão do usuário. Em Hoje só aparece enquanto o material espera por ela; em Ajustes aparece sempre -->
+        <div x-show="$store.ia.assinaturaParou && concurso?.material?.aPreparar > 0" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
           <p class="font-medium">A assinatura do Claude parou.</p>
           <p class="mt-1" x-text="$store.ia.config?.claude?.falha?.motivo ?? ''"></p>
           <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
@@ -504,8 +522,19 @@
         <div x-show="materialConferencia" class="space-y-1 rounded border border-gray-200 bg-white p-3 text-sm">
           <p class="text-xs font-medium text-gray-500">Material por partes do edital</p>
           <p x-text="materialConferencia ? textoCasamento({situacaoDoCasamento: materialConferencia.situacao, minutosEstimados: materialConferencia.minutos}) : ''"></p>
-          <ul x-show="materialConferencia && materialConferencia.lacunas.length" class="ml-4 list-disc text-xs text-gray-600">
-            <template x-for="l in (materialConferencia?.lacunas ?? [])" :key="l"><li x-text="l"></li></template>
+          <ul x-show="materialConferencia && materialConferencia.lacunas.length" class="ml-1 space-y-1 text-xs text-gray-600">
+            <template x-for="l in (materialConferencia?.lacunas ?? [])" :key="l.parte">
+              <li>
+                <span :class="l.decisao === 'IGNORADA' ? 'text-gray-400 line-through' : ''" x-text="textoLacuna(l)"></span>
+                <span x-show="l.decisao === 'POR_FORA'" class="text-green-800"> · você estuda por fora</span>
+                <span x-show="l.decisao === 'IGNORADA'" class="text-gray-500"> · ignorada</span>
+                <span class="block">
+                  <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacunaDoAssunto(l, 'POR_FORA')">Vou estudar por fora</button>
+                  <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacunaDoAssunto(l, 'IGNORADA')">Ignorar</button>
+                  <button type="button" x-show="l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacunaDoAssunto(l, null)">Desfazer</button>
+                </span>
+              </li>
+            </template>
           </ul>
           <a x-show="materialConferencia && materialConferencia.consulta" :href="materialConferencia ? '/material/' + materialConferencia.consulta : '#'"
              target="_blank" rel="noopener" class="inline-block text-primary-700 underline">Questões deste assunto (consulta)</a>
@@ -888,7 +917,7 @@
     <template x-if="!carregando && !erro">
       <div class="space-y-6">
 <!-- ADR-045: a assinatura do Claude parou; trocar para o OpenRouter é decisão do usuário -->
-        <div x-show="$store.ia.assinaturaParou" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
+        <div x-show="$store.ia.assinaturaParou && ativo?.material?.aPreparar > 0" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
           <p class="font-medium">A assinatura do Claude parou.</p>
           <p class="mt-1" x-text="$store.ia.config?.claude?.falha?.motivo ?? ''"></p>
           <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
@@ -949,8 +978,19 @@
                                   :class="a.situacao === 'SEM_MATERIAL' ? 'text-red-700' : (a.situacao === 'A_PREPARAR' ? 'text-gray-500' : 'text-gray-600')"
                                   x-text="textoAssuntoMaterial(a)"></span>
                             <span x-show="a.situacaoDoCasamento" class="block text-xs text-gray-600" x-text="textoCasamento(a)"></span>
-                            <ul x-show="a.lacunasPorParte && a.lacunasPorParte.length" class="ml-3 list-disc text-xs text-gray-500">
-                              <template x-for="l in (a.lacunasPorParte ?? [])" :key="l"><li x-text="l"></li></template>
+                            <ul x-show="a.lacunasPorParte && a.lacunasPorParte.length" class="ml-3 space-y-1 text-xs text-gray-600">
+                              <template x-for="l in (a.lacunasPorParte ?? [])" :key="l.parte">
+                                <li>
+                                  <span :class="l.decisao === 'IGNORADA' ? 'text-gray-400 line-through' : ''" x-text="textoLacuna(l)"></span>
+                                  <span x-show="l.decisao === 'POR_FORA'" class="text-green-800"> · você estuda por fora</span>
+                                  <span x-show="l.decisao === 'IGNORADA'" class="text-gray-500"> · ignorada</span>
+                                  <span class="block">
+                                    <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacuna(a, l, 'POR_FORA')">Vou estudar por fora</button>
+                                    <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacuna(a, l, 'IGNORADA')">Ignorar</button>
+                                    <button type="button" x-show="l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacuna(a, l, null)">Desfazer</button>
+                                  </span>
+                                </li>
+                              </template>
                             </ul>
                             <a x-show="a.consulta" :href="'/material/' + a.consulta" target="_blank" rel="noopener" class="block text-xs text-primary-700 underline"
                                x-text="'Questões deste assunto (consulta' + (a.consultaPaginas ? ', ' + a.consultaPaginas + ' págs.' : '') + ')'"></a>

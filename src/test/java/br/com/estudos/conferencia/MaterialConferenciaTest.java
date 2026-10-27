@@ -3,6 +3,7 @@ package br.com.estudos.conferencia;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -94,8 +95,8 @@ class MaterialConferenciaTest extends ConferenciaTestBase {
         assertEquals(List.of("PARCIAL"), JsonPath.<List<String>>read(tela, filtro + ".situacaoDoCasamento"));
         assertEquals(List.of(90), JsonPath.<List<Integer>>read(tela, filtro + ".minutosEstimados"));
         assertEquals(List.of("consulta/a1a1a1a1a1a1a1a1.pdf"), JsonPath.<List<String>>read(tela, filtro + ".consulta"));
-        assertEquals(List.of(List.of("álgebra relacional: nenhum tema do acervo ensina esta parte")),
-            JsonPath.<List<List<String>>>read(tela, filtro + ".lacunasPorParte"));
+        assertEquals(List.of("álgebra relacional"), JsonPath.<List<String>>read(tela, filtro + ".lacunasPorParte[*].parte"));
+        assertEquals(List.of("nenhum tema do acervo ensina esta parte"), JsonPath.<List<String>>read(tela, filtro + ".lacunasPorParte[*].motivo"));
     }
 
     @Test
@@ -108,6 +109,29 @@ class MaterialConferenciaTest extends ConferenciaTestBase {
             .andExpect(jsonPath("$.situacao").value("COMPLETO"))
             .andExpect(jsonPath("$.consulta").value("consulta/a1a1a1a1a1a1a1a1.pdf"))
             .andExpect(jsonPath("$.consultaPaginas").value(12));
+    }
+
+    @Test
+    void lacuna_recebeDestino_eDesfaz_eRecusaParteQueNaoELacuna() throws Exception {
+        mockMvc.perform(internoPost("/internal/editais/{id}/material", entrega("a1a1a1a1a1a1a1a1", "PARCIAL"), id)).andExpect(status().isOk());
+        long assuntoId = jdbc.queryForObject("SELECT assunto_id FROM edital_assunto WHERE chave = 'a1a1a1a1a1a1a1a1'", Long.class);
+        var destino = (java.util.function.BiFunction<String, String, org.springframework.test.web.servlet.ResultActions>) (parte, decisao) -> {
+            try {
+                return mockMvc.perform(put("/api/assuntos/{a}/lacunas", assuntoId).contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"parte\": \"" + parte + "\", \"decisao\": " + (decisao == null ? "null" : "\"" + decisao + "\"") + "}"));
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+        destino.apply("álgebra relacional", "POR_FORA").andExpect(status().isOk()).andExpect(jsonPath("$.lacunas[0].decisao").value("POR_FORA"));
+        mockMvc.perform(get("/api/assuntos/{a}/material-da-conferencia", assuntoId)).andExpect(jsonPath("$.lacunas[0].decisao").value("POR_FORA"));
+        destino.apply("álgebra relacional", "IGNORADA").andExpect(jsonPath("$.lacunas[0].decisao").value("IGNORADA"));
+        // a entrega de novo (idempotente) não apaga o destino que a pessoa deu
+        mockMvc.perform(internoPost("/internal/editais/{id}/material", entrega("a1a1a1a1a1a1a1a1", "PARCIAL"), id)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/assuntos/{a}/material-da-conferencia", assuntoId)).andExpect(jsonPath("$.lacunas[0].decisao").value("IGNORADA"));
+        destino.apply("álgebra relacional", null).andExpect(jsonPath("$.lacunas[0].decisao").doesNotExist());
+        destino.apply("outra coisa", "POR_FORA").andExpect(status().isNotFound()).andExpect(jsonPath("$.codigo").value("LACUNA_INEXISTENTE"));
+        destino.apply("álgebra relacional", "TALVEZ").andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("DECISAO_INVALIDA"));
     }
 
     @Test

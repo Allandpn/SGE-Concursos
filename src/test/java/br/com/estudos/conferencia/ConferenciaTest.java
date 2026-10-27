@@ -326,12 +326,12 @@ class ConferenciaTest extends ConferenciaTestBase {
             .andReturn().getResponse().getContentAsString(), "$.concursoId")).longValue();
         mockMvc.perform(get("/api/concursos/{c}/avisos-de-conferencia", concursoId))
             .andExpect(jsonPath("$.partesSemNo").value(1))          // p3
-            .andExpect(jsonPath("$.vinculosAmplosOuParciais").value(1)) // p2
+            .andExpect(jsonPath("$.vinculosAmplosOuParciais").value(0)) // p2 é mais ampla, mas o nó tem 2 subitens: não é aviso
             .andExpect(jsonPath("$.nosQueMudaram").value(0));
         long assuntoId = jdbc.queryForObject("SELECT assunto_id FROM edital_assunto WHERE chave = 'a1a1a1a1a1a1a1a1'", Long.class);
         var partes = mockMvc.perform(get("/api/assuntos/{a}/partes-do-edital", assuntoId)).andReturn().getResponse().getContentAsString();
         assertEquals(List.of("window function", "álgebra relacional"), JsonPath.<List<String>>read(partes, "$[*].texto"));
-        assertEquals("MAIS_AMPLO", JsonPath.read(partes, "$[1].aviso"));
+        org.junit.jupiter.api.Assertions.assertNull(JsonPath.<Object>read(partes, "$[1].aviso"), "mais ampla com nó pequeno não pede atenção");
         mockMvc.perform(get("/api/assuntos/{a}/partes-do-edital", 999999999)).andExpect(jsonPath("$.length()").value(0));
     }
 

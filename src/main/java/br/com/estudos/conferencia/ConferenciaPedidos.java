@@ -32,5 +32,8 @@ public final class ConferenciaPedidos {
     /** {@code acao}: DESCARTAR (com motivo) ou INCLUIR (como assunto, com o texto; trecho de linha fora pede a disciplina). */
     public record ResolverTrecho(String acao, String motivo, String texto, Long disciplinaId, String novaDisciplina) {}
 
+    /** {@code decisao}: POR_FORA ("estudo por fora"), IGNORADA ou nulo para desfazer. */
+    public record DestinoDaLacuna(String parte, String decisao) {}
+
     public record EditarDecisao(List<Long> nos, String natureza, String comentario) {}
 }

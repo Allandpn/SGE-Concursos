@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import br.com.estudos.conferencia.ConferenciaPedidos.Comentario;
+import br.com.estudos.conferencia.ConferenciaPedidos.DestinoDaLacuna;
 import br.com.estudos.conferencia.ConferenciaPedidos.Dividir;
 import br.com.estudos.conferencia.ConferenciaPedidos.EditarDecisao;
 import br.com.estudos.conferencia.ConferenciaPedidos.Juntar;
@@ -82,6 +83,12 @@ public class ConferenciaController {
     @Operation(summary = "As partes do edital de um assunto", description = "Com o nó de cada uma e o aviso que ainda pede atenção. Vazio se o assunto não nasceu de uma conferência.")
     public List<ConferenciaResponses.ParteDoAssunto> partesDoAssunto(@PathVariable Long assuntoId) {
         return service.partesDoAssunto(assuntoId);
+    }
+
+    @PutMapping("/assuntos/{assuntoId}/lacunas")
+    @Operation(summary = "Dá destino a uma lacuna do material", description = "POR_FORA (vou estudar por fora), IGNORADA, ou nulo para desfazer. A parte tem de ser uma das lacunas entregues. Não muda o que o planejamento entregou.")
+    public MaterialDaConferencia.Info destinoDaLacuna(@PathVariable Long assuntoId, @RequestBody DestinoDaLacuna corpo) {
+        return materialDaConferencia.decidirLacuna(assuntoId, corpo.parte(), corpo.decisao());
     }
 
     @GetMapping("/assuntos/{assuntoId}/material-da-conferencia")

@@ -16,7 +16,7 @@ public record MaterialAssuntoResponse(
     @Schema(description = "Motivo da lacuna (D-65); só em SEM_MATERIAL", nullable = true) String motivo,
     @Schema(description = "Situação do casamento por partes: COMPLETO, PARCIAL, SEM_MATERIAL ou RECUSADO; nulo se o assunto não nasceu de uma conferência ou ainda está a preparar", nullable = true) String situacaoDoCasamento,
     @Schema(description = "Tempo estimado de leitura que o planejamento calculou, em minutos", nullable = true) Integer minutosEstimados,
-    @Schema(description = "As partes do assunto que nenhum tema do acervo ensina, com o motivo") java.util.List<String> lacunasPorParte,
+    @Schema(description = "As partes do assunto que nenhum tema do acervo ensina, com o motivo e o destino que a pessoa deu (POR_FORA, IGNORADA ou nulo)") java.util.List<br.com.estudos.conferencia.MaterialDaConferencia.Lacuna> lacunasPorParte,
     @Schema(description = "O PDF \"Questões deste assunto\" (consulta, fora da escada, D-94), servido em /material/", nullable = true) String consulta,
     @Schema(description = "Páginas do PDF de consulta", nullable = true) Integer consultaPaginas
 ) {}
