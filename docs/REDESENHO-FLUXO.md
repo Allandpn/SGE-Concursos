@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 0.6.0 (rascunho; passos 0, A, B, C e D feitos) |
+| Versão | 0.7.0 (rascunho; passos 0, A, B, C e D feitos; E medido e não recomendado) |
 | Data | 2026-10-27 |
 | Situação | Não é especificação. Aprovado, vira mudança em `02_JORNADAS` (J-5, J-2 e §4) pelo processo de `especificacao/` |
 | Base | `02_JORNADAS` v1.16.0, as telas de `static/index.html`, o ensaio real do MPPR (2026-10-24 a 26) e a análise do usuário de 2026-10-27 |
@@ -18,7 +18,7 @@ Hoje ──► (card do concurso) ──► Concursos ──► Edital ──►
                      (barra de cima: só Assuntos · Progresso · Ajustes)
 ```
 
-O fluxo é **linear**: o material só começa depois de **Concluir** (D-62, D-92: é a conclusão que cria os assuntos), e a conclusão espera a pessoa decidir tudo. No MPPR, a preparação levou cerca de 5 h.
+O fluxo é **linear**: o material só começa depois de **Concluir** (D-62, D-92: é a conclusão que cria os assuntos), e a conclusão espera a pessoa decidir tudo. **Medido no MPPR (2026-10-26):** a preparação levou **58 minutos** (concluir às 17:47, material entregue às 18:45); a espera pela pessoa decidir os últimos itens é que levou horas (aceites automáticos às 07:08, últimos itens às 17:40).
 
 ## 2. Onde atrapalha
 
@@ -27,11 +27,11 @@ O fluxo é **linear**: o material só começa depois de **Concluir** (D-62, D-92
 | 1 | **Decisão demais na conferência.** 315 partes; só 14 pediam a pessoa de verdade | [visto] |
 | 2 | **Vocabulário interno:** parte, nó, natureza do vínculo, mais amplo, parcial, exata | [visto] |
 | 3 | **Beco sem saída:** Aceitar desabilitado sem explicar (corrigido; falta implantar) | [visto] |
-| 4 | **Esperas sem rosto:** leitura (minutos) e material (horas) sem etapa visível | [visto] |
+| 4 | **Esperas sem rosto:** leitura (minutos) e material (cerca de uma hora no MPPR) sem etapa visível | [visto] |
 | 5 | **Conferência escondida:** 4 toques de Hoje; Concursos fora da barra | [visto] |
 | 6 | **Lacuna sem ação:** leis do MPPR, Node.js ficam "sem material" sem o que fazer | [visto] |
 | 7 | **Dois endereços** (443 e 8443); "Sem conexão com o servidor" não diz qual falhou nem o que tentar | [visto] |
-| 8 | **Ninguém avisa que o material chegou.** Quem espera 5 h não fica olhando Hoje | [hipótese] |
+| 8 | **Ninguém avisa que o material chegou.** Quem espera uma hora ou mais não fica olhando Hoje | [hipótese] |
 | 9 | **Avisos de IA** repetidos em Hoje, Concursos e Ajustes, mesmo sem nada a fazer na hora; contradiz "Hoje é a porta" | [visto no código] |
 | 10 | **Revisão trava o material.** O que já é seguro espera as exceções para começar a ser preparado | [visto] |
 | 11 | **Aceite automático sem rastro:** a pessoa não vê o que foi aceito sozinho nem desfaz item a item | proposta nova |
@@ -85,7 +85,7 @@ O fluxo é **linear**: o material só começa depois de **Concluir** (D-62, D-92
 | **B** | **Feito, falta implantar** (branch `redesenho-fluxo-b`). Faixa do material em Hoje ("Preparando o material: 120 de 203 assuntos", e "pronto" com "Entendi" guardado só no aparelho); avisos de IA em Hoje e em Concursos só enquanto o material espera por eles, em Ajustes sempre; lacuna com "vou estudar por fora", "ignorar" e "desfazer" (V19, `PUT /api/assuntos/{id}/lacunas`; a entrega nova do planejamento não apaga o destino); aviso de conexão que diz qual endereço falhou e sugere o outro no tailnet; os avisos do concurso passaram a usar a mesma regra de nó pequeno | pouco: uma tabela e uma rota |
 | **C** | **Feito, falta implantar e testar no celular** (branch `redesenho-fluxo-c`; `docs/SPRINT-27-AVISOS-DE-PROCESSO.md`, ADR-048, D-96). Web Push próprio, sem biblioteca; dois avisos (edital lido, material pronto), opcionais por aparelho em Ajustes | sim: V20, rotas `/api/push`, marcas por rodada |
 | **D** | **Feito, falta implantar** (branch `redesenho-fluxo-d`; `docs/SPRINT-28-PDF-ANEXADO-A-LACUNA.md`, ADR-049, D-97). Lacuna com "Anexar PDF": o SGE guarda, o worker corta em segmentos e importa, a tela mostra o estado | sim: V21, rotas, ciclo no worker |
-| **E** | Preparo em paralelo à revisão (concluir por partes) | sim; depende da medição do worker |
+| **E** | **Medido: não recomendado.** Preparo em paralelo à revisão pouparia no máximo os ~58 min de preparo depois do último "Concluir"; a espera longa do MPPR foi a pessoa (10 h entre os aceites automáticos e os últimos itens), e com o passo A restam 45 itens em vez de 190. O custo seria alto: concluir por partes (rever D-62/D-92) e um worker que hoje joga fora o trabalho quando o lote muda (`MaterialDoEdital.processar` apaga a pasta se a lista de assuntos muda; as etapas se identificam por posição). Reabrir só se um edital grande mostrar o preparo passando de várias horas | sim, e grande |
 | **F** | Um só endereço (443 do Guardian) | fora do app |
 
 ## 7. Edital retificado (caso a registrar)

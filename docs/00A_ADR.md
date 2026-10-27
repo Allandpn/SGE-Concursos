@@ -1882,7 +1882,7 @@ guardado e valha antes da IA.
 
 ### Contexto
 
-O preparo do material de um edital leva horas (cerca de 5 h no MPPR) e a leitura do edital, minutos. A faixa em Hoje só ajuda com
+O preparo do material de um edital leva de dezenas de minutos a algumas horas (medido no MPPR: 58 min, de 17:47 a 18:45 em 2026-10-26, para 203 assuntos) e a leitura do edital, minutos. A faixa em Hoje só ajuda com
 o app aberto. `00_PRODUTO` §8.5 recusava push; o usuário pediu o aviso só para esses dois fatos (v1.9.0, D-96). No celular o
 usuário usa o app instalado pelo navegador (PWA, ADR-038); o app Android nativo (ADR-041) não é o cliente em uso para isso. O
 Guardian, no mesmo Pi e no mesmo celular, já entrega Web Push por conta própria.
