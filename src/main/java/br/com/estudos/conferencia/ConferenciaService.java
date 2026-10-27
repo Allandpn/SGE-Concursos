@@ -3,6 +3,7 @@ package br.com.estudos.conferencia;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import br.com.estudos.conferencia.ConferenciaPedidos.TextoDaParte;
 import br.com.estudos.conferencia.ConferenciaResponses.Assunto;
 import br.com.estudos.conferencia.ConferenciaResponses.Disciplina;
 import br.com.estudos.conferencia.ConferenciaResponses.Execucao;
+import br.com.estudos.conferencia.ConferenciaResponses.AceitoSozinho;
 import br.com.estudos.conferencia.ConferenciaResponses.ItemDaFila;
 import br.com.estudos.conferencia.ConferenciaResponses.Parte;
 import br.com.estudos.conferencia.ConferenciaResponses.Pendencias;
@@ -108,6 +110,7 @@ public class ConferenciaService {
     /** A fila de revisão, derivada (docs §6): bloqueantes primeiro, depois a gravidade e a ordem do edital. */
     List<ItemDaFila> fila(ConferenciaDados d) {
         var itens = new ArrayList<ItemDaFila>();
+        var nos = nosDe(d);
         for (var t : d.trechos) {
             if (!"ABERTO".equals(t.estado())) continue;
             var disc = t.disciplinaId() == null ? null : d.disciplinaPorId.get(t.disciplinaId());
@@ -136,7 +139,7 @@ public class ConferenciaService {
             if (!p.ativa()) continue;
             if (p.noMudou()) itens.add(item("NO_MUDOU_NA_ARVORE", 3, disc, a, p));
             else if (p.nos().isEmpty() && "PROPOSTA".equals(p.estado())) itens.add(item("PARTE_SEM_NO", 4, disc, a, p));
-            else if (("MAIS_AMPLO".equals(p.natureza()) || "PARCIAL".equals(p.natureza())) && "PROPOSTA".equals(p.estado())) {
+            else if ("PROPOSTA".equals(p.estado()) && ("PARCIAL".equals(p.natureza()) || ("MAIS_AMPLO".equals(p.natureza()) && noLargo(p, nos)))) {
                 itens.add(item("VINCULO_AMPLO_OU_PARCIAL", 5, disc, a, p));
             } else if ("REFINO".equals(p.origem()) && "PROPOSTA".equals(p.estado())) itens.add(item("NO_TROCADO_NO_REFINO", 5, disc, a, p));
         }
@@ -146,6 +149,43 @@ public class ConferenciaService {
             .thenComparingInt(i -> i.disciplinaId() == null ? -1 : ordemDisc.getOrDefault(i.disciplinaId(), 0))
             .thenComparing(i -> i.assuntoId() == null ? 0L : i.assuntoId()).thenComparing(i -> i.parteId() == null ? 0L : i.parteId()));
         return itens;
+    }
+
+    /** Mais amplo com até este número de subitens entra aceito sozinho; acima disso o nó é largo e pede a pessoa (docs/REDESENHO-FLUXO §4). */
+    static final int NO_LARGO_ACIMA_DE = 3;
+
+    /** Nó que sumiu da árvore conta como largo: não dá para dizer que é pequeno. */
+    private static boolean noLargo(ConferenciaDados.Parte p, Map<Long, Map<Long, No>> nos) {
+        var mapa = nos.getOrDefault(p.arvoreVersaoId(), Map.of());
+        return p.nos().stream().anyMatch(id -> mapa.get(id) == null || mapa.get(id).filhos() > NO_LARGO_ACIMA_DE);
+    }
+
+    /** O que entrou sem pedir a pessoa e ela pode rever: parte com nó, por conferir, que a fila não pede (derivado, D-16). */
+    @Transactional(readOnly = true)
+    public List<AceitoSozinho> aceitosSozinhos(Long analiseId) {
+        conferencia(analiseId);
+        var d = ConferenciaDados.ler(jdbc, analiseId);
+        var naFila = new HashSet<Long>();
+        fila(d).forEach(i -> { if (i.parteId() != null) naFila.add(i.parteId()); });
+        var nos = nosDe(d);
+        var saida = new ArrayList<AceitoSozinho>();
+        for (var p : d.partes) {
+            if (!p.ativa() || !"PROPOSTA".equals(p.estado()) || p.noMudou() || p.nos().isEmpty() || naFila.contains(p.id())) continue;
+            var a = d.assuntoPorId.get(p.assuntoEditalId());
+            var disc = d.disciplinaPorId.get(a.disciplinaId());
+            var lista = resolver(p.nos(), nos.getOrDefault(p.arvoreVersaoId(), Map.of()));
+            saida.add(new AceitoSozinho(p.id(), a.id(), disc.nome(), a.texto(), p.nome(), lista, motivo(p, lista)));
+        }
+        return saida;
+    }
+
+    private static String motivo(ConferenciaDados.Parte p, List<No> nos) {
+        if ("MAIS_AMPLO".equals(p.natureza())) {
+            int filhos = nos.stream().mapToInt(No::filhos).max().orElse(0);
+            return filhos == 0 ? "O QConcursos tem este assunto num item só, um pouco mais abrangente que o texto do edital."
+                : "O QConcursos agrupa este assunto com poucos subitens (" + filhos + "), então o filtro não fica largo.";
+        }
+        return "O QConcursos tem este assunto igual ao do edital.";
     }
 
     private ItemDaFila item(String tipo, int gravidade, Disc disc, Ass a, ConferenciaDados.Parte p) {

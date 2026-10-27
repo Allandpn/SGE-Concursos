@@ -7,7 +7,7 @@
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-10-26-2';
+const CASCA_VERSAO = 'casca-2026-10-27-1';
 
 const CASCA = [
   './',

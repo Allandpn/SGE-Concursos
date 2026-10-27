@@ -47,6 +47,9 @@ public final class ConferenciaResponses {
         String tipo, int gravidade, boolean bloqueia, Long disciplinaId, String disciplina, Long assuntoId, String assunto,
         Long parteId, String parte, Long trechoId, List<String> detalhe) {}
 
+    /** Parte que entrou aceita sem pedir a pessoa, com o motivo; ela pode rever (trocar o nó) a qualquer hora. */
+    public record AceitoSozinho(Long parteId, Long assuntoId, String disciplina, String assunto, String parte, List<No> nos, String motivo) {}
+
     /** O que "valer para todos os editais" mudaria: partes de outros editais, ainda por conferir, com a chave igual. */
     public record EscopoTodos(int partes, List<String> exemplos) {}
 

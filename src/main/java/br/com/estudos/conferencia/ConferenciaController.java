@@ -26,6 +26,7 @@ import br.com.estudos.conferencia.ConferenciaPedidos.Peso;
 import br.com.estudos.conferencia.ConferenciaPedidos.ResolverTrecho;
 import br.com.estudos.conferencia.ConferenciaPedidos.TextoDaParte;
 import br.com.estudos.conferencia.ConferenciaPedidos.TextoDoAssunto;
+import br.com.estudos.conferencia.ConferenciaResponses.AceitoSozinho;
 import br.com.estudos.conferencia.ConferenciaResponses.Assunto;
 import br.com.estudos.conferencia.ConferenciaResponses.DecisaoResponse;
 import br.com.estudos.conferencia.ConferenciaResponses.Disciplina;
@@ -69,6 +70,12 @@ public class ConferenciaController {
     @Operation(summary = "A fila de revisão", description = "Só o que pede decisão: bloqueantes primeiro, depois a gravidade e a ordem do edital.")
     public List<ItemDaFila> fila(@PathVariable Long id) {
         return service.fila(id);
+    }
+
+    @GetMapping(BASE + "/conferencia/aceitos-sozinhos")
+    @Operation(summary = "O que entrou aceito sem pedir a pessoa", description = "Partes com nó que a regra deu como seguras (exato, ou mais amplo com poucos subitens), cada uma com o motivo. Derivado, nunca gravado.")
+    public List<AceitoSozinho> aceitosSozinhos(@PathVariable Long id) {
+        return service.aceitosSozinhos(id);
     }
 
     @GetMapping("/assuntos/{assuntoId}/partes-do-edital")

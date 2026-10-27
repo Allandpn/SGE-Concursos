@@ -1269,6 +1269,7 @@ document.addEventListener('alpine:init', () => {
     resumo: null,
     disciplinas: [],
     fila: [],
+    aceitos: [], // o que a regra aceitou sem pedir a pessoa (docs/REDESENHO-FLUXO §4)
     decisoes: [],
     aba: 'fila',
     abertas: {},
@@ -1296,12 +1297,13 @@ document.addEventListener('alpine:init', () => {
       this.erro = null;
       try {
         const base = `/editais/analises/${this.id}/conferencia`;
-        const [resumo, disciplinas, fila] = await Promise.all([api(base), api(`${base}/disciplinas`), api(`${base}/fila`)]);
+        const [resumo, disciplinas, fila, aceitos] = await Promise.all([api(base), api(`${base}/disciplinas`), api(`${base}/fila`), api(`${base}/aceitos-sozinhos`)]);
         this.lendo = false;
         clearTimeout(this.timerLeitura);
         this.resumo = resumo;
         this.disciplinas = disciplinas;
         this.fila = fila;
+        this.aceitos = aceitos;
         if (inicial) this.aba = fila.length ? 'fila' : 'disciplinas';
         if (this.painel) this.atualizarPainel();
       } catch (e) {
@@ -1341,18 +1343,58 @@ document.addEventListener('alpine:init', () => {
       return api(`/editais/analises/${this.id}${caminho}`, { method: metodo, body: corpo === undefined ? undefined : JSON.stringify(corpo) });
     },
 
+    // ------------------------------------------------ a fila, por disciplina
+    get filaAgrupada() {
+      const grupos = [];
+      const por = new Map();
+      for (const it of this.fila) {
+        const chave = it.disciplinaId ?? 0;
+        if (!por.has(chave)) { const g = { chave, disciplinaId: it.disciplinaId, nome: it.disciplina ?? '', itens: [], aceitaveis: 0 }; por.set(chave, g); grupos.push(g); }
+        const g = por.get(chave);
+        g.itens.push(it);
+        if (it.tipo === 'VINCULO_AMPLO_OU_PARCIAL') g.aceitaveis++;
+      }
+      return grupos;
+    },
+    get aceitosPorDisciplina() {
+      const por = new Map();
+      for (const a of this.aceitos) {
+        if (!por.has(a.disciplina)) por.set(a.disciplina, { nome: a.disciplina, itens: [] });
+        por.get(a.disciplina).itens.push(a);
+      }
+      return [...por.values()];
+    },
+    aceitarGrupo(g) { return this.aceitarAmplos({ id: g.disciplinaId, nome: g.nome }); },
+
+    // Uma frase que diz o que o sistema achou, no lugar dos termos internos.
+    explicacao(it) {
+      if (!it.parteId) return '';
+      const parte = this.achar(it.assuntoId)?.a.partes.find((p) => p.id === it.parteId);
+      if (!parte) return '';
+      const no = parte.nos.find((n) => n.caminho);
+      const onde = no ? `«${no.caminho.join(' › ')}»${no.filhos ? ` (${no.filhos} subitens)` : ''}` : '';
+      if (it.tipo === 'PARTE_SEM_NO') return 'Não achei este assunto no QConcursos.';
+      if (it.tipo === 'VINCULO_AMPLO_OU_PARCIAL') {
+        return parte.natureza === 'PARCIAL' ? `O mais próximo no QConcursos é ${onde}, que cobre só uma parte do que o edital pede.`
+          : `O mais próximo no QConcursos é ${onde}, que é mais largo que o edital: as questões virão mais abrangentes.`;
+      }
+      if (it.tipo === 'NO_TROCADO_NO_REFINO') return `A segunda checagem trocou para ${onde}. Confira se serve.`;
+      if (it.tipo === 'NO_MUDOU_NA_ARVORE') return 'O QConcursos mudou ou tirou o assunto escolhido: confirme de novo ou escolha outro.';
+      return '';
+    },
+
     // ------------------------------------------------ rótulos
     rotuloTipo(tipo) {
       return {
         LINHA_FORA: 'Linhas fora de qualquer disciplina', SEM_ASSUNTO: 'Trecho do edital sem assunto',
-        ASSUNTO_RECUSADO: 'Assunto recusado pela conferência', ALERTA_DE_PARTE: 'Alerta na divisão do assunto',
-        PARTE_SEM_NO: 'Parte sem nó', VINCULO_AMPLO_OU_PARCIAL: 'Vínculo mais amplo ou parcial',
-        NO_TROCADO_NO_REFINO: 'Nó trocado pela segunda checagem', NO_MUDOU_NA_ARVORE: 'O nó mudou na árvore',
+        ASSUNTO_RECUSADO: 'Assunto que o sistema recusou', ALERTA_DE_PARTE: 'Assunto dividido de um jeito duvidoso',
+        PARTE_SEM_NO: 'Sem correspondência no QConcursos', VINCULO_AMPLO_OU_PARCIAL: 'O QConcursos não tem igual',
+        NO_TROCADO_NO_REFINO: 'Trocado pela segunda checagem', NO_MUDOU_NA_ARVORE: 'O QConcursos mudou este assunto',
         NAO_APARECE_MAIS: 'Não aparece mais no reprocessamento',
       }[tipo] ?? tipo;
     },
     rotuloNatureza(n) {
-      return { EXATO: 'exato', MAIS_AMPLO: 'mais amplo', PARCIAL: 'parcial' }[n] ?? 'sem vínculo';
+      return { EXATO: 'igual no QConcursos', MAIS_AMPLO: 'mais largo no QConcursos', PARCIAL: 'cobre só uma parte' }[n] ?? 'sem correspondência';
     },
     rotuloOrigem(o) {
       return { IA: 'proposto pela IA', REFINO: 'trocado na segunda checagem', DECISAO: 'vindo de uma decisão sua anterior', PESSOA: 'escolhido por você' }[o] ?? o;
@@ -1466,7 +1508,7 @@ document.addEventListener('alpine:init', () => {
     corrigirAssunto() { return this.agir(() => this.pedido(`/assuntos/${this.painel.assunto.id}`, 'PUT', { texto: this.formulario.texto }), { fecharPainel: true }); },
     aceitarExatos(d) { return this.agir(() => this.pedido(`/disciplinas/${d.id}/aceitar-exatos`, 'POST')); },
     aceitarAmplos(d) {
-      if (!window.confirm(`Aceitar de uma vez os vínculos mais amplos ou parciais de ${d.nome}? Você aceita o nó largo: as questões do QConcursos continuam a um toque, só que mais abrangentes.`)) return;
+      if (!window.confirm(`Aceitar de uma vez os assuntos de ${d.nome} em que o QConcursos é mais largo ou cobre só uma parte? As questões continuam a um toque, só que mais abrangentes.`)) return;
       return this.agir(() => this.pedido(`/disciplinas/${d.id}/aceitar-amplos`, 'POST'));
     },
     trocarPeso(d, peso) { return this.agir(() => this.pedido(`/disciplinas/${d.id}/peso`, 'PUT', { peso })); },

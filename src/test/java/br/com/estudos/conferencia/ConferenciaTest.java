@@ -35,6 +35,7 @@ class ConferenciaTest extends ConferenciaTestBase {
     @Autowired private AnaliseEditalRepository analises;
     @Autowired private ConcursoRepository concursos;
     @Autowired private AssuntoRepository assuntos;
+    @Autowired private br.com.estudos.arvore.ArvoreService arvore;
 
     private long id;
 
@@ -86,10 +87,41 @@ class ConferenciaTest extends ConferenciaTestBase {
         var fila = mockMvc.perform(get("/api/editais/analises/{id}/conferencia/fila", id)).andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         List<String> tipos = JsonPath.read(fila, "$[*].tipo");
-        assertEquals(List.of("LINHA_FORA", "SEM_ASSUNTO", "ASSUNTO_RECUSADO", "ALERTA_DE_PARTE", "PARTE_SEM_NO", "VINCULO_AMPLO_OU_PARCIAL"), tipos,
-            "p1 exata e p4 de decisão não entram; a p2 é refino e mais ampla (uma vez só)");
+        assertEquals(List.of("LINHA_FORA", "SEM_ASSUNTO", "ASSUNTO_RECUSADO", "ALERTA_DE_PARTE", "PARTE_SEM_NO", "NO_TROCADO_NO_REFINO"), tipos,
+            "p1 exata e p4 de decisão não entram; a p2 é mais ampla com nó pequeno (2 filhos): só entra por ter vindo do refino");
         List<Boolean> bloqueia = JsonPath.read(fila, "$[*].bloqueia");
         assertEquals(List.of(true, true, true, true, false, false), bloqueia);
+    }
+
+    @Test
+    void aceitosSozinhos_listaOQueAFilaNaoPedeComOMotivo() throws Exception {
+        var lista = mockMvc.perform(get("/api/editais/analises/{id}/conferencia/aceitos-sozinhos", id)).andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+        List<String> partes = JsonPath.read(lista, "$[*].parte");
+        assertEquals(1, partes.size(), "só a p1 (exata, por conferir): a p2 é do refino, a p3 não tem nó e a p4 já é decisão");
+        assertEquals("Window Function", JsonPath.<String>read(lista, "$[0].nos[0].nome"));
+        assertEquals("O QConcursos tem este assunto igual ao do edital.", JsonPath.<String>read(lista, "$[0].motivo"));
+    }
+
+    @Test
+    void maisAmplaComNoLargo_pedeAPessoa_eComNoPequenoNao() throws Exception {
+        long p2 = parteId("p2p2p2p2p2p2p2p2");
+        jdbc.update("UPDATE edital_parte SET origem = 'IA' WHERE id = ?", p2);   // sem o refino, só a regra do nó decide
+        var antes = JsonPath.<List<String>>read(mockMvc.perform(get("/api/editais/analises/{id}/conferencia/fila", id))
+            .andReturn().getResponse().getContentAsString(), "$[*].tipo");
+        assertTrue(!antes.contains("VINCULO_AMPLO_OU_PARCIAL"), "mais ampla com 2 filhos entra aceita sozinha: " + antes);
+        var aceitos = JsonPath.<List<String>>read(mockMvc.perform(get("/api/editais/analises/{id}/conferencia/aceitos-sozinhos", id))
+            .andReturn().getResponse().getContentAsString(), "$[*].motivo");
+        assertTrue(aceitos.stream().anyMatch(m -> m.contains("poucos subitens (2)")), aceitos.toString());
+
+        // o mesmo vínculo com um nó largo (acima de 3 filhos) vira exceção
+        jdbc.update("""
+            INSERT INTO no_arvore (versao_id, no_id, nome, pai_id, ordem, raiz_id)
+            SELECT versao_id, 9000 + g, 'Extra ' || g, 12, 10 + g, raiz_id FROM no_arvore, generate_series(1, 3) g WHERE no_id = 12""");
+        ((java.util.Map<?, ?>) org.springframework.test.util.ReflectionTestUtils.getField(arvore, "cache")).clear();   // a árvore fica em memória
+        var depois = JsonPath.<List<String>>read(mockMvc.perform(get("/api/editais/analises/{id}/conferencia/fila", id))
+            .andReturn().getResponse().getContentAsString(), "$[*].tipo");
+        assertTrue(depois.contains("VINCULO_AMPLO_OU_PARCIAL"), "mais ampla com 5 filhos pede a pessoa: " + depois);
     }
 
     @Test
