@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.15.0** |
+| Versão do documento | **2.16.0** |
 | Status | **Congelado** |
 | Data | 2026-10-27 |
-| Total | 48 ADRs — 34 vigentes, 13 substituídas, 1 revogada |
+| Total | 49 ADRs — 35 vigentes, 13 substituídas, 1 revogada |
 
 ---
 
@@ -76,6 +76,7 @@ que custa e o que foi descartado.
 | [ADR-046](#adr-046--prova-hospedada-para-verificar-o-material-e-ser-resolvida) | Prova hospedada, para verificar o material e ser resolvida | 2026-10-18 |
 | [ADR-047](#adr-047--conferência-do-edital-pela-pessoa-e-material-por-casamento) | Conferência do edital pela pessoa e material por casamento | 2026-10-24 |
 | [ADR-048](#adr-048--aviso-de-processo-concluído-por-web-push-próprio) | Aviso de processo concluído por Web Push próprio | 2026-10-27 |
+| [ADR-049](#adr-049--pdf-anexado-a-uma-lacuna-guardado-no-servidor-e-fatiado-pelo-worker) | PDF anexado a uma lacuna, guardado no servidor e fatiado pelo worker | 2026-10-27 |
 
 ### 1.2 Históricas
 
@@ -975,6 +976,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.16.0 | 2026-10-27 | **ADR-049**, pedido do usuário: o PDF anexado a uma lacuna do material fica no volume `editais` e o worker o fatia e importa; `material` continua só leitura no app. Com `00_PRODUTO` v1.10.0 e `01_DOMINIO` v1.29.0 (D-97). Total 49, 35 vigentes |
 | 2.15.0 | 2026-10-27 | **ADR-048**, pedido do usuário: aviso de processo concluído (edital lido, material pronto) por Web Push próprio, sem biblioteca nova, com `00_PRODUTO` v1.9.0 e `01_DOMINIO` v1.28.0 (D-96). Total 48, 34 vigentes |
 | 2.14.0 | 2026-10-24 | **ADR-047**, pedido do usuário: a separação do edital em disciplinas, assuntos e partes e a ligação aos nós do QConcursos passam ao planejamento; o SGE guarda a conferência e as decisões da pessoa; o PDF do edital passa a ser guardado até a conclusão. Substitui em parte ADR-043. Total 47, 33 vigentes |
 | 2.13.0 | 2026-10-18 | **ADR-046**, pedido do usuário: o SGE hospeda uma prova objetiva inteira com gabarito para verificar o material e deixar o usuário resolvê-la; o planejamento lê o PDF (OCR no worker); o veredito é sobre a alternativa do gabarito; a nota alimenta M-1 por disciplina e global, assunto só informa. Revisa `00_PRODUTO` §5.1 e §6.7. Total 46, 32 vigentes |
@@ -1912,6 +1914,43 @@ Guardian, no mesmo Pi e no mesmo celular, já entrega Web Push por conta própri
 | ntfy.sh, Telegram ou e-mail | Conta e app novos fora do SGE; e-mail continua fora do produto (§8.5) |
 | Servidor de push do Guardian | Acoplaria dois sistemas por causa de um aviso; o Guardian é de outro projeto |
 | Notificar no app Android nativo | Outro repositório, sem edição aqui; o usuário usa o app instalado pelo navegador |
+
+---
+
+## ADR-049 — PDF anexado a uma lacuna, guardado no servidor e fatiado pelo worker
+
+**Status:** Aceita · 2026-10-27 · Sprint 28 · pedido do usuário · complementa ADR-044 e ADR-047
+
+### Contexto
+
+O acervo não cobre a legislação específica de um edital: no MPPR, cinco assuntos ficaram sem material e seis com lacuna parcial. O
+usuário pediu para anexar o PDF da lei. `00_PRODUTO` §8.5 recusava anexo e upload; a exceção entrou na v1.10.0 (D-97). A ADR-044
+decidiu que o **worker escreve o material e o app só lê** (o volume `material` é montado só para leitura no app), e que o corte do
+PDF em segmentos de ~60 min é do planejamento (`dias/montar_bloco.py`).
+
+### Decisão
+
+- O SGE **recebe o PDF** (`POST /api/assuntos/{id}/lacunas/anexo`, multipart), confere que abre e tem páginas, e o guarda no volume
+  `editais` (o app já escreve ali; o worker lê), em `anexos/`. Cria um registro `lacuna_anexo` em estado PENDENTE.
+- O **worker pega o pendente** (`GET /internal/editais/anexos/pendentes`), corta o PDF com `montar_bloco.py` num manifesto de uma
+  fonte só, escreve os segmentos em `material/blocos/…`, importa pelo caminho de sempre (CSV de segmentos, chave externa do assunto)
+  e devolve o resultado (`POST /internal/editais/anexos/{id}/pronto` ou `/falha`).
+- Os segmentos novos **entram depois dos que o assunto já tem** (a ordem continua a numeração); nada existente é apagado ou alterado.
+- O volume `material` **continua somente leitura no app**: a regra da ADR-044 não muda.
+
+### Consequências
+
+- Preparar o anexo leva um ciclo do worker (minutos), e a tela mostra o estado enquanto isso.
+- Sem seção natural no PDF anexado, o corte cai no alvo de tempo, como em qualquer fonte sem marcadores.
+- O PDF do usuário fica no disco do servidor (`/mnt/ssd/editais/anexos`), fora do banco e do Drive.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| O app fatiar o PDF (PDFBox) e escrever em `material` | Exigiria montar `material` com escrita no app e duplicaria o fatiador do planejamento |
+| Guardar o PDF inteiro como um segmento só | Segmento é ~60 min; um PDF de lei teria horas |
+| Subir o PDF para o Drive e usar o link | Contraria ADR-044 (sem Drive) |
 
 ---
 

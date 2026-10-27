@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.28.0 |
+| Versão | 1.29.0 |
 | Data | 2026-10-27 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -641,6 +641,24 @@ concluído**, e só ele.
 - O aviso leva à tela do fato (conferência ou Concursos) e não carrega dado de estudo.
 
 **O que o sistema não garante.** Que o aviso chegue: o serviço de push do navegador pode atrasar ou descartar.
+
+### 3.14 PDF anexado a uma lacuna
+
+O acervo não ensina tudo: a legislação específica de um edital (a lei orgânica do órgão, o estatuto dos servidores, resoluções)
+costuma ficar de fora, e o sistema declara a lacuna em vez de inventar material (D-65). A pessoa pode **preencher a lacuna com um
+PDF que ela mesma anexa** — o texto da lei, por exemplo.
+
+- **O PDF vira segmentos do assunto** pelo mesmo caminho do material automático (segmentos de cerca de 60 minutos, ligados ao
+  assunto, abertos em "Abrir material"). Para o turno e a escada não há diferença entre um segmento anexado e os outros.
+- **A lacuna fica à vista**: a parte continua constando como lacuna do acervo, e a tela mostra ao lado o PDF anexado, o estado
+  (preparando, pronto, falhou) e o tempo estimado. Anexar não apaga a declaração.
+- **Nada que já existe é apagado** (D-18, D-93): os segmentos novos entram depois dos que o assunto já tem.
+- **Um PDF por parte**; se o preparo falhar, a pessoa vê o motivo e pode anexar de novo. Anexo já pronto não se remove por aqui:
+  o segmento existe, e segmento só se arquiva pelo gesto de sempre.
+- O PDF é da pessoa e fica só no servidor; este é o **único** anexo que o produto aceita (`00_PRODUTO` §8.5).
+
+**O que o sistema não garante.** Que o PDF anexado seja o texto certo, nem que ele tenha texto selecionável: um PDF escaneado vira
+segmentos de imagens, abertos como são.
 
 ---
 
@@ -1494,6 +1512,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-94 | O material de consulta ("Questões deste assunto") não é segmento: não tem escada, não entra no turno e não conta para a leitura completa do assunto | §3.12 |
 | D-95 | Cada execução da IA guarda modelo, prompt e data; trocar o modelo reprocessa só o que não tem decisão humana, e a tela do reprocessamento mostra só as pendências novas e um contador do que a decisão preservou | §3.12 |
 | D-96 | O sistema só avisa de processo concluído (conferência pronta, material pronto), no máximo uma vez por edital e rodada, por escolha da pessoa e por aparelho; nunca avisa de estudo, atraso ou sequência, e o mesmo fato sempre aparece na tela | §3.13 |
+| D-97 | Uma lacuna do material se preenche com um PDF anexado pela pessoa, que vira segmentos do assunto pelo caminho do material automático; a lacuna continua declarada, nada que já existe é apagado e é o único anexo que o produto aceita | §3.14 |
 
 ---
 
@@ -1571,6 +1590,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.29.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.10.0. **§3.14** (PDF anexado a uma lacuna) e **D-97**: a lacuna do material se preenche com um PDF que a pessoa anexa, e ele vira segmentos |
 | 1.28.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.9.0. **§3.13** (avisos de processo) e **D-96**: o sistema avisa só de processo concluído, opcional e por aparelho, nunca do estudo |
 | 1.27.0 | 2026-10-24 | Pedido do usuário ("do edital ao estudo pronto", com a revisão manual no SGE como parte central). **§3.12** (conferência do edital e material de consulta) e **D-86 a D-95**, migradas de `docs/ESPECIFICACAO-REVISAO-EDITAL.md` v0.1.0: a IA propõe e a pessoa resolve, a decisão é guardada presa à chave e vale antes da IA, os assuntos nascem na conclusão da conferência, a árvore do QConcursos é atualizada quando a pessoa decide, questões e gabarito viram material de consulta fora dos segmentos. **§1** ganha cinco termos; **§3.2** ganha partes; **§3.9** passa a ler só o cabeçalho (ADR-047); **§3.10** ganha o material por casamento; **§9** ganha as relações de parte e nó. "Revisão" continua sendo o compromisso da escada: o novo conceito se chama conferência. 95 regras |
 | 1.26.0 | 2026-10-18 | Pedido do usuário: o objetivo final é gabaritar a prova. **§3.11** (prova hospedada e verificação do material) e **D-67 a D-85**, migradas de `docs/ESPECIFICACAO-PROVA-GABARITO.md` v0.4.0: o veredito é sobre a alternativa do gabarito, a nota entra em M-1 por disciplina e global, o desempenho por assunto só informa, a reanálise é incremental e derivada. **§3.6** remete à prova hospedada. Revisa `00_PRODUTO` §5.1 e §6.7 (v1.8.0). 85 regras |

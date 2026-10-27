@@ -30,8 +30,11 @@ public class EditalInternoController {
     private final EntregaEditalService entrega;
     private final AnaliseEditalService analises;
     private final EditalMaterialService material;
+    private final AnexoDeLacunaService anexos;
 
-    public EditalInternoController(EntregaEditalService entrega, AnaliseEditalService analises, EditalMaterialService material) {
+    public EditalInternoController(EntregaEditalService entrega, AnaliseEditalService analises, EditalMaterialService material,
+                                   AnexoDeLacunaService anexos) {
+        this.anexos = anexos;
         this.entrega = entrega;
         this.analises = analises;
         this.material = material;
@@ -53,6 +56,28 @@ public class EditalInternoController {
     @Operation(summary = "Entrega o material de cada assunto", description = "Situação (COMPLETO, PARCIAL, SEM_MATERIAL, RECUSADO), tempo, lacunas por parte e o PDF de consulta. Idempotente; assunto de outra análise: 404.")
     public java.util.Map<String, Object> entregarMaterial(@PathVariable Long id, @RequestBody tools.jackson.databind.JsonNode corpo) {
         return java.util.Map.of("atualizados", material.entregar(id, corpo));
+    }
+
+    @GetMapping("/anexos/pendentes")
+    @Operation(summary = "PDFs anexados a lacunas que esperam ser fatiados", description = "Com o caminho no volume editais, as páginas e a ordem em que os segmentos novos entram no assunto (D-97).")
+    public List<AnexoDeLacunaService.AnexoPendente> anexosPendentes() {
+        return anexos.pendentes();
+    }
+
+    public record AnexoPronto(int segmentos, int minutos) {}
+
+    public record AnexoFalha(String erro) {}
+
+    @PostMapping("/anexos/{id}/pronto")
+    @Operation(summary = "O anexo virou segmentos", description = "Os segmentos já foram importados pelo caminho de sempre; aqui só se registra o resultado.")
+    public void anexoPronto(@PathVariable Long id, @RequestBody AnexoPronto corpo) {
+        anexos.pronto(id, corpo.segmentos(), corpo.minutos());
+    }
+
+    @PostMapping("/anexos/{id}/falha")
+    @Operation(summary = "O anexo não pôde ser fatiado", description = "A pessoa vê o motivo e pode anexar de novo.")
+    public void anexoFalha(@PathVariable Long id, @RequestBody AnexoFalha corpo) {
+        anexos.falha(id, corpo.erro());
     }
 
     @GetMapping("/{id}/dados")

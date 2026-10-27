@@ -532,7 +532,13 @@
                   <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacunaDoAssunto(l, 'POR_FORA')">Vou estudar por fora</button>
                   <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacunaDoAssunto(l, 'IGNORADA')">Ignorar</button>
                   <button type="button" x-show="l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacunaDoAssunto(l, null)">Desfazer</button>
+                  <label x-show="!l.anexo || l.anexo.estado === 'FALHOU'" class="inline-block cursor-pointer py-1 pr-3 text-primary-700 underline">
+                    <span x-text="l.anexo ? 'Anexar de novo' : 'Anexar PDF'"></span>
+                    <input type="file" accept="application/pdf" class="sr-only" @change="anexarPdfDoAssunto(l, $event)">
+                  </label>
+                  <button type="button" x-show="l.anexo && l.anexo.estado !== 'PRONTO'" class="py-1 pr-3 text-primary-700 underline" @click="tirarAnexoDoAssunto(l)">Tirar o PDF</button>
                 </span>
+                <span x-show="l.anexo" class="block" :class="l.anexo && l.anexo.estado === 'FALHOU' ? 'text-red-700' : 'text-green-800'" x-text="textoAnexo(l)"></span>
               </li>
             </template>
           </ul>
@@ -1007,7 +1013,13 @@
                                     <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacuna(a, l, 'POR_FORA')">Vou estudar por fora</button>
                                     <button type="button" x-show="!l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacuna(a, l, 'IGNORADA')">Ignorar</button>
                                     <button type="button" x-show="l.decisao" class="py-1 pr-3 text-primary-700 underline" @click="destinoLacuna(a, l, null)">Desfazer</button>
+                                    <label x-show="!l.anexo || l.anexo.estado === 'FALHOU'" class="inline-block cursor-pointer py-1 pr-3 text-primary-700 underline">
+                                      <span x-text="l.anexo ? 'Anexar de novo' : 'Anexar PDF'"></span>
+                                      <input type="file" accept="application/pdf" class="sr-only" @change="anexarPdf(a, l, $event)">
+                                    </label>
+                                    <button type="button" x-show="l.anexo && l.anexo.estado !== 'PRONTO'" class="py-1 pr-3 text-primary-700 underline" @click="tirarAnexo(a, l)">Tirar o PDF</button>
                                   </span>
+                                  <span x-show="l.anexo" class="block" :class="l.anexo && l.anexo.estado === 'FALHOU' ? 'text-red-700' : 'text-green-800'" x-text="textoAnexo(l)"></span>
                                 </li>
                               </template>
                             </ul>

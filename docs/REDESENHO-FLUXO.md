@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 0.5.0 (rascunho; passos 0, A, B e C feitos) |
+| Versão | 0.6.0 (rascunho; passos 0, A, B, C e D feitos) |
 | Data | 2026-10-27 |
 | Situação | Não é especificação. Aprovado, vira mudança em `02_JORNADAS` (J-5, J-2 e §4) pelo processo de `especificacao/` |
 | Base | `02_JORNADAS` v1.16.0, as telas de `static/index.html`, o ensaio real do MPPR (2026-10-24 a 26) e a análise do usuário de 2026-10-27 |
@@ -84,7 +84,7 @@ O fluxo é **linear**: o material só começa depois de **Concluir** (D-62, D-92
 | **A** | **Feito, falta implantar** (branch `redesenho-fluxo`). Revisão rápida: regra de §4, exceções agrupadas, "decidir depois", aba "Aceitos sozinhos" com Desfazer, **vocabulário em português do usuário** (inclusive no "abrir o resto") e Concursos na barra | pouco: o rastro e o desfazer usam as decisões que já existem; "aceito sozinho" precisa de uma marca |
 | **B** | **Feito, falta implantar** (branch `redesenho-fluxo-b`). Faixa do material em Hoje ("Preparando o material: 120 de 203 assuntos", e "pronto" com "Entendi" guardado só no aparelho); avisos de IA em Hoje e em Concursos só enquanto o material espera por eles, em Ajustes sempre; lacuna com "vou estudar por fora", "ignorar" e "desfazer" (V19, `PUT /api/assuntos/{id}/lacunas`; a entrega nova do planejamento não apaga o destino); aviso de conexão que diz qual endereço falhou e sugere o outro no tailnet; os avisos do concurso passaram a usar a mesma regra de nó pequeno | pouco: uma tabela e uma rota |
 | **C** | **Feito, falta implantar e testar no celular** (branch `redesenho-fluxo-c`; `docs/SPRINT-27-AVISOS-DE-PROCESSO.md`, ADR-048, D-96). Web Push próprio, sem biblioteca; dois avisos (edital lido, material pronto), opcionais por aparelho em Ajustes | sim: V20, rotas `/api/push`, marcas por rodada |
-| **D** | Lacuna com "anexar PDF" (rota no SGE e entrega ao worker) | sim |
+| **D** | **Feito, falta implantar** (branch `redesenho-fluxo-d`; `docs/SPRINT-28-PDF-ANEXADO-A-LACUNA.md`, ADR-049, D-97). Lacuna com "Anexar PDF": o SGE guarda, o worker corta em segmentos e importa, a tela mostra o estado | sim: V21, rotas, ciclo no worker |
 | **E** | Preparo em paralelo à revisão (concluir por partes) | sim; depende da medição do worker |
 | **F** | Um só endereço (443 do Guardian) | fora do app |
 

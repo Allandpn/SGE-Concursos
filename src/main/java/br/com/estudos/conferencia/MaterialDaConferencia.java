@@ -20,7 +20,10 @@ import tools.jackson.databind.json.JsonMapper;
 public class MaterialDaConferencia {
 
     /** Uma parte do assunto que nenhum tema do acervo ensina; {@code decisao}: POR_FORA, IGNORADA ou nulo (ainda sem destino). */
-    public record Lacuna(String parte, String motivo, String decisao) {}
+    public record Lacuna(String parte, String motivo, String decisao, Anexo anexo) {}
+
+    /** O PDF que a pessoa anexou a esta parte (D-97): PENDENTE (o worker ainda prepara), PRONTO (virou segmentos) ou FALHOU. */
+    public record Anexo(String estado, String nome, Integer paginas, Integer segmentos, Integer minutos, String erro) {}
 
     public record Info(String chave, String situacao, Integer minutos, Integer fontes, List<Lacuna> lacunas, String consulta, Integer consultaPaginas) {}
 
@@ -43,14 +46,21 @@ public class MaterialDaConferencia {
                 + "WHERE a.assunto_id IN (" + marcas + ")",
             (org.springframework.jdbc.core.RowCallbackHandler) rs -> decisoes.computeIfAbsent(rs.getLong("assunto_edital_id"), k -> new HashMap<>())
                 .put(rs.getString("parte"), rs.getString("decisao")), assuntoIds.toArray());
+        var anexos = new HashMap<Long, Map<String, Anexo>>();   // por id do edital_assunto
+        jdbc.query("SELECT l.assunto_edital_id, l.parte, l.estado, l.nome_original, l.paginas, l.segmentos, l.minutos, l.erro FROM lacuna_anexo l "
+                + "JOIN edital_assunto a ON a.id = l.assunto_edital_id WHERE a.assunto_id IN (" + marcas + ")",
+            (org.springframework.jdbc.core.RowCallbackHandler) rs -> anexos.computeIfAbsent(rs.getLong("assunto_edital_id"), k -> new HashMap<>())
+                .put(rs.getString("parte"), new Anexo(rs.getString("estado"), rs.getString("nome_original"), rs.getInt("paginas"),
+                    (Integer) rs.getObject("segmentos"), (Integer) rs.getObject("minutos"), rs.getString("erro"))), assuntoIds.toArray());
         jdbc.query("SELECT id, assunto_id, chave, material_situacao, material_minutos, material_fontes, material_lacunas, material_consulta, "
                 + "material_consulta_paginas FROM edital_assunto WHERE assunto_id IN (" + marcas + ") ORDER BY id",
             (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
                 var decididas = decisoes.getOrDefault(rs.getLong("id"), Map.of());
+                var anexados = anexos.getOrDefault(rs.getLong("id"), Map.of());
                 var lacunas = new java.util.ArrayList<Lacuna>();
                 json.readTree(rs.getString("material_lacunas")).forEach(l -> {
                     var parte = l.path("parte").asString("");
-                    lacunas.add(new Lacuna(parte, l.path("motivo").asString(""), decididas.get(parte)));
+                    lacunas.add(new Lacuna(parte, l.path("motivo").asString(""), decididas.get(parte), anexados.get(parte)));
                 });
                 saida.put(rs.getLong("assunto_id"), new Info(rs.getString("chave"), rs.getString("material_situacao"),
                     (Integer) rs.getObject("material_minutos"), (Integer) rs.getObject("material_fontes"), lacunas,

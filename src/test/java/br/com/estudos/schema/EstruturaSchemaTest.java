@@ -55,7 +55,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Redesenho do fluxo (passo B): o destino que a pessoa deu a uma lacuna do material.
                 "edital_lacuna_decisao",
                 // Sprint 27 (ADR-048): a chave VAPID e os aparelhos inscritos nos avisos de processo concluído.
-                "push_config", "push_inscricao");
+                "push_config", "push_inscricao",
+                // Sprint 28 (ADR-049): o PDF que a pessoa anexa a uma lacuna do material.
+                "lacuna_anexo");
         assertEquals(esperado, tabelasDoSchema());
     }
 

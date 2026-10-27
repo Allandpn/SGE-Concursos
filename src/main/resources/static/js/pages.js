@@ -31,6 +31,34 @@ function destinoDaLacuna(assuntoId, parte, decisao) {
   return api(`/assuntos/${assuntoId}/lacunas`, { method: 'PUT', body: JSON.stringify({ parte, decisao }) });
 }
 
+// Anexa o PDF a uma parte sem material (D-97); devolve o material do assunto atualizado.
+function anexarPdfALacuna(assuntoId, parte, arquivo) {
+  const corpo = new FormData();
+  corpo.append('parte', parte);
+  corpo.append('arquivo', arquivo);
+  return api(`/assuntos/${assuntoId}/lacunas/anexo`, { method: 'POST', body: corpo });
+}
+
+async function tirarAnexoDaLacuna(assuntoId, parte) {
+  await api(`/assuntos/${assuntoId}/lacunas/anexo?parte=${encodeURIComponent(parte)}`, { method: 'DELETE' });
+  return api(`/assuntos/${assuntoId}/material-da-conferencia`);
+}
+
+const temAnexoPreparando = (lacunas) => (lacunas ?? []).some((l) => l.anexo && l.anexo.estado === 'PENDENTE');
+
+// "pronto: 3 segmentos · 3 h", "preparando…" ou "falhou: motivo" (D-97).
+function textoAnexo(l) {
+  const a = l.anexo;
+  if (!a) return '';
+  if (a.estado === 'PRONTO') {
+    const min = a.minutos ?? 0;
+    const tempo = min < 60 ? `${min} min` : (min % 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${Math.floor(min / 60)} h`);
+    return `PDF anexado (${a.nome}): ${a.segmentos} ${a.segmentos === 1 ? 'segmento' : 'segmentos'} · ${tempo}`;
+  }
+  if (a.estado === 'FALHOU') return `Não deu para preparar o PDF ${a.nome}: ${a.erro ?? 'erro desconhecido'}`;
+  return `PDF anexado (${a.nome}, ${a.paginas} págs.): preparando, leva alguns minutos…`;
+}
+
 function textoLacuna(l) {
   return l.motivo && !l.decisao ? `${l.parte}: ${l.motivo}` : l.parte;
 }
@@ -598,6 +626,36 @@ document.addEventListener('alpine:init', () => {
     // GET /api/assuntos/{id} (§7B do doc técnico), os dados do próprio
     // assunto vêm do store escrito pela lista — só os segmentos são um
     // fetch novo.
+    async anexarPdfDoAssunto(l, evento) {
+      const arquivo = evento.target.files[0];
+      evento.target.value = '';
+      if (!arquivo) return;
+      try {
+        this.materialConferencia = await anexarPdfALacuna(this.assuntoId, l.parte, arquivo);
+        this.acompanharAnexo();
+      } catch (e) {
+        window.alert(e.message);
+      }
+    },
+    async tirarAnexoDoAssunto(l) {
+      try {
+        this.materialConferencia = await tirarAnexoDaLacuna(this.assuntoId, l.parte);
+      } catch (e) {
+        window.alert(e.message);
+      }
+    },
+    acompanharAnexo() {
+      clearTimeout(this.timerAnexo);
+      if (!temAnexoPreparando(this.materialConferencia?.lacunas)) return;
+      this.timerAnexo = setTimeout(async () => {
+        try {
+          this.materialConferencia = await api(`/assuntos/${this.assuntoId}/material-da-conferencia`);
+          this.segmentos = await api(`/assuntos/${this.assuntoId}/segmentos`);
+        } catch (e) { /* tenta de novo no próximo ciclo */ }
+        this.acompanharAnexo();
+      }, 10000);
+    },
+    textoAnexo,
     async destinoLacunaDoAssunto(l, decisao) {
       try {
         this.materialConferencia = await destinoDaLacuna(this.assuntoId, l.parte, decisao);
@@ -649,6 +707,7 @@ document.addEventListener('alpine:init', () => {
       }
       try {
         this.materialConferencia = await api(`/assuntos/${assuntoId}/material-da-conferencia`);
+        this.acompanharAnexo();
       } catch (e) {
         this.materialConferencia = null;
       }
@@ -1124,6 +1183,7 @@ document.addEventListener('alpine:init', () => {
       this.erroAcao = null;
       try {
         this.porAssunto = await api(`/concursos/${c.id}/material`);
+        this.acompanharAnexos();
       } catch (e) {
         this.erroAcao = e.message;
       } finally {
@@ -1158,6 +1218,37 @@ document.addEventListener('alpine:init', () => {
       return a.minutosEstimados ? `Casamento por partes: ${rotulo} · ${this.minutosTexto(a.minutosEstimados)}` : `Casamento por partes: ${rotulo}`;
     },
 
+    async anexarPdf(a, l, evento) {
+      const arquivo = evento.target.files[0];
+      evento.target.value = '';
+      if (!arquivo) return;
+      try {
+        a.lacunasPorParte = (await anexarPdfALacuna(a.assuntoId, l.parte, arquivo)).lacunas;
+        this.acompanharAnexos();
+      } catch (e) {
+        window.alert(e.message);
+      }
+    },
+    async tirarAnexo(a, l) {
+      try {
+        a.lacunasPorParte = (await tirarAnexoDaLacuna(a.assuntoId, l.parte)).lacunas;
+      } catch (e) {
+        window.alert(e.message);
+      }
+    },
+    // Enquanto o worker prepara um anexo, a lista se atualiza sozinha (a cada 10 s, até acabar).
+    acompanharAnexos() {
+      clearTimeout(this.timerAnexos);
+      if (!this.porAssunto || !this.porAssunto.some((a) => temAnexoPreparando(a.lacunasPorParte))) return;
+      this.timerAnexos = setTimeout(async () => {
+        try {
+          const ativo = this.concursos.find((c) => c.ativo);
+          if (ativo && this.porAssunto) this.porAssunto = await api(`/concursos/${ativo.id}/material`);
+        } catch (e) { /* tenta de novo no próximo ciclo */ }
+        this.acompanharAnexos();
+      }, 10000);
+    },
+    textoAnexo,
     async destinoLacuna(a, l, decisao) {
       try {
         a.lacunasPorParte = (await destinoDaLacuna(a.assuntoId, l.parte, decisao)).lacunas;

@@ -28,7 +28,8 @@ async function api(caminho, opcoes = {}) {
   let resposta;
   try {
     resposta = await fetch(`/api${caminho}`, {
-      headers: { 'Content-Type': 'application/json' },
+      // FormData leva o Content-Type com a fronteira, que só o navegador sabe
+      headers: opcoes.body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
       ...opcoes,
     });
   } catch (e) {

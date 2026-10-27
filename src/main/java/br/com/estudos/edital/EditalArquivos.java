@@ -47,6 +47,29 @@ public class EditalArquivos {
         }
     }
 
+    /** Guarda o PDF que a pessoa anexou a uma lacuna (D-97) em {@code anexos/}; o nome é nosso, nunca do usuário. */
+    public String salvarAnexo(byte[] bytes) {
+        try {
+            var nome = "anexos/" + java.util.UUID.randomUUID() + ".pdf";
+            var destino = raiz.resolve(nome).normalize();
+            Files.createDirectories(destino.getParent());
+            Files.write(destino, bytes);
+            return nome;
+        } catch (IOException e) {
+            throw new IllegalStateException("Não foi possível guardar o PDF anexado.", e);
+        }
+    }
+
+    /** Tira um anexo do volume; já não existir não é erro. */
+    public void apagarAnexo(String relativo) {
+        try {
+            var destino = raiz.resolve(relativo).normalize();
+            if (destino.startsWith(raiz.resolve("anexos"))) Files.deleteIfExists(destino);
+        } catch (IOException e) {
+            // fica para a próxima limpeza; o registro já saiu
+        }
+    }
+
     Path raiz() {
         return raiz;
     }

@@ -42,7 +42,7 @@ public abstract class ConferenciaTestBase extends IntegracaoTestBase {
 
     @BeforeEach
     void limparConferencia() {
-        jdbc.execute("TRUNCATE edital_lacuna_decisao, edital_evento, edital_decisao, edital_parte_no, edital_parte, edital_trecho, edital_assunto, "
+        jdbc.execute("TRUNCATE lacuna_anexo, edital_lacuna_decisao, edital_evento, edital_decisao, edital_parte_no, edital_parte, edital_trecho, edital_assunto, "
             + "edital_disciplina, edital_execucao, no_arvore_diferenca, no_arvore, arvore_versao RESTART IDENTITY");
     }
 

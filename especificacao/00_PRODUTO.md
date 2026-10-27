@@ -5,7 +5,7 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.9.0 |
+| Versão | 1.10.0 |
 | Data | 2026-10-27 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
@@ -625,7 +625,8 @@ Confiança fica onde ela não é redundante e é diagnóstica: **no erro** (§7.
 Estimativa de probabilidade de aprovação. Humor, energia ou "qualidade da
 sessão". Medalhas, XP, níveis. Comparação com outros usuários. Cronograma
 gerado automaticamente. Algoritmo adaptativo tipo SM-2/FSRS — §3.2 mostra que
-compra pouco. Editor de conteúdo, anexo, upload. Notificação por e-mail, e qualquer notificação push sobre o estudo em si (lembrete, atraso,
+compra pouco. Editor de conteúdo, anexo, upload — **exceção, por pedido do usuário (2026-10-27): o PDF que a pessoa anexa para preencher uma
+lacuna do material** (`01_DOMINIO` D-97); fora isso, nenhum anexo nem upload. Notificação por e-mail, e qualquer notificação push sobre o estudo em si (lembrete, atraso,
 sequência de dias). **Exceção, por pedido do usuário (2026-10-27):** aviso de **processo concluído** — "edital lido, pronto para
 conferir" e "material pronto" —, opcional, por aparelho e sem cobrança (`01_DOMINIO` D-96).
 Campo estruturado de "insight" ou "observação elaborada" — §7.1 mostra que o
@@ -736,6 +737,7 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.10.0 | 2026-10-27 | Pedido do usuário: as leis específicas do edital (e o que o acervo não ensina) não têm material. **§8.5**: o anexo de um PDF para preencher uma lacuna do material deixa de ser recusado; continua recusado todo outro anexo e upload (`01_DOMINIO` D-97, ADR-049) |
 | 1.9.0 | 2026-10-27 | Pedido do usuário: esperas longas (a leitura do edital leva minutos; o material, horas) pedem um aviso fora da tela. **§8.5**: a recusa de push passa a valer só para o estudo em si; entram os avisos de processo concluído, opcionais, por aparelho, sem cobrança (`01_DOMINIO` D-96, ADR-048) |
 | 1.8.0 | 2026-10-18 | Pedido do usuário: o objetivo final é gabaritar a prova. **§5.1.1**: o sistema hospeda **uma prova objetiva inteira, com gabarito**, para verificar o material e deixar o usuário resolvê-la; revisa §5.1 ("não hospeda enunciado, alternativa ou gabarito", "não corrige questão") e a decisão vinculante nº 2. **§6.7**: a nota alimenta M-1 por disciplina e global, o desempenho por assunto só informa, e nada vira revisão (D-78). Decisões nº 2 e 15 ressalvadas; nº 18 nova (D-72). ADR-046 |
 | 1.7.0 | 2026-09-01 | §8.2: **intenção de implementação removida** como substituto da terceira dor — o campo (`Sessao.proximaSessaoData`/`proximaSessaoDescricao`) nunca era lido de volta por nada, falhando o próprio critério de §9.1 (informação que não muda decisão nem alimenta métrica). A dor passa a ser atacada só por atrito baixo — a fila automática já entrega o que fazer, sem o usuário planejar nada. §4: pilar da dor #3 atualizado. Decisão do usuário, testando o fluxo de sessão |

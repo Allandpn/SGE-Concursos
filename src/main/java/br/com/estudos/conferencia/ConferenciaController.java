@@ -46,9 +46,11 @@ public class ConferenciaController {
     private final ConclusaoConferenciaService conclusao;
     private final DecisaoService decisoes;
     private final MaterialDaConferencia materialDaConferencia;
+    private final AnexoDeLacunaService anexos;
 
     public ConferenciaController(ConferenciaService service, ConclusaoConferenciaService conclusao, DecisaoService decisoes,
-                                 MaterialDaConferencia materialDaConferencia) {
+                                 MaterialDaConferencia materialDaConferencia, AnexoDeLacunaService anexos) {
+        this.anexos = anexos;
         this.service = service;
         this.conclusao = conclusao;
         this.decisoes = decisoes;
@@ -89,6 +91,20 @@ public class ConferenciaController {
     @Operation(summary = "Dá destino a uma lacuna do material", description = "POR_FORA (vou estudar por fora), IGNORADA, ou nulo para desfazer. A parte tem de ser uma das lacunas entregues. Não muda o que o planejamento entregou.")
     public MaterialDaConferencia.Info destinoDaLacuna(@PathVariable Long assuntoId, @RequestBody DestinoDaLacuna corpo) {
         return materialDaConferencia.decidirLacuna(assuntoId, corpo.parte(), corpo.decisao());
+    }
+
+    @PostMapping(value = "/assuntos/{assuntoId}/lacunas/anexo", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Anexa um PDF a uma lacuna do material", description = "A parte tem de ser uma lacuna do assunto (404 LACUNA_INEXISTENTE); PDF que não abre: 422 PDF_INVALIDO; parte que já tem anexo: 409 ANEXO_JA_EXISTE (FALHOU se substitui). O worker corta em segmentos e devolve o resultado (D-97).")
+    public MaterialDaConferencia.Info anexar(@PathVariable Long assuntoId, @RequestParam("parte") String parte,
+                                             @RequestParam("arquivo") org.springframework.web.multipart.MultipartFile arquivo) {
+        return anexos.anexar(assuntoId, parte, arquivo);
+    }
+
+    @DeleteMapping("/assuntos/{assuntoId}/lacunas/anexo")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    @Operation(summary = "Tira o PDF anexado de uma lacuna", description = "Só PENDENTE ou FALHOU; PRONTO já virou segmentos: 409 ANEXO_JA_PRONTO.")
+    public void tirarAnexo(@PathVariable Long assuntoId, @RequestParam("parte") String parte) {
+        anexos.remover(assuntoId, parte);
     }
 
     @GetMapping("/assuntos/{assuntoId}/material-da-conferencia")
