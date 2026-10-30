@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.19.0 |
+| Versão | 1.20.0 |
 | Data | 2026-10-30 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -541,9 +541,29 @@ foco acumulado e, nos segmentos, o estimado × real.
 Orçamento: iniciar, pausar e encerrar em **um toque**, ≤ 1 s de resposta; a barra aparece sem recarregar a tela. O Pomodoro não
 acrescenta campo ao registro: ele só preenche um que já existia.
 
+### J-9 · Entrar no app
+
+Serve a quem usa o eAgora fora da rede de casa (`01_DOMINIO` §3.16). A porta é uma página fora das oito telas do estudo: não mostra dado nenhum.
+
+1. **Primeiro acesso, uma vez, pela rede privada.** Antes de existir um passkey, o app só deixa cadastrá-lo a quem chega pela tailnet. A pessoa toca
+   **"Cadastrar este aparelho"**, usa a biometria e vê os **8 códigos de recuperação**, uma única vez, com um botão para copiar e a frase
+   "guarde fora deste aparelho". Só depois de marcar que guardou o app abre. Vindo de fora, a porta diz que o primeiro acesso é pela rede privada.
+2. **Dia a dia.** A porta tem um botão, **"Entrar"**. Toca, usa a biometria e cai em Hoje. Com a sessão de 30 dias válida nem aparece: abrir o app
+   leva direto a Hoje (`02_JORNADAS` §5, abrir em < 2 s continua valendo).
+3. **Outro aparelho.** Dentro, em Ajustes → Acesso, **"Cadastrar passkey neste aparelho"** pede a biometria do aparelho novo estando logado no antigo, ou
+   entra pelo código de recuperação no aparelho novo. A lista mostra os aparelhos, quando cada um entrou por último, e **Sair**, **Sair de todos** e **Remover**.
+   O último passkey não tem botão de remover.
+4. **Perdi o aparelho.** Na porta, **"Usar código de recuperação"**: digita um dos 8 códigos, cadastra o passkey do aparelho novo e o código é consumido.
+   Ajustes → Acesso mostra quantos códigos restam e permite **gerar novos** (os antigos deixam de valer).
+5. **Sem passkey e sem código.** Não há caminho. A porta diz isso de forma curta; o convite pelo Guardian é pedido futuro.
+
+Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qualquer falha), e o bloqueio por excesso de tentativas diz quando volta.
+
+Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
+
 ## 4. As telas
 
-Oito. Cada uma justificada por uma jornada — tela sem jornada não entra.
+Oito de estudo, mais a **porta** do login (J-9), que não mostra dado. Cada uma justificada por uma jornada — tela sem jornada não entra.
 
 | Tela | Serve a | Existe porque |
 |---|---|---|
@@ -727,6 +747,7 @@ O documento de interface é quem amarra isso.
 | J-3 Balanço semanal | Progresso, Assuntos | M-1 a M-4, D-35 |
 | J-4 Retorno | Hoje | D-15, D-20, §5.1 |
 | J-5 Edital novo e histórico | Concursos, Hoje, Assuntos | D-58 a D-63 |
+| J-9 Entrar no app | A porta (fora das oito), Ajustes | D-106 a D-113 |
 | J-8 Cronometrar o foco | Barra do Pomodoro, Hoje, Assuntos, Registrar, Ajustes, Progresso | D-98 a D-105 |
 
 ---
@@ -754,6 +775,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.20.0 | 2026-10-30 | **J-9** (entrar no app) com `01_DOMINIO` v1.31.0 (D-106 a D-113) e ADR-051. A porta do login fica fora das oito telas do estudo; Ajustes ganha "Acesso" (passkeys, códigos de recuperação, sair de todos) |
 | 1.19.0 | 2026-10-30 | **J-8** (cronometrar o foco, Pomodoro) com `01_DOMINIO` v1.30.0 (D-98 a D-105) e `00_PRODUTO` v1.11.0. A barra do Pomodoro não é tela nova: as oito telas de §4 ficam. Ajustes ganha "Pomodoro"; o campo de tempo do registro passa a vir do foco medido quando houver |
 | 1.18.0 | 2026-10-27 | **J-5, passo 9a**: lacuna com "estudar por fora", "ignorar" e **anexar PDF**, com `01_DOMINIO` v1.29.0 (D-97) e `00_PRODUTO` v1.10.0 |
 | 1.17.0 | 2026-10-27 | **§2.3** (os avisos do processo do edital) e um passo novo em J-5, com `01_DOMINIO` v1.28.0 (D-96) e `00_PRODUTO` v1.9.0. Ajustes ganha "Avisos neste aparelho" |

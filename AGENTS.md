@@ -167,6 +167,14 @@ primeira foi revisada oito vezes; a segunda nasce por sprint, de propósito.
 
 ---
 
+## O acesso: login por passkey (ADR-051, a definir na Sprint 30)
+
+O ADR-015 (sem autenticação, a rede é a defesa) foi **substituído** em 2026-10-30. A especificação do login está em `01_DOMINIO` §3.16 (D-106 a D-113)
+e `02_JORNADAS` J-9; **o código ainda não existe**. Até a Sprint 30, o app segue sem login e só na tailnet. **Não ligue `tailscale funnel` nem exponha
+o app antes do login estar implementado e testado**: expor sem autenticação é defeito grave.
+
+---
+
 ## Três coisas que parecem erro e não são
 
 Herdadas da tentativa anterior, e continuam valendo:

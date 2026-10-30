@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.18.0 |
+| Versão | 1.19.0 |
 | Data | 2026-10-30 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 105 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 113 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 105 regras, classificadas
+## 3. As 113 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -217,8 +217,16 @@ conceitual — envelhecer por motivo errado.
 | D-103 | Política | S | Teste: valor não positivo é recusado (validação única dos parâmetros, sem faixa por chave); sem edição vale o padrão 25 / 5 / 15 / 4; mudar o parâmetro não altera a fase em curso |
 | D-104 | Comportamento | S | Teste: sem inscrição não envia; com inscrição envia só no fim de fase iniciada pela pessoa; nenhum outro caminho envia; inscrição rejeitada (404/410) é removida |
 | D-105 | Derivação | S | Teste: as três consultas vêm dos dados gravados e não existe coluna que as guarde |
+| D-106 | **Invariante** | S + I | Teste estrutural: toda rota mapeada fora da lista fechada responde 401 sem sessão; rota nova sem entrada na lista nasce fechada |
+| D-107 | Invariante | S | Teste: passkey com contador menor ou igual ao guardado é recusado; não existe campo de senha |
+| D-108 | Comportamento | S | Teste: sem credencial, cadastro vindo da rede privada abre; cadastro marcado como público é recusado; com um passkey, o caminho está fechado |
+| D-109 | Comportamento | S | Teste: cookie httpOnly, Secure e SameSite=Strict; sessão expira em 30 dias sem uso e renova com uso; o banco guarda só o resumo; sair e sair de todos a encerram; pedido que muda dado de outra origem é recusado |
+| D-110 | Comportamento | S | Teste: 8 códigos mostrados uma vez e guardados só como resumo; cada um vale uma vez; gerar novos invalida os antigos; código cadastra passkey novo |
+| D-111 | Invariante | **P** + S | Teste: remover o último passkey é recusado; cadastrar exige sessão ou código |
+| D-112 | Comportamento | S | Teste: após N falhas a origem é bloqueada por tempo; o bloqueio expira; código de recuperação tem limite mais estrito |
+| D-113 | Comportamento | S + I | Teste: pedido a `/internal` marcado como público é recusado mesmo com o token certo; sem a marca, o token interno segue valendo |
 
-**Contagem:** 23 invariantes · 10 derivações · 63 comportamentos · 10 políticas — 106 linhas para 105 regras.
+**Contagem:** 26 invariantes · 10 derivações · 68 comportamentos · 10 políticas — 114 linhas para 113 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -264,6 +272,9 @@ dados — **como** cada uma é implementada é do documento de persistência.
 | D-41 | Todo assunto tem ordem dentro da disciplina |
 | D-45 | Duas gravações da mesma tentativa de registro são impossíveis |
 | D-98 | Não existem duas fases de Pomodoro em curso ao mesmo tempo |
+| D-106 | Nenhuma rota fora da lista fechada responde sem sessão |
+| D-107 | O contador de assinaturas de um passkey nunca regride |
+| D-111 | Existe sempre ao menos um passkey depois do primeiro |
 | D-16, D-28 | *(por ausência — §4.2)* Não existe atributo de fase nem entidade de turno |
 
 ### 4.1 A crítica é a D-05
@@ -406,7 +417,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 105 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 113 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -529,6 +540,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.19.0 | 2026-10-30 | **D-106 a D-113** com `01_DOMINIO.md` v1.31.0 (o acesso por passkey). Três invariantes (D-106, D-107, D-111), cinco comportamentos. Contagem: 114 linhas para 113 regras |
 | 1.18.0 | 2026-10-30 | **D-98 a D-105** com `01_DOMINIO.md` v1.30.0 (Pomodoro). Uma invariante (D-98), duas derivações (D-99, D-105), quatro comportamentos, uma política (D-103). Contagem: 106 linhas para 105 regras |
 | 1.17.0 | 2026-10-27 | **D-97** com `01_DOMINIO.md` v1.29.0 (PDF anexado a uma lacuna). Um comportamento. Contagem: 98 linhas para 97 regras |
 | 1.16.0 | 2026-10-27 | **D-96** com `01_DOMINIO.md` v1.28.0 (avisos de processo). Um comportamento. Contagem: 97 linhas para 96 regras |

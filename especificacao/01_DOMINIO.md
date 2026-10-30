@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.30.0 |
+| Versão | 1.31.0 |
 | Data | 2026-10-30 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -51,6 +51,8 @@ Uma frase cada. Se um termo precisar de duas, é porque está mal definido.
 | **Material de consulta** | Páginas das apostilas que não são leitura obrigatória, como as questões do assunto (§3.12) |
 | **Pomodoro** | Cronômetro de foco em fases (foco, pausa curta, pausa longa) que mede o tempo real de estudo (§3.15) |
 | **Fase** | Um trecho do Pomodoro, com início gravado e fim; só a de foco conta como tempo de estudo (§3.15) |
+| **Passkey** | A credencial do titular no login: biometria ou PIN do aparelho, sem senha (§3.16) |
+| **Sessão (de acesso)** | O que mantém a pessoa dentro depois de entrar: 30 dias, revogável (§3.16). Não é a sessão de estudo |
 
 Note a separação que a v1 não tinha: **revisão é compromisso, recuperação é
 evento.** A revisão agenda; a sessão de recuperação cumpre. Confundir os dois
@@ -713,6 +715,44 @@ falta. É a segunda exceção à recusa de push (`00_PRODUTO` §8.5), pedida pel
 
 **O que o sistema não garante.** Que o foco medido seja foco: o cronômetro mede o tempo com a fase em curso, não a atenção.
 E que o push chegue na hora: o serviço do navegador pode atrasar ou descartar.
+
+---
+
+### 3.16 O acesso: login por passkey
+
+Até a v1.30.0 a rede era a autenticação (ADR-015): quem alcançava a porta estava dentro. Para usar o app fora da rede de casa, o serviço passa a
+ser alcançável pela internet (ADR-051) e a rede deixa de ser defesa. A **porta** do app é o login por passkey.
+
+**Um titular.** O sistema tem uma pessoa só, com um ou mais passkeys (WebAuthn: biometria ou PIN do aparelho). Não há senha, não há
+cadastro aberto, não há outro usuário (ADR-040 continua: multiusuário fica fora).
+
+**Tudo exige sessão (D-106).** Toda rota do app, de dado ou de tela, responde `401` sem sessão válida. O que fica aberto é uma **lista fechada**:
+a página e os arquivos da porta (entrar), as rotas do próprio login, e a verificação de saúde do contêiner. Rota nova nasce fechada.
+
+**O passkey (D-107).** A credencial é um passkey do titular; o contador de assinaturas do passkey nunca regride (assinatura clonada é recusada).
+
+**O primeiro passkey (D-108).** Só se cadastra o primeiro quando **não existe nenhum** e **só por um pedido que não veio da internet pública** (a
+rede privada do Tailscale). Depois do primeiro, esse caminho fecha: cadastrar outro passkey exige já estar dentro (D-111) ou usar um código de
+recuperação (D-110). Antes do primeiro passkey o app é inacessível de fora.
+
+**A sessão (D-109).** Depois de entrar, a sessão dura **30 dias** no mesmo aparelho, renovada a cada uso. Vive num cookie que o JavaScript não lê,
+só em HTTPS e só no mesmo site; o servidor guarda dela só um resumo irreversível. É revogável: **Sair** encerra a deste aparelho, **Sair de todos**
+encerra todas. Pedido que muda dado só vale com a origem do próprio app.
+
+**Recuperação por códigos (D-110).** No primeiro cadastro o sistema mostra **8 códigos de uso único**, uma vez só; guarda só o resumo deles. Um
+código vale para entrar e cadastrar um passkey novo, e é consumido. Gerar códigos novos invalida os antigos. Quem perder todos os aparelhos e todos
+os códigos fica sem acesso: o convite emitido pelo Guardian é um pedido futuro ao projeto dele (o Guardian ainda não emite convite para outros sistemas), não uma garantia desta versão.
+
+**Gerenciar passkeys (D-111).** Dentro, a pessoa cadastra passkeys novos e remove os que não usa. **O último passkey não se remove.**
+
+**Freio de tentativas (D-112).** Tentativa de entrar falha devagar e é limitada por origem e no total; código de recuperação tem limite mais
+estrito. Falha demais bloqueia por um tempo, nunca para sempre, para que um atacante não consiga trancar o titular do lado de fora.
+
+**O que não muda (D-113).** As rotas internas do planejamento (`/internal`) continuam com o token interno e **nunca** respondem a pedido vindo da
+internet pública. O aviso de push, o Pomodoro e o resto do estudo são os mesmos; só passam a exigir sessão.
+
+**O que o sistema não garante.** Que o aparelho do titular esteja limpo: quem controla o aparelho desbloqueado usa a sessão. E recuperar o
+acesso sem passkey nem código: não há segundo caminho nesta versão.
 
 ---
 
@@ -1577,6 +1617,14 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-103 | Durações do foco, da pausa curta e da pausa longa, e focos até a pausa longa, são parâmetros em Ajustes (padrão 25 / 5 / 15 / 4) | §3.15, §7.7 |
 | D-104 | O aviso de fim de fase é sinal na tela com o app aberto; Web Push é opcional, desligado por padrão e por aparelho, só de fase iniciada pela pessoa, sem lembrete, cobrança nem sequência | §3.15 |
 | D-105 | Tempo de foco por assunto e por dia, focos completos × encerrados e estimado × real do segmento são derivados, informação e nunca meta, ranking ou sequência | §3.15 |
+| D-106 | Toda rota do app exige sessão válida e responde 401 sem ela; as abertas são uma lista fechada (a porta, as rotas do login e a saúde), e rota nova nasce fechada | §3.16 |
+| D-107 | A credencial é um passkey (WebAuthn) do único titular, sem senha nem cadastro aberto; o contador de assinaturas do passkey nunca regride | §3.16 |
+| D-108 | O primeiro passkey só se cadastra quando não existe nenhum e só por pedido que não veio da internet pública; depois dele esse caminho fecha | §3.16 |
+| D-109 | A sessão dura 30 dias, renovada ao usar, em cookie inacessível ao JavaScript, só HTTPS e mesmo site; o servidor guarda só o resumo, e ela é revogável (sair, sair de todos) | §3.16 |
+| D-110 | A recuperação é por 8 códigos de uso único, mostrados uma vez e guardados só como resumo; cada código vale para entrar e cadastrar um passkey novo e é consumido; gerar novos invalida os antigos | §3.16 |
+| D-111 | Cadastrar passkey novo exige sessão (ou código de recuperação); o último passkey não se remove | §3.16 |
+| D-112 | Tentativas de entrar são limitadas por origem e no total, com bloqueio temporário e nunca permanente; o código de recuperação tem limite mais estrito | §3.16 |
+| D-113 | As rotas internas do planejamento mantêm o token interno e nunca respondem a pedido vindo da internet pública | §3.16 |
 
 ---
 
@@ -1608,6 +1656,7 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Parte como pedaço literal do assunto, com nó da árvore do QConcursos como pivô | Casar o assunto inteiro com o acervo por palavras | O assunto é grosso; o nó dá um critério verificável (84% de veredito igual entre duas IAs) e é também o filtro das questões |
 | Os assuntos nascem na conclusão da conferência | Criar na leitura e migrar a cada correção | A conferência pode mudar o texto e a divisão; criar antes obrigaria a migrar assunto com chave, sessão e segmento |
 | Árvore do QConcursos no SGE, atualizada quando a pessoa decide | Árvore servida pelo planejamento a cada consulta, ou atualização automática | A tela precisa de busca rápida; e uma troca de nós sob os pés da pessoa mudaria o que ela já resolveu |
+| Login por passkey de um titular, com a rede deixando de ser a defesa | Manter o app só na tailnet; senha; reaproveitar o login do Guardian | Só tailnet impede usar fora de casa sem instalar o Tailscale em cada aparelho; senha exposta à internet convida força bruta; acoplar ao Guardian amarra dois sistemas de projetos diferentes (ADR-048 já recusou) |
 | Pomodoro como cronômetro que alimenta o registro, com início gravado no servidor | Pomodoro só no aparelho, ou Pomodoro que monta o turno em ciclos | Estado só no aparelho some ao limpar o navegador e não vale entre celular e tablet; montar o turno por ciclos mexeria em §7 por uma convenção que o próprio domínio diz arbitrária (§7.7) |
 | Questões e gabarito como material de consulta, fora dos segmentos | Segmentos de questões na escada | Resolver questão é feito no QConcursos, ligado ao nó; misturar com leitura inflaria o tempo do assunto e a contagem de leitura (D-54) |
 
@@ -1655,6 +1704,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.31.0 | 2026-10-30 | Pedido do usuário: usar o app fora da rede de casa. **§3.16** (o acesso: login por passkey) e **D-106 a D-113**, com ADR-051 (substitui o ADR-015): toda rota exige sessão, um titular com passkey, primeiro cadastro só pela rede privada, sessão de 30 dias revogável, recuperação por 8 códigos de uso único, freio de tentativas e rotas internas fechadas à internet. 113 regras |
 | 1.30.0 | 2026-10-30 | Pedido do usuário (testando o fluxo de estudo), com `00_PRODUTO` v1.11.0. **§3.15** (Pomodoro: o foco cronometrado) e **D-98 a D-105**: o tempo de foco medido pré-preenche o registro sem substituir o declarado (§7.7), um só ativo por vez, nenhuma fase começa sozinha, durações em Ajustes, aviso de fim de fase com push opcional, e três consultas derivadas. 105 regras |
 | 1.29.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.10.0. **§3.14** (PDF anexado a uma lacuna) e **D-97**: a lacuna do material se preenche com um PDF que a pessoa anexa, e ele vira segmentos |
 | 1.28.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.9.0. **§3.13** (avisos de processo) e **D-96**: o sistema avisa só de processo concluído, opcional e por aparelho, nunca do estudo |

@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.17.0** |
+| Versão do documento | **2.18.0** |
 | Status | **Congelado** |
 | Data | 2026-10-30 |
-| Total | 50 ADRs — 36 vigentes, 13 substituídas, 1 revogada |
+| Total | 51 ADRs — 36 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -78,6 +78,7 @@ que custa e o que foi descartado.
 | [ADR-048](#adr-048--aviso-de-processo-concluído-por-web-push-próprio) | Aviso de processo concluído por Web Push próprio | 2026-10-27 |
 | [ADR-049](#adr-049--pdf-anexado-a-uma-lacuna-guardado-no-servidor-e-fatiado-pelo-worker) | PDF anexado a uma lacuna, guardado no servidor e fatiado pelo worker | 2026-10-27 |
 | [ADR-050](#adr-050--pomodoro-com-início-gravado-no-servidor) | Pomodoro com início gravado no servidor | 2026-10-30 |
+| [ADR-051](#adr-051--login-por-passkey-e-exposição-pela-internet) | Login por passkey e exposição pela internet | 2026-10-30 |
 
 ### 1.2 Históricas
 
@@ -94,6 +95,7 @@ que custa e o que foi descartado.
 | ADR-010 | Sem etapa de build | Substituída por **ADR-028** |
 | ADR-012 | Cache por coleção, invalidado por escrita | Substituída por **ADR-029** |
 | ADR-013 | SPA servida por `doGet` | Substituída por **ADR-030** |
+| ADR-015 | Autenticação delegada à Tailscale | Substituída por **ADR-051** — texto integral mantido abaixo |
 | ADR-028 | Maven no backend, zero build no frontend (Tailwind/Alpine por CDN) | Substituída por **ADR-038** — texto integral mantido abaixo |
 | ADR-037 | Artefatos do planejamento chegam via Google Drive e `rclone` | Substituída por **ADR-044** — texto integral mantido abaixo; o caminho segue como legado |
 | ADR-039 | Um concurso-alvo ativo por vez na importação automática | Substituída por **ADR-042** — texto integral mantido abaixo |
@@ -211,7 +213,7 @@ dias. **Não** é algoritmo adaptativo.
 
 ## ADR-015 — Autenticação delegada à Tailscale
 
-**Status:** Aceita · 2026-08-15
+**Status:** Substituída por **ADR-051** · 2026-10-30 (texto integral mantido abaixo) · Aceita em 2026-08-15
 
 ### Contexto
 Sistema de usuário único, atrás de CGNAT, rodando num Pi doméstico. A v1 herdava
@@ -977,6 +979,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.18.0 | 2026-10-30 | **ADR-051**, pedido do usuário: login por passkey e exposição pela internet via Tailscale Funnel; substitui o ADR-015. Com `01_DOMINIO` v1.31.0 (D-106 a D-113). Total 51, 36 vigentes |
 | 2.17.0 | 2026-10-30 | **ADR-050**, pedido do usuário: o Pomodoro grava o início da fase no servidor e reutiliza o Web Push do ADR-048 para o fim de fase. Com `00_PRODUTO` v1.11.0 e `01_DOMINIO` v1.30.0 (D-98 a D-105). Total 50, 36 vigentes |
 | 2.16.0 | 2026-10-27 | **ADR-049**, pedido do usuário: o PDF anexado a uma lacuna do material fica no volume `editais` e o worker o fatia e importa; `material` continua só leitura no app. Com `00_PRODUTO` v1.10.0 e `01_DOMINIO` v1.29.0 (D-97). Total 49, 35 vigentes |
 | 2.15.0 | 2026-10-27 | **ADR-048**, pedido do usuário: aviso de processo concluído (edital lido, material pronto) por Web Push próprio, sem biblioteca nova, com `00_PRODUTO` v1.9.0 e `01_DOMINIO` v1.28.0 (D-96). Total 48, 34 vigentes |
@@ -1992,6 +1995,53 @@ app dorme e não vale em outro aparelho. O aviso de fim de fase, com o app fecha
 | Contador incrementado a cada segundo no servidor | Estado derivado persistido diverge do relógio real (D-16) e custa escrita sem ganho |
 | Pomodoro dentro da própria Sessão | Fase existe antes de qualquer sessão e pode não gerar nenhuma; misturar quebraria D-01 |
 | Encadear as fases sozinho | Contaria foco com a pessoa longe do aparelho (D-102) |
+
+---
+
+## ADR-051 — Login por passkey e exposição pela internet
+
+**Status:** Aceita · 2026-10-30 · pedido do usuário · substitui o ADR-015
+
+### Contexto
+
+O ADR-015 deixou a autenticação para a rede: o app só era alcançável dentro da tailnet. O usuário precisa usar o eAgora fora de casa, sem
+instalar o Tailscale em cada aparelho. Isso exige alcançar o serviço pela internet, e a rede deixa de ser defesa: o ADR-015 dizia que expor
+publicamente é decisão de arquitetura, com novo ADR e autenticação. Já existe, no mesmo Pi, um serviço exposto assim: o gateway do Guardian
+usa Tailscale Funnel e passkeys (WebAuthn).
+
+### Decisão
+
+- **Exposição:** `tailscale funnel` na porta 8443 do Pi, que já publica o app só na tailnet. O endereço é o do próprio nó (`*.ts.net`), com HTTPS e
+  certificado do Tailscale; nenhuma porta é aberta no roteador. O Funnel marca cada pedido que vem da internet pública (cabeçalho do Tailscale), e é
+  por essa marca que o app distingue a rede privada da pública (D-108, D-113).
+- **Login:** passkey (WebAuthn) de um titular, sem senha. Uma biblioteca de WebAuthn é a **única dependência nova**: a verificação de assinatura e do
+  contador é criptografia que não se escreve à mão, ao contrário da cifra do push (ADR-048). Spring Security continua fora; o filtro de sessão é código nosso,
+  pequeno, com lista fechada de rotas abertas (D-106).
+- **Sessão:** cookie `HttpOnly`, `Secure`, `SameSite=Strict`, 30 dias deslizantes; o banco guarda só o resumo do identificador (D-109).
+- **Recuperação:** 8 códigos de uso único, só o resumo no banco (D-110). Convite emitido pelo Guardian é pedido futuro ao projeto dele.
+- **O identificador do passkey é o hostname** (`rpId`): renomear o nó invalida todos os passkeys.
+- **O planejamento** (`/internal`) não passa pelo login: usa o token interno e nunca responde a pedido marcado como público (D-113).
+
+### Consequências
+
+- **A superfície de ataque passa a ser a internet.** O login é a única defesa do banco de estudos; por isso passkey (sem senha para vazar nem forçar) e
+  freio de tentativas (D-112).
+- **Mudança operacional que o desenvolvimento não faz:** ligar o Funnel exige `tailscale funnel` no Pi **e** o atributo `funnel` para o nó na política da
+  tailnet. Ambos são ação de quem tem root no Pi e a conta do Tailscale; o desenvolvimento só entrega o app, via Guardian. Até isso ser feito, o app
+  continua alcançável só na tailnet, agora com login.
+- O app deixa de abrir sem login também na tailnet: um caminho só de autenticação, mais simples de provar.
+- Quem perde todos os passkeys e todos os códigos fica sem acesso até haver o convite do Guardian.
+- O `docker-compose` não muda: a porta publicada continua `127.0.0.1:8080`; a exposição é do `tailscaled`, fora do contêiner.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Continuar só na tailnet | Não atende o uso fora de casa sem instalar o Tailscale em cada aparelho |
+| Cloudflare Tunnel | Exige domínio próprio e outra conta para manter; o Funnel já está em uso no mesmo Pi |
+| Usuário e senha | Senha exposta à internet convida força bruta e vazamento; passkey elimina os dois |
+| Reaproveitar o login do Guardian | Acopla dois projetos por causa de uma credencial (ADR-048 já recusou o acoplamento) |
+| Tailnet sem login, só o Funnel com login | Dois caminhos de autenticação, com o app distinguindo a origem em cada rota; mais difícil de provar que "toda rota exige sessão" |
 
 ---
 
