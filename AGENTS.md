@@ -256,9 +256,14 @@ Chromium headless (Playwright): expressão do Alpine dentro de `x-show` é avali
 - **`List.of(...).contains(null)` lança NPE**: cuidado ao testar um valor que pode ser nulo.
 - **Texto da regra em dois lugares** (`RegrasEdital` em Java, `partes_edital.py` no planejamento): os dois testam o mesmo arquivo de vetores.
 
-**Implantar no Pi** (só com o OK do usuário): backup do banco, `git pull --ff-only git@github.com:Allandpn/SGE-Concursos.git main` em
-`/opt/estudos` (o remoto https não tem credencial), `docker compose up -d --build app planejamento`, conferir saúde, a última migração e que a
-rota interna responde 401 sem token. **Nunca leia o `.env`.** O acesso do usuário é `tailscale serve` **só na porta 8443**: o Pi-hole (`pihole-FTL`)
-ocupa `0.0.0.0:443` e o `tailscaled` não consegue abri-la no IPv4 da tailnet (`docs/03E_DEPLOYMENT.md` §4.4).
+**Implantar (desde 2026-10-30, sem acesso do usuário ao Pi):** só pelo Guardian (`github.com/Allandpn/guardian`, `docs/DEPLOY.md`).
+Quem desenvolve não coloca nada no ar: o pedido de deploy é uma **etiqueta `release/N`** num commit já em `main`, e **só criar a etiqueta com o
+OK do usuário**. O deployer (root, no Pi) mostra a oferta no site, o guardião-mestre assina com passkey dentro do horário dele, roda
+`docker compose up -d --build` em `/opt/estudos` e volta sozinho se `estudos-app-1` não ficar `healthy`. Antes de pedir a etiqueta: suíte
+inteira verde, migração Flyway nova conferida (imutável depois de aplicada) e `CASCA_VERSAO` atualizado se mexeu em estático. Mudar o registro
+do deployer exige root no Pi: fale com o usuário. `docker-compose*.yml`, `Dockerfile` e `.env*` aparecem ao mestre como "mexe em segurança".
+**Nunca leia o `.env`** nem cole token em sessão. O acesso do usuário é `tailscale serve` **só na porta 8443**: o Pi-hole (`pihole-FTL`)
+ocupa `0.0.0.0:443` e o `tailscaled` não consegue abri-la no IPv4 da tailnet (`docs/03E_DEPLOYMENT.md` §4.4). O deploy manual antigo (backup,
+`git pull --ff-only`, `docker compose up`) vale só para quem ainda tiver root no Pi.
 
 **Custo**: o app chama IA pela assinatura do usuário (ADR-045); ensaie em pouco antes de rodar em edital inteiro.
