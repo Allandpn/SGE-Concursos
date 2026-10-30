@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.29.0 |
-| Data | 2026-10-27 |
+| Versão | 1.30.0 |
+| Data | 2026-10-30 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -49,6 +49,8 @@ Uma frase cada. Se um termo precisar de duas, é porque está mal definido.
 | **Conferência do edital** | O estado em que a pessoa resolve as divergências da leitura do edital, antes de ele virar assuntos (§3.12) |
 | **Decisão** | O que a pessoa resolveu numa divergência; vale antes da IA em qualquer reprocessamento (§3.12) |
 | **Material de consulta** | Páginas das apostilas que não são leitura obrigatória, como as questões do assunto (§3.12) |
+| **Pomodoro** | Cronômetro de foco em fases (foco, pausa curta, pausa longa) que mede o tempo real de estudo (§3.15) |
+| **Fase** | Um trecho do Pomodoro, com início gravado e fim; só a de foco conta como tempo de estudo (§3.15) |
 
 Note a separação que a v1 não tinha: **revisão é compromisso, recuperação é
 evento.** A revisão agenda; a sessão de recuperação cumpre. Confundir os dois
@@ -659,6 +661,58 @@ PDF que ela mesma anexa** — o texto da lei, por exemplo.
 
 **O que o sistema não garante.** Que o PDF anexado seja o texto certo, nem que ele tenha texto selecionável: um PDF escaneado vira
 segmentos de imagens, abertos como são.
+
+---
+
+### 3.15 Pomodoro: o foco cronometrado
+
+O tempo de uma sessão de conteúdo ou de questões é **declarado** (§7.7), e declarado de memória é o dado mais frouxo do
+sistema. O Pomodoro é um **cronômetro de foco** que mede esse tempo de verdade. Não é método de estudo, não é meta e não
+dirige o turno: só alimenta o registro e o que se aprende dele (D-29).
+
+**A fase.** O Pomodoro corre em fases, de três espécies: **foco**, **pausa curta** e **pausa longa**. Cada fase tem início
+gravado, fim (quando termina ou é encerrada) e os intervalos em que a pessoa pausou à mão. O relógio é calculado a partir do
+início gravado, nunca de um contador no aparelho: fechar o app, trocar de tela ou de aparelho não o altera (ADR-050).
+
+**O vínculo.** Ao iniciar, a fase de foco pode apontar para um assunto (e para um segmento dele). O vínculo é **opcional** e
+pode ser feito depois, antes de registrar. Um foco sem assunto é válido e só entra no total do dia.
+
+**O que conta como tempo de estudo (D-99).** Só a fase de **foco**, pelo tempo que de fato correu: pausa manual congela o
+relógio, fase encerrada antes do fim conta o que correu até parar, e **pausa curta e longa nunca contam**. Foco que venceu sem
+a pessoa encerrar conta só a duração programada, nunca o tempo depois do vencimento: voltar duas horas depois não infla o dado.
+
+**Encadeamento (D-102).** Nenhuma fase começa sozinha. Ao fim do foco o sistema propõe a pausa, ao fim da pausa propõe o
+próximo foco, e cada uma espera um toque. Contar foco com a pessoa longe do aparelho falsearia o dado que o Pomodoro existe
+para dar.
+
+**Alimenta o registro (D-100, D-101).** Ao registrar uma sessão de um assunto, o tempo dos focos ainda não usados para ele
+**pré-preenche** o campo de tempo (`ESTUDO`, `QUESTOES`, `FLASHCARDS`); a pessoa confirma ou corrige, e o que fica gravado é o
+declarado (§7.7). Cada fase de foco serve a **uma** sessão no máximo; o que não foi usado continua disponível. Em
+`RECUPERACAO` o tempo da sessão continua sendo o da tela (a reconstrução acontece entre a previsão e o resultado): o foco que
+correu ao lado é guardado, entra nas consultas abaixo e **não** substitui o tempo da recuperação.
+
+**Um só ativo (D-98).** Há no máximo uma fase em curso, em qualquer aparelho. Iniciar outra pede encerrar a atual. É a mesma
+ideia de D-05: a unicidade mora na persistência, nunca numa verificação prévia.
+
+**Parâmetros (D-103).** Duração do foco, da pausa curta, da pausa longa e quantos focos até a pausa longa são parâmetros
+em Ajustes. O padrão é 25 / 5 / 15 / 4 — convenção, não achado (§7.7); a pessoa muda sem pedir nada a ninguém.
+
+**O que se aprende (D-105).** Três consultas, todas derivadas (D-16), nada guardado:
+
+1. **tempo de foco por assunto e por dia**;
+2. **focos completos × encerrados antes do fim**, onde completo é o que correu até a duração programada;
+3. **estimado × real do segmento**: a estimativa de leitura do segmento contra o foco medido nas sessões `ESTUDO` dele.
+
+São informação, como M-2: não geram meta, ranking, sequência de dias nem destaque (`00_PRODUTO` §8.1 e §8.2). O total do dia
+aparece em Progresso, pequeno; a barra do Pomodoro mostra só o relógio da fase em curso.
+
+**O aviso de fim de fase (D-104).** Com o app aberto, o fim de uma fase sempre dá sinal na tela, com som e vibração se a pessoa
+deixou ligados. **Web Push** é opcional, desligado por padrão e por aparelho, e só avisa o fim de uma fase que a própria pessoa
+iniciou: nunca lembra de estudar, nunca cobra, nunca conta dias. O texto diz o que aconteceu ("o foco terminou"), não o que
+falta. É a segunda exceção à recusa de push (`00_PRODUTO` §8.5), pedida pelo usuário em 2026-10-30.
+
+**O que o sistema não garante.** Que o foco medido seja foco: o cronômetro mede o tempo com a fase em curso, não a atenção.
+E que o push chegue na hora: o serviço do navegador pode atrasar ou descartar.
 
 ---
 
@@ -1401,6 +1455,8 @@ Disciplina 1 ──── N ResultadoSimulado
 Concurso   N ──── N Assunto           cobertura do edital: peso, disciplina e ordem que ele deu
 Assunto    1 ──── N Parte             só os nascidos da conferência de um edital (§3.12)
 Parte      1 ──── N Nó                até 3, com natureza (os nós são da árvore do QConcursos, fora do estudo)
+Assunto    1 ──── N Fase de foco      opcional (§3.15); o segmento também pode ser apontado
+Fase de foco N ── 1 Sessão            a sessão que usou o tempo medido; no máximo uma por fase (D-101)
 ```
 
 **A única relação n:n é a cobertura do edital** (§3.8) — e ela descreve um
@@ -1513,6 +1569,14 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-95 | Cada execução da IA guarda modelo, prompt e data; trocar o modelo reprocessa só o que não tem decisão humana, e a tela do reprocessamento mostra só as pendências novas e um contador do que a decisão preservou | §3.12 |
 | D-96 | O sistema só avisa de processo concluído (conferência pronta, material pronto), no máximo uma vez por edital e rodada, por escolha da pessoa e por aparelho; nunca avisa de estudo, atraso ou sequência, e o mesmo fato sempre aparece na tela | §3.13 |
 | D-97 | Uma lacuna do material se preenche com um PDF anexado pela pessoa, que vira segmentos do assunto pelo caminho do material automático; a lacuna continua declarada, nada que já existe é apagado e é o único anexo que o produto aceita | §3.14 |
+| D-98 | Existe no máximo uma fase de Pomodoro em curso, em qualquer aparelho; iniciar outra pede encerrar a atual, e a unicidade mora na persistência | §3.15 |
+| D-99 | Conta como tempo de estudo só a fase de foco, pelo tempo que correu sem as pausas manuais; pausa curta e longa nunca contam, e foco vencido sem encerramento conta só a duração programada | §3.15 |
+| D-100 | O tempo dos focos ainda não usados pré-preenche o tempo da sessão de conteúdo, questões e flashcards; a pessoa confirma ou corrige, e o gravado é o declarado | §3.15, §7.7 |
+| D-101 | Cada fase de foco serve a uma sessão no máximo; em recuperação o tempo da sessão continua o da tela e o foco ao lado não o substitui | §3.15 |
+| D-102 | Nenhuma fase do Pomodoro começa sozinha: o sistema propõe a seguinte e espera um toque | §3.15 |
+| D-103 | Durações do foco, da pausa curta e da pausa longa, e focos até a pausa longa, são parâmetros em Ajustes (padrão 25 / 5 / 15 / 4) | §3.15, §7.7 |
+| D-104 | O aviso de fim de fase é sinal na tela com o app aberto; Web Push é opcional, desligado por padrão e por aparelho, só de fase iniciada pela pessoa, sem lembrete, cobrança nem sequência | §3.15 |
+| D-105 | Tempo de foco por assunto e por dia, focos completos × encerrados e estimado × real do segmento são derivados, informação e nunca meta, ranking ou sequência | §3.15 |
 
 ---
 
@@ -1544,6 +1608,7 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Parte como pedaço literal do assunto, com nó da árvore do QConcursos como pivô | Casar o assunto inteiro com o acervo por palavras | O assunto é grosso; o nó dá um critério verificável (84% de veredito igual entre duas IAs) e é também o filtro das questões |
 | Os assuntos nascem na conclusão da conferência | Criar na leitura e migrar a cada correção | A conferência pode mudar o texto e a divisão; criar antes obrigaria a migrar assunto com chave, sessão e segmento |
 | Árvore do QConcursos no SGE, atualizada quando a pessoa decide | Árvore servida pelo planejamento a cada consulta, ou atualização automática | A tela precisa de busca rápida; e uma troca de nós sob os pés da pessoa mudaria o que ela já resolveu |
+| Pomodoro como cronômetro que alimenta o registro, com início gravado no servidor | Pomodoro só no aparelho, ou Pomodoro que monta o turno em ciclos | Estado só no aparelho some ao limpar o navegador e não vale entre celular e tablet; montar o turno por ciclos mexeria em §7 por uma convenção que o próprio domínio diz arbitrária (§7.7) |
 | Questões e gabarito como material de consulta, fora dos segmentos | Segmentos de questões na escada | Resolver questão é feito no QConcursos, ligado ao nó; misturar com leitura inflaria o tempo do assunto e a contagem de leitura (D-54) |
 
 ---
@@ -1590,6 +1655,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.30.0 | 2026-10-30 | Pedido do usuário (testando o fluxo de estudo), com `00_PRODUTO` v1.11.0. **§3.15** (Pomodoro: o foco cronometrado) e **D-98 a D-105**: o tempo de foco medido pré-preenche o registro sem substituir o declarado (§7.7), um só ativo por vez, nenhuma fase começa sozinha, durações em Ajustes, aviso de fim de fase com push opcional, e três consultas derivadas. 105 regras |
 | 1.29.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.10.0. **§3.14** (PDF anexado a uma lacuna) e **D-97**: a lacuna do material se preenche com um PDF que a pessoa anexa, e ele vira segmentos |
 | 1.28.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.9.0. **§3.13** (avisos de processo) e **D-96**: o sistema avisa só de processo concluído, opcional e por aparelho, nunca do estudo |
 | 1.27.0 | 2026-10-24 | Pedido do usuário ("do edital ao estudo pronto", com a revisão manual no SGE como parte central). **§3.12** (conferência do edital e material de consulta) e **D-86 a D-95**, migradas de `docs/ESPECIFICACAO-REVISAO-EDITAL.md` v0.1.0: a IA propõe e a pessoa resolve, a decisão é guardada presa à chave e vale antes da IA, os assuntos nascem na conclusão da conferência, a árvore do QConcursos é atualizada quando a pessoa decide, questões e gabarito viram material de consulta fora dos segmentos. **§1** ganha cinco termos; **§3.2** ganha partes; **§3.9** passa a ler só o cabeçalho (ADR-047); **§3.10** ganha o material por casamento; **§9** ganha as relações de parte e nó. "Revisão" continua sendo o compromisso da escada: o novo conceito se chama conferência. 95 regras |

@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.18.0 |
-| Data | 2026-10-27 |
+| Versão | 1.19.0 |
+| Data | 2026-10-30 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -515,6 +515,32 @@ vez, de propósito, e o sistema não a mistura com o estudo diário.
 
 Orçamento: ≤ 1 s entre uma questão e a seguinte (navegação local); entregar e corrigir em ≤ 3 s.
 
+### J-8 · Cronometrar o foco (Pomodoro)
+
+Serve ao registro: o tempo de conteúdo e de questões deixa de ser lembrado e passa a ser medido (`01_DOMINIO` §3.15).
+
+1. Em **Hoje** (ao lado do assunto ou do segmento do plano) ou em **Assuntos**, toca **"Foco"**. A fase de foco começa na hora, com o
+   assunto já apontado. Há também um **"Foco"** sem assunto, na barra, para quem começa a estudar antes de decidir o quê.
+2. A **barra do Pomodoro** fica fixa em qualquer tela enquanto há fase em curso: o relógio, o assunto (se houver), **pausar** e
+   **encerrar**. Não é uma tela: a oitava seria justificada por uma jornada, e a jornada aqui é o turno (J-2).
+3. Fechar o app, trocar de tela ou abrir em outro aparelho não altera o relógio (D-98, ADR-050). Só uma fase corre por vez, em
+   qualquer aparelho; iniciar outra pede encerrar a atual.
+4. No fim do foco, a tela dá sinal (som e vibração, se ligados) e **propõe a pausa**; no fim da pausa, propõe o próximo foco.
+   **Nada começa sozinho** (D-102). Depois de N focos, a pausa proposta é a longa.
+5. Ao abrir **Registrar sessão** de um assunto, o campo de tempo já vem com a soma dos focos ainda não usados dele (D-100). Confirmar
+   custa zero, corrigir custa um toque; cada foco serve a uma sessão só (D-101). Em recuperação o tempo continua o da tela.
+6. O foco sem assunto pode ser apontado a um assunto depois, antes de registrar.
+
+Em **Ajustes → Pomodoro**: as quatro durações (D-103), som e vibração, e o aviso de fim de fase neste aparelho (um botão liga,
+outro desliga, um terceiro manda um aviso de teste; **desligado por padrão**, D-104). Sem permissão do navegador ou sem suporte, a
+tela diz isso e o sinal na tela segue funcionando.
+
+Em **Progresso**, pequeno e sem destaque (D-105): foco por dia, focos completos × encerrados antes do fim. No detalhe do **assunto**: o
+foco acumulado e, nos segmentos, o estimado × real.
+
+Orçamento: iniciar, pausar e encerrar em **um toque**, ≤ 1 s de resposta; a barra aparece sem recarregar a tela. O Pomodoro não
+acrescenta campo ao registro: ele só preenche um que já existia.
+
 ## 4. As telas
 
 Oito. Cada uma justificada por uma jornada — tela sem jornada não entra.
@@ -701,6 +727,7 @@ O documento de interface é quem amarra isso.
 | J-3 Balanço semanal | Progresso, Assuntos | M-1 a M-4, D-35 |
 | J-4 Retorno | Hoje | D-15, D-20, §5.1 |
 | J-5 Edital novo e histórico | Concursos, Hoje, Assuntos | D-58 a D-63 |
+| J-8 Cronometrar o foco | Barra do Pomodoro, Hoje, Assuntos, Registrar, Ajustes, Progresso | D-98 a D-105 |
 
 ---
 
@@ -727,6 +754,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.19.0 | 2026-10-30 | **J-8** (cronometrar o foco, Pomodoro) com `01_DOMINIO` v1.30.0 (D-98 a D-105) e `00_PRODUTO` v1.11.0. A barra do Pomodoro não é tela nova: as oito telas de §4 ficam. Ajustes ganha "Pomodoro"; o campo de tempo do registro passa a vir do foco medido quando houver |
 | 1.18.0 | 2026-10-27 | **J-5, passo 9a**: lacuna com "estudar por fora", "ignorar" e **anexar PDF**, com `01_DOMINIO` v1.29.0 (D-97) e `00_PRODUTO` v1.10.0 |
 | 1.17.0 | 2026-10-27 | **§2.3** (os avisos do processo do edital) e um passo novo em J-5, com `01_DOMINIO` v1.28.0 (D-96) e `00_PRODUTO` v1.9.0. Ajustes ganha "Avisos neste aparelho" |
 | 1.16.0 | 2026-10-24 | **J-5 refeita do passo 4 em diante** com `01_DOMINIO.md` v1.27.0: a proposta de assuntos dá lugar à **conferência do edital** (partes, nós do QConcursos, fila de divergências, decisões com escopo, conclusão que grava), ao acompanhamento do material por parte e ao material de consulta. Atualizar a árvore passa a ser gesto do usuário. Pedido do usuário |

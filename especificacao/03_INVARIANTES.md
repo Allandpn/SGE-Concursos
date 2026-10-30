@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.17.0 |
-| Data | 2026-10-27 |
+| Versão | 1.18.0 |
+| Data | 2026-10-30 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 97 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 105 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 97 regras, classificadas
+## 3. As 105 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -209,8 +209,16 @@ conceitual — envelhecer por motivo errado.
 | D-95  | Comportamento | S | Teste: trocar o modelo reprocessa só o que não tem decisão humana; a tela do reprocessamento lista só as pendências novas e o contador de decisões preservadas |
 | D-96  | Comportamento | S | Teste: sem inscrição não envia; com inscrição envia exatamente nos dois eventos, uma vez por edital e rodada; nenhum outro caminho envia; inscrição rejeitada pelo serviço (404/410) é removida |
 | D-97  | Comportamento | S + I | Teste: o PDF anexado a uma parte com lacuna gera segmentos do assunto sem apagar nem alterar os que já existem; PDF inválido é recusado; a lacuna continua declarada; o estado do anexo (preparando, pronto, falhou) vem do que o planejamento entregou |
+| D-98  | **Invariante** | **P** | Duas fases em curso ao mesmo tempo → a segunda escrita falha, de qualquer aparelho |
+| D-99  | Derivação | S | Teste: tempo de foco = fim − início − pausas manuais; pausa curta e longa valem zero; foco vencido sem encerramento vale a duração programada |
+| D-100 | Comportamento | S + I | Teste: registrar com focos livres do assunto traz o tempo somado; corrigir o valor grava o corrigido |
+| D-101 | Comportamento | S + **P** | Teste: uma fase usada por uma sessão não pré-preenche outra; em recuperação o tempo gravado é o da tela |
+| D-102 | Comportamento | S + I | Teste: terminar uma fase não cria a seguinte; a proposta espera um toque |
+| D-103 | Política | S | Teste: valores fora das faixas são recusados; sem edição vale o padrão 25 / 5 / 15 / 4 |
+| D-104 | Comportamento | S | Teste: sem inscrição não envia; com inscrição envia só no fim de fase iniciada pela pessoa; nenhum outro caminho envia; inscrição rejeitada (404/410) é removida |
+| D-105 | Derivação | S | Teste: as três consultas vêm dos dados gravados e não existe coluna que as guarde |
 
-**Contagem:** 22 invariantes · 8 derivações · 59 comportamentos · 9 políticas — 98 linhas para 97 regras.
+**Contagem:** 23 invariantes · 10 derivações · 63 comportamentos · 10 políticas — 106 linhas para 105 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -255,6 +263,7 @@ dados — **como** cada uma é implementada é do documento de persistência.
 | D-36 | Sessão de tipo `QUESTOES` tem formato de banca |
 | D-41 | Todo assunto tem ordem dentro da disciplina |
 | D-45 | Duas gravações da mesma tentativa de registro são impossíveis |
+| D-98 | Não existem duas fases de Pomodoro em curso ao mesmo tempo |
 | D-16, D-28 | *(por ausência — §4.2)* Não existe atributo de fase nem entidade de turno |
 
 ### 4.1 A crítica é a D-05
@@ -397,7 +406,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 97 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 105 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -520,6 +529,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.18.0 | 2026-10-30 | **D-98 a D-105** com `01_DOMINIO.md` v1.30.0 (Pomodoro). Uma invariante (D-98), duas derivações (D-99, D-105), quatro comportamentos, uma política (D-103). Contagem: 106 linhas para 105 regras |
 | 1.17.0 | 2026-10-27 | **D-97** com `01_DOMINIO.md` v1.29.0 (PDF anexado a uma lacuna). Um comportamento. Contagem: 98 linhas para 97 regras |
 | 1.16.0 | 2026-10-27 | **D-96** com `01_DOMINIO.md` v1.28.0 (avisos de processo). Um comportamento. Contagem: 97 linhas para 96 regras |
 | 1.15.0 | 2026-10-24 | **D-86 a D-95** com `01_DOMINIO.md` v1.27.0 (conferência do edital e material de consulta). Uma invariante (D-89), uma derivação (D-94), oito comportamentos. Contagem: 96 linhas para 95 regras |

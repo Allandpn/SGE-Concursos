@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.16.0** |
+| Versão do documento | **2.17.0** |
 | Status | **Congelado** |
-| Data | 2026-10-27 |
-| Total | 49 ADRs — 35 vigentes, 13 substituídas, 1 revogada |
+| Data | 2026-10-30 |
+| Total | 50 ADRs — 36 vigentes, 13 substituídas, 1 revogada |
 
 ---
 
@@ -77,6 +77,7 @@ que custa e o que foi descartado.
 | [ADR-047](#adr-047--conferência-do-edital-pela-pessoa-e-material-por-casamento) | Conferência do edital pela pessoa e material por casamento | 2026-10-24 |
 | [ADR-048](#adr-048--aviso-de-processo-concluído-por-web-push-próprio) | Aviso de processo concluído por Web Push próprio | 2026-10-27 |
 | [ADR-049](#adr-049--pdf-anexado-a-uma-lacuna-guardado-no-servidor-e-fatiado-pelo-worker) | PDF anexado a uma lacuna, guardado no servidor e fatiado pelo worker | 2026-10-27 |
+| [ADR-050](#adr-050--pomodoro-com-início-gravado-no-servidor) | Pomodoro com início gravado no servidor | 2026-10-30 |
 
 ### 1.2 Históricas
 
@@ -976,6 +977,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.17.0 | 2026-10-30 | **ADR-050**, pedido do usuário: o Pomodoro grava o início da fase no servidor e reutiliza o Web Push do ADR-048 para o fim de fase. Com `00_PRODUTO` v1.11.0 e `01_DOMINIO` v1.30.0 (D-98 a D-105). Total 50, 36 vigentes |
 | 2.16.0 | 2026-10-27 | **ADR-049**, pedido do usuário: o PDF anexado a uma lacuna do material fica no volume `editais` e o worker o fatia e importa; `material` continua só leitura no app. Com `00_PRODUTO` v1.10.0 e `01_DOMINIO` v1.29.0 (D-97). Total 49, 35 vigentes |
 | 2.15.0 | 2026-10-27 | **ADR-048**, pedido do usuário: aviso de processo concluído (edital lido, material pronto) por Web Push próprio, sem biblioteca nova, com `00_PRODUTO` v1.9.0 e `01_DOMINIO` v1.28.0 (D-96). Total 48, 34 vigentes |
 | 2.14.0 | 2026-10-24 | **ADR-047**, pedido do usuário: a separação do edital em disciplinas, assuntos e partes e a ligação aos nós do QConcursos passam ao planejamento; o SGE guarda a conferência e as decisões da pessoa; o PDF do edital passa a ser guardado até a conclusão. Substitui em parte ADR-043. Total 47, 33 vigentes |
@@ -1951,6 +1953,45 @@ PDF em segmentos de ~60 min é do planejamento (`dias/montar_bloco.py`).
 | O app fatiar o PDF (PDFBox) e escrever em `material` | Exigiria montar `material` com escrita no app e duplicaria o fatiador do planejamento |
 | Guardar o PDF inteiro como um segmento só | Segmento é ~60 min; um PDF de lei teria horas |
 | Subir o PDF para o Drive e usar o link | Contraria ADR-044 (sem Drive) |
+
+---
+
+## ADR-050 — Pomodoro com início gravado no servidor
+
+**Status:** Aceita · 2026-10-30 · pedido do usuário · complementa ADR-038 e ADR-048
+
+### Contexto
+
+O Pomodoro (`01_DOMINIO` §3.15) mede o tempo de estudo que alimenta o registro. O app é uma SPA instalável usada em celular e
+tablet; a pessoa troca de tela, fecha o app e muda de aparelho no meio de um foco. Um contador mantido no aparelho para quando o
+app dorme e não vale em outro aparelho. O aviso de fim de fase, com o app fechado, só existe por Web Push (ADR-048).
+
+### Decisão
+
+- **A fase é gravada com o instante de início**; o relógio é sempre calculado (agora − início − pausas manuais), no servidor para o
+  que é gravado e no cliente só para desenhar o ponteiro. Nenhum contador é fonte de verdade.
+- **Uma fase em curso por vez**, garantida por unicidade na persistência restrita às em curso (mesmo desenho de D-05), nunca por
+  verificação prévia (D-98).
+- **Fim de fase** é um fato gravado (encerrada pela pessoa ou vencida), e foco vencido sem encerramento conta a duração
+  programada (D-99). Tempo, completo/encerrado e estimado × real são consultas, nada é guardado (D-105).
+- **O push de fim de fase reutiliza o mecanismo do ADR-048** (VAPID, inscrições, lista fechada de domínios). O envio é agendado para
+  o instante de vencimento e cancelado se a pessoa encerrar antes; sem inscrição, não há envio.
+- A chave de idempotência do início é gerada no cliente, como em D-45: tocar duas vezes em "Foco" não abre duas fases.
+
+### Consequências
+
+- O vencimento da fase não depende de o app estar aberto; o sinal em tela depende, o push cobre o resto, quando ligado.
+- Há uma entidade e um agendamento novos; o relógio do servidor é o árbitro, então aparelhos com a hora errada não distorcem o dado.
+- O push de fim de fase é a segunda exceção do `00_PRODUTO` §8.5 e não pode crescer para lembrete.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Cronômetro só no aparelho (localStorage) | Some ao limpar o navegador, não vale entre aparelhos e para quando o app dorme |
+| Contador incrementado a cada segundo no servidor | Estado derivado persistido diverge do relógio real (D-16) e custa escrita sem ganho |
+| Pomodoro dentro da própria Sessão | Fase existe antes de qualquer sessão e pode não gerar nenhuma; misturar quebraria D-01 |
+| Encadear as fases sozinho | Contaria foco com a pessoa longe do aparelho (D-102) |
 
 ---
 

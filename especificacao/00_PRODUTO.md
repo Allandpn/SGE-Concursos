@@ -5,8 +5,8 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.10.0 |
-| Data | 2026-10-27 |
+| Versão | 1.11.0 |
+| Data | 2026-10-30 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
 
@@ -571,7 +571,8 @@ Cada item foi considerado e recusado, com motivo.
 ### 8.1 Horas como progresso
 
 Horas continuam registradas — dão denominador a §7.2 e dizem se você
-compareceu. Mas **não sobem ao topo e não geram meta em destaque.**
+compareceu. Mas **não sobem ao topo e não geram meta em destaque.** O Pomodoro (`01_DOMINIO` §3.15) mede essas horas com mais honestidade, e por isso mesmo
+não as promove: o relógio da fase em curso é ferramenta, o total do dia fica pequeno em Progresso e não vira meta.
 
 Hora é entrada; a tese é sobre saída. Indicador grande de "240 min/dia" ensina
 a otimizar a coisa errada, e o usuário obedece a indicadores grandes.
@@ -628,7 +629,9 @@ gerado automaticamente. Algoritmo adaptativo tipo SM-2/FSRS — §3.2 mostra que
 compra pouco. Editor de conteúdo, anexo, upload — **exceção, por pedido do usuário (2026-10-27): o PDF que a pessoa anexa para preencher uma
 lacuna do material** (`01_DOMINIO` D-97); fora isso, nenhum anexo nem upload. Notificação por e-mail, e qualquer notificação push sobre o estudo em si (lembrete, atraso,
 sequência de dias). **Exceção, por pedido do usuário (2026-10-27):** aviso de **processo concluído** — "edital lido, pronto para
-conferir" e "material pronto" —, opcional, por aparelho e sem cobrança (`01_DOMINIO` D-96).
+conferir" e "material pronto" —, opcional, por aparelho e sem cobrança (`01_DOMINIO` D-96). **Segunda exceção, por pedido do usuário (2026-10-30):** aviso de
+**fim de fase do Pomodoro**, só de fase que a própria pessoa iniciou, opcional, desligado por padrão e por aparelho, sem lembrete, cobrança ou
+sequência de dias (`01_DOMINIO` D-104).
 Campo estruturado de "insight" ou "observação elaborada" — §7.1 mostra que o
 banco de erros já faz isso, no momento certo.
 
@@ -737,6 +740,7 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.11.0 | 2026-10-30 | Pedido do usuário: um Pomodoro para medir o tempo real de estudo. **§8.1**: o Pomodoro não promove horas a meta. **§8.5**: segunda exceção à recusa de push, o aviso de fim de fase, opcional e por aparelho (`01_DOMINIO` §3.15, D-98 a D-105, ADR-050) |
 | 1.10.0 | 2026-10-27 | Pedido do usuário: as leis específicas do edital (e o que o acervo não ensina) não têm material. **§8.5**: o anexo de um PDF para preencher uma lacuna do material deixa de ser recusado; continua recusado todo outro anexo e upload (`01_DOMINIO` D-97, ADR-049) |
 | 1.9.0 | 2026-10-27 | Pedido do usuário: esperas longas (a leitura do edital leva minutos; o material, horas) pedem um aviso fora da tela. **§8.5**: a recusa de push passa a valer só para o estudo em si; entram os avisos de processo concluído, opcionais, por aparelho, sem cobrança (`01_DOMINIO` D-96, ADR-048) |
 | 1.8.0 | 2026-10-18 | Pedido do usuário: o objetivo final é gabaritar a prova. **§5.1.1**: o sistema hospeda **uma prova objetiva inteira, com gabarito**, para verificar o material e deixar o usuário resolvê-la; revisa §5.1 ("não hospeda enunciado, alternativa ou gabarito", "não corrige questão") e a decisão vinculante nº 2. **§6.7**: a nota alimenta M-1 por disciplina e global, o desempenho por assunto só informa, e nada vira revisão (D-78). Decisões nº 2 e 15 ressalvadas; nº 18 nova (D-72). ADR-046 |
