@@ -24,7 +24,39 @@ const ROTULOS_PARAMETRO = {
   janela_tolerancia_percentual: 'Janela de tolerância',
   lote_minimo_questoes: 'Lote mínimo de questões',
   duracao_bloco_min: 'Duração sugerida do bloco (min)',
+  pomodoro_foco_min: 'Foco (min)',
+  pomodoro_pausa_curta_min: 'Pausa curta (min)',
+  pomodoro_pausa_longa_min: 'Pausa longa (min)',
+  pomodoro_focos_ate_longa: 'Focos até a pausa longa',
 };
+
+// Preferências do Pomodoro que são do aparelho, não do domínio (docs/SPRINT-29-POMODORO.md §6): ficam no navegador.
+function preferenciaFoco(chave, padrao) {
+  try {
+    const v = window.localStorage.getItem('foco.' + chave);
+    return v === null ? padrao : v === '1';
+  } catch (e) {
+    return padrao;
+  }
+}
+function guardarPreferenciaFoco(chave, valor) {
+  try { window.localStorage.setItem('foco.' + chave, valor ? '1' : '0'); } catch (e) { /* sem armazenamento, segue com o padrão */ }
+}
+function nomesDeAssuntoEmFoco() {
+  try { return JSON.parse(window.localStorage.getItem('foco.nomes') || '{}'); } catch (e) { return {}; }
+}
+function lembrarNomeDeAssunto(id, nome) {
+  if (!id || !nome) return;
+  try {
+    const nomes = nomesDeAssuntoEmFoco();
+    nomes[id] = nome;
+    window.localStorage.setItem('foco.nomes', JSON.stringify(nomes));
+  } catch (e) { /* o nome é só conveniência da barra */ }
+}
+function relogioFoco(segundos) {
+  const s = Math.max(0, Math.floor(segundos));
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
 
 // Dá destino a uma lacuna do material (POR_FORA, IGNORADA ou null para desfazer); devolve o material do assunto atualizado.
 function destinoDaLacuna(assuntoId, parte, decisao) {
@@ -64,6 +96,163 @@ function textoLacuna(l) {
 }
 
 document.addEventListener('alpine:init', () => {
+
+  // Pomodoro (01_DOMINIO §3.15, D-98 a D-105; ADR-050; docs/SPRINT-29-POMODORO.md §6). O relógio é do servidor: aqui só se desenha o
+  // ponteiro a partir do último estado recebido, e se confere de novo ao abrir, ao voltar à aba e a cada 30 s. Auxiliar: se algo
+  // falhar, o resto do app segue.
+  Alpine.store('foco', {
+    fase: null,          // { fase, decorridoS, restanteS, pausada } como o servidor devolveu
+    recebidoEm: Date.now(),
+    agora: Date.now(),
+    proposta: null,      // D-102: o que vem depois, só proposto; nada começa sozinho
+    ultimoFoco: null,    // { assuntoId, segmentoId, nome } do último foco visto, para "mais um foco"
+    erro: null,
+    trabalhando: false,
+    avisouVencimento: false,
+
+    init() {
+      this.sincronizar();
+      setInterval(() => this.tocar(), 1000);
+      setInterval(() => this.sincronizar(), 30000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) this.sincronizar(); });
+    },
+
+    get emCurso() { return !!this.fase; },
+    get ehPausa() { return !!this.fase && this.fase.fase.especie !== 'FOCO'; },
+    get pausada() { return !!this.fase && this.fase.pausada; },
+
+    get restante() {
+      if (!this.fase) return 0;
+      if (this.fase.pausada) return this.fase.restanteS;
+      return Math.max(0, this.fase.restanteS - Math.floor((this.agora - this.recebidoEm) / 1000));
+    },
+    get rotulo() { return relogioFoco(this.restante); },
+
+    get descricao() {
+      if (!this.fase) return '';
+      const e = this.fase.fase.especie;
+      if (e === 'PAUSA_CURTA') return 'Pausa curta';
+      if (e === 'PAUSA_LONGA') return 'Pausa longa';
+      const nome = nomesDeAssuntoEmFoco()[this.fase.fase.assuntoId];
+      return (this.pausada ? 'Foco pausado' : 'Foco') + (nome ? ' · ' + nome : '');
+    },
+
+    get textoProposta() {
+      const p = this.proposta;
+      if (!p) return '';
+      const min = Math.round(p.duracaoS / 60);
+      if (p.especie === 'FOCO') return `Iniciar foco · ${min} min`;
+      return `Iniciar ${p.especie === 'PAUSA_LONGA' ? 'pausa longa' : 'pausa curta'} · ${min} min`;
+    },
+
+    receber(situacao) {
+      const mudou = !situacao || !this.fase || situacao.fase.id !== this.fase.fase.id;
+      this.fase = situacao;
+      this.recebidoEm = Date.now();
+      this.agora = this.recebidoEm;
+      if (mudou) this.avisouVencimento = false;
+      if (situacao && situacao.fase.especie === 'FOCO') {
+        const nome = nomesDeAssuntoEmFoco()[situacao.fase.assuntoId] ?? null;
+        this.ultimoFoco = { assuntoId: situacao.fase.assuntoId, segmentoId: situacao.fase.segmentoId, nome };
+      }
+    },
+
+    async sincronizar() {
+      const tinha = !!this.fase;
+      try {
+        this.receber(await api('/foco/atual'));
+        if (tinha && !this.fase) await this.carregarProposta();   // a fase terminou (aqui ou em outro aparelho)
+        if (this.fase) this.proposta = null;
+      } catch (e) {
+        // sem rede o ponteiro segue do último estado; a próxima conferência acerta
+      }
+    },
+
+    tocar() {
+      this.agora = Date.now();
+      if (this.fase && !this.fase.pausada && this.restante === 0 && !this.avisouVencimento) {
+        this.avisouVencimento = true;
+        this.sinalizar();
+        this.sincronizar();
+      }
+    },
+
+    // D-104: com o app aberto, o fim de fase sempre dá sinal na tela; som e vibração são escolha do aparelho.
+    sinalizar() {
+      if (preferenciaFoco('vibracao', true) && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      if (!preferenciaFoco('som', true)) return;
+      try {
+        const Contexto = window.AudioContext || window.webkitAudioContext;
+        const ctx = new Contexto();
+        const osc = ctx.createOscillator();
+        osc.frequency.value = 880;
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+      } catch (e) { /* sem áudio, fica o sinal na tela */ }
+    },
+
+    async carregarProposta() {
+      try {
+        this.proposta = await api('/foco/proposta');
+      } catch (e) {
+        this.proposta = null;
+      }
+    },
+
+    async agir(fazer) {
+      this.trabalhando = true;
+      this.erro = null;
+      try {
+        await fazer();
+      } catch (e) {
+        this.erro = e.message || 'Não deu certo. Tente de novo.';
+        await this.sincronizar();
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+
+    // D-98: uma fase por vez; o servidor recusa a segunda com 409, e a barra mostra a que está em curso.
+    iniciar(especie, assuntoId = null, segmentoId = null, nome = null) {
+      return this.agir(async () => {
+        lembrarNomeDeAssunto(assuntoId, nome);
+        this.proposta = null;
+        await api('/foco/iniciar', { method: 'POST', body: JSON.stringify({ tentativaId: crypto.randomUUID(), especie, assuntoId, segmentoId }) });
+        await this.sincronizar();
+      });
+    },
+
+    iniciarProposta() {
+      const p = this.proposta;
+      if (!p) return Promise.resolve();
+      const u = this.ultimoFoco;
+      return p.especie === 'FOCO'
+        ? this.iniciar('FOCO', p.assuntoId ?? u?.assuntoId ?? null, p.segmentoId ?? u?.segmentoId ?? null, u?.nome ?? null)
+        : this.iniciar(p.especie);
+    },
+
+    maisUmFoco() {
+      const u = this.ultimoFoco;
+      return this.iniciar('FOCO', u?.assuntoId ?? null, u?.segmentoId ?? null, u?.nome ?? null);
+    },
+
+    pausar() {
+      return this.agir(async () => { this.receber(await api('/foco/atual/pausar', { method: 'POST' })); });
+    },
+    retomar() {
+      return this.agir(async () => { this.receber(await api('/foco/atual/retomar', { method: 'POST' })); });
+    },
+    encerrar() {
+      return this.agir(async () => {
+        await api('/foco/atual/encerrar', { method: 'POST' });
+        this.fase = null;
+        await this.carregarProposta();
+      });
+    },
+
+    descartarProposta() { this.proposta = null; },
+  });
 
   // IA em uso e o aviso de assinatura parada (ADR-045, docs/SPRINT-19-MATERIAL-AUTOMATICO.md
   // §3A). Um store só para Hoje, Concursos e Ajustes mostrarem o mesmo aviso. Auxiliar:
@@ -330,6 +519,7 @@ document.addEventListener('alpine:init', () => {
     resultado: null,
     tentativaId: null,
     inicioEm: null,
+    fasesIds: [], // D-101: focos do Pomodoro que esta recuperação consome
     enviando: false,
     erro: null,
     semDados: false,
@@ -354,6 +544,9 @@ document.addEventListener('alpine:init', () => {
       this.erro = null;
       this.tentativaId = crypto.randomUUID(); // D-45: gerado ao abrir a tela, não ao enviar
       this.inicioEm = Date.now();
+      // D-101: o foco que correu ao lado é consumido por esta recuperação, sem tocar o tempo de tela.
+      this.fasesIds = [];
+      api(`/foco/livres?assuntoId=${assuntoId}`).then((l) => { this.fasesIds = l.fasesIds; }).catch(() => {});
     },
 
     prever(valor) {
@@ -385,6 +578,7 @@ document.addEventListener('alpine:init', () => {
             previsaoReconstrucao: this.previsao,
             resultado: this.resultado,
             tentativaId: this.tentativaId,
+            fasesIds: this.fasesIds.length ? this.fasesIds : undefined,
           }),
         });
       } catch (e) {
@@ -424,6 +618,7 @@ document.addEventListener('alpine:init', () => {
     tempo: null,
     tempoEditado: false,
     duracaoBloco: null,
+    livres: null, // D-100: os focos do Pomodoro ainda não usados deste assunto (minutos e ids)
     tentativaId: null,
     enviando: false,
     erro: null,
@@ -449,10 +644,13 @@ document.addEventListener('alpine:init', () => {
       this.previsao = null;
       this.tempo = null;
       this.tempoEditado = false;
+      this.livres = null;
       this.erro = null;
       this.tentativaId = crypto.randomUUID(); // D-45: gerado ao abrir a tela
 
       if (!this.semDados) {
+        // D-100: o tempo medido pelo Pomodoro vence a estimativa; auxiliar, falhar só deixa a estimativa.
+        api(`/foco/livres?assuntoId=${assuntoId}`).then((l) => { this.livres = l; this.sugerirTempo(); }).catch(() => { this.livres = null; });
         // D-29: a duração de bloco é parâmetro — lida a cada abertura, então
         // mudar em Ajustes vale na próxima vez, sem recarregar o app.
         api('/parametros')
@@ -483,6 +681,11 @@ document.addEventListener('alpine:init', () => {
     // flashcards ficam vazios — não há estimativa honesta para um lote livre.
     sugerirTempo() {
       if (this.tempoEditado) return;
+      // D-100: o foco medido pré-preenche conteúdo, questões e flashcards; a pessoa confirma ou corrige.
+      if (this.livres && this.livres.minutos > 0) {
+        this.tempo = this.livres.minutos;
+        return;
+      }
       if (this.tipo !== 'conteudo') {
         this.tempo = null;
         return;
@@ -526,6 +729,8 @@ document.addEventListener('alpine:init', () => {
         data: hojeISO(),
         tempoMinutos,
         tentativaId: this.tentativaId,
+        // D-101: os focos usados ficam presos a esta sessão, no mesmo envio.
+        fasesIds: this.livres && this.livres.fasesIds.length ? this.livres.fasesIds : undefined,
       };
       // x-model de <select> sempre devolve string — "" quando "Nenhum em
       // especial" está selecionado (nunca null; um <option value="null">
@@ -612,6 +817,7 @@ document.addEventListener('alpine:init', () => {
     peso: null,
     fase: null,
     segmentos: [],
+    focoSegmentos: [], // D-105: estimado × real por segmento
     lacuna: null,
     refazendo: false,
     refeito: false,
@@ -626,6 +832,12 @@ document.addEventListener('alpine:init', () => {
     // GET /api/assuntos/{id} (§7B do doc técnico), os dados do próprio
     // assunto vêm do store escrito pela lista — só os segmentos são um
     // fetch novo.
+    // D-105: só informação — "foco real 52 min" ao lado da estimativa, quando houve foco medido naquele segmento.
+    textoFocoDoSegmento(s) {
+      const f = this.focoSegmentos.find((x) => x.segmentoId === s.id);
+      return f && f.realMin > 0 ? `foco real ${f.realMin} min` : '';
+    },
+
     async anexarPdfDoAssunto(l, evento) {
       const arquivo = evento.target.files[0];
       evento.target.value = '';
@@ -688,6 +900,7 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.carregando = false;
       }
+      this.focoSegmentos = await api(`/foco/assuntos/${assuntoId}/segmentos`).catch(() => []);
 
       // D-65: sem segmento, o motivo de o acervo não ensinar o assunto, se houver.
       // 404 é o normal (sem lacuna); qualquer falha só esconde a linha.
@@ -854,11 +1067,13 @@ document.addEventListener('alpine:init', () => {
     m4: null,
     frente: null,
     divisoes: [],
+    foco: null, // D-105: foco por dia e completos × encerrados antes; informação, nunca meta
 
     async init() {
       this.carregando = true;
       this.erro = null;
       try {
+        this.foco = await api('/foco/resumo').catch(() => null);
         const disciplinas = await api('/disciplinas');
         this.disciplinasPorId = Object.fromEntries(disciplinas.map((d) => [d.id, d.nome]));
         await this.carregarM1();
@@ -876,6 +1091,23 @@ document.addEventListener('alpine:init', () => {
 
     async carregarM1() {
       this.m1 = await api(`/metricas/m1?janela=${this.janela}`);
+    },
+
+    get focoTemDados() {
+      return !!this.foco && (this.foco.completos + this.foco.encerradosAntes) > 0;
+    },
+    get focoMaiorDia() {
+      return Math.max(1, ...(this.foco?.porDia ?? []).map((d) => d.segundos));
+    },
+    alturaDoDia(d) {
+      return Math.max(4, Math.round((d.segundos / this.focoMaiorDia) * 100));
+    },
+    rotuloDoDia(d) {
+      const [, mes, dia] = d.dia.split('-');
+      return `${dia}/${mes}`;
+    },
+    minutosDoDia(d) {
+      return Math.round(d.segundos / 60);
     },
 
     async trocarJanela(janela) {
@@ -977,6 +1209,62 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 
+  // Ajustes → Pomodoro (D-103, D-104): som e vibração são do aparelho; o aviso com o app fechado é Web Push opcional, desligado por padrão,
+  // e só vale para um aparelho já inscrito nos avisos. As durações são parâmetros e aparecem no grupo "Pomodoro" abaixo.
+  Alpine.data('pomodoroAjustes', () => ({
+    som: preferenciaFoco('som', true),
+    vibracao: preferenciaFoco('vibracao', true),
+    avisaFase: preferenciaFoco('avisaFase', false),
+    inscrito: false,
+    trabalhando: false,
+    mensagem: null,
+    erro: null,
+
+    async init() {
+      try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        const registro = await navigator.serviceWorker.ready;
+        this.inscrito = !!(await registro.pushManager.getSubscription());
+      } catch (e) {
+        this.inscrito = false;
+      }
+    },
+
+    alternarSom() { this.som = !this.som; guardarPreferenciaFoco('som', this.som); },
+    alternarVibracao() { this.vibracao = !this.vibracao; guardarPreferenciaFoco('vibracao', this.vibracao); },
+
+    async definirAviso(avisa) {
+      this.trabalhando = true;
+      this.erro = null;
+      this.mensagem = null;
+      try {
+        const registro = await navigator.serviceWorker.ready;
+        const inscricao = await registro.pushManager.getSubscription();
+        if (!inscricao) throw new Error('Ligue antes os avisos neste aparelho, logo acima.');
+        await api('/push/inscricoes/fase', { method: 'PUT', body: JSON.stringify({ endpoint: inscricao.endpoint, avisa }) });
+        this.avisaFase = avisa;
+        guardarPreferenciaFoco('avisaFase', avisa);
+        this.mensagem = avisa ? 'Aviso de fim de fase ligado neste aparelho.' : 'Aviso de fim de fase desligado neste aparelho.';
+      } catch (e) {
+        this.erro = e.message || 'Não deu certo. Tente de novo.';
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+
+    async testar() {
+      this.erro = null;
+      this.mensagem = null;
+      try {
+        const r = await api('/push/teste-fase', { method: 'POST' });
+        if (r.enviados > 0) this.mensagem = 'Aviso enviado. Se não aparecer em alguns segundos, confira as notificações do navegador.';
+        else this.erro = 'Nenhum aparelho recebeu. Ligue o aviso de fim de fase e tente de novo.';
+      } catch (e) {
+        this.erro = e.message;
+      }
+    },
+  }));
+
   Alpine.data('paginaAjustes', () => ({
     carregando: true,
     erro: null,
@@ -1073,6 +1361,7 @@ document.addEventListener('alpine:init', () => {
         if (chave.startsWith('teto_')) return 'Tetos';
         if (chave.startsWith('limiar_')) return 'Limiares de resultado';
         if (chave.startsWith('duracao_')) return 'Turno';
+        if (chave.startsWith('pomodoro_')) return 'Pomodoro';
         return 'Escada';
       };
       const porGrupo = {};
@@ -1080,7 +1369,7 @@ document.addEventListener('alpine:init', () => {
         const grupo = nomeDoGrupo(p.chave);
         (porGrupo[grupo] ??= []).push(p);
       }
-      return ['Tetos', 'Turno', 'Limiares de resultado', 'Escada']
+      return ['Tetos', 'Turno', 'Pomodoro', 'Limiares de resultado', 'Escada']
         .filter((nome) => porGrupo[nome])
         .map((nome) => ({ nome, itens: porGrupo[nome] }));
     },

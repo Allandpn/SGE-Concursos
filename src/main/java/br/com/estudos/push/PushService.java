@@ -84,11 +84,29 @@ public class PushService {
         jdbc.update("DELETE FROM push_inscricao WHERE endpoint = ?", endpoint);
     }
 
-    /** Manda o aviso a todos os aparelhos; nunca lança: aviso é auxiliar e não pode desfazer o que o disparou. */
+    /** D-104 — liga ou desliga, neste aparelho, o aviso de fim de fase do Pomodoro. O aparelho precisa estar inscrito. */
+    @Transactional
+    public void avisarFase(String endpoint, boolean avisa) {
+        if (jdbc.update("UPDATE push_inscricao SET avisa_fase = ? WHERE endpoint = ?", avisa, endpoint) == 0) {
+            throw new br.com.estudos.shared.exception.NotFoundException("Este aparelho não está inscrito nos avisos.", "INSCRICAO_INEXISTENTE");
+        }
+    }
+
+    /** Aviso de processo concluído (D-96): vai a todos os aparelhos inscritos. */
     public Resultado enviar(Aviso aviso) {
+        return enviar(aviso, "");
+    }
+
+    /** Fim de fase do Pomodoro (D-104): só aos aparelhos que pediram. */
+    public Resultado enviarDeFase(Aviso aviso) {
+        return enviar(aviso, " WHERE avisa_fase");
+    }
+
+    /** Manda o aviso aos aparelhos do filtro; nunca lança: aviso é auxiliar e não pode desfazer o que o disparou. */
+    private Resultado enviar(Aviso aviso, String filtro) {
         int enviados = 0, removidos = 0, falhas = 0;
         try {
-            var inscricoes = jdbc.queryForList("SELECT id, endpoint, p256dh, auth FROM push_inscricao ORDER BY id");
+            var inscricoes = jdbc.queryForList("SELECT id, endpoint, p256dh, auth FROM push_inscricao" + filtro + " ORDER BY id");
             if (inscricoes.isEmpty()) return new Resultado(0, 0, 0);
             var publica = chavePublica();   // gera o par se ainda não existe
             var privada = jdbc.queryForObject("SELECT chave_privada FROM push_config WHERE id = 1", String.class);

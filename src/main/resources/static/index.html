@@ -59,6 +59,37 @@
   </nav>
 </header>
 
+<!-- Pomodoro (01_DOMINIO §3.15, J-8): a barra mora na casca, visível em qualquer tela enquanto há fase em curso. Não é tela nova. -->
+<div id="barra-foco" x-data>
+  <template x-if="$store.foco.emCurso">
+    <div class="flex items-center gap-3 px-4 py-2 text-sm text-white" :class="$store.foco.ehPausa ? 'bg-amber-700' : 'bg-primary-700'" role="timer" aria-label="Pomodoro">
+      <span class="font-mono text-lg font-semibold tabular-nums" x-text="$store.foco.rotulo"></span>
+      <span class="min-w-0 flex-1 truncate" x-text="$store.foco.descricao"></span>
+      <button type="button" x-show="!$store.foco.ehPausa && !$store.foco.pausada" :disabled="$store.foco.trabalhando"
+              class="min-h-11 rounded border border-white/70 px-3 text-sm" @click="$store.foco.pausar()">Pausar</button>
+      <button type="button" x-show="!$store.foco.ehPausa && $store.foco.pausada" :disabled="$store.foco.trabalhando"
+              class="min-h-11 rounded border border-white/70 px-3 text-sm" @click="$store.foco.retomar()">Retomar</button>
+      <button type="button" :disabled="$store.foco.trabalhando"
+              class="min-h-11 rounded border border-white/70 px-3 text-sm" @click="$store.foco.encerrar()"
+              x-text="$store.foco.ehPausa ? 'Pular' : 'Encerrar'"></button>
+    </div>
+  </template>
+  <!-- D-102: terminou uma fase; a seguinte é só proposta e espera um toque -->
+  <template x-if="!$store.foco.emCurso && $store.foco.proposta">
+    <div class="space-y-2 border-b border-gray-200 bg-white px-4 py-3" role="status">
+      <p class="text-sm text-gray-700" x-text="$store.foco.proposta.especie === 'FOCO' ? 'A pausa terminou.' : 'O foco terminou.'"></p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" :disabled="$store.foco.trabalhando"
+                class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white hover:bg-primary-800" @click="$store.foco.iniciarProposta()" x-text="$store.foco.textoProposta"></button>
+        <button type="button" x-show="$store.foco.proposta.especie !== 'FOCO'" :disabled="$store.foco.trabalhando"
+                class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="$store.foco.maisUmFoco()">Mais um foco</button>
+        <button type="button" class="min-h-11 rounded border border-gray-200 px-3 text-sm text-gray-600 hover:bg-gray-50" @click="$store.foco.descartarProposta()">Encerrar por hoje</button>
+      </div>
+    </div>
+  </template>
+  <p x-show="$store.foco.erro" class="bg-red-50 px-4 py-2 text-sm text-red-700" role="alert" x-text="$store.foco.erro"></p>
+</div>
+
 <main class="mx-auto max-w-md px-4 py-6">
 
   <!-- Tela Hoje — porta de entrada, J-2/J-4 (04_FRONTEND.md §6) -->
@@ -187,6 +218,10 @@
               <span class="block font-medium" x-text="blocoConteudo?.nome"></span>
               <span class="text-sm text-gray-500" x-show="segmentoSugerido" x-text="descricaoSegmento"></span>
             </button>
+            <!-- D-98: "Foco" começa o Pomodoro já apontando o assunto e o segmento do bloco -->
+            <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando"
+              class="flex min-h-11 w-full items-center border-t border-gray-200 px-3 text-left text-sm font-medium text-primary-700 hover:bg-gray-50"
+              @click="$store.foco.iniciar('FOCO', blocoConteudo.id, segmentoSugerido?.id ?? null, blocoConteudo.nome)">Foco neste bloco</button>
             <!-- D-55: o material do bloco abre direto daqui (o SGE guarda o link, nunca o abre ele mesmo) -->
             <a x-show="linkMaterial" :href="linkMaterial" target="_blank" rel="noopener"
               class="flex min-h-11 items-center border-t border-gray-200 px-3 text-sm font-medium text-primary-700 underline">Abrir material</a>
@@ -194,6 +229,13 @@
             <a x-show="seloEdital" :href="seloEdital ? '#/concursos/analise/' + seloEdital.analiseId + '/conferencia' : '#'"
               class="block border-t border-gray-100 px-3 py-2 text-xs text-alerta-600 underline" x-text="seloEdital?.texto"></a>
           </div>
+        </div>
+
+        <!-- J-8: foco sem assunto — o vínculo pode vir depois, antes de registrar -->
+        <div x-show="!$store.foco.emCurso">
+          <button type="button" :disabled="$store.foco.trabalhando"
+            class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm hover:bg-gray-50"
+            @click="$store.foco.iniciar('FOCO')">Foco sem assunto</button>
         </div>
 
         <!-- 02_JORNADAS §4.3: "puxar mais" fica no fim, só com algo a oferecer, sempre por pedido explícito -->
@@ -386,6 +428,11 @@
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-500" x-text="tipo === 'conteudo' ? 'Tempo de estudo (min)' : 'Tempo gasto (min)'"></label>
           <input type="number" min="1" inputmode="numeric" x-model="tempo" @input="tempoEditado = true" class="w-full rounded border border-gray-200 bg-white p-2">
+          <!-- D-100: o tempo vem do Pomodoro; a pessoa confirma ou corrige -->
+          <template x-if="livres && livres.minutos > 0 && !tempoEditado">
+            <p class="mt-1 text-xs text-primary-700"
+               x-text="'Vem do Pomodoro: ' + livres.fasesIds.length + (livres.fasesIds.length === 1 ? ' foco medido' : ' focos medidos') + '. Confirme ou corrija.'"></p>
+          </template>
         </div>
 
         <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-white hover:bg-primary-700" :disabled="enviando" @click="registrar()">Registrar</button>
@@ -503,6 +550,10 @@
           <a :href="'#/concursos/analise/' + partesEdital[0]?.analiseId + '/conferencia'" class="inline-block text-xs text-primary-700 underline">Abrir a conferência</a>
         </div>
 
+        <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando"
+          class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm font-medium text-primary-700 hover:bg-gray-50"
+          @click="$store.foco.iniciar('FOCO', assuntoId, null, nome)">Foco neste assunto</button>
+
         <div x-show="temSegmentos" class="space-y-2">
           <h3 class="text-sm font-medium text-gray-500">Material</h3>
           <ul class="space-y-2">
@@ -513,6 +564,10 @@
                   <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
                 </div>
                 <a :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
+                <!-- D-105: estimado × real, só informação -->
+                <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
+                  @click="$store.foco.iniciar('FOCO', assuntoId, s.id, nome)">foco neste bloco</button>
+                <p class="text-xs text-gray-500" x-show="textoFocoDoSegmento(s)" x-text="textoFocoDoSegmento(s)"></p>
               </li>
             </template>
           </ul>
@@ -673,6 +728,18 @@
 
     <template x-if="!carregando && !erro">
       <div class="space-y-6">
+        <!-- D-105: o que o Pomodoro mediu, pequeno e sem meta (00_PRODUTO §8.1) -->
+        <div x-show="focoTemDados" class="space-y-2">
+          <h2 class="text-sm font-medium text-gray-500">Foco medido <span class="font-normal">· últimos 7 dias</span></h2>
+          <div class="rounded border border-gray-200 bg-white p-3">
+            <div class="flex h-14 items-end gap-1">
+              <template x-for="d in (foco?.porDia ?? [])" :key="d.dia">
+                <div class="flex-1 rounded-t bg-primary-100" :style="'height:' + alturaDoDia(d) + '%'" :title="rotuloDoDia(d) + ': ' + minutosDoDia(d) + ' min'"></div>
+              </template>
+            </div>
+            <p class="mt-2 text-xs text-gray-600" x-text="foco ? foco.completos + ' completos · ' + foco.encerradosAntes + ' encerrados antes do fim' : ''"></p>
+          </div>
+        </div>
         <div class="space-y-2">
           <p class="text-xs text-gray-500">A retenção (M-2) de cada assunto fica no detalhe dele, em Assuntos.</p>
           <h2 class="text-sm font-medium text-gray-500">Eu me conheço? <span class="font-normal">· calibração (M-3)</span></h2>
@@ -784,7 +851,7 @@
     <!-- Ajustes → Avisos neste aparelho (D-96, ADR-048): só dois avisos de processo, opcionais, por aparelho -->
     <div id="avisos-ajustes" x-data="avisosAjustes()" class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
       <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Avisos neste aparelho</h2>
-      <p class="text-sm text-gray-700">Só dois avisos: <strong>edital lido, pronto para conferir</strong> e <strong>material pronto</strong>. Nunca sobre estudo, atraso ou sequência de dias.</p>
+      <p class="text-sm text-gray-700">Dois avisos de processo: <strong>edital lido, pronto para conferir</strong> e <strong>material pronto</strong>. O fim de fase do Pomodoro é outra escolha, no cartão abaixo. Nunca lembrete de estudo, atraso ou sequência de dias.</p>
       <p x-show="!suporte" class="rounded bg-gray-50 p-2 text-sm text-gray-700">Este navegador não consegue mostrar avisos. No iPhone, instale o app na tela inicial primeiro.</p>
       <p x-show="suporte && permissao === 'denied'" class="rounded bg-alerta-50 p-2 text-sm text-gray-800">O navegador está bloqueando as notificações deste app. Libere nas configurações do site e volte aqui.</p>
       <p x-show="suporte && ligado" class="text-sm font-medium text-green-800">Ligados neste aparelho.</p>
@@ -798,6 +865,28 @@
         <button type="button" x-show="ligado" :disabled="trabalhando"
                 class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="desligar()">Desligar</button>
       </div>
+    </div>
+
+    <!-- Ajustes → Pomodoro (D-103, D-104): som e vibração do aparelho; aviso de fim de fase opcional, desligado por padrão -->
+    <div id="pomodoro-ajustes" x-data="pomodoroAjustes()" class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
+      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Pomodoro neste aparelho</h2>
+      <p class="text-sm text-gray-700">As durações estão em <strong>Pomodoro</strong>, na lista de parâmetros. Aqui ficam os avisos de fim de fase.</p>
+      <label class="flex min-h-11 items-center justify-between gap-3 text-sm">
+        <span>Som no fim de cada fase</span>
+        <input type="checkbox" :checked="som" @change="alternarSom()" class="h-5 w-5">
+      </label>
+      <label class="flex min-h-11 items-center justify-between gap-3 text-sm">
+        <span>Vibração</span>
+        <input type="checkbox" :checked="vibracao" @change="alternarVibracao()" class="h-5 w-5">
+      </label>
+      <label class="flex min-h-11 items-center justify-between gap-3 text-sm">
+        <span>Aviso com o app fechado <span class="block text-xs text-gray-500">Desligado por padrão. Só avisa o fim de uma fase que você iniciou.</span></span>
+        <input type="checkbox" :checked="avisaFase" :disabled="trabalhando || !inscrito" @change="definirAviso($event.target.checked)" class="h-5 w-5">
+      </label>
+      <p x-show="!inscrito" class="rounded bg-gray-50 p-2 text-sm text-gray-700">Para o aviso com o app fechado, ligue antes "Avisos neste aparelho", logo acima.</p>
+      <p x-show="mensagem" class="text-sm text-gray-700" x-text="mensagem"></p>
+      <p x-show="erro" class="text-sm text-red-700" role="alert" x-text="erro"></p>
+      <button type="button" x-show="inscrito && avisaFase" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" @click="testar()">Enviar aviso de teste</button>
     </div>
 
     <!-- Ajustes → Árvore do QConcursos (D-90): atualizar é gesto seu, e o impacto vem antes -->

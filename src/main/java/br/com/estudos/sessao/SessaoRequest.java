@@ -1,6 +1,7 @@
 package br.com.estudos.sessao;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import br.com.estudos.shared.enums.FormatoBanca;
@@ -48,5 +49,16 @@ public record SessaoRequest(
     UUID tentativaId,
 
     @Schema(description = "Segmento de material lido nesta sessão — só ESTUDO pode preencher (D-51), e precisa pertencer ao mesmo assunto")
-    Long segmentoId
-) {}
+    Long segmentoId,
+
+    @Schema(description = "Focos do Pomodoro que esta sessão usa (D-100, D-101) — cada foco serve a uma sessão no máximo; opcional")
+    List<Long> fasesIds
+) {
+    /** Forma anterior ao Pomodoro: sem focos. */
+    public SessaoRequest(Long assuntoId, TipoSessao tipo, LocalDate data, Integer tempoMinutos, Integer questoesCorretas,
+            Integer questoesTotal, FormatoBanca formato, Short previsaoPercentual, ResultadoSessao previsaoReconstrucao,
+            ResultadoSessao resultado, UUID tentativaId, Long segmentoId) {
+        this(assuntoId, tipo, data, tempoMinutos, questoesCorretas, questoesTotal, formato, previsaoPercentual,
+            previsaoReconstrucao, resultado, tentativaId, segmentoId, null);
+    }
+}

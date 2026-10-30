@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.1.0 |
 | Data | 2026-10-30 |
 | Subordinado a | `00_PRODUTO` v1.11.0 §8.1, §8.5; `01_DOMINIO` v1.30.0 §3.15, D-98 a D-105; `02_JORNADAS` v1.19.0 J-8; `03_INVARIANTES` v1.18.0; ADR-050 |
 | Origem | Pedido do usuário (2026-10-30), enquanto testa o fluxo de estudo; wireframe publicado na conversa |
@@ -62,9 +62,9 @@ Restrições, com o identificador da regra no nome (`AGENTS.md`):
 **Não existe coluna de tempo corrido, de "completo" nem de total do dia** (D-16, D-99, D-105): tudo isso é consulta.
 
 **`parametro`** ganha quatro chaves (D-103), com o padrão 25 / 5 / 15 / 4: `pomodoro_foco_min`, `pomodoro_pausa_curta_min`,
-`pomodoro_pausa_longa_min`, `pomodoro_focos_ate_longa`. As faixas de valores válidos seguem o mecanismo de validação dos parâmetros
-existentes; o item 29.1 confere como o `ParametroService` faz hoje e fecha as faixas na mesma conta (proposta: foco 5 a 120, pausas 1 a
-60, focos até a longa 2 a 8).
+`pomodoro_pausa_longa_min`, `pomodoro_focos_ate_longa`. **Sem faixa por chave**: a validação continua a única dos parâmetros (número
+positivo, `docs/SPRINT-15-AJUSTES.md` §0, decisão do usuário). Valor fracionário é aceito e arredondado ao segundo; a duração nunca fica
+abaixo de 1 s.
 
 **`push_inscricao.avisa_fase`** — `BOOLEAN NOT NULL DEFAULT false`. A inscrição do ADR-048 é "avisos de processo neste aparelho"; o aviso
 de fim de fase é uma escolha separada (D-104), então o envio de fase só vai às inscrições com este marcador.
@@ -81,7 +81,8 @@ de fim de fase é uma escolha separada (D-104), então o envio de fase só vai �
 | `GET /livres?assuntoId=` | focos encerrados do assunto sem sessão: `{minutos, fasesIds}` (D-100) |
 | `GET /resumo?de=&ate=` | foco por dia e focos completos × encerrados antes (D-105) |
 | `GET /assuntos/{id}/segmentos` | estimado × real por segmento (D-105) |
-| `PUT /api/push/inscricoes/fase` | `{endpoint, avisa}`: liga ou desliga o aviso de fase naquele aparelho |
+| `PUT /api/push/inscricoes/fase` | `{endpoint, avisa}`: liga ou desliga o aviso de fim de fase naquele aparelho; `404` se o aparelho não está inscrito |
+| `POST /api/push/teste-fase` | aviso de fim de fase de teste, só aos aparelhos que pediram |
 
 `POST /api/sessoes` ganha `fasesIds` (opcional). Na mesma transação do registro: cada fase tem de ser `FOCO`, encerrada, do mesmo
 assunto e sem `sessao_id`, senão `422`; marca `sessao_id`. O `tempoMinutos` continua o declarado (§7.7); em `RECUPERACAO` o `fasesIds` só
@@ -98,13 +99,13 @@ consome, e o tempo gravado continua o da tela (D-101).
 | D-102 | `GET /proposta` | só deriva; nenhuma escrita |
 | D-103 | `parametro` | Ajustes edita as quatro chaves |
 | D-104 | `AvisoDeFase` | só inscrições com `avisa_fase`; só fase iniciada pela pessoa; uma vez (`aviso_fim_em`); texto "O foco terminou" |
-| D-105 | `FocoConsultas` | três consultas, sem coluna que as guarde |
+| D-105 | `FocoService.resumo` e `porSegmento` | três consultas, sem coluna que as guarde |
 
 Os testes do cálculo usam relógio injetável, como os de prazo (princípio 4 de `AGENTS.md`).
 
 ## 5. Aviso de fim de fase
 
-`AvisoDeFase` roda a cada 15 s: encerra as fases vencidas (`VENCIDA`) e, para cada uma ainda sem `aviso_fim_em`, envia pelo
+`AvisoDeFase` roda a cada 15 s (`@Scheduled` com cron; a propriedade `estudos.foco.varredura-cron=-` o desliga, como nos testes, que chamam `varrer()` com o relógio na mão): encerra as fases vencidas (`VENCIDA`) e, para cada uma ainda sem `aviso_fim_em`, envia pelo
 `PushService` do ADR-048 às inscrições com `avisa_fase`, **depois do commit** e fora da transação. Marca `aviso_fim_em` mesmo quando não
 há inscrição, para não reavisar. Fase encerrada pela pessoa antes do vencimento nunca envia. A carga é `{titulo: "Pomodoro", corpo: "O foco
 terminou" (ou "A pausa terminou"), url: "/"}`; sem nome de assunto, sem contagem, sem pergunta.
@@ -134,7 +135,7 @@ terminou" (ou "A pausa terminou"), url: "/"}`; sem nome de assunto, sem contagem
 | D-100 | registrar com focos livres traz a soma; corrigir o valor grava o corrigido; sem foco vem a estimativa |
 | D-101 | uma fase usada por uma sessão não aparece em `livres`; usar de novo é `422`; em `RECUPERACAO` o tempo gravado é o da tela; `sessao_id` em pausa é recusado pelo banco |
 | D-102 | encerrar uma fase não cria a seguinte; `GET /proposta` não escreve |
-| D-103 | valores fora da faixa são recusados; sem edição vale 25 / 5 / 15 / 4; mudar o parâmetro não altera fase em curso |
+| D-103 | sem edição vale 25 / 5 / 15 / 4; mudar o parâmetro não altera fase em curso (a validação de valor é a única dos parâmetros) |
 | D-104 | sem inscrição não envia; com `avisa_fase` envia uma vez ao vencer; encerrada pela pessoa não envia; inscrição só de processo não recebe; 404/410 remove |
 | D-105 | as três consultas vêm dos dados gravados; estrutural: nenhuma coluna guarda tempo corrido, completo ou total |
 | Estrutural | `fase_foco` não tem coluna derivada (D-16) |
@@ -145,13 +146,17 @@ terminou" (ou "A pausa terminou"), url: "/"}`; sem nome de assunto, sem contagem
 | # | Item | Estado |
 |---|---|---|
 | 29.0 | Este documento, ADR-050 e a especificação | feito |
-| 29.1 | `V22`, entidade, `FocoCalculo`, `FocoService`, rotas, `fasesIds` em sessão, faixas dos parâmetros | a fazer |
-| 29.2 | `AvisoDeFase`, `avisa_fase` e a rota de inscrição de fase | a fazer |
-| 29.3 | Consultas de D-105 | a fazer |
-| 29.4 | Barra, botões "Foco", proposta de fim de fase e `CASCA_VERSAO` | a fazer |
-| 29.5 | Registrar e Recuperar com tempo medido; Ajustes → Pomodoro; Progresso e detalhe do assunto | a fazer |
-| 29.6 | Suíte inteira verde e conferência no Chromium | a fazer |
+| 29.1 | `V22`, `FocoCalculo`, `FocoService`, rotas, `fasesIds` em sessão | feito |
+| 29.2 | `AvisoDeFase`, `avisa_fase` e a rota de inscrição de fase | feito |
+| 29.3 | Consultas de D-105 | feito |
+| 29.4 | Barra, botões "Foco", proposta de fim de fase e `CASCA_VERSAO` | feito |
+| 29.5 | Registrar e Recuperar com tempo medido; Ajustes → Pomodoro; Progresso e detalhe do assunto | feito |
+| 29.6 | Suíte inteira verde e conferência no Chromium | feito — 371 de 373 verdes; os 2 restantes são os testes de schema, que exigem Docker (não há neste ambiente) e cuja lista branca recebeu `fase_foco`; Chromium conferido contra Postgres real |
 | 29.7 | Deploy pelo Guardian: etiqueta `release/N` na `main`, com o OK do usuário | a fazer |
+
+**Conferido no Chromium (Postgres 16 local, relógio real, foco de 9 s):** botão "Foco" no detalhe do assunto; barra com relógio e assunto; a barra sobrevive a recarregar; pausar e retomar; ao vencer, a proposta aparece e nada começa sozinho; Registrar abre com "Vem do Pomodoro" e o tempo preenchido; gravar prende o foco à sessão; segunda fase recusada com `409 FASE_EM_CURSO`; Ajustes mostra o grupo e o cartão do Pomodoro.
+
+**O que não foi conferido:** o Web Push de fim de fase num navegador real (o transporte é falso nos testes, como no ADR-048), o som e a vibração, e os dois testes de schema contra Docker.
 
 ## 9. Decisões e alternativas
 
@@ -180,4 +185,5 @@ terminou" (ou "A pausa terminou"), url: "/"}`; sem nome de assunto, sem contagem
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-10-30 | Itens 29.0 a 29.6 feitos. A validação dos parâmetros segue a única existente (sem faixa por chave); a varredura do aviso tem cron desligável; `POST /api/push/teste-fase` entra; as consultas de D-105 moram em `FocoService`. Falta o 29.7 (deploy pelo Guardian) |
 | 1.0.0 | 2026-10-30 | Primeira versão |

@@ -54,6 +54,8 @@ public abstract class IntegracaoTestBase {
     static void poolPequeno(DynamicPropertyRegistry registro) {
         registro.add("spring.datasource.hikari.maximum-pool-size", () -> "3");
         registro.add("spring.datasource.hikari.minimum-idle", () -> "1");
+        // A varredura do Pomodoro (AvisoDeFase) não roda sozinha nos testes: eles a chamam, com o relógio na mão.
+        registro.add("estudos.foco.varredura-cron", () -> "-");
     }
 
     @Autowired

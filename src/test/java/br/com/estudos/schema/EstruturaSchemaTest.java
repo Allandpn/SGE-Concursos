@@ -57,7 +57,10 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 27 (ADR-048): a chave VAPID e os aparelhos inscritos nos avisos de processo concluído.
                 "push_config", "push_inscricao",
                 // Sprint 28 (ADR-049): o PDF que a pessoa anexa a uma lacuna do material.
-                "lacuna_anexo");
+                "lacuna_anexo",
+                // Sprint 29 (ADR-050): as fases do Pomodoro. O tempo corrido, o "completo" e o total do dia são
+                // consultas (D-16, D-99, D-105); a tabela guarda só o início, o fim e o que a pessoa fez.
+                "fase_foco");
         assertEquals(esperado, tabelasDoSchema());
     }
 

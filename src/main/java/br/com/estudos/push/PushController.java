@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -29,6 +30,8 @@ public class PushController {
 
     public record Endereco(String endpoint) {}
 
+    public record AvisoDeFase(String endpoint, boolean avisa) {}
+
     private final PushService push;
 
     public PushController(PushService push) {
@@ -48,11 +51,24 @@ public class PushController {
         push.inscrever(corpo.endpoint(), corpo.keys() == null ? null : corpo.keys().p256dh(), corpo.keys() == null ? null : corpo.keys().auth());
     }
 
+    @PutMapping("/inscricoes/fase")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Liga ou desliga o aviso de fim de fase do Pomodoro neste aparelho", description = "Desligado por padrão (D-104). 404 se o aparelho não está inscrito.")
+    public void avisarFase(@RequestBody AvisoDeFase corpo) {
+        push.avisarFase(corpo.endpoint(), corpo.avisa());
+    }
+
     @DeleteMapping("/inscricoes")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Tira este aparelho", description = "204 mesmo se não estava inscrito.")
     public void remover(@RequestBody Endereco corpo) {
         push.remover(corpo.endpoint());
+    }
+
+    @PostMapping("/teste-fase")
+    @Operation(summary = "Manda um aviso de fim de fase de teste, só aos aparelhos que pediram")
+    public Resultado testeFase() {
+        return push.enviarDeFase(new Aviso("Pomodoro", "O foco terminou.", "/"));
     }
 
     @PostMapping("/teste")

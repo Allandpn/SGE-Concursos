@@ -214,7 +214,7 @@ conceitual — envelhecer por motivo errado.
 | D-100 | Comportamento | S + I | Teste: registrar com focos livres do assunto traz o tempo somado; corrigir o valor grava o corrigido |
 | D-101 | Comportamento | S + **P** | Teste: uma fase usada por uma sessão não pré-preenche outra; em recuperação o tempo gravado é o da tela |
 | D-102 | Comportamento | S + I | Teste: terminar uma fase não cria a seguinte; a proposta espera um toque |
-| D-103 | Política | S | Teste: valores fora das faixas são recusados; sem edição vale o padrão 25 / 5 / 15 / 4 |
+| D-103 | Política | S | Teste: valor não positivo é recusado (validação única dos parâmetros, sem faixa por chave); sem edição vale o padrão 25 / 5 / 15 / 4; mudar o parâmetro não altera a fase em curso |
 | D-104 | Comportamento | S | Teste: sem inscrição não envia; com inscrição envia só no fim de fase iniciada pela pessoa; nenhum outro caminho envia; inscrição rejeitada (404/410) é removida |
 | D-105 | Derivação | S | Teste: as três consultas vêm dos dados gravados e não existe coluna que as guarde |
 

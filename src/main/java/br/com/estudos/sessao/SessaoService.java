@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.estudos.assunto.AssuntoRepository;
+import br.com.estudos.foco.FocoService;
 import br.com.estudos.revisao.RevisaoService;
 import br.com.estudos.segmento.SegmentoRepository;
 import br.com.estudos.shared.enums.FormatoBanca;
@@ -27,6 +28,7 @@ public class SessaoService {
     private final SegmentoRepository segmentoRepository;
     private final ParametroRepository parametroRepository;
     private final RevisaoService revisaoService;
+    private final FocoService focoService;
     private final SessaoService self;
 
     public SessaoService(
@@ -35,12 +37,14 @@ public class SessaoService {
             SegmentoRepository segmentoRepository,
             ParametroRepository parametroRepository,
             RevisaoService revisaoService,
+            FocoService focoService,
             @Lazy SessaoService self) {
         this.sessaoRepository = sessaoRepository;
         this.assuntoRepository = assuntoRepository;
         this.segmentoRepository = segmentoRepository;
         this.parametroRepository = parametroRepository;
         this.revisaoService = revisaoService;
+        this.focoService = focoService;
         this.self = self;
     }
 
@@ -100,6 +104,8 @@ public class SessaoService {
         // Mesma transação: revisão é efeito de sessão, não passo separado
         // (docs/SPRINT-4-ESCADA.md §3).
         revisaoService.processarSessao(salva);
+        // D-100, D-101 — os focos usados ficam presos a esta sessão, na mesma transação; foco inválido desfaz tudo.
+        focoService.consumir(salva.getId(), request.assuntoId(), request.fasesIds());
         return salva;
     }
 
