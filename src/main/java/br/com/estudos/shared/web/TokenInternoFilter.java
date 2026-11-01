@@ -13,6 +13,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import br.com.estudos.acesso.OrigemDoPedido;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,10 +23,9 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * `/internal/**` só para o sistema de planejamento, no mesmo servidor (ADR-044,
- * docs/SPRINT-19-MATERIAL-AUTOMATICO.md §4). O resto da API confia na Tailscale
- * (ADR-015); estas rotas gastam crédito de IA na conta do usuário, então exigem
- * também o token compartilhado entre os contêineres. Sem token configurado no
- * servidor, ficam desligadas.
+ * docs/SPRINT-19-MATERIAL-AUTOMATICO.md §4). Não passa pelo login (ADR-051): exige o
+ * token compartilhado entre os contêineres e nunca responde a pedido vindo da
+ * internet pública (D-113). Sem token configurado no servidor, ficam desligadas.
  */
 @Component
 public class TokenInternoFilter extends OncePerRequestFilter {
@@ -47,6 +48,11 @@ public class TokenInternoFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        // D-113: a rota interna nunca responde a pedido vindo da internet pública, nem com o token certo.
+        if (OrigemDoPedido.publica(request)) {
+            recusar(response, HttpStatus.FORBIDDEN, "Rota interna: só na rede do próprio servidor.", "ROTA_INTERNA_PUBLICA");
+            return;
+        }
         if (token == null || token.isBlank()) {
             recusar(response, HttpStatus.SERVICE_UNAVAILABLE, "Rotas internas desligadas: defina INTERNAL_TOKEN no servidor.", "INTERNO_DESLIGADO");
             return;

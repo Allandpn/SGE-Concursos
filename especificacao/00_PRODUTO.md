@@ -5,8 +5,8 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.11.0 |
-| Data | 2026-10-30 |
+| Versão | 1.12.0 |
+| Data | 2026-11-01 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
 
@@ -242,6 +242,10 @@ etapas. A primeira mostra só o nome do assunto e a instrução de reconstruir. 
 campo de resultado **não existe na tela** até a tentativa ser declarada. O
 sistema não consegue verificar que você produziu — mas consegue não te oferecer
 o atalho.
+
+Desde 2026-11-01 o material abre dentro do app (`01_DOMINIO` §3.17), e a mesma
+lógica vale para ele: a tela de recuperação **não oferece o material**, nem nas
+duas etapas (D-114). O lugar do material é a leitura.
 
 ### 5.3 A aritmética que decide isto
 
@@ -626,8 +630,10 @@ Confiança fica onde ela não é redundante e é diagnóstica: **no erro** (§7.
 Estimativa de probabilidade de aprovação. Humor, energia ou "qualidade da
 sessão". Medalhas, XP, níveis. Comparação com outros usuários. Cronograma
 gerado automaticamente. Algoritmo adaptativo tipo SM-2/FSRS — §3.2 mostra que
-compra pouco. Editor de conteúdo, anexo, upload — **exceção, por pedido do usuário (2026-10-27): o PDF que a pessoa anexa para preencher uma
-lacuna do material** (`01_DOMINIO` D-97); fora isso, nenhum anexo nem upload. Notificação por e-mail, e qualquer notificação push sobre o estudo em si (lembrete, atraso,
+compra pouco. ~~Editor de conteúdo~~ — **revogado por pedido do usuário (2026-11-01)**: o material é lido dentro do app, num leitor com destaques e notas
+que nunca alteram o PDF, e nunca aparece na recuperação (`01_DOMINIO` §3.17, D-114). Anexo e upload: o PDF que a pessoa anexa para preencher uma
+lacuna do material (`01_DOMINIO` D-97, 2026-10-27) e, decidido em 2026-11-01 e a especificar na sprint dele, o **PDF próprio ligado a um assunto**,
+que vira blocos como o material (`01_DOMINIO` §12); fora isso, nenhum anexo nem upload. Notificação por e-mail, e qualquer notificação push sobre o estudo em si (lembrete, atraso,
 sequência de dias). **Exceção, por pedido do usuário (2026-10-27):** aviso de **processo concluído** — "edital lido, pronto para
 conferir" e "material pronto" —, opcional, por aparelho e sem cobrança (`01_DOMINIO` D-96). **Segunda exceção, por pedido do usuário (2026-10-30):** aviso de
 **fim de fase do Pomodoro**, só de fase que a própria pessoa iniciou, opcional, desligado por padrão e por aparelho, sem lembrete, cobrança ou
@@ -740,6 +746,7 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.12.0 | 2026-11-01 | Pedido do usuário. **§8.5**: o editor de conteúdo deixa de ser recusado (leitor com marcações, `01_DOMINIO` §3.17, D-114 a D-121, ADR-052), e o PDF próprio ligado a um assunto entra como decidido, a especificar. **§5.2.1**: a tela de recuperação não oferece o material |
 | 1.11.0 | 2026-10-30 | Pedido do usuário: um Pomodoro para medir o tempo real de estudo. **§8.1**: o Pomodoro não promove horas a meta. **§8.5**: segunda exceção à recusa de push, o aviso de fim de fase, opcional e por aparelho (`01_DOMINIO` §3.15, D-98 a D-105, ADR-050) |
 | 1.10.0 | 2026-10-27 | Pedido do usuário: as leis específicas do edital (e o que o acervo não ensina) não têm material. **§8.5**: o anexo de um PDF para preencher uma lacuna do material deixa de ser recusado; continua recusado todo outro anexo e upload (`01_DOMINIO` D-97, ADR-049) |
 | 1.9.0 | 2026-10-27 | Pedido do usuário: esperas longas (a leitura do edital leva minutos; o material, horas) pedem um aviso fora da tela. **§8.5**: a recusa de push passa a valer só para o estudo em si; entram os avisos de processo concluído, opcionais, por aparelho, sem cobrança (`01_DOMINIO` D-96, ADR-048) |

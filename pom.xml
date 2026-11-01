@@ -99,6 +99,15 @@
             <version>3.0.8</version>
         </dependency>
 
+        <!-- WebAuthn (passkey) do login, ADR-051 (docs/SPRINT-30-LOGIN.md §4): a
+             verificação de assinatura e do contador é criptografia que não se
+             escreve à mão. Única dependência nova da Sprint 30. -->
+        <dependency>
+            <groupId>com.yubico</groupId>
+            <artifactId>webauthn-server-core</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
         <!-- Lombok: permitido em entidade JPA com escopo restrito desde
              09_CODE_STYLE.md v2.1.0 §3.2.1 (@Getter/@Setter exceto id,
              @EqualsAndHashCode só no id). Versão vem do BOM do

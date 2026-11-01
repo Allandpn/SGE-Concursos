@@ -37,7 +37,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 public abstract class IntegracaoTestBase {
 
     @ServiceConnection
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
+    public static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
 
     static {
         POSTGRES.start();
@@ -56,6 +56,8 @@ public abstract class IntegracaoTestBase {
         registro.add("spring.datasource.hikari.minimum-idle", () -> "1");
         // A varredura do Pomodoro (AvisoDeFase) não roda sozinha nos testes: eles a chamam, com o relógio na mão.
         registro.add("estudos.foco.varredura-cron", () -> "-");
+        // O login (Sprint 30) fica de fora destes testes, que usam a API sem sessão; AcessoTestBase o liga.
+        registro.add("estudos.acesso.desligado-em-teste", () -> "true");
     }
 
     @Autowired

@@ -36,6 +36,9 @@
   <link rel="stylesheet" href="css/styles.css">
   <script defer src="vendor/alpinejs-3.14.3.min.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/entrar.js"></script>
+  <script src="js/offline.js"></script>
+  <script src="js/leitor.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/router.js"></script>
   <script>
@@ -93,6 +96,187 @@
 <main class="mx-auto max-w-md px-4 py-6">
 
   <!-- Tela Hoje — porta de entrada, J-2/J-4 (04_FRONTEND.md §6) -->
+  <!-- Leitor (J-10; 01_DOMINIO §3.17, D-114 a D-121; ADR-052). A nona tela. Nunca aberto a partir de Recuperar (D-114). -->
+  <section id="pagina-leitor" x-data="paginaLeitor()" hidden class="-mx-4 -my-6">
+    <template x-if="!online">
+      <div class="flex items-center gap-2 border-b border-red-300 bg-red-50 px-4 py-2 text-sm text-red-800">
+        <span>● Sem rede</span><span x-show="pendentes > 0" x-text="'· marcações por enviar: ' + pendentes"></span>
+      </div>
+    </template>
+    <div class="sticky top-0 z-20 flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
+      <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 text-gray-600" aria-label="Voltar" @click="voltar()">←</button>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium" x-text="leitura?.assuntoNome || 'Leitor'"></p>
+        <p class="text-xs text-gray-500" x-show="leitura" x-text="leitura ? 'Bloco ' + leitura.posicao + ' de ' + leitura.total + (guardado ? ' · guardado no aparelho' : '') : ''"></p>
+      </div>
+      <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 text-gray-600" aria-label="Marcações" @click="listaAberta = !listaAberta; menuAberto = false">☰</button>
+      <div class="relative">
+        <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 text-gray-600" aria-label="Mais" @click="menuAberto = !menuAberto">⋮</button>
+        <div x-show="menuAberto" @click.outside="menuAberto = false" class="absolute right-0 z-30 mt-1 w-64 rounded border border-gray-200 bg-white py-1 text-sm shadow-lg">
+          <button type="button" class="block min-h-11 w-full px-3 text-left hover:bg-gray-50 disabled:opacity-50" :disabled="guardado || guardando || !online" @click="guardarSemRede()"
+            x-text="guardado ? 'Guardado para ler sem rede ✓' : (guardando ? 'Guardando…' : 'Guardar para ler sem rede')"></button>
+          <a x-show="leitura?.arquivo" :href="leitura?.arquivo" target="_blank" rel="noopener" class="flex min-h-11 items-center px-3 hover:bg-gray-50">Abrir fora do app</a>
+          <button type="button" class="block min-h-11 w-full px-3 text-left hover:bg-gray-50" @click="abrirHistorico()">Marcações removidas e versões</button>
+          <div class="flex items-center gap-2 border-t border-gray-100 px-3 py-2">
+            <span class="flex-1 text-gray-600">Zoom</span>
+            <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200" @click="mudarZoom(0.8)" aria-label="Diminuir">−</button>
+            <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200" @click="mudarZoom(1.25)" aria-label="Aumentar">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p x-show="carregando" class="p-4 text-sm text-gray-600">Abrindo o bloco…</p>
+    <p x-show="erro" class="m-4 rounded bg-red-50 p-3 text-sm text-red-800" role="alert" x-text="erro"></p>
+    <template x-if="naoGuardado">
+      <div class="flex flex-col items-center gap-2 p-8 text-center text-sm text-gray-600">
+        <span class="text-2xl">⇣</span>
+        <b class="text-gray-900">Este bloco não está no aparelho</b>
+        <span>Ele abre quando a rede voltar. Para ler sem rede da próxima vez, use "Guardar para ler sem rede" no menu ⋮.</span>
+      </div>
+    </template>
+    <template x-if="semArquivo">
+      <div class="m-4 space-y-2 rounded border border-gray-200 bg-white p-4 text-sm">
+        <p>Este bloco é um link de fora do app e não abre no leitor.</p>
+        <a :href="leitura?.arquivo" target="_blank" rel="noopener" class="text-primary-700 underline">Abrir fora do app</a>
+      </div>
+    </template>
+
+    <div x-show="!carregando && !naoGuardado && !semArquivo && !erro" class="relative">
+      <div x-ref="rolagem" class="overflow-auto bg-gray-100 p-2" style="max-height: calc(100vh - 170px)">
+        <div x-ref="pagina" class="leitor-pagina" @click="tocarPagina($event)" @dblclick.prevent="criarNotaDePagina(pontoNaPagina($event))"
+             @touchstart.passive="comecarToque($event)" @touchend="cancelarToque()" @touchmove.passive="cancelarToque()">
+          <canvas x-ref="canvas"></canvas>
+          <div x-ref="marcas" class="leitor-marcas"></div>
+          <div x-ref="texto" class="textLayer"></div>
+          <div x-ref="pinos" class="leitor-pinos"></div>
+          <!-- Selecionar texto: as três cores e a nota (D-116) -->
+          <template x-if="selecao">
+            <div class="absolute z-10 flex items-center gap-1 rounded-lg border border-gray-900 bg-white p-1 shadow-lg"
+                 :style="'left:' + (selecao.x * 100) + '%; top: calc(' + (selecao.y * 100) + '% + 6px)'" @click.stop>
+              <template x-for="c in ['IMPORTANTE', 'DUVIDA', 'DECORAR']" :key="c">
+                <button type="button" class="flex min-h-11 min-w-11 flex-col items-center justify-center px-1 text-[10px] text-gray-600" @click="marcar(c)">
+                  <span class="block h-6 w-6 rounded-full border border-gray-300" :style="'background:' + corDe(c)"></span>
+                  <span x-text="rotuloCor(c)"></span>
+                </button>
+              </template>
+              <span class="mx-1 h-8 w-px bg-gray-200"></span>
+              <button type="button" class="flex min-h-11 min-w-11 flex-col items-center justify-center px-1 text-[10px] text-gray-600" @click="marcar('IMPORTANTE', true)">
+                <span class="block h-6 w-6 rounded-full border border-gray-300 text-center leading-6">✎</span><span>nota</span>
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 border-t border-gray-200 bg-white px-3 py-2 text-sm">
+        <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 disabled:opacity-40" :disabled="pagina <= 1" @click="irPara(pagina - 1)" aria-label="Página anterior">‹</button>
+        <span class="tabular-nums text-gray-600" x-text="pagina + ' / ' + totalPaginas"></span>
+        <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 disabled:opacity-40" :disabled="pagina >= totalPaginas" @click="irPara(pagina + 1)" aria-label="Próxima página">›</button>
+        <span class="flex-1"></span>
+        <a x-show="pagina >= totalPaginas && blocoSeguinte" :href="'#/ler/' + blocoSeguinte?.id" class="text-sm text-primary-700 underline">Próximo bloco</a>
+        <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white disabled:opacity-40" :disabled="!online" @click="terminei()"
+          :title="online ? '' : 'Registrar a sessão precisa de rede'">Terminei</button>
+      </div>
+    </div>
+
+    <!-- Tocar num destaque ou criar nota de página (D-115, D-117) -->
+    <template x-if="painel">
+      <div class="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-3xl space-y-2 rounded-t-2xl border-t-2 border-gray-900 bg-white p-4 shadow-2xl" @click.stop>
+        <div class="mx-auto h-1 w-9 rounded bg-gray-300"></div>
+        <template x-if="painel.tipo === 'DESTAQUE'">
+          <div class="space-y-2">
+            <p class="border-l-4 pl-2 text-sm text-gray-600" :style="'border-color:' + bordaDe(painel.cor)" x-text="'“' + painel.citacao + '”'"></p>
+            <div class="flex flex-wrap gap-2">
+              <template x-for="c in ['IMPORTANTE', 'DUVIDA', 'DECORAR']" :key="c">
+                <button type="button" class="flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm" :class="painel.cor === c ? 'border-gray-900 font-semibold' : 'border-gray-200'" @click="trocarCor(c)">
+                  <span class="h-3 w-3 rounded-full" :style="'background:' + bordaDe(c)"></span><span x-text="rotuloCor(c)"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+        </template>
+        <p x-show="painel.tipo === 'NOTA_PAGINA'" class="text-sm font-semibold">Nota nesta página</p>
+        <textarea x-model="notaTexto" rows="3" class="w-full rounded border border-gray-300 p-2 text-sm" :placeholder="painel.tipo === 'DESTAQUE' ? 'Nota sobre este trecho (opcional)' : 'Escreva a nota'"></textarea>
+        <div class="flex items-center gap-2">
+          <button type="button" x-show="!painel.novo" class="min-h-11 rounded border border-red-300 px-3 text-sm text-red-700" @click="remover()">Remover</button>
+          <span class="flex-1"></span>
+          <button type="button" class="min-h-11 px-3 text-sm text-gray-600 underline" @click="fecharPainel()">Fechar</button>
+          <button type="button" class="min-h-11 rounded bg-primary-600 px-4 text-sm font-semibold text-white" @click="salvarNota()">Salvar</button>
+        </div>
+      </div>
+    </template>
+
+    <!-- Lista de marcações do bloco, por página, com filtro por cor (D-116) -->
+    <template x-if="listaAberta">
+      <div class="fixed inset-0 z-40 flex justify-end bg-black/20" @click.self="listaAberta = false">
+        <div class="h-full w-full max-w-sm overflow-y-auto bg-white p-4 shadow-2xl">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="font-semibold">Marcações deste bloco</h2>
+            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="listaAberta = false" aria-label="Fechar">✕</button>
+          </div>
+          <div class="mb-3 flex flex-wrap gap-2 text-xs">
+            <button type="button" class="min-h-9 rounded-full border px-3" :class="!filtroCor ? 'border-gray-900 font-semibold' : 'border-gray-200'" @click="filtroCor = null" x-text="'todas ' + contar(null)"></button>
+            <template x-for="c in ['IMPORTANTE', 'DUVIDA', 'DECORAR']" :key="c">
+              <button type="button" class="flex min-h-9 items-center gap-1 rounded-full border px-3" :class="filtroCor === c ? 'border-gray-900 font-semibold' : 'border-gray-200'" @click="filtroCor = c">
+                <span class="h-2.5 w-2.5 rounded-full" :style="'background:' + bordaDe(c)"></span><span x-text="rotuloCor(c) + ' ' + contar(c)"></span>
+              </button>
+            </template>
+            <button type="button" class="min-h-9 rounded-full border px-3" :class="filtroCor === 'NOTA' ? 'border-gray-900 font-semibold' : 'border-gray-200'" @click="filtroCor = 'NOTA'" x-text="'✎ ' + contar('NOTA')"></button>
+          </div>
+          <p x-show="lista.length === 0" class="text-sm text-gray-500">Nenhuma marcação aqui ainda. Selecione um trecho para destacar.</p>
+          <template x-for="g in lista" :key="g.pagina">
+            <div class="mb-3">
+              <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500" x-text="'Página ' + g.pagina"></p>
+              <template x-for="m in g.itens" :key="m.chave">
+                <button type="button" class="flex w-full gap-2 border-b border-gray-100 py-2 text-left text-sm" @click="irParaMarcacao(m)">
+                  <span class="w-1 flex-none rounded" :style="'background:' + (m.tipo === 'DESTAQUE' ? bordaDe(m.cor) : '#0694a2')"></span>
+                  <span class="min-w-0">
+                    <span class="block" x-text="m.tipo === 'DESTAQUE' ? '“' + m.citacao + '”' : 'Nota de página'"></span>
+                    <span class="block truncate text-xs text-gray-500" x-show="m.tipo === 'NOTA_PAGINA' || notaDe(m)" x-text="'✎ ' + (m.tipo === 'NOTA_PAGINA' ? m.texto : (notaDe(m)?.texto || ''))"></span>
+                  </span>
+                </button>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+
+    <!-- Removidas e versões: só consulta (D-117) -->
+    <template x-if="historico">
+      <div class="fixed inset-0 z-40 flex justify-end bg-black/20" @click.self="historico = null">
+        <div class="h-full w-full max-w-sm overflow-y-auto bg-white p-4 shadow-2xl">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="font-semibold">Histórico de marcações</h2>
+            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="historico = null" aria-label="Fechar">✕</button>
+          </div>
+          <p x-show="historico.carregando" class="text-sm text-gray-500">Carregando…</p>
+          <p x-show="historico.erro" class="text-sm text-red-700" x-text="historico.erro"></p>
+          <template x-if="historico.removidas">
+            <div>
+              <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Removidas</p>
+              <p x-show="historico.removidas.length === 0" class="mb-3 text-sm text-gray-500">Nenhuma.</p>
+              <template x-for="m in historico.removidas" :key="m.chave">
+                <div class="border-b border-gray-100 py-2 text-sm">
+                  <span class="text-gray-500 line-through" x-text="m.citacao ? '“' + m.citacao + '”' : (m.texto || 'nota')"></span>
+                  <span class="block text-xs text-gray-500" x-text="'Removida em ' + dataInstante(m.editadaEm) + ' · pág. ' + m.pagina"></span>
+                </div>
+              </template>
+              <p class="mb-1 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Versões</p>
+              <template x-for="(v, i) in historico.versoes" :key="i">
+                <div class="border-b border-gray-100 py-2 text-sm">
+                  <span :class="v.vigente ? '' : 'text-gray-500 line-through'"
+                        x-text="(v.citacao ? '“' + v.citacao.slice(0, 60) + '”' : 'Nota') + (v.cor ? ' · ' + rotuloCor(v.cor) : '') + (v.texto ? ' · ' + v.texto : '') + (v.removida ? ' · removida' : '')"></span>
+                  <span class="block text-xs text-gray-500" x-text="(v.vigente ? 'Atual' : 'Versão anterior') + ' · ' + new Date(v.editadaEm).toLocaleString('pt-BR')"></span>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </section>
+
   <section id="pagina-hoje" x-data="paginaHoje()">
 
     <!-- 02_JORNADAS §4.4: o concurso-alvo no topo — contexto, não alarme -->
@@ -203,6 +387,10 @@
                   <span class="block font-medium" x-text="item.nome"></span>
                   <span class="text-sm text-gray-600" x-text="'Falhou em ' + item.dataFalha.split('-').reverse().join('/') + ' · nível ' + item.nivel"></span>
                 </button>
+                <!-- J-10: o reestudo abre o material no leitor (D-114) -->
+                <button type="button" x-show="reestudoBloco[item.assuntoId]" class="mt-1 flex min-h-11 items-center gap-2 px-1 text-sm font-semibold text-primary-700"
+                  @click="window.location.hash = '#/ler/' + reestudoBloco[item.assuntoId]">Ler
+                  <span x-show="guardados.has(reestudoBloco[item.assuntoId])" class="rounded-full border border-primary-600 px-2 text-xs font-normal">sem rede ✓</span></button>
               </li>
             </template>
           </ul>
@@ -222,8 +410,11 @@
             <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando"
               class="flex min-h-11 w-full items-center border-t border-gray-200 px-3 text-left text-sm font-medium text-primary-700 hover:bg-gray-50"
               @click="$store.foco.iniciar('FOCO', blocoConteudo.id, segmentoSugerido?.id ?? null, blocoConteudo.nome)">Foco neste bloco</button>
-            <!-- D-55: o material do bloco abre direto daqui (o SGE guarda o link, nunca o abre ele mesmo) -->
-            <a x-show="linkMaterial" :href="linkMaterial" target="_blank" rel="noopener"
+            <!-- J-10: o material abre no leitor do app (D-114); link antigo do Drive continua abrindo fora -->
+            <a x-show="segmentoSugerido && materialLocal(segmentoSugerido)" :href="'#/ler/' + segmentoSugerido?.id"
+              class="flex min-h-11 items-center gap-2 border-t border-gray-200 px-3 text-sm font-semibold text-primary-700">Ler
+              <span x-show="guardados.has(segmentoSugerido?.id)" class="rounded-full border border-primary-600 px-2 text-xs font-normal">sem rede ✓</span></a>
+            <a x-show="linkMaterial && !materialLocal(segmentoSugerido)" :href="linkMaterial" target="_blank" rel="noopener"
               class="flex min-h-11 items-center border-t border-gray-200 px-3 text-sm font-medium text-primary-700 underline">Abrir material</a>
             <!-- Sprint 25 §9: aviso discreto da conferência; leva a ela e não bloqueia nada -->
             <a x-show="seloEdital" :href="seloEdital ? '#/concursos/analise/' + seloEdital.analiseId + '/conferencia' : '#'"
@@ -563,7 +754,8 @@
                   <span class="text-sm" x-text="s.ordem + '. p. ' + (s.paginaInicial ?? '?') + '–' + (s.paginaFinal ?? '?')"></span>
                   <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
                 </div>
-                <a :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
+                <a x-show="s.arquivo && s.arquivo.startsWith('/material/')" :href="'#/ler/' + s.id" class="text-sm font-semibold text-primary-700 underline">Ler</a>
+                <a x-show="!(s.arquivo && s.arquivo.startsWith('/material/'))" :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
                 <!-- D-105: estimado × real, só informação -->
                 <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
                   @click="$store.foco.iniciar('FOCO', assuntoId, s.id, nome)">foco neste bloco</button>
@@ -865,6 +1057,51 @@
         <button type="button" x-show="ligado" :disabled="trabalhando"
                 class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="desligar()">Desligar</button>
       </div>
+    </div>
+
+    <!-- Ajustes → Acesso (J-9, D-109 a D-111): passkeys, sair e os códigos de recuperação -->
+    <div id="acesso-ajustes" x-data="acessoAjustes()" class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
+      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Acesso</h2>
+      <ul class="space-y-2">
+        <template x-for="p in passkeys" :key="p.id">
+          <li class="flex items-center justify-between gap-3 rounded border border-gray-100 p-2 text-sm">
+            <span class="min-w-0">
+              <span class="font-medium" x-text="p.nome"></span>
+              <span x-show="p.esteAparelho" class="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">este aparelho</span>
+              <span class="block text-xs text-gray-500" x-text="ultimoUso(p)"></span>
+            </span>
+            <button type="button" x-show="passkeys.length > 1" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-red-700 hover:bg-gray-50" @click="remover(p)">Remover</button>
+          </li>
+        </template>
+      </ul>
+      <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="cadastrar()">Cadastrar passkey neste aparelho</button>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="sair()">Sair</button>
+        <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="sairDeTodos()">Sair de todos</button>
+      </div>
+      <div class="rounded bg-gray-50 p-2 text-sm text-gray-700">
+        <p>Códigos de recuperação restantes: <strong x-text="restantes ?? '…'"></strong></p>
+        <template x-if="!codigosNovos.length">
+          <div>
+            <button type="button" x-show="!confirmarCodigos" class="mt-2 min-h-11 rounded border border-gray-300 bg-white px-3 text-sm text-primary-700" @click="confirmarCodigos = true">Gerar novos códigos</button>
+            <div x-show="confirmarCodigos" class="mt-2 space-y-2">
+              <p>Os códigos atuais deixam de valer. Os novos aparecem uma vez só.</p>
+              <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-semibold text-white" :disabled="trabalhando" @click="gerarCodigos()">Gerar e mostrar</button>
+              <button type="button" class="min-h-11 px-3 text-sm text-gray-600 underline" @click="confirmarCodigos = false">Cancelar</button>
+            </div>
+          </div>
+        </template>
+        <template x-if="codigosNovos.length">
+          <div class="mt-2 space-y-2">
+            <p><strong>Guarde agora, fora deste aparelho.</strong> Eles não aparecem de novo.</p>
+            <ol class="grid grid-cols-2 gap-2 font-mono text-sm">
+              <template x-for="c in codigosNovos" :key="c"><li class="rounded bg-white px-2 py-1 text-center" x-text="c"></li></template>
+            </ol>
+          </div>
+        </template>
+      </div>
+      <p x-show="mensagem" class="text-sm text-gray-700" x-text="mensagem"></p>
+      <p x-show="erro" class="text-sm text-red-700" role="alert" x-text="erro"></p>
     </div>
 
     <!-- Ajustes → Pomodoro (D-103, D-104): som e vibração do aparelho; aviso de fim de fase opcional, desligado por padrão -->

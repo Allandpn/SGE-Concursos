@@ -58,7 +58,7 @@ E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
 | Documento | Responde |
 |---|---|
 | `especificacao/00_PRODUTO.md` | Para que serve, e como saberemos que funcionou |
-| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 95 regras D-xx** |
+| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 121 regras D-xx** |
 | `especificacao/02_JORNADAS.md` | Como é usado, e quanto pode custar em segundos |
 | `especificacao/03_INVARIANTES.md` | Quem garante cada regra e como se testa |
 
@@ -72,7 +72,7 @@ Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
-| `docs/00A_ADR.md` | 47 ADRs, 33 vigentes (até ADR-047 — conferência do edital) |
+| `docs/00A_ADR.md` | 52 ADRs, 37 vigentes (até ADR-052 — leitor de PDF no app) |
 | `docs/03C_LOGGING.md` | Intacto |
 | `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta), §8C (Sprint 19: worker do material, tetos de memória do Pi 4) e §8D (Sprint 24: volume `provas`, OCR) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |
@@ -102,7 +102,7 @@ desenhada para impedir.
 
 ## As regras D-xx
 
-`01_DOMINIO.md` §10 tem as 95. `03_INVARIANTES.md` §3 diz de cada uma: que
+`01_DOMINIO.md` §10 tem as 121. `03_INVARIANTES.md` §3 diz de cada uma: que
 natureza tem, em que camada mora, como se sabe que quebrou.
 
 **Todo código que implementa uma regra a cita pelo identificador**, e o
@@ -164,6 +164,16 @@ Isso explica por que a especificação conceitual é densa e a técnica é magra
 primeira foi revisada oito vezes; a segunda nasce por sprint, de propósito.
 
 **Em que ponto estamos: `PROGRESSO.md`.**
+
+---
+
+## O acesso: login por passkey (ADR-051, Sprint 30)
+
+O ADR-015 (sem autenticação, a rede é a defesa) foi **substituído** em 2026-10-30. A especificação do login está em `01_DOMINIO` §3.16 (D-106 a D-113)
+e `02_JORNADAS` J-9; o código é da Sprint 30 (`docs/SPRINT-30-LOGIN.md`). **Rota nova nasce fechada**: o `SessaoAcessoFilter` só deixa passar a lista
+aberta, e o `AcessoRotasTest` falha se alguma rota responder sem sessão. Testes novos de API estendem `IntegracaoTestBase` (login desligado) ou
+`AcessoTestBase` (login ligado). **Não ligue `tailscale funnel` antes do deploy do login e do primeiro passkey cadastrado pela tailnet**
+(`docs/SPRINT-30-LOGIN.md` §8A): expor sem autenticação é defeito grave.
 
 ---
 
@@ -258,7 +268,10 @@ Chromium headless (Playwright): expressão do Alpine dentro de `x-show` é avali
 
 **Implantar (desde 2026-10-30, sem acesso do usuário ao Pi):** só pelo Guardian (`github.com/Allandpn/guardian`, `docs/DEPLOY.md`).
 Quem desenvolve não coloca nada no ar: o pedido de deploy é uma **etiqueta `release/N`** num commit já em `main`, e **só criar a etiqueta com o
-OK do usuário**. O deployer (root, no Pi) mostra a oferta no site, o guardião-mestre assina com passkey dentro do horário dele, roda
+OK do usuário**. O caminho: commits na branch da sessão → **PR para a `main`**, merge só com o OK → etiqueta `release/N` com N maior que a
+última (`git ls-remote --tags origin`). **Se o push da etiqueta for recusado** (sessão na nuvem só envia para a própria branch), não contorne:
+diga ao usuário o número e o commit, e ele cria pelo GitHub (Releases > Draft a new release > tag `release/N` > Target `main` > Publish).
+Desfazer não é downgrade: corrija e publique `release/N+1`. Avise antes quando a versão tocar arquivos de segurança (aviso vermelho no site). O deployer (root, no Pi) mostra a oferta no site, o guardião-mestre assina com passkey dentro do horário dele, roda
 `docker compose up -d --build` em `/opt/estudos` e volta sozinho se `estudos-app-1` não ficar `healthy`. Antes de pedir a etiqueta: suíte
 inteira verde, migração Flyway nova conferida (imutável depois de aplicada) e `CASCA_VERSAO` atualizado se mexeu em estático. Mudar o registro
 do deployer exige root no Pi: fale com o usuário. `docker-compose*.yml`, `Dockerfile` e `.env*` aparecem ao mestre como "mexe em segurança".

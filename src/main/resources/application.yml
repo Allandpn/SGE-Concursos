@@ -14,6 +14,8 @@ server:
   # o navegador ignora o arquivo e não oferece "instalar".
   mime-mappings:
     webmanifest: application/manifest+json
+    # ADR-052: o PDF.js é módulo ES (.mjs); sem o tipo certo o navegador recusa o import.
+    mjs: text/javascript
   # BIND_ADDRESS=0.0.0.0 dentro do container é obrigatório para o Docker
   # mapear a porta; o confinamento real vem do "127.0.0.1:" do host no
   # docker-compose.yml. Não "corrigir" para um valor fixo.
@@ -57,6 +59,10 @@ estudos:
     dir: ${MATERIAL_DIR:/dados/material}
   provas:
     dir: ${PROVAS_DIR:/dados/provas}
+  # ADR-051 — login por passkey (docs/SPRINT-30-LOGIN.md §4). O rpId e a origem vêm do próprio pedido;
+  # o host precisa casar com esta lista. "desligado-em-teste" só existe para os testes antigos (sem sessão).
+  acesso:
+    hosts: ${ACESSO_HOSTS:*.ts.net,localhost}
   # ADR-047 — o PDF do edital fica aqui até a conferência terminar (docs/SPRINT-25-CONFERENCIA-EDITAL.md §2.5)
   editais:
     dir: ${EDITAIS_DIR:/dados/editais}

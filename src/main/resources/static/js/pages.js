@@ -345,6 +345,8 @@ document.addEventListener('alpine:init', () => {
     seloEdital: null, // §9 da Sprint 25: parte do edital sem filtro de questões, no assunto em foco
     blocoContinuacao: false,
     segmentoSugerido: null,
+    guardados: new Set(), // D-119: blocos já no aparelho (selo "sem rede ✓")
+    reestudoBloco: {}, // assuntoId → o primeiro bloco ativo, para o "Ler" do reestudo (J-10)
     alertaRepresamento: false,
     diasSemEstudar: null,
     represado: 0,
@@ -419,6 +421,7 @@ document.addEventListener('alpine:init', () => {
         this.reestudos = plano.reestudos;
         this.blocoConteudo = plano.blocoConteudo;
         this.carregarSelo();
+        this.prepararLeitura();
         this.blocoContinuacao = plano.blocoContinuacao;
         this.segmentoSugerido = plano.segmentoSugerido;
         this.alertaRepresamento = plano.alertaRepresamento;
@@ -434,6 +437,30 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.carregando = false;
       }
+    },
+
+    materialLocal(s) {
+      return !!(s && s.arquivo && s.arquivo.startsWith('/material/'));
+    },
+
+    // J-10 e D-119: acha o bloco de cada reestudo e guarda no aparelho os blocos do plano de hoje. Auxiliar: falhar não
+    // atrapalha a tela, e sem rede só mostra o que já está guardado.
+    async prepararLeitura() {
+      this.guardados = await offline.guardados();
+      const blocos = {};
+      for (const r of this.reestudos) {
+        try {
+          const segmentos = await api(`/assuntos/${r.assuntoId}/segmentos`);
+          const primeiro = segmentos.find((x) => this.materialLocal(x));
+          if (primeiro) blocos[r.assuntoId] = primeiro.id;
+        } catch (e) {
+          // sem rede: o "Ler" do reestudo só aparece com rede ou com o bloco já guardado
+        }
+      }
+      this.reestudoBloco = blocos;
+      const deHoje = [this.materialLocal(this.segmentoSugerido) ? this.segmentoSugerido.id : null, ...Object.values(blocos)];
+      await offline.guardarDeHoje(deHoje);
+      this.guardados = await offline.guardados();
     },
 
     // Aviso discreto, nunca bloqueia: o assunto em foco tem parte sem filtro de questões ou com vínculo largo.
@@ -1261,6 +1288,85 @@ document.addEventListener('alpine:init', () => {
         else this.erro = 'Nenhum aparelho recebeu. Ligue o aviso de fim de fase e tente de novo.';
       } catch (e) {
         this.erro = e.message;
+      }
+    },
+  }));
+
+  // Ajustes → Acesso (J-9, D-109 a D-111): passkeys, sair, sair de todos e os códigos de recuperação.
+  Alpine.data('acessoAjustes', () => ({
+    passkeys: [],
+    restantes: null,
+    codigosNovos: [],
+    confirmarCodigos: false,
+    trabalhando: false,
+    mensagem: null,
+    erro: null,
+
+    async init() {
+      await this.carregar();
+    },
+
+    async carregar() {
+      try {
+        this.passkeys = await api('/acesso/passkeys');
+        this.restantes = (await api('/acesso/codigos')).restantes;
+      } catch (e) {
+        this.erro = e.message;
+      }
+    },
+
+    ultimoUso(p) {
+      return p.ultimoUsoEm ? `último uso em ${dataInstante(p.ultimoUsoEm)}` : 'ainda não usado para entrar';
+    },
+
+    async cadastrar() {
+      this.trabalhando = true;
+      this.erro = null;
+      this.mensagem = null;
+      try {
+        await cadastrarPasskeyNesteAparelho();
+        this.mensagem = 'Passkey cadastrado neste aparelho.';
+        await this.carregar();
+      } catch (e) {
+        this.erro = e && e.name === 'NotAllowedError' ? 'Cancelado.' : (e.message || 'Não foi possível cadastrar.');
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+
+    async remover(p) {
+      if (!confirm(`Remover o passkey "${p.nome}"? Esse aparelho deixa de entrar com ele.`)) return;
+      this.erro = null;
+      try {
+        await api(`/acesso/passkeys/${p.id}`, { method: 'DELETE' });
+        await this.carregar();
+      } catch (e) {
+        this.erro = e.message;
+      }
+    },
+
+    async sair() {
+      try { await api('/acesso/sair', { method: 'POST' }); } catch (e) { /* a porta resolve */ }
+      window.location.replace('/entrar.html');
+    },
+
+    async sairDeTodos() {
+      if (!confirm('Sair de todos os aparelhos? Cada um vai pedir para entrar de novo, inclusive este.')) return;
+      try { await api('/acesso/sair-de-todos', { method: 'POST' }); } catch (e) { /* a porta resolve */ }
+      window.location.replace('/entrar.html');
+    },
+
+    async gerarCodigos() {
+      this.trabalhando = true;
+      this.erro = null;
+      try {
+        this.codigosNovos = (await api('/acesso/codigos', { method: 'POST' })).codigos;
+        this.confirmarCodigos = false;
+        this.restantes = this.codigosNovos.length;
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.trabalhando = false;
       }
     },
   }));
