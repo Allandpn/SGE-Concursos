@@ -40,6 +40,24 @@ public class GlobalExceptionHandler {
         return montar(HttpStatus.SERVICE_UNAVAILABLE, e);
     }
 
+    @ExceptionHandler(NaoAutorizadoException.class)
+    public ProblemDetail tratarNaoAutorizado(NaoAutorizadoException e) {
+        return montar(HttpStatus.UNAUTHORIZED, e);
+    }
+
+    @ExceptionHandler(ProibidoException.class)
+    public ProblemDetail tratarProibido(ProibidoException e) {
+        return montar(HttpStatus.FORBIDDEN, e);
+    }
+
+    /** D-112: o bloqueio diz quando volta (`ate`, instante ISO). */
+    @ExceptionHandler(MuitasTentativasException.class)
+    public ProblemDetail tratarMuitasTentativas(MuitasTentativasException e) {
+        var problema = montar(HttpStatus.TOO_MANY_REQUESTS, e);
+        problema.setProperty("ate", e.getAte().toString());
+        return problema;
+    }
+
     @ExceptionHandler(BusinessRuleException.class)
     public ProblemDetail tratarRegraDeNegocio(BusinessRuleException e) {
         return montar(HttpStatus.CONFLICT, e);

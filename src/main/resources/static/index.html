@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="css/styles.css">
   <script defer src="vendor/alpinejs-3.14.3.min.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/entrar.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/router.js"></script>
   <script>
@@ -865,6 +866,51 @@
         <button type="button" x-show="ligado" :disabled="trabalhando"
                 class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="desligar()">Desligar</button>
       </div>
+    </div>
+
+    <!-- Ajustes → Acesso (J-9, D-109 a D-111): passkeys, sair e os códigos de recuperação -->
+    <div id="acesso-ajustes" x-data="acessoAjustes()" class="mb-6 space-y-3 rounded border border-gray-200 bg-white p-3">
+      <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Acesso</h2>
+      <ul class="space-y-2">
+        <template x-for="p in passkeys" :key="p.id">
+          <li class="flex items-center justify-between gap-3 rounded border border-gray-100 p-2 text-sm">
+            <span class="min-w-0">
+              <span class="font-medium" x-text="p.nome"></span>
+              <span x-show="p.esteAparelho" class="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">este aparelho</span>
+              <span class="block text-xs text-gray-500" x-text="ultimoUso(p)"></span>
+            </span>
+            <button type="button" x-show="passkeys.length > 1" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-red-700 hover:bg-gray-50" @click="remover(p)">Remover</button>
+          </li>
+        </template>
+      </ul>
+      <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" :disabled="trabalhando" @click="cadastrar()">Cadastrar passkey neste aparelho</button>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="sair()">Sair</button>
+        <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="sairDeTodos()">Sair de todos</button>
+      </div>
+      <div class="rounded bg-gray-50 p-2 text-sm text-gray-700">
+        <p>Códigos de recuperação restantes: <strong x-text="restantes ?? '…'"></strong></p>
+        <template x-if="!codigosNovos.length">
+          <div>
+            <button type="button" x-show="!confirmarCodigos" class="mt-2 min-h-11 rounded border border-gray-300 bg-white px-3 text-sm text-primary-700" @click="confirmarCodigos = true">Gerar novos códigos</button>
+            <div x-show="confirmarCodigos" class="mt-2 space-y-2">
+              <p>Os códigos atuais deixam de valer. Os novos aparecem uma vez só.</p>
+              <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-semibold text-white" :disabled="trabalhando" @click="gerarCodigos()">Gerar e mostrar</button>
+              <button type="button" class="min-h-11 px-3 text-sm text-gray-600 underline" @click="confirmarCodigos = false">Cancelar</button>
+            </div>
+          </div>
+        </template>
+        <template x-if="codigosNovos.length">
+          <div class="mt-2 space-y-2">
+            <p><strong>Guarde agora, fora deste aparelho.</strong> Eles não aparecem de novo.</p>
+            <ol class="grid grid-cols-2 gap-2 font-mono text-sm">
+              <template x-for="c in codigosNovos" :key="c"><li class="rounded bg-white px-2 py-1 text-center" x-text="c"></li></template>
+            </ol>
+          </div>
+        </template>
+      </div>
+      <p x-show="mensagem" class="text-sm text-gray-700" x-text="mensagem"></p>
+      <p x-show="erro" class="text-sm text-red-700" role="alert" x-text="erro"></p>
     </div>
 
     <!-- Ajustes → Pomodoro (D-103, D-104): som e vibração do aparelho; aviso de fim de fase opcional, desligado por padrão -->

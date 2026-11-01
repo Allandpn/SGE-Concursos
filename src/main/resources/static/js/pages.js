@@ -1265,6 +1265,85 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 
+  // Ajustes → Acesso (J-9, D-109 a D-111): passkeys, sair, sair de todos e os códigos de recuperação.
+  Alpine.data('acessoAjustes', () => ({
+    passkeys: [],
+    restantes: null,
+    codigosNovos: [],
+    confirmarCodigos: false,
+    trabalhando: false,
+    mensagem: null,
+    erro: null,
+
+    async init() {
+      await this.carregar();
+    },
+
+    async carregar() {
+      try {
+        this.passkeys = await api('/acesso/passkeys');
+        this.restantes = (await api('/acesso/codigos')).restantes;
+      } catch (e) {
+        this.erro = e.message;
+      }
+    },
+
+    ultimoUso(p) {
+      return p.ultimoUsoEm ? `último uso em ${dataInstante(p.ultimoUsoEm)}` : 'ainda não usado para entrar';
+    },
+
+    async cadastrar() {
+      this.trabalhando = true;
+      this.erro = null;
+      this.mensagem = null;
+      try {
+        await cadastrarPasskeyNesteAparelho();
+        this.mensagem = 'Passkey cadastrado neste aparelho.';
+        await this.carregar();
+      } catch (e) {
+        this.erro = e && e.name === 'NotAllowedError' ? 'Cancelado.' : (e.message || 'Não foi possível cadastrar.');
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+
+    async remover(p) {
+      if (!confirm(`Remover o passkey "${p.nome}"? Esse aparelho deixa de entrar com ele.`)) return;
+      this.erro = null;
+      try {
+        await api(`/acesso/passkeys/${p.id}`, { method: 'DELETE' });
+        await this.carregar();
+      } catch (e) {
+        this.erro = e.message;
+      }
+    },
+
+    async sair() {
+      try { await api('/acesso/sair', { method: 'POST' }); } catch (e) { /* a porta resolve */ }
+      window.location.replace('/entrar.html');
+    },
+
+    async sairDeTodos() {
+      if (!confirm('Sair de todos os aparelhos? Cada um vai pedir para entrar de novo, inclusive este.')) return;
+      try { await api('/acesso/sair-de-todos', { method: 'POST' }); } catch (e) { /* a porta resolve */ }
+      window.location.replace('/entrar.html');
+    },
+
+    async gerarCodigos() {
+      this.trabalhando = true;
+      this.erro = null;
+      try {
+        this.codigosNovos = (await api('/acesso/codigos', { method: 'POST' })).codigos;
+        this.confirmarCodigos = false;
+        this.restantes = this.codigosNovos.length;
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.trabalhando = false;
+      }
+    },
+  }));
+
   Alpine.data('paginaAjustes', () => ({
     carregando: true,
     erro: null,

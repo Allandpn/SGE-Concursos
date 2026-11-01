@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.0 |
+| Versão | 1.1.0 |
 | Data | 2026-11-01 |
 | Subordinado a | `01_DOMINIO` v1.32.1 §3.16, D-106 a D-113; `02_JORNADAS` v1.21.0 J-9; `03_INVARIANTES` v1.20.1; ADR-051 |
 | Origem | Pedido do usuário (2026-10-30): usar o app fora da rede de casa. ADR-051 aprovado em 2026-11-01 |
@@ -178,12 +178,12 @@ O desafio (`pedidoId`) vive na memória por 5 minutos e vale uma vez. Reiniciar 
 | # | Item | Situação |
 |---|---|---|
 | 30.0 | Especificação (feita em 2026-10-30) e ajuste de D-106/D-107 (v1.32.1) | feito |
-| 30.1 | `V23__acesso.sql` com os gatilhos | — |
-| 30.2 | `SessaoAcessoFilter`, `OrigemDoPedido`, lista aberta; D-113 no `TokenInternoFilter` | — |
-| 30.3 | WebAuthn (primeiro, entrar, cadastrar outro) com `webauthn-server-core` | — |
-| 30.4 | Sessão, sair, códigos, freio | — |
-| 30.5 | Porta, `api.js`, Ajustes → Acesso, `CASCA_VERSAO` | — |
-| 30.6 | Testes e Chromium | — |
+| 30.1 | `V23__acesso.sql` com os gatilhos | feito |
+| 30.2 | `SessaoAcessoFilter`, `OrigemDoPedido`, lista aberta; D-113 no `TokenInternoFilter` | feito |
+| 30.3 | WebAuthn (primeiro, entrar, cadastrar outro) com `webauthn-server-core` | feito |
+| 30.4 | Sessão, sair, códigos, freio | feito |
+| 30.5 | Porta, `api.js`, Ajustes → Acesso, `CASCA_VERSAO` | feito |
+| 30.6 | Testes e Chromium | feito |
 | 30.7 | Deploy pelo Guardian (etiqueta `release/N`, com o OK do usuário); depois, `tailscale funnel` por quem tem root | — |
 
 ## 8. Decisões e alternativas
@@ -196,6 +196,14 @@ O desafio (`pedidoId`) vive na memória por 5 minutos e vale uma vez. Reiniciar 
 | Freio em memória | Tabela de tentativas | Um contêiner só; reiniciar zerar é a garantia de "nunca permanente" |
 | Desafio em memória por 5 min | Tabela de desafios | Desafio é efêmero; perder no reinício só pede outro toque |
 | Igualdade de contador aceita só em zero | Recusar qualquer igualdade | Passkeys sincronizados sempre mandam 0: ninguém com iPhone ou Android entraria |
+
+## 8A. Como ligar depois do deploy (para quem tem root no Pi)
+
+1. Deploy pelo Guardian (etiqueta `release/N`), conferir `estudos-app-1` saudável.
+2. Pela tailnet, abrir `https://<nó>.<tailnet>.ts.net:8443`: a porta aparece com **Cadastrar este aparelho**. Cadastrar e guardar os 8 códigos.
+3. Só então ligar a internet: no Pi, `tailscale funnel --bg --https=8443 http://127.0.0.1:8080` (o mesmo alvo do `serve` de hoje), e o atributo
+   `funnel` para o nó na política da tailnet. De fora, a porta não oferece o primeiro cadastro.
+4. Conferir de fora: `/api/acesso/estado` responde `primeiroAcesso: false`; `/api/hoje` responde 401; `/internal/...` responde 403.
 
 ## 9. Riscos
 
@@ -210,4 +218,5 @@ O desafio (`pedidoId`) vive na memória por 5 minutos e vale uma vez. Reiniciar 
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.1.0 | 2026-11-01 | Itens 30.1 a 30.6 feitos. 26 testes novos (`AcessoLoginTest`, `AcessoRotasTest`, `FreioDeTentativasTest`, `FreioHttpTest`) e a suíte inteira: 397 de 399 verdes; os 2 de schema exigem Docker, ausente nesta sessão (a lista de tabelas recebeu as três novas). Chromium com autenticador virtual: primeiro cadastro pela tailnet, códigos, Ajustes → Acesso, sair, entrar de fora, código de recuperação num aparelho novo e código repetido recusado, sem erro de página. Achado no caminho: o service worker instalado sem sessão guardaria a porta no lugar do `index.html`; a casca passa a ser buscada com `redirect: 'error'` |
 | 1.0.0 | 2026-11-01 | Criado, com o ADR-051 aprovado pelo usuário |

@@ -7,7 +7,7 @@
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-10-30-1';
+const CASCA_VERSAO = 'casca-2026-11-01-1';
 
 const CASCA = [
   './',
@@ -15,6 +15,8 @@ const CASCA = [
   'manifest.webmanifest',
   'css/styles.css',
   'js/api.js',
+  'js/entrar.js',
+  'entrar.html',
   'js/pages.js',
   'js/router.js',
   'vendor/alpinejs-3.14.3.min.js',
@@ -32,7 +34,9 @@ const CASCA = [
 ];
 
 self.addEventListener('install', (evento) => {
-  evento.waitUntil(caches.open(CASCA_VERSAO).then((cache) => cache.addAll(CASCA)));
+  // Sem sessão, as telas redirecionam para a porta (D-106): com redirect 'error' a instalação falha em vez de guardar a
+  // porta no lugar do index.html, e o navegador tenta de novo na próxima abertura, já com sessão.
+  evento.waitUntil(caches.open(CASCA_VERSAO).then((cache) => cache.addAll(CASCA.map((u) => new Request(u, { redirect: 'error' })))));
   self.skipWaiting();
 });
 

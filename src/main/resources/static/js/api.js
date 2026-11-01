@@ -37,7 +37,13 @@ async function api(caminho, opcoes = {}) {
     const tipo = resposta.headers.get('Content-Type') || '';
     if (tipo.includes('json')) {
       const problema = await resposta.json(); // application/problem+json, ADR-026
-      throw new ApiError(problema.detail, problema.codigo, problema.campo, resposta.status);
+      // D-106: sem sessão (expirou, saiu de todos), volta para a porta. Na própria porta, o erro é dela.
+      if (resposta.status === 401 && problema.codigo === 'SESSAO_AUSENTE' && window.location.pathname !== '/entrar.html') {
+        window.location.replace('/entrar.html');
+      }
+      const erro = new ApiError(problema.detail, problema.codigo, problema.campo, resposta.status);
+      if (problema.ate) erro.ate = problema.ate; // D-112: quando o bloqueio acaba
+      throw erro;
     }
     throw new ApiError(`O servidor respondeu com erro (${resposta.status}). Tente de novo em instantes.`, 'ERRO_SERVIDOR', null, resposta.status);
   }

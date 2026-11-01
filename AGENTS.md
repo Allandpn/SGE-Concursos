@@ -167,11 +167,13 @@ primeira foi revisada oito vezes; a segunda nasce por sprint, de propósito.
 
 ---
 
-## O acesso: login por passkey (ADR-051, a definir na Sprint 30)
+## O acesso: login por passkey (ADR-051, Sprint 30)
 
 O ADR-015 (sem autenticação, a rede é a defesa) foi **substituído** em 2026-10-30. A especificação do login está em `01_DOMINIO` §3.16 (D-106 a D-113)
-e `02_JORNADAS` J-9; **o código ainda não existe**. Até a Sprint 30, o app segue sem login e só na tailnet. **Não ligue `tailscale funnel` nem exponha
-o app antes do login estar implementado e testado**: expor sem autenticação é defeito grave.
+e `02_JORNADAS` J-9; o código é da Sprint 30 (`docs/SPRINT-30-LOGIN.md`). **Rota nova nasce fechada**: o `SessaoAcessoFilter` só deixa passar a lista
+aberta, e o `AcessoRotasTest` falha se alguma rota responder sem sessão. Testes novos de API estendem `IntegracaoTestBase` (login desligado) ou
+`AcessoTestBase` (login ligado). **Não ligue `tailscale funnel` antes do deploy do login e do primeiro passkey cadastrado pela tailnet**
+(`docs/SPRINT-30-LOGIN.md` §8A): expor sem autenticação é defeito grave.
 
 ---
 

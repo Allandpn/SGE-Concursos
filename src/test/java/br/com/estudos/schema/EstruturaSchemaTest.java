@@ -60,7 +60,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 "lacuna_anexo",
                 // Sprint 29 (ADR-050): as fases do Pomodoro. O tempo corrido, o "completo" e o total do dia são
                 // consultas (D-16, D-99, D-105); a tabela guarda só o início, o fim e o que a pessoa fez.
-                "fase_foco");
+                "fase_foco",
+                // Sprint 30 (ADR-051): o acesso. Um titular só, sem tabela de usuário; nada guarda fase, turno ou plano.
+                "passkey", "sessao_acesso", "codigo_recuperacao");
         assertEquals(esperado, tabelasDoSchema());
     }
 
