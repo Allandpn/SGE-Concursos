@@ -39,6 +39,7 @@
   <script src="js/entrar.js"></script>
   <script src="js/offline.js"></script>
   <script src="js/leitor.js"></script>
+  <script src="js/prova.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/router.js"></script>
   <script>
@@ -277,6 +278,277 @@
     </template>
   </section>
 
+  <!-- J-6: verificar o material com uma prova (01_DOMINIO §3.11; docs/SPRINT-24-PROVA-GABARITO.md §9; 04_FRONTEND §7M) -->
+  <section id="pagina-prova" x-data="paginaProva()" hidden>
+    <a href="#/concursos" class="mb-3 inline-block text-sm text-gray-500 underline">← Concursos</a>
+    <p x-show="erro" class="mb-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" role="alert" x-text="erro"></p>
+    <p x-show="aviso" class="mb-3 rounded bg-gray-50 p-3 text-sm text-gray-700" x-text="aviso"></p>
+
+    <!-- J-6 1-2: envio -->
+    <template x-if="modo === 'nova'">
+      <div class="space-y-4">
+        <h2 class="text-lg font-semibold">Verificar com uma prova</h2>
+        <p class="text-sm text-gray-600">O sistema lê a prova, casa com o gabarito e mostra o que achou antes de julgar. Responde: com este material, eu acertaria esta prova?</p>
+        <label class="block space-y-1 text-sm"><span class="font-medium">Prova (PDF)</span>
+          <input type="file" accept="application/pdf" class="block w-full text-sm" @change="escolherArquivo('arquivoProva', $event)"></label>
+        <label class="block space-y-1 text-sm"><span class="font-medium">Gabarito (PDF)</span>
+          <input type="file" accept="application/pdf" class="block w-full text-sm" @change="escolherArquivo('arquivoGabarito', $event)"></label>
+        <label class="block space-y-1 text-sm"><span class="font-medium">ou cole o texto do gabarito</span>
+          <textarea x-model="gabaritoTexto" rows="3" class="w-full rounded border border-gray-300 p-2 text-sm" placeholder="1 A  2 C  3 E …"></textarea></label>
+        <label class="block space-y-1 text-sm"><span class="font-medium">Tipo da prova (opcional)</span>
+          <input x-model="tipo" class="w-full rounded border border-gray-300 p-2 text-sm" placeholder="ex.: Tipo 1 — o sistema tenta descobrir pela capa"></label>
+        <p class="text-xs text-gray-500">Sem gabarito, a prova é lida, mas fica aguardando o gabarito para ser julgada ou resolvida.</p>
+        <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="trabalhando" @click="enviar()"
+          x-text="trabalhando ? 'Enviando…' : 'Enviar'"></button>
+      </div>
+    </template>
+
+    <!-- J-6 3-5: acompanhamento e conferência -->
+    <template x-if="modo === 'detalhe' && prova">
+      <div class="space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold" x-text="prova.resumo.nome || 'Prova'"></h2>
+          <p class="text-sm text-gray-500" x-text="[prova.resumo.banca, prova.resumo.ano, prova.resumo.tipo].filter(Boolean).join(' · ')"></p>
+          <p class="mt-1 text-sm font-medium" x-text="textoStatus()"></p>
+          <p x-show="prova.resumo.gabaritoSituacao === 'PRELIMINAR'" class="text-xs text-alerta-600">gabarito preliminar</p>
+        </div>
+
+        <template x-if="status === 'LENDO' || status === 'JULGANDO'">
+          <p class="rounded bg-gray-50 p-3 text-sm text-gray-600">Roda em segundo plano: pode fechar esta tela. Esta página se atualiza sozinha.</p>
+        </template>
+
+        <template x-if="status === 'FALHOU'">
+          <div class="space-y-2 rounded border border-red-300 bg-red-50 p-3 text-sm">
+            <p x-text="prova.erro || 'A leitura falhou.'"></p>
+            <button type="button" class="min-h-11 rounded border border-gray-300 bg-white px-3" :disabled="trabalhando" @click="tentarDeNovo()">Tentar de novo</button>
+          </div>
+        </template>
+
+        <template x-if="status === 'AGUARDANDO_GABARITO'">
+          <div class="space-y-3 rounded border border-gray-200 bg-white p-3 text-sm">
+            <p>A prova foi lida (<span x-text="prova.resumo.questoes"></span> questões). Falta o gabarito para julgar e resolver.</p>
+            <input type="file" accept="application/pdf" class="block w-full text-sm" @change="escolherArquivo('arquivoGabarito', $event)">
+            <textarea x-model="gabaritoTexto" rows="3" class="w-full rounded border border-gray-300 p-2" placeholder="ou cole o texto do gabarito"></textarea>
+            <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white" :disabled="trabalhando" @click="anexarGabarito()">Anexar gabarito</button>
+          </div>
+        </template>
+
+        <template x-if="status === 'CONFERIR'">
+          <div class="space-y-4">
+            <div class="space-y-2 rounded border border-gray-200 bg-white p-3 text-sm">
+              <p class="font-medium">O que o sistema leu</p>
+              <p x-text="prova.resumo.questoes + ' questões lidas · ' + prova.avaliaveis + ' avaliáveis · ' + prova.foraDoEdital + ' fora do edital'"></p>
+              <p x-show="prova.gabaritoCasado !== null" x-text="prova.gabaritoCasado + ' respostas do gabarito casaram'"></p>
+              <p x-show="prova.gabaritoRecorte" x-text="'Recorte do gabarito: ' + prova.gabaritoRecorte + (prova.cargoProva ? ' · cargo ' + prova.cargoProva : '')"></p>
+              <template x-for="(n, motivo) in (prova.naoAvaliaveis || {})" :key="motivo">
+                <p class="text-gray-600" x-text="n + ' ' + rotuloMotivo(motivo)"></p>
+              </template>
+              <div class="grid grid-cols-3 gap-2 pt-2">
+                <input x-model="edicao.nome" class="col-span-3 rounded border border-gray-300 p-2" placeholder="Nome">
+                <input x-model="edicao.banca" class="col-span-2 rounded border border-gray-300 p-2" placeholder="Banca">
+                <input x-model="edicao.ano" inputmode="numeric" class="rounded border border-gray-300 p-2" placeholder="Ano">
+              </div>
+              <button type="button" class="min-h-9 text-primary-700 underline" @click="salvarDados()">Salvar nome, banca e ano</button>
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-sm font-medium">3 questões para conferir o gabarito</p>
+              <template x-for="a in prova.amostra" :key="a.numero">
+                <div class="space-y-1 rounded border border-gray-200 bg-white p-3 text-sm">
+                  <p class="font-medium" x-text="'Questão ' + a.numero"></p>
+                  <p class="line-clamp-4 text-gray-700" x-text="a.enunciado"></p>
+                  <template x-for="alt in (a.alternativas || [])" :key="alt.letra">
+                    <p :class="alt.letra === a.respostaGabarito ? 'rounded bg-green-50 font-semibold text-green-900' : 'text-gray-600'" x-text="alt.letra + ') ' + alt.texto"></p>
+                  </template>
+                  <p class="text-xs text-gray-500" x-text="'Gabarito: ' + a.respostaGabarito"></p>
+                  <a x-show="a.lidaPorOcr && a.paginaOrigem" :href="'/api/provas/' + id + '/paginas/' + a.paginaOrigem" target="_blank" rel="noopener" class="text-xs underline">ver a página original</a>
+                </div>
+              </template>
+            </div>
+
+            <div class="space-y-2" x-show="prova.duvidosas.length">
+              <p class="text-sm font-medium">Questões com assunto duvidoso</p>
+              <template x-for="d in prova.duvidosas" :key="d.numero">
+                <div class="space-y-1 rounded border border-gray-200 bg-white p-3 text-sm" :class="d.resolvida ? 'opacity-60' : ''">
+                  <p class="font-medium" x-text="'Questão ' + d.numero"></p>
+                  <p class="line-clamp-3 text-gray-600" x-text="d.trecho"></p>
+                  <select class="w-full rounded border border-gray-300 p-2" @change="corrigirAssunto(d, $event.target.value)">
+                    <option value="" :selected="!d.assuntoSugeridoId">Fora do edital</option>
+                    <template x-for="g in assuntos" :key="g.disciplina">
+                      <optgroup :label="g.disciplina">
+                        <template x-for="s in g.assuntos" :key="s.id">
+                          <option :value="s.id" :selected="s.id === d.assuntoSugeridoId" x-text="s.nome"></option>
+                        </template>
+                      </optgroup>
+                    </template>
+                  </select>
+                </div>
+              </template>
+            </div>
+
+            <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="trabalhando" @click="confirmar()">Confirmar e julgar</button>
+            <p class="text-xs text-gray-500">A partir daqui o sistema usa a IA para ver se o material sustenta cada resposta.</p>
+          </div>
+        </template>
+
+        <template x-if="status === 'JULGANDO' || status === 'PRONTA'">
+          <div class="flex flex-wrap gap-2">
+            <a :href="'#/provas/' + id + '/relatorio'" class="flex min-h-11 items-center rounded border border-gray-300 bg-white px-4 text-sm text-primary-700">Ver o relatório</a>
+            <a x-show="prova.resumo.temGabarito" :href="'#/provas/' + id + '/resolver'" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white">Resolver</a>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- J-6 6-7: relatório (sempre com denominador, D-71; nunca o enunciado, D-72) -->
+    <template x-if="modo === 'relatorio' && relatorio">
+      <div class="space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold" x-text="'Relatório · ' + (relatorio.nome || 'Prova')"></h2>
+          <p class="text-sm text-gray-500" x-text="[relatorio.banca, relatorio.ano, relatorio.recorte].filter(Boolean).join(' · ')"></p>
+          <p x-show="relatorio.gabaritoPreliminar" class="text-xs text-alerta-600">gabarito preliminar</p>
+        </div>
+        <div class="rounded border border-gray-200 bg-white p-3 text-sm">
+          <p class="font-medium">Cobertura do material</p>
+          <p x-text="textoCobertura(relatorio.cobertura)"></p>
+          <p class="text-xs text-gray-500" x-text="textoDeclaradas(relatorio.declaradas)"></p>
+        </div>
+        <template x-if="relatorio.nota">
+          <div class="rounded border border-primary-600 bg-white p-3 text-sm">
+            <p class="font-medium">Sua nota</p>
+            <p x-text="placarTexto(relatorio.nota.global) + ' questões avaliáveis' + (relatorio.nota.contaParaM1 ? '' : ' (não conta: só a primeira tentativa entra nas métricas)')"></p>
+            <template x-for="d in relatorio.nota.porDisciplina" :key="d.disciplina">
+              <p class="text-gray-600" x-text="d.disciplina + ': ' + placarTexto(d.placar)"></p>
+            </template>
+          </div>
+        </template>
+        <div class="rounded border border-gray-200 bg-white p-3 text-sm" x-show="relatorio.porDisciplina.length">
+          <p class="font-medium">Por disciplina</p>
+          <template x-for="d in relatorio.porDisciplina" :key="d.disciplina">
+            <p class="text-gray-700" x-text="d.disciplina + ': ' + textoCobertura(d.cobertura)"></p>
+          </template>
+        </div>
+        <div class="space-y-2" x-show="relatorio.assuntosFurados.length">
+          <p class="text-sm font-medium">Assuntos furados</p>
+          <template x-for="a in relatorio.assuntosFurados" :key="a.assuntoId">
+            <div class="rounded border border-alerta-600 bg-white p-3 text-sm">
+              <p class="font-medium" x-text="a.assunto"></p>
+              <p class="text-xs text-gray-500" x-text="a.disciplina + ' · ' + a.questoes + ' questões · ' + a.parciais + ' em parte · ' + a.naoRespondiveis + ' não'"></p>
+              <template x-for="(f, i) in a.faltas" :key="i"><p class="text-gray-700" x-text="'Faltou: ' + f"></p></template>
+            </div>
+          </template>
+          <p class="text-xs text-gray-500">Refazer o material de um assunto fica no detalhe dele, em Assuntos. Depois, "Analisar de novo" julga só o que mudou.</p>
+        </div>
+        <div class="space-y-2" x-show="relatorio.discordancias && relatorio.discordancias.length">
+          <p class="text-sm font-medium">Onde a cobertura e a nota discordam</p>
+          <template x-for="d in relatorio.discordancias" :key="d.assuntoId">
+            <p class="text-sm text-gray-700" x-text="d.assunto + ': ' + (d.tipo === 'SOLIDA_E_ERROU' ? 'o material sustenta, e você errou ' : 'o material é furado, e você acertou ') + (d.questoes - d.acertos) + ' de ' + d.questoes"></p>
+          </template>
+          <p class="text-xs text-gray-500">É informação: nenhuma revisão nasce da nota.</p>
+        </div>
+        <div class="space-y-1">
+          <p class="text-sm font-medium">Por questão</p>
+          <template x-for="q in relatorio.questoes" :key="q.numero">
+            <div class="flex items-start justify-between gap-2 border-b border-gray-100 py-1 text-sm">
+              <span><span class="font-medium" x-text="q.numero + '. '"></span><span x-text="q.assunto || (q.atribuicao === 'FORA_DO_EDITAL' ? 'fora do edital' : '—')"></span>
+                <span class="block text-xs text-gray-500" x-text="q.motivoNaoAvaliavel ? rotuloMotivo(q.motivoNaoAvaliavel) : rotuloVeredito(q.veredito) + (q.falta ? ' · faltou: ' + q.falta : '')"></span></span>
+              <a x-show="q.segmentoId && q.paginaSegmento" :href="'#/ler/' + q.segmentoId + '?p=' + q.paginaSegmento" class="whitespace-nowrap text-xs text-primary-700 underline" x-text="'p. ' + q.paginaSegmento"></a>
+            </div>
+          </template>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="min-h-11 rounded border border-gray-300 bg-white px-4 text-sm text-primary-700" :disabled="trabalhando" @click="analisarDeNovo()">Analisar de novo</button>
+          <a :href="'#/provas/' + id + '/resolver'" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white">Resolver</a>
+        </div>
+      </div>
+    </template>
+    <p x-show="carregando" class="text-sm text-gray-500">Carregando…</p>
+  </section>
+
+  <!-- J-7: resolver a prova — uma questão por tela; a resposta do gabarito só depois de entregar (D-80) -->
+  <section id="pagina-resolver" x-data="paginaResolver()" hidden>
+    <a :href="'#/provas/' + id" class="mb-3 inline-block text-sm text-gray-500 underline">← A prova</a>
+    <p x-show="erro" class="mb-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" role="alert" x-text="erro"></p>
+
+    <template x-if="!tentativaId">
+      <div class="space-y-4 rounded border border-gray-200 bg-white p-4">
+        <h2 class="text-lg font-semibold">Resolver a prova</h2>
+        <p class="text-sm text-gray-600">Uma questão por tela. Dá para pular, marcar para revisar e sair e voltar: o progresso fica guardado. Só a primeira tentativa entra nas métricas.</p>
+        <label class="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" x-model="cronometrar" class="h-5 w-5"> Cronometrar</label>
+        <label x-show="cronometrar" class="block text-sm">Tempo da prova (minutos)
+          <input x-model="limiteMinutos" type="number" min="10" class="mt-1 w-full rounded border border-gray-300 p-2"></label>
+        <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="carregando" @click="comecar()">Começar</button>
+      </div>
+    </template>
+
+    <template x-if="tentativaId && detalhe">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between text-sm text-gray-600">
+          <span x-text="entregue ? 'Entregue' : (respondidas + ' de ' + detalhe.questoes.length + ' respondidas')"></span>
+          <span x-show="restante !== null && !entregue" class="tabular-nums" :class="restante === 0 ? 'text-red-700' : ''" x-text="textoRestante()"></span>
+        </div>
+
+        <template x-if="entregue && nota">
+          <div class="space-y-1 rounded border border-primary-600 bg-white p-3 text-sm">
+            <p class="text-base font-semibold" x-text="'Nota: ' + placarTexto(nota.global)"></p>
+            <template x-for="d in nota.porDisciplina" :key="d.disciplina"><p class="text-gray-700" x-text="d.disciplina + ': ' + placarTexto(d.placar)"></p></template>
+            <p x-show="nota.semResposta" class="text-xs text-gray-500" x-text="nota.semResposta + ' sem resposta'"></p>
+            <p class="text-xs text-gray-500" x-text="nota.contaParaM1 ? 'Entra nas métricas, por disciplina.' : 'Não entra nas métricas: só a primeira tentativa conta.'"></p>
+            <p x-show="nota.gabaritoPreliminar" class="text-xs text-alerta-600">Gabarito preliminar: a nota muda se o definitivo mudar.</p>
+            <div class="flex gap-2 pt-1">
+              <a :href="'#/provas/' + id + '/relatorio'" class="text-primary-700 underline">Relatório</a>
+              <button type="button" class="text-primary-700 underline" @click="resolverDeNovo()">Resolver de novo</button>
+            </div>
+          </div>
+        </template>
+
+        <!-- Navegador: verde/vermelho só depois da entrega -->
+        <div class="flex flex-wrap gap-1">
+          <template x-for="(q, i) in detalhe.questoes" :key="q.numero">
+            <button type="button" class="h-8 min-w-8 rounded border px-1 text-xs" :class="classeNavegador(q, i)" @click="ir(i)" x-text="q.numero"></button>
+          </template>
+        </div>
+
+        <template x-if="questao">
+          <div class="space-y-3 rounded border border-gray-200 bg-white p-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500" x-show="questao.cabecalhoDisciplina" x-text="questao.cabecalhoDisciplina"></p>
+            <p x-show="questao.textoBase" class="whitespace-pre-line rounded bg-gray-50 p-2 text-sm text-gray-700" x-text="questao.textoBase"></p>
+            <p class="whitespace-pre-line font-medium" x-text="questao.numero + '. ' + questao.enunciado"></p>
+            <a x-show="questao.lidaPorOcr && questao.paginaOrigem" :href="'/api/provas/' + id + '/paginas/' + questao.paginaOrigem" target="_blank" rel="noopener" class="text-xs underline">leitura duvidosa: ver a página original</a>
+            <p x-show="!questao.avaliavel" class="text-xs text-gray-500">Esta questão não entra na nota (anulada, sem gabarito ou sem texto).</p>
+            <div class="space-y-2">
+              <template x-for="alt in questao.alternativas" :key="alt.letra">
+                <button type="button" class="flex min-h-11 w-full items-start gap-2 rounded border p-2 text-left text-sm"
+                  :class="(() => { const c = correcaoDe(questao.numero); if (entregue && c && alt.letra === c.respostaGabarito) return 'border-green-600 bg-green-50'; if (entregue && c && alt.letra === c.alternativaMarcada) return 'border-red-500 bg-red-50'; return alt.letra === questao.alternativaMarcada ? 'border-primary-600 bg-primary-50 font-medium' : 'border-gray-200'; })()"
+                  :disabled="entregue" @click="responder(alt.letra)">
+                  <span class="font-semibold" x-text="alt.letra + ')'"></span><span x-text="alt.texto"></span>
+                </button>
+              </template>
+            </div>
+            <template x-if="entregue && correcaoDe(questao.numero) && correcaoDe(questao.numero).veredito">
+              <p class="text-xs text-gray-600">
+                <span x-text="'Material: ' + rotuloVeredito(correcaoDe(questao.numero).veredito)"></span>
+                <a x-show="correcaoDe(questao.numero).segmentoId" :href="'#/ler/' + correcaoDe(questao.numero).segmentoId + '?p=' + correcaoDe(questao.numero).paginaSegmento"
+                   class="ml-1 text-primary-700 underline" x-text="'ler p. ' + correcaoDe(questao.numero).paginaSegmento"></a>
+              </p>
+            </template>
+            <div class="flex items-center gap-2">
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm disabled:opacity-40" :disabled="indice === 0" @click="ir(indice - 1)">‹ Anterior</button>
+              <button type="button" x-show="!entregue" class="min-h-11 rounded border px-3 text-sm" :class="questao.marcadaRevisar ? 'border-alerta-600 bg-alerta-50' : 'border-gray-300'" @click="alternarRevisar()"
+                x-text="questao.marcadaRevisar ? 'Revisar ✓' : 'Revisar'"></button>
+              <span class="flex-1"></span>
+              <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm disabled:opacity-40" :disabled="indice >= detalhe.questoes.length - 1" @click="ir(indice + 1)"
+                x-text="questao.alternativaMarcada || entregue ? 'Próxima ›' : 'Pular ›'"></button>
+            </div>
+          </div>
+        </template>
+
+        <button type="button" x-show="!entregue" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="carregando" @click="entregar()">Entregar</button>
+      </div>
+    </template>
+    <p x-show="carregando" class="text-sm text-gray-500">Carregando…</p>
+  </section>
+
   <section id="pagina-hoje" x-data="paginaHoje()">
 
     <!-- 02_JORNADAS §4.4: o concurso-alvo no topo — contexto, não alarme -->
@@ -387,6 +659,17 @@
                   <span class="block font-medium" x-text="item.nome"></span>
                   <span class="text-sm text-gray-600" x-text="'Falhou em ' + item.dataFalha.split('-').reverse().join('/') + ' · nível ' + item.nivel"></span>
                 </button>
+                <!-- D-128: os pontos que não vieram, cada um abrindo o leitor na página -->
+                <template x-if="item.pontos && item.pontos.length">
+                  <ul class="mt-1 space-y-1 rounded border border-alerta-600 bg-white p-2 text-sm">
+                    <template x-for="(pt, i) in item.pontos" :key="i">
+                      <li class="flex items-start justify-between gap-2">
+                        <span x-text="pt.texto"></span>
+                        <a class="whitespace-nowrap font-semibold text-primary-700" :href="'#/ler/' + pt.segmentoId + '?p=' + pt.pagina" x-text="'Bloco ' + pt.bloco + ' · p. ' + pt.pagina + ' →'"></a>
+                      </li>
+                    </template>
+                  </ul>
+                </template>
                 <!-- J-10: o reestudo abre o material no leitor (D-114) -->
                 <button type="button" x-show="reestudoBloco[item.assuntoId]" class="mt-1 flex min-h-11 items-center gap-2 px-1 text-sm font-semibold text-primary-700"
                   @click="window.location.hash = '#/ler/' + reestudoBloco[item.assuntoId]">Ler
@@ -494,6 +777,21 @@
              x-text="'Nível ' + nivel + (dataPrevista ? ' · previsto para ' + dataPrevista : '')"></p>
         </div>
 
+        <!-- D-123/D-124: as perguntas, sem gabarito (ele nem veio do servidor, D-125). A resposta é opcional e fica só na tela. -->
+        <template x-if="perguntas.length">
+          <div class="space-y-3">
+            <p class="text-sm text-gray-600">Feche o material e responda de memória: em voz alta, no papel ou aqui.</p>
+            <template x-for="(p, i) in perguntas" :key="p.id">
+              <div class="space-y-2 rounded border border-gray-200 bg-white p-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500" x-text="tipoDaPergunta(p.tipo)"></p>
+                <p class="font-medium" x-text="(i + 1) + '. ' + p.enunciado"></p>
+                <textarea rows="2" class="w-full rounded border border-dashed border-gray-300 p-2 text-sm" placeholder="responder (opcional)"
+                  :value="respostas[p.id] || ''" @input="respostas = { ...respostas, [p.id]: $event.target.value }"></textarea>
+              </div>
+            </template>
+          </div>
+        </template>
+
         <p class="font-medium">O que você espera?</p>
         <div class="space-y-2">
           <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('SUCESSO')">Vou reconstruir</button>
@@ -501,7 +799,7 @@
           <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('FALHA')">Não vai vir</button>
         </div>
 
-        <p class="text-sm text-gray-500">Feche o material e reconstrua de memória.</p>
+        <p x-show="!perguntas.length" class="text-sm text-gray-500">Feche o material e reconstrua de memória.</p>
       </div>
     </template>
 
@@ -514,23 +812,66 @@
           <span x-text="{SUCESSO: 'vou reconstruir', PARCIAL: 'vai faltar um pedaço', FALHA: 'não vai vir'}[previsao]"></span>
         </p>
 
+        <!-- D-125/D-126/D-127: o gabarito em pontos; a pessoa marca o que veio e a sugestão acompanha -->
+        <template x-if="perguntas.length">
+          <div class="space-y-3">
+            <p class="text-sm text-gray-600">Marque o que veio. <span class="inline-block h-2 w-2 rounded-full bg-gray-900 align-middle"></span> = ponto principal.</p>
+            <template x-for="(p, i) in perguntas" :key="p.id">
+              <div class="space-y-2 rounded border border-gray-200 bg-white p-3" :class="ruins[p.id] ? 'opacity-50' : ''">
+                <p class="font-medium" x-text="(i + 1) + '. ' + p.enunciado"></p>
+                <p x-show="respostas[p.id]" class="border-l-2 border-gray-200 pl-2 text-xs text-gray-500" x-text="'Você escreveu: ' + (respostas[p.id] || '')"></p>
+                <p x-show="!gabarito[p.id]" class="text-xs text-gray-500">Carregando o gabarito…</p>
+                <template x-for="pt in (gabarito[p.id] || [])" :key="pt.id">
+                  <label class="flex min-h-9 items-start gap-2 text-sm">
+                    <input type="checkbox" class="mt-0.5 h-5 w-5 flex-none" :checked="!!vieram[pt.id]" :disabled="!!ruins[p.id]" @change="alternarPonto(pt.id)">
+                    <span class="flex-1"><span x-text="pt.texto"></span><span x-show="pt.principal" class="ml-1 inline-block h-2 w-2 rounded-full bg-gray-900 align-middle" title="ponto principal"></span></span>
+                    <span class="whitespace-nowrap text-xs text-gray-400" x-text="'p. ' + pt.pagina"></span>
+                  </label>
+                </template>
+                <button type="button" class="block min-h-9 text-xs text-gray-500 underline" @click="alternarRuim(p)"
+                  x-text="ruins[p.id] ? 'Desfazer (pergunta tirada do banco)' : 'pergunta ruim'"></button>
+              </div>
+            </template>
+            <p x-show="sugestao" class="text-sm text-primary-700" x-text="textoSugestao"></p>
+          </div>
+        </template>
+
         <p class="font-medium">Conseguiu reconstruir?</p>
         <div class="space-y-2">
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('SUCESSO')">
+          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'SUCESSO' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('SUCESSO')">
             <span class="block">Reconstruí</span>
             <span class="text-sm text-gray-500">os pontos principais vieram; faltou detalhe, não estrutura</span>
           </button>
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('PARCIAL')">
+          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'PARCIAL' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('PARCIAL')">
             <span class="block">Faltou um pedaço</span>
             <span class="text-sm text-gray-500">a estrutura veio, mas um bloco inteiro não</span>
           </button>
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('FALHA')">
+          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'FALHA' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('FALHA')">
             <span class="block">Não veio</span>
             <span class="text-sm text-gray-500">preciso reler antes de tentar de novo</span>
           </button>
         </div>
 
         <button type="button" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
+      </div>
+    </template>
+
+    <!-- D-128: depois de "Faltou um pedaço", o que faltou, já gravado — só agora o leitor pode abrir. Não cria reestudo (D-07). -->
+    <template x-if="!semDados && etapa === 3">
+      <div class="space-y-4">
+        <div class="rounded border border-primary-600 bg-white p-3">
+          <p class="font-semibold">Faltou um pedaço</p>
+          <p class="text-sm text-gray-500">A escada repete o nível.</p>
+        </div>
+        <div class="space-y-2 rounded bg-alerta-50 p-3 text-sm">
+          <p class="font-semibold">O que faltou</p>
+          <template x-for="pt in faltaram" :key="pt.id">
+            <p><span x-text="pt.texto"></span> — <a class="font-semibold text-primary-700" :href="'#/ler/' + pt.segmentoId + '?p=' + pt.pagina" x-text="'ler p. ' + pt.pagina + ' →'"></a></p>
+          </template>
+          <p class="text-xs text-gray-500">Opcional: não cria reestudo.</p>
+        </div>
+        <button type="button" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
+        <a href="#/hoje" class="block min-h-11 rounded bg-primary-600 px-4 py-3 text-center font-semibold text-white">Próxima recuperação</a>
       </div>
     </template>
   </section>
@@ -745,24 +1086,55 @@
           class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm font-medium text-primary-700 hover:bg-gray-50"
           @click="$store.foco.iniciar('FOCO', assuntoId, null, nome)">Foco neste assunto</button>
 
+        <!-- O material do assunto: "Do acervo" e um grupo por PDF próprio (D-129, D-132; J-11) -->
         <div x-show="temSegmentos" class="space-y-2">
           <h3 class="text-sm font-medium text-gray-500">Material</h3>
-          <ul class="space-y-2">
-            <template x-for="s in segmentos" :key="s.id">
-              <li class="rounded border border-gray-200 bg-white p-3">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-sm" x-text="s.ordem + '. p. ' + (s.paginaInicial ?? '?') + '–' + (s.paginaFinal ?? '?')"></span>
-                  <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
-                </div>
-                <a x-show="s.arquivo && s.arquivo.startsWith('/material/')" :href="'#/ler/' + s.id" class="text-sm font-semibold text-primary-700 underline">Ler</a>
-                <a x-show="!(s.arquivo && s.arquivo.startsWith('/material/'))" :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
-                <!-- D-105: estimado × real, só informação -->
-                <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
-                  @click="$store.foco.iniciar('FOCO', assuntoId, s.id, nome)">foco neste bloco</button>
-                <p class="text-xs text-gray-500" x-show="textoFocoDoSegmento(s)" x-text="textoFocoDoSegmento(s)"></p>
-              </li>
-            </template>
-          </ul>
+          <template x-for="g in gruposDoAssunto" :key="g.chave">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between gap-2 text-xs text-gray-500">
+                <span x-text="g.titulo"></span>
+                <button type="button" x-show="g.pdf" class="min-h-9 rounded border border-gray-300 px-2 text-xs text-gray-600" @click="tirarPdf(g.pdf)">Tirar este PDF</button>
+              </div>
+              <ul class="space-y-2">
+                <template x-for="s in g.segmentos" :key="s.id">
+                  <li class="rounded border border-gray-200 bg-white p-3">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-sm" x-text="s.ordem + '. p. ' + (s.paginaInicial ?? '?') + '–' + (s.paginaFinal ?? '?')"></span>
+                      <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
+                    </div>
+                    <a x-show="s.arquivo && s.arquivo.startsWith('/material/')" :href="'#/ler/' + s.id" class="text-sm font-semibold text-primary-700 underline">Ler</a>
+                    <a x-show="!(s.arquivo && s.arquivo.startsWith('/material/'))" :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
+                    <!-- D-105: estimado × real, só informação -->
+                    <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
+                      @click="$store.foco.iniciar('FOCO', assuntoId, s.id, nome)">foco neste bloco</button>
+                    <p class="text-xs text-gray-500" x-show="textoFocoDoSegmento(s)" x-text="textoFocoDoSegmento(s)"></p>
+                    <p class="text-xs text-gray-500" x-show="textoPerguntas(s)" x-text="textoPerguntas(s)"></p>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </template>
+        </div>
+
+        <!-- J-11: adicionar meu PDF (D-129, D-130) -->
+        <div class="space-y-2 rounded border border-gray-200 bg-white p-3 text-sm">
+          <button type="button" x-show="!adicionandoPdf" class="min-h-11 w-full rounded border border-gray-300 font-medium text-primary-700" @click="adicionandoPdf = true; resultadoPdf = null; erroPdf = null">+ Adicionar meu PDF</button>
+          <template x-if="adicionandoPdf">
+            <div class="space-y-2">
+              <input type="file" accept="application/pdf" class="block w-full text-sm" @change="arquivoPdf = $event.target.files[0] ?? null">
+              <p class="text-xs font-medium text-gray-500">Que tipo de leitura?</p>
+              <label class="flex min-h-11 items-center gap-2"><input type="radio" value="APOSTILA" x-model="tipoPdf" class="h-5 w-5"> Apostila ou resumo <span class="text-xs text-gray-500">~2 min por página</span></label>
+              <label class="flex min-h-11 items-center gap-2"><input type="radio" value="LEI_SECA" x-model="tipoPdf" class="h-5 w-5"> Lei seca <span class="text-xs text-gray-500">~3 min por página</span></label>
+              <p class="text-xs text-gray-500">Até 50 MB. Os blocos entram depois dos que o assunto já tem.</p>
+              <div class="flex gap-2">
+                <button type="button" class="min-h-11 flex-1 rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="enviandoPdf || !arquivoPdf" @click="adicionarPdf()"
+                  x-text="enviandoPdf ? 'Cortando…' : 'Adicionar'"></button>
+                <button type="button" class="min-h-11 px-3 text-gray-600 underline" @click="adicionandoPdf = false">Cancelar</button>
+              </div>
+            </div>
+          </template>
+          <p x-show="resultadoPdf" class="rounded p-2" :class="resultadoPdf?.semTexto ? 'bg-alerta-50 text-gray-800' : 'bg-primary-50 text-gray-800'" x-text="textoResultadoPdf()"></p>
+          <p x-show="erroPdf" class="text-red-700" role="alert" x-text="erroPdf"></p>
         </div>
 
         <!-- D-94: as questões das aulas que ensinaram o assunto — consulta, fora do turno e da escada -->
@@ -1303,6 +1675,19 @@
                 <span x-text="textoAvisos"></span>
                 <a :href="'#/concursos/analise/' + avisos.analiseId + '/conferencia'" class="ml-1 underline">Conferir</a>
               </p>
+              <!-- J-6/J-7: verificar o material com uma prova, e resolvê-la -->
+              <div class="mt-3 border-t border-gray-100 pt-3">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-xs font-medium uppercase text-gray-500">Provas</p>
+                  <a href="#/provas/nova" class="text-sm font-medium text-primary-700 underline">Verificar com uma prova</a>
+                </div>
+                <template x-for="pv in provas" :key="pv.id">
+                  <a :href="'#/provas/' + pv.id" class="mt-2 block rounded border border-gray-100 p-2 text-sm hover:bg-gray-50">
+                    <span class="font-medium" x-text="pv.nome || 'Prova'"></span>
+                    <span class="block text-xs text-gray-500" x-text="textoStatusProva(pv)"></span>
+                  </a>
+                </template>
+              </div>
               <!-- D-66: preparar de novo o material do concurso inteiro -->
               <button type="button" x-show="ativo.material && (ativo.material.prontos + ativo.material.semMaterial) > 0"
                       class="mt-2 rounded border border-gray-300 px-3 py-1.5 text-sm text-primary-700 hover:bg-gray-50"

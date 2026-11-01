@@ -26,8 +26,9 @@ spring:
     multipart:
       # ADR-043: o PDF do edital passa por aqui (o padrão de 1 MB recusaria
       # quase todo edital). Os CSVs de importação continuam pequenos.
-      max-file-size: 30MB
-      max-request-size: 31MB
+      # Sprint 33 (D-129): o PDF próprio vai até 50 MB; o do edital tem a conferência dele.
+      max-file-size: 50MB
+      max-request-size: 51MB
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}

@@ -61,6 +61,7 @@ abstract class AcessoTestBase {
         registro.add("spring.datasource.hikari.maximum-pool-size", () -> "3");
         registro.add("spring.datasource.hikari.minimum-idle", () -> "1");
         registro.add("estudos.foco.varredura-cron", () -> "-");
+        registro.add("estudos.perguntas.varredura-cron", () -> "-"); // D-122: a varredura é chamada com a mão
         registro.add("estudos.acesso.desligado-em-teste", () -> "false");
         registro.add("estudos.acesso.atraso-falha-ms", () -> "0");
         registro.add("estudos.interno.token", () -> "token-de-teste");

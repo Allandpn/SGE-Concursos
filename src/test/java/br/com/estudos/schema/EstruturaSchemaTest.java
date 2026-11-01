@@ -64,7 +64,12 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 30 (ADR-051): o acesso. Um titular só, sem tabela de usuário; nada guarda fase, turno ou plano.
                 "passkey", "sessao_acesso", "codigo_recuperacao",
                 // Sprint 31 (ADR-052): as marcações do leitor e a última página aberta. A versão vigente é consulta (D-16, D-117).
-                "marcacao", "marcacao_versao", "segmento_leitura");
+                "marcacao", "marcacao_versao", "segmento_leitura",
+                // Sprint 32 (ADR-053): as perguntas de recuperação, a fila de preparo e os pontos marcados em cada sessão.
+                // O que faltou é consulta sobre sessao_ponto (D-128, D-16).
+                "pergunta_preparo", "pergunta", "pergunta_ponto", "sessao_pergunta", "sessao_ponto",
+                // Sprint 33 (ADR-054): os PDFs próprios; os blocos são segmentos (pdf_proprio_id).
+                "pdf_proprio");
         assertEquals(esperado, tabelasDoSchema());
     }
 

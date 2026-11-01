@@ -347,7 +347,12 @@ public class FrenteService {
                 return Optional.of(new SugestaoConteudo(assunto, proximo.get(), segmentos.size(), true));
             }
         }
-        return Optional.empty();
+        // D-131: bloco de PDF próprio ainda não lido, num assunto que já está na escada — leitura sugerida, revisão intacta.
+        return segmentoRepository.proximoProprioNaoLidoNaEscada().flatMap(segmentoRepository::findById).map(segmento -> {
+            var assunto = segmento.getAssunto();
+            var total = segmentoRepository.findByAssuntoIdAndArquivadoEmIsNullOrderByOrdemAsc(assunto.getId()).size();
+            return new SugestaoConteudo(assunto, segmento, total, true);
+        });
     }
 
     /**

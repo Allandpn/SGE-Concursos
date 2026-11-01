@@ -30,6 +30,8 @@ public class SessaoService {
     private final RevisaoService revisaoService;
     private final FocoService focoService;
     private final SessaoService self;
+    private final br.com.estudos.pergunta.PreparoPerguntas preparoPerguntas;
+    private final br.com.estudos.pergunta.PerguntaService perguntaService;
 
     public SessaoService(
             SessaoRepository sessaoRepository,
@@ -38,7 +40,11 @@ public class SessaoService {
             ParametroRepository parametroRepository,
             RevisaoService revisaoService,
             FocoService focoService,
+            br.com.estudos.pergunta.PreparoPerguntas preparoPerguntas,
+            br.com.estudos.pergunta.PerguntaService perguntaService,
             @Lazy SessaoService self) {
+        this.preparoPerguntas = preparoPerguntas;
+        this.perguntaService = perguntaService;
         this.sessaoRepository = sessaoRepository;
         this.assuntoRepository = assuntoRepository;
         this.segmentoRepository = segmentoRepository;
@@ -106,6 +112,14 @@ public class SessaoService {
         revisaoService.processarSessao(salva);
         // D-100, D-101 — os focos usados ficam presos a esta sessão, na mesma transação; foco inválido desfaz tudo.
         focoService.consumir(salva.getId(), request.assuntoId(), request.fasesIds());
+        // D-122: o bloco foi lido — as perguntas dele entram na fila (a IA roda depois, fora desta transação).
+        if (request.tipo() == TipoSessao.ESTUDO && request.segmentoId() != null) {
+            preparoPerguntas.enfileirar(request.segmentoId());
+        }
+        // D-126: os pontos marcados na conferência são um fato desta sessão.
+        if (request.tipo() == TipoSessao.RECUPERACAO && request.conferencia() != null) {
+            perguntaService.gravarConferencia(salva.getId(), request.assuntoId(), request.conferencia());
+        }
         return salva;
     }
 

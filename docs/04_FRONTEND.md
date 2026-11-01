@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.17.0 |
+| Versão | 1.19.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -738,8 +738,23 @@ documento da sprint).
   Duas armadilhas do Alpine, as duas já vistas: **objeto do PDF.js não pode ficar no estado reativo** (o Proxy quebra os campos privados
   `#x` das classes dele) e **nada do estado reativo vai direto ao IndexedDB** (o Proxy não é clonável; mande uma cópia com
   `JSON.parse(JSON.stringify(...))`).
+- **`:disabled` com valor que pode ser `undefined`** (ex.: `ruins[p.id]` antes de existir) deixa o campo desabilitado: use
+  `:disabled="!!expr"`. Achado na Recuperar com perguntas (Sprint 32).
 - **Sem rede** (`js/offline.js`, ADR-052): cache `material-v1` para PDFs de bloco e IndexedDB `eagora` (`blocos`, `fila`). Trocar
   `CASCA_VERSAO` não os apaga. Detalhes em `docs/SPRINT-31-LEITOR.md` §5.
+
+## 7M. Prova e gabarito (Sprint 24, item 24.7)
+
+`js/prova.js`, dois componentes; rotas sob `#/provas` (J-6, J-7; `docs/SPRINT-24-PROVA-GABARITO.md` §4 e §9):
+
+| Rota | Tela |
+|---|---|
+| `#/provas/nova` | Envio: PDF da prova, gabarito em PDF ou texto colado, tipo opcional (J-6 1-2) |
+| `#/provas/{id}` | Por estado: `LENDO`/`JULGANDO` se atualizam a cada 10 s (a tela pode ser fechada); `AGUARDANDO_GABARITO` anexa o gabarito; `CONFERIR` mostra o que foi lido, o recorte, 3 questões de amostra **com** o gabarito (só aqui, J-6 3) e as duvidosas com o seletor de assunto (vazio = fora do edital); `FALHOU` tenta de novo |
+| `#/provas/{id}/relatorio` | Cobertura sempre com denominador (D-71), o que fica à parte, por disciplina, assuntos furados, discordâncias, por questão sem enunciado (D-72), com o link da página de sustentação para o leitor; "Analisar de novo" (D-79) |
+| `#/provas/{id}/resolver` | Uma questão por tela; o `tentativaId` fica no `localStorage` por prova, para sair e voltar (D-80); revisar, pular, navegador de números, cronômetro opcional; "Entregar" mostra a nota por disciplina e a correção (verde a certa, vermelho a marcada errada) |
+
+Concursos lista as provas do alvo com o andamento e leva a "Verificar com uma prova".
 
 ## 8. Os quatro estados de tela
 
@@ -831,6 +846,8 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.19.0 | 2026-11-01 | §7M: as telas da prova e do gabarito (Sprint 24, item 24.7) |
+| 1.18.0 | 2026-11-01 | §7L: a armadilha do `:disabled` com `undefined` (Sprint 32) |
 | 1.17.0 | 2026-11-01 | §7L: a porta do login (Sprint 30) e o leitor com o modo sem rede (Sprint 31), com as duas armadilhas do Alpine com o PDF.js e o IndexedDB |
 | 1.16.0 | 2026-10-17 | §7K: Concursos — lista do material por assunto |
 | 1.15.0 | 2026-10-17 | §7K: refazer o material do assunto e do concurso (D-66) |

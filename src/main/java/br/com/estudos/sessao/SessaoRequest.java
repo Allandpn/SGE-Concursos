@@ -52,13 +52,24 @@ public record SessaoRequest(
     Long segmentoId,
 
     @Schema(description = "Focos do Pomodoro que esta sessão usa (D-100, D-101) — cada foco serve a uma sessão no máximo; opcional")
-    List<Long> fasesIds
+    List<Long> fasesIds,
+
+    @Schema(description = "Só em RECUPERACAO com perguntas: as perguntas usadas e os pontos que vieram (D-126)", nullable = true)
+    br.com.estudos.pergunta.PerguntaService.Conferencia conferencia
 ) {
+    /** Forma anterior às perguntas de recuperação: sem conferência. */
+    public SessaoRequest(Long assuntoId, TipoSessao tipo, LocalDate data, Integer tempoMinutos, Integer questoesCorretas,
+            Integer questoesTotal, FormatoBanca formato, Short previsaoPercentual, ResultadoSessao previsaoReconstrucao,
+            ResultadoSessao resultado, UUID tentativaId, Long segmentoId, List<Long> fasesIds) {
+        this(assuntoId, tipo, data, tempoMinutos, questoesCorretas, questoesTotal, formato, previsaoPercentual,
+            previsaoReconstrucao, resultado, tentativaId, segmentoId, fasesIds, null);
+    }
+
     /** Forma anterior ao Pomodoro: sem focos. */
     public SessaoRequest(Long assuntoId, TipoSessao tipo, LocalDate data, Integer tempoMinutos, Integer questoesCorretas,
             Integer questoesTotal, FormatoBanca formato, Short previsaoPercentual, ResultadoSessao previsaoReconstrucao,
             ResultadoSessao resultado, UUID tentativaId, Long segmentoId) {
         this(assuntoId, tipo, data, tempoMinutos, questoesCorretas, questoesTotal, formato, previsaoPercentual,
-            previsaoReconstrucao, resultado, tentativaId, segmentoId, null);
+            previsaoReconstrucao, resultado, tentativaId, segmentoId, null, null);
     }
 }
