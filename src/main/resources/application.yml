@@ -14,6 +14,8 @@ server:
   # o navegador ignora o arquivo e não oferece "instalar".
   mime-mappings:
     webmanifest: application/manifest+json
+    # ADR-052: o PDF.js é módulo ES (.mjs); sem o tipo certo o navegador recusa o import.
+    mjs: text/javascript
   # BIND_ADDRESS=0.0.0.0 dentro do container é obrigatório para o Docker
   # mapear a porta; o confinamento real vem do "127.0.0.1:" do host no
   # docker-compose.yml. Não "corrigir" para um valor fixo.

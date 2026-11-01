@@ -345,6 +345,8 @@ document.addEventListener('alpine:init', () => {
     seloEdital: null, // §9 da Sprint 25: parte do edital sem filtro de questões, no assunto em foco
     blocoContinuacao: false,
     segmentoSugerido: null,
+    guardados: new Set(), // D-119: blocos já no aparelho (selo "sem rede ✓")
+    reestudoBloco: {}, // assuntoId → o primeiro bloco ativo, para o "Ler" do reestudo (J-10)
     alertaRepresamento: false,
     diasSemEstudar: null,
     represado: 0,
@@ -419,6 +421,7 @@ document.addEventListener('alpine:init', () => {
         this.reestudos = plano.reestudos;
         this.blocoConteudo = plano.blocoConteudo;
         this.carregarSelo();
+        this.prepararLeitura();
         this.blocoContinuacao = plano.blocoContinuacao;
         this.segmentoSugerido = plano.segmentoSugerido;
         this.alertaRepresamento = plano.alertaRepresamento;
@@ -434,6 +437,30 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.carregando = false;
       }
+    },
+
+    materialLocal(s) {
+      return !!(s && s.arquivo && s.arquivo.startsWith('/material/'));
+    },
+
+    // J-10 e D-119: acha o bloco de cada reestudo e guarda no aparelho os blocos do plano de hoje. Auxiliar: falhar não
+    // atrapalha a tela, e sem rede só mostra o que já está guardado.
+    async prepararLeitura() {
+      this.guardados = await offline.guardados();
+      const blocos = {};
+      for (const r of this.reestudos) {
+        try {
+          const segmentos = await api(`/assuntos/${r.assuntoId}/segmentos`);
+          const primeiro = segmentos.find((x) => this.materialLocal(x));
+          if (primeiro) blocos[r.assuntoId] = primeiro.id;
+        } catch (e) {
+          // sem rede: o "Ler" do reestudo só aparece com rede ou com o bloco já guardado
+        }
+      }
+      this.reestudoBloco = blocos;
+      const deHoje = [this.materialLocal(this.segmentoSugerido) ? this.segmentoSugerido.id : null, ...Object.values(blocos)];
+      await offline.guardarDeHoje(deHoje);
+      this.guardados = await offline.guardados();
     },
 
     // Aviso discreto, nunca bloqueia: o assunto em foco tem parte sem filtro de questões ou com vínculo largo.

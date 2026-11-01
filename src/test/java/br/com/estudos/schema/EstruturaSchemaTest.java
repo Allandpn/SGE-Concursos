@@ -62,7 +62,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // consultas (D-16, D-99, D-105); a tabela guarda só o início, o fim e o que a pessoa fez.
                 "fase_foco",
                 // Sprint 30 (ADR-051): o acesso. Um titular só, sem tabela de usuário; nada guarda fase, turno ou plano.
-                "passkey", "sessao_acesso", "codigo_recuperacao");
+                "passkey", "sessao_acesso", "codigo_recuperacao",
+                // Sprint 31 (ADR-052): as marcações do leitor e a última página aberta. A versão vigente é consulta (D-16, D-117).
+                "marcacao", "marcacao_versao", "segmento_leitura");
         assertEquals(esperado, tabelasDoSchema());
     }
 

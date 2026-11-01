@@ -1,13 +1,17 @@
 // sw.js — service worker da casca estática (ADR-038, docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §4).
 //
 // Guarda só HTML/JS/CSS/ícones/vendor, para o app abrir rápido e com rede
-// instável. /api/** NUNCA passa pelo cache nem é enfileirado: dado de estudo
-// sempre vem do servidor, e gravação sem rede falha do jeito não destrutivo
-// de sempre (02_JORNADAS §5.1 — sem fila offline).
+// instável. /api/** NUNCA passa pelo cache: dado de estudo sempre vem do
+// servidor, e gravação sem rede falha do jeito não destrutivo de sempre
+// (02_JORNADAS §5.1). A única exceção é do leitor (ADR-052): os PDFs de bloco
+// guardados no cache "material-v1" e a fila de marcações no IndexedDB
+// (js/offline.js), que não passa por aqui.
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-11-01-1';
+const CASCA_VERSAO = 'casca-2026-11-01-2';
+// ADR-052: os PDFs guardados para ler sem rede ficam num cache próprio, que a troca de casca não apaga.
+const CACHE_MATERIAL = 'material-v1';
 
 const CASCA = [
   './',
@@ -16,6 +20,10 @@ const CASCA = [
   'css/styles.css',
   'js/api.js',
   'js/entrar.js',
+  'js/offline.js',
+  'js/leitor.js',
+  'vendor/pdfjs-4.10.38/pdf.min.mjs',
+  'vendor/pdfjs-4.10.38/pdf.worker.min.mjs',
   'entrar.html',
   'js/pages.js',
   'js/router.js',
@@ -43,7 +51,7 @@ self.addEventListener('install', (evento) => {
 self.addEventListener('activate', (evento) => {
   evento.waitUntil(
     caches.keys()
-      .then((nomes) => Promise.all(nomes.filter((n) => n !== CASCA_VERSAO).map((n) => caches.delete(n))))
+      .then((nomes) => Promise.all(nomes.filter((n) => n !== CASCA_VERSAO && n !== CACHE_MATERIAL).map((n) => caches.delete(n))))
       .then(() => self.clients.claim()),
   );
 });
@@ -52,8 +60,12 @@ self.addEventListener('fetch', (evento) => {
   const url = new URL(evento.request.url);
   if (evento.request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/actuator/')) return; // sempre rede
-  // PDFs do material (ADR-044): grandes e servidos pelo próprio SGE — nunca na casca.
-  if (url.pathname.startsWith('/material/')) return;
+  // PDFs do material (ADR-044): nunca na casca. Os guardados para ler sem rede (D-119, ADR-052) saem do cache
+  // próprio; o resto vem da rede, como sempre.
+  if (url.pathname.startsWith('/material/')) {
+    evento.respondWith(caches.open(CACHE_MATERIAL).then((c) => c.match(evento.request)).then((guardado) => guardado || fetch(evento.request)));
+    return;
+  }
 
   // Rede primeiro: com servidor no ar, a casca vem sempre atualizada; sem
   // rede, cai no cache (navegação cai no index.html).
