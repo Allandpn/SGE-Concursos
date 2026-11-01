@@ -1588,6 +1588,7 @@ document.addEventListener('alpine:init', () => {
 
   // Concursos — concurso-alvo, histórico, edital novo (02_JORNADAS J-5, 04_FRONTEND §7J).
   Alpine.data('paginaConcursos', () => ({
+    textoStatusProva,
     carregando: true,
     erro: null,
     erroAcao: null,
@@ -1601,6 +1602,7 @@ document.addEventListener('alpine:init', () => {
     soSemMaterial: false,
     carregandoLista: false,
     avisos: null, // Sprint 25 — o que a conferência deixou por resolver no concurso-alvo
+    provas: [], // J-6: as provas do concurso-alvo
 
     async init() {
       this.carregando = true;
@@ -1616,6 +1618,7 @@ document.addEventListener('alpine:init', () => {
         // Só as que ainda pedem algo do usuário; confirmada já está no histórico.
         this.analises = analises.filter((a) => a.status !== 'CONFIRMADA');
         this.avisos = null;
+        this.provas = this.ativo ? await api('/provas').catch(() => []) : [];
         if (this.ativo) {
           try {
             this.avisos = await api(`/concursos/${this.ativo.id}/avisos-de-conferencia`);

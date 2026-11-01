@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.0.6 |
+| Versão | 1.0.7 |
 | Data | 2026-10-18 |
 | Status | Vigente — em andamento |
 | Especificação | `01_DOMINIO` v1.26.0 §3.11 e D-67 a D-85 · `02_JORNADAS` v1.15.0 J-6 e J-7 · `03_INVARIANTES` v1.14.0 · `00_PRODUTO` v1.8.0 §5.1.1 · ADR-046 |
@@ -347,6 +347,7 @@ ou a revisão; limiar de "gabaritar" e nota de corte (Sprint 23); prova de concu
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.0.7 | 2026-11-01 | Item 24.7 feito: `js/prova.js` e as telas `#/provas/nova`, `#/provas/{id}` (acompanhamento, gabarito que faltava, conferência, falha), `#/provas/{id}/relatorio` e `#/provas/{id}/resolver`; Concursos lista as provas do alvo; detalhe em `04_FRONTEND` §7M. Conferido no Chromium com o worker simulado pelas rotas internas: envio, leitura, conferência (amostra com gabarito, duvidosa corrigida), confirmar, vereditos, relatório (com denominador, sem enunciado), resolver (sem gabarito no que vem do servidor, sair e voltar, revisar), entregar (nota por disciplina, simulado criado), correção com a página de sustentação. Sem mudança de servidor |
 | 1.0.6 | 2026-10-18 | Itens 24.5 e 24.6 feitos (código e testes). §8 reescrita com o que foi construído: **separação das questões determinística** (decisão registrada, com a razão e os números das provas reais), OCR por bandas com sobreposição, escolha da página do gabarito, julgamento por FTS5, tratamento de cada tipo de falha. `GabaritoRequest` ganha `avisoGabarito` (gabarito recusado volta a esperar com o motivo) |
 | 1.0.5 | 2026-10-18 | Item 24.4 feito; nomes dos testes alinhados ao que existe |
 | 1.0.4 | 2026-10-18 | Ao desenhar o código do item 24.4: `{tid}` é o `tentativaId` do cliente; gabarito só na lista `correcao`, vazia até a entrega; entregar é idempotente; a nota exclui questão sem assunto (declarada em `foraDaNota`); disciplina que perde todas as questões perde a apuração; relatório com nota, outras tentativas e discordâncias |

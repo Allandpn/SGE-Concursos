@@ -15,6 +15,8 @@ function renderizarRotaAtual() {
   const elEdital = document.getElementById('pagina-edital');
   const elConferencia = document.getElementById('pagina-conferencia');
   const elLeitor = document.getElementById('pagina-leitor');
+  const elProva = document.getElementById('pagina-prova');
+  const elResolver = document.getElementById('pagina-resolver');
   const matchRecuperar = hash.match(/^#\/recuperar\/(\d+)$/);
   const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards)\/(\d+)$/);
   const matchAssuntoDetalhe = hash.match(/^#\/assuntos\/(\d+)$/);
@@ -26,6 +28,10 @@ function renderizarRotaAtual() {
   const matchEditalNovo = hash === '#/concursos/novo';
   const matchAnalise = hash.match(/^#\/concursos\/analise\/(\d+)$/);
   const matchConferencia = hash.match(/^#\/concursos\/analise\/(\d+)\/conferencia$/);
+  const matchProvaNova = hash === '#/provas/nova';
+  const matchProva = hash.match(/^#\/provas\/(\d+)$/);
+  const matchRelatorioProva = hash.match(/^#\/provas\/(\d+)\/relatorio$/);
+  const matchResolver = hash.match(/^#\/provas\/(\d+)\/resolver$/);
   const matchLeitor = hash.match(/^#\/ler\/(\d+)(?:\?p=(\d+))?$/);
 
   elHoje.hidden = true;
@@ -40,6 +46,10 @@ function renderizarRotaAtual() {
   elEdital.hidden = true;
   elConferencia.hidden = true;
   elLeitor.hidden = true;
+  elProva.hidden = true;
+  elResolver.hidden = true;
+  if (!matchProva) Alpine.$data(elProva).parar(); // o acompanhamento da prova só vive na tela dela
+  if (!matchResolver) Alpine.$data(elResolver).parar();
   if (!matchLeitor) Alpine.$data(elLeitor).parar(); // o envio periódico da fila só vive com o leitor aberto
   // A conferência tem mais coisa por linha: usa a largura da tela em computador; o resto segue como celular.
   const principal = document.querySelector('main');
@@ -47,7 +57,19 @@ function renderizarRotaAtual() {
   principal.classList.toggle('max-w-3xl', !!matchConferencia || !!matchLeitor);
   Alpine.$data(elEdital).parar(); // a consulta periódica da análise só vive na tela dela
 
-  if (matchLeitor) {
+  if (matchProvaNova) {
+    elProva.hidden = false;
+    Alpine.$data(elProva).abrirNova();
+  } else if (matchProva) {
+    elProva.hidden = false;
+    Alpine.$data(elProva).abrir(Number(matchProva[1]));
+  } else if (matchRelatorioProva) {
+    elProva.hidden = false;
+    Alpine.$data(elProva).abrirRelatorio(Number(matchRelatorioProva[1]));
+  } else if (matchResolver) {
+    elResolver.hidden = false;
+    Alpine.$data(elResolver).abrir(Number(matchResolver[1]));
+  } else if (matchLeitor) {
     elLeitor.hidden = false;
     Alpine.$data(elLeitor).abrir(Number(matchLeitor[1]), matchLeitor[2] ? Number(matchLeitor[2]) : null);
   } else if (matchRecuperar) {
