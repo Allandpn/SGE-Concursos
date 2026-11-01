@@ -268,7 +268,10 @@ Chromium headless (Playwright): expressão do Alpine dentro de `x-show` é avali
 
 **Implantar (desde 2026-10-30, sem acesso do usuário ao Pi):** só pelo Guardian (`github.com/Allandpn/guardian`, `docs/DEPLOY.md`).
 Quem desenvolve não coloca nada no ar: o pedido de deploy é uma **etiqueta `release/N`** num commit já em `main`, e **só criar a etiqueta com o
-OK do usuário**. O deployer (root, no Pi) mostra a oferta no site, o guardião-mestre assina com passkey dentro do horário dele, roda
+OK do usuário**. O caminho: commits na branch da sessão → **PR para a `main`**, merge só com o OK → etiqueta `release/N` com N maior que a
+última (`git ls-remote --tags origin`). **Se o push da etiqueta for recusado** (sessão na nuvem só envia para a própria branch), não contorne:
+diga ao usuário o número e o commit, e ele cria pelo GitHub (Releases > Draft a new release > tag `release/N` > Target `main` > Publish).
+Desfazer não é downgrade: corrija e publique `release/N+1`. Avise antes quando a versão tocar arquivos de segurança (aviso vermelho no site). O deployer (root, no Pi) mostra a oferta no site, o guardião-mestre assina com passkey dentro do horário dele, roda
 `docker compose up -d --build` em `/opt/estudos` e volta sozinho se `estudos-app-1` não ficar `healthy`. Antes de pedir a etiqueta: suíte
 inteira verde, migração Flyway nova conferida (imutável depois de aplicada) e `CASCA_VERSAO` atualizado se mexeu em estático. Mudar o registro
 do deployer exige root no Pi: fale com o usuário. `docker-compose*.yml`, `Dockerfile` e `.env*` aparecem ao mestre como "mexe em segurança".
