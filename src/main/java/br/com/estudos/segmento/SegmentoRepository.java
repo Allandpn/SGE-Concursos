@@ -55,4 +55,14 @@ public interface SegmentoRepository extends JpaRepository<Segmento, Long> {
         order by a.id, s.ordem
         """)
     List<Segmento> listarParaExportacao();
+
+    /** D-131: o primeiro bloco de PDF próprio sem sessão ESTUDO, de assunto que já tem revisão, pelo PDF mais antigo e pela ordem. */
+    @Query(value = """
+        SELECT s.id FROM segmento s JOIN pdf_proprio p ON p.id = s.pdf_proprio_id
+        WHERE s.arquivado_em IS NULL AND p.retirado_em IS NULL
+          AND NOT EXISTS (SELECT 1 FROM sessao x WHERE x.segmento_id = s.id AND x.tipo = 'ESTUDO' AND x.ativo)
+          AND EXISTS (SELECT 1 FROM revisao r WHERE r.assunto_id = s.assunto_id)
+        ORDER BY p.criado_em, p.id, s.ordem
+        LIMIT 1""", nativeQuery = true)
+    Optional<Long> proximoProprioNaoLidoNaEscada();
 }

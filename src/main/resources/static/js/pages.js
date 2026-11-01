@@ -914,6 +914,13 @@ document.addEventListener('alpine:init', () => {
     segmentos: [],
     focoSegmentos: [], // D-105: estimado × real por segmento
     perguntasEstado: [], // D-122: as perguntas de cada bloco (só o estado; as perguntas em si só na recuperação)
+    pdfsProprios: [], // D-129: os PDFs da pessoa neste assunto, com os blocos de cada um
+    adicionandoPdf: false,
+    arquivoPdf: null,
+    tipoPdf: 'APOSTILA',
+    enviandoPdf: false,
+    resultadoPdf: null,
+    erroPdf: null,
     lacuna: null,
     refazendo: false,
     refeito: false,
@@ -932,6 +939,62 @@ document.addEventListener('alpine:init', () => {
     textoFocoDoSegmento(s) {
       const f = this.focoSegmentos.find((x) => x.segmentoId === s.id);
       return f && f.realMin > 0 ? `foco real ${f.realMin} min` : '';
+    },
+
+    // "Do acervo" (tudo que não veio de PDF próprio) e um grupo por PDF, na ordem de envio (J-11).
+    get gruposDoAssunto() {
+      const doPdf = new Map();
+      this.pdfsProprios.forEach((p) => p.segmentos.forEach((id) => doPdf.set(id, p)));
+      const grupos = [{ chave: 'acervo', titulo: 'Do acervo', pdf: null, segmentos: this.segmentos.filter((s) => !doPdf.has(s.id)) }];
+      this.pdfsProprios.forEach((p) => grupos.push({ chave: 'pdf-' + p.id, titulo: '📄 ' + p.nome + ' · seu PDF', pdf: p,
+        segmentos: this.segmentos.filter((s) => doPdf.get(s.id) === p) }));
+      return grupos.filter((g) => g.segmentos.length);
+    },
+
+    async adicionarPdf() {
+      this.erroPdf = null;
+      this.enviandoPdf = true;
+      try {
+        const dados = new FormData();
+        dados.append('arquivo', this.arquivoPdf);
+        dados.append('tipo', this.tipoPdf);
+        this.resultadoPdf = await api(`/assuntos/${this.assuntoId}/pdfs`, { method: 'POST', body: dados, headers: {} });
+        this.adicionandoPdf = false;
+        this.arquivoPdf = null;
+        await this.recarregarMaterial();
+      } catch (e) {
+        this.erroPdf = e.message;
+      } finally {
+        this.enviandoPdf = false;
+      }
+    },
+
+    textoResultadoPdf() {
+      const r = this.resultadoPdf;
+      if (!r) return '';
+      const h = Math.floor(r.minutos / 60);
+      const tempo = h ? `~${h} h ${String(r.minutos % 60).padStart(2, '0')}` : `~${r.minutos} min`;
+      const base = `✓ ${r.nome}: ${r.blocos} ${r.blocos === 1 ? 'bloco' : 'blocos'} · ${tempo}`;
+      return r.semTexto ? `${base}. Sem texto (escaneado): dá para ler e marcar com notas de página, mas a IA não prepara perguntas.` : base;
+    },
+
+    // D-132: arquiva os blocos deste PDF de uma vez; nada é apagado.
+    async tirarPdf(p) {
+      const n = p.segmentos.length;
+      if (!confirm(`Tirar ${p.nome}? ${n === 1 ? 'O bloco dele sai' : `Os ${n} blocos dele saem`} do material e do turno. O que você leu, marcou e as perguntas ficam no histórico; nada é apagado.`)) return;
+      try {
+        await api(`/pdfs/${p.id}/tirar`, { method: 'POST' });
+        this.resultadoPdf = null;
+        await this.recarregarMaterial();
+      } catch (e) {
+        this.erroPdf = e.message;
+      }
+    },
+
+    async recarregarMaterial() {
+      this.segmentos = await api(`/assuntos/${this.assuntoId}/segmentos`).catch(() => this.segmentos);
+      this.pdfsProprios = await api(`/assuntos/${this.assuntoId}/pdfs`).catch(() => []);
+      this.perguntasEstado = await api(`/assuntos/${this.assuntoId}/perguntas/estado`).catch(() => []);
     },
 
     textoPerguntas(s) {
@@ -1006,6 +1069,10 @@ document.addEventListener('alpine:init', () => {
       }
       this.focoSegmentos = await api(`/foco/assuntos/${assuntoId}/segmentos`).catch(() => []);
       this.perguntasEstado = await api(`/assuntos/${assuntoId}/perguntas/estado`).catch(() => []);
+      this.pdfsProprios = await api(`/assuntos/${assuntoId}/pdfs`).catch(() => []);
+      this.adicionandoPdf = false;
+      this.resultadoPdf = null;
+      this.erroPdf = null;
 
       // D-65: sem segmento, o motivo de o acervo não ensinar o assunto, se houver.
       // 404 é o normal (sem lacuna); qualquer falha só esconde a linha.

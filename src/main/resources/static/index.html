@@ -1086,25 +1086,55 @@
           class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm font-medium text-primary-700 hover:bg-gray-50"
           @click="$store.foco.iniciar('FOCO', assuntoId, null, nome)">Foco neste assunto</button>
 
+        <!-- O material do assunto: "Do acervo" e um grupo por PDF próprio (D-129, D-132; J-11) -->
         <div x-show="temSegmentos" class="space-y-2">
           <h3 class="text-sm font-medium text-gray-500">Material</h3>
-          <ul class="space-y-2">
-            <template x-for="s in segmentos" :key="s.id">
-              <li class="rounded border border-gray-200 bg-white p-3">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-sm" x-text="s.ordem + '. p. ' + (s.paginaInicial ?? '?') + '–' + (s.paginaFinal ?? '?')"></span>
-                  <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
-                </div>
-                <a x-show="s.arquivo && s.arquivo.startsWith('/material/')" :href="'#/ler/' + s.id" class="text-sm font-semibold text-primary-700 underline">Ler</a>
-                <a x-show="!(s.arquivo && s.arquivo.startsWith('/material/'))" :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
-                <!-- D-105: estimado × real, só informação -->
-                <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
-                  @click="$store.foco.iniciar('FOCO', assuntoId, s.id, nome)">foco neste bloco</button>
-                <p class="text-xs text-gray-500" x-show="textoFocoDoSegmento(s)" x-text="textoFocoDoSegmento(s)"></p>
-                <p class="text-xs text-gray-500" x-show="textoPerguntas(s)" x-text="textoPerguntas(s)"></p>
-              </li>
-            </template>
-          </ul>
+          <template x-for="g in gruposDoAssunto" :key="g.chave">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between gap-2 text-xs text-gray-500">
+                <span x-text="g.titulo"></span>
+                <button type="button" x-show="g.pdf" class="min-h-9 rounded border border-gray-300 px-2 text-xs text-gray-600" @click="tirarPdf(g.pdf)">Tirar este PDF</button>
+              </div>
+              <ul class="space-y-2">
+                <template x-for="s in g.segmentos" :key="s.id">
+                  <li class="rounded border border-gray-200 bg-white p-3">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-sm" x-text="s.ordem + '. p. ' + (s.paginaInicial ?? '?') + '–' + (s.paginaFinal ?? '?')"></span>
+                      <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
+                    </div>
+                    <a x-show="s.arquivo && s.arquivo.startsWith('/material/')" :href="'#/ler/' + s.id" class="text-sm font-semibold text-primary-700 underline">Ler</a>
+                    <a x-show="!(s.arquivo && s.arquivo.startsWith('/material/'))" :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
+                    <!-- D-105: estimado × real, só informação -->
+                    <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
+                      @click="$store.foco.iniciar('FOCO', assuntoId, s.id, nome)">foco neste bloco</button>
+                    <p class="text-xs text-gray-500" x-show="textoFocoDoSegmento(s)" x-text="textoFocoDoSegmento(s)"></p>
+                    <p class="text-xs text-gray-500" x-show="textoPerguntas(s)" x-text="textoPerguntas(s)"></p>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </template>
+        </div>
+
+        <!-- J-11: adicionar meu PDF (D-129, D-130) -->
+        <div class="space-y-2 rounded border border-gray-200 bg-white p-3 text-sm">
+          <button type="button" x-show="!adicionandoPdf" class="min-h-11 w-full rounded border border-gray-300 font-medium text-primary-700" @click="adicionandoPdf = true; resultadoPdf = null; erroPdf = null">+ Adicionar meu PDF</button>
+          <template x-if="adicionandoPdf">
+            <div class="space-y-2">
+              <input type="file" accept="application/pdf" class="block w-full text-sm" @change="arquivoPdf = $event.target.files[0] ?? null">
+              <p class="text-xs font-medium text-gray-500">Que tipo de leitura?</p>
+              <label class="flex min-h-11 items-center gap-2"><input type="radio" value="APOSTILA" x-model="tipoPdf" class="h-5 w-5"> Apostila ou resumo <span class="text-xs text-gray-500">~2 min por página</span></label>
+              <label class="flex min-h-11 items-center gap-2"><input type="radio" value="LEI_SECA" x-model="tipoPdf" class="h-5 w-5"> Lei seca <span class="text-xs text-gray-500">~3 min por página</span></label>
+              <p class="text-xs text-gray-500">Até 50 MB. Os blocos entram depois dos que o assunto já tem.</p>
+              <div class="flex gap-2">
+                <button type="button" class="min-h-11 flex-1 rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="enviandoPdf || !arquivoPdf" @click="adicionarPdf()"
+                  x-text="enviandoPdf ? 'Cortando…' : 'Adicionar'"></button>
+                <button type="button" class="min-h-11 px-3 text-gray-600 underline" @click="adicionandoPdf = false">Cancelar</button>
+              </div>
+            </div>
+          </template>
+          <p x-show="resultadoPdf" class="rounded p-2" :class="resultadoPdf?.semTexto ? 'bg-alerta-50 text-gray-800' : 'bg-primary-50 text-gray-800'" x-text="textoResultadoPdf()"></p>
+          <p x-show="erroPdf" class="text-red-700" role="alert" x-text="erroPdf"></p>
         </div>
 
         <!-- D-94: as questões das aulas que ensinaram o assunto — consulta, fora do turno e da escada -->

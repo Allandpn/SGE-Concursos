@@ -67,7 +67,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 "marcacao", "marcacao_versao", "segmento_leitura",
                 // Sprint 32 (ADR-053): as perguntas de recuperação, a fila de preparo e os pontos marcados em cada sessão.
                 // O que faltou é consulta sobre sessao_ponto (D-128, D-16).
-                "pergunta_preparo", "pergunta", "pergunta_ponto", "sessao_pergunta", "sessao_ponto");
+                "pergunta_preparo", "pergunta", "pergunta_ponto", "sessao_pergunta", "sessao_ponto",
+                // Sprint 33 (ADR-054): os PDFs próprios; os blocos são segmentos (pdf_proprio_id).
+                "pdf_proprio");
         assertEquals(esperado, tabelasDoSchema());
     }
 

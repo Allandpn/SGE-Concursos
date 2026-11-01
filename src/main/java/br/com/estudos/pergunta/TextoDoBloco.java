@@ -29,9 +29,12 @@ public class TextoDoBloco {
     }
 
     private final Path diretorio;
+    private final Path proprios;
 
-    public TextoDoBloco(@Value("${estudos.material.dir:/dados/material}") String diretorio) {
+    public TextoDoBloco(@Value("${estudos.material.dir:/dados/material}") String diretorio,
+                        @Value("${estudos.editais.dir:/dados/editais}") String editais) {
         this.diretorio = Path.of(diretorio).toAbsolutePath().normalize();
+        this.proprios = Path.of(editais, "proprios").toAbsolutePath().normalize(); // ADR-054
     }
 
     /** Vazio quando o bloco não tem texto que sirva. */
@@ -60,8 +63,10 @@ public class TextoDoBloco {
         if (arquivo == null || !arquivo.startsWith("/material/")) {
             throw new SemArquivo("O bloco não é um PDF do servidor: " + arquivo);
         }
-        var caminho = diretorio.resolve(arquivo.substring("/material/".length())).normalize();
-        if (!caminho.startsWith(diretorio) || !Files.isRegularFile(caminho)) {
+        var base = arquivo.startsWith("/material/proprios/") ? proprios : diretorio;
+        var relativo = arquivo.startsWith("/material/proprios/") ? arquivo.substring("/material/proprios/".length()) : arquivo.substring("/material/".length());
+        var caminho = base.resolve(relativo).normalize();
+        if (!caminho.startsWith(base) || !Files.isRegularFile(caminho)) {
             throw new SemArquivo("Arquivo do bloco não encontrado: " + arquivo);
         }
         return caminho;
