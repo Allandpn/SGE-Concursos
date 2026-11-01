@@ -108,4 +108,6 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
 
     // M-3 subjetiva (docs/SPRINT-7-METRICAS.md §4.3).
     List<Sessao> findByTipoAndPrevisaoReconstrucaoNotNull(TipoSessao tipo);
+
+    List<Sessao> findByTipoInAndPrevisaoReconstrucaoNotNull(List<TipoSessao> tipos);
 }

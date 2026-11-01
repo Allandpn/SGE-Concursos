@@ -28,6 +28,8 @@ const ROTULOS_PARAMETRO = {
   pomodoro_pausa_curta_min: 'Pausa curta (min)',
   pomodoro_pausa_longa_min: 'Pausa longa (min)',
   pomodoro_focos_ate_longa: 'Focos até a pausa longa',
+  discursiva_limiar_sucesso: 'Sucesso · discursiva (nota)',
+  discursiva_limiar_parcial: 'Parcial · discursiva (nota)',
 };
 
 // Preferências do Pomodoro que são do aparelho, não do domínio (docs/SPRINT-29-POMODORO.md §6): ficam no navegador.
@@ -347,6 +349,7 @@ document.addEventListener('alpine:init', () => {
     segmentoSugerido: null,
     guardados: new Set(), // D-119: blocos já no aparelho (selo "sem rede ✓")
     reestudoBloco: {}, // assuntoId → o primeiro bloco ativo, para o "Ler" do reestudo (J-10)
+    lote: null, // D-133: o lote rápido aberto ("Fiz questões")
     alertaRepresamento: false,
     diasSemEstudar: null,
     represado: 0,
@@ -437,6 +440,74 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.carregando = false;
       }
+    },
+
+    // D-133: "Fiz questões" — formato pelo histórico, tempo pelos focos livres (D-100) ou 2 min por questão.
+    async abrirLote(item) {
+      this.lote = { assuntoId: item.assuntoId, nome: item.nome, formato: 'MULTIPLA_ESCOLHA', tempo: null, doFoco: false, fasesIds: [],
+        previsao: null, feitas: null, certas: null, erro: null, enviando: false, tentativaId: crypto.randomUUID(), limiares: null };
+      const [sugerido, livres, parametros] = await Promise.all([
+        api(`/assuntos/${item.assuntoId}/lote-sugerido`).catch(() => null),
+        api(`/foco/livres?assuntoId=${item.assuntoId}`).catch(() => null),
+        api('/parametros').catch(() => []),
+      ]);
+      if (!this.lote) return;
+      if (sugerido) this.lote.formato = sugerido.formato;
+      if (livres && livres.minutos > 0) { this.lote.tempo = livres.minutos; this.lote.doFoco = true; this.lote.fasesIds = livres.fasesIds; }
+      const sufixo = this.lote.formato === 'CERTO_ERRADO' ? 'certo_errado' : 'multipla_escolha';
+      const valor = (chave) => Number((parametros.find((x) => x.chave === chave) || {}).valor);
+      this.lote.limiares = { sucesso: valor(`limiar_sucesso_${sufixo}`), parcial: valor(`limiar_parcial_${sufixo}`) };
+    },
+
+    atualizarTempoDoLote() {
+      if (this.lote && !this.lote.doFoco) {
+        const n = Number(this.lote.feitas);
+        this.lote.tempo = n > 0 ? n * 2 : null;
+      }
+    },
+
+    textoLote() {
+      const l = this.lote;
+      const feitas = Number(l.feitas);
+      const certas = Number(l.certas);
+      if (!(feitas > 0) || l.certas === null || l.certas === '' || certas > feitas) return '';
+      const pct = Math.round((certas * 100) / feitas);
+      if (!l.limiares || Number.isNaN(l.limiares.sucesso)) return `${pct}%`;
+      const r = pct >= l.limiares.sucesso ? 'reconstruí (a revisão sobe)' : pct >= l.limiares.parcial ? 'faltou um pedaço (a revisão repete o nível)' : 'não veio (volta para o reestudo)';
+      return `${pct}% · ${r}`;
+    },
+
+    async registrarLote() {
+      const l = this.lote;
+      l.erro = null;
+      const feitas = Number(l.feitas);
+      const certas = Number(l.certas);
+      if (!(feitas > 0) || l.certas === null || l.certas === '' || certas < 0 || certas > feitas) { l.erro = 'Informe quantas fez e quantas acertou.'; return; }
+      if (l.previsao === null) { l.erro = 'Toque na previsão.'; return; }
+      l.enviando = true;
+      try {
+        await api('/sessoes', { method: 'POST', body: JSON.stringify({
+          assuntoId: l.assuntoId, tipo: 'QUESTOES', data: hojeISO(), tempoMinutos: Math.max(1, Number(l.tempo) || feitas * 2),
+          formato: l.formato, questoesTotal: feitas, questoesCorretas: certas, previsaoPercentual: l.previsao, tentativaId: l.tentativaId,
+          fasesIds: l.fasesIds.length ? l.fasesIds : undefined }) });
+        this.lote = null;
+        await this.carregar();
+      } catch (e) {
+        l.erro = e.message; // o mesmo tentativaId no reenvio: nunca duplica (D-45)
+      } finally {
+        if (this.lote) this.lote.enviando = false;
+      }
+    },
+
+    maisCamposDoLote() {
+      const l = this.lote;
+      this.lote = null;
+      this.abrirRegistroDeQuestoes({ id: l.assuntoId, nome: l.nome });
+    },
+
+    abrirRegistroDeQuestoes(assunto) {
+      Alpine.store('registrar').selecionar(assunto);
+      window.location.hash = `#/registrar/questoes/${assunto.id}`;
     },
 
     materialLocal(s) {
@@ -701,7 +772,10 @@ document.addEventListener('alpine:init', () => {
   }));
 
   Alpine.data('paginaRegistrar', () => ({
-    tipo: 'conteudo', // conteudo | questoes | flashcards
+    tipo: 'conteudo', // conteudo | questoes | flashcards | discursiva
+    previsaoNivel: null, // D-134: a previsão da discursiva, em três níveis
+    nota: null, // D-134: a nota da discursiva, 0–100
+    limiaresDiscursiva: { sucesso: 70, parcial: 40 },
     assuntoId: null,
     nome: null,
     segmentos: [],
@@ -726,6 +800,8 @@ document.addEventListener('alpine:init', () => {
     async abrir(tipo, assuntoId) {
       this.tipo = tipo;
       if (this.assuntoId === assuntoId && this.tentativaId) return;
+      this.previsaoNivel = null;
+      this.nota = null;
 
       const item = Alpine.store('registrar').item;
       this.semDados = !item || item.id !== assuntoId;
@@ -751,6 +827,9 @@ document.addEventListener('alpine:init', () => {
         api('/parametros')
           .then((ps) => {
             const p = ps.find((x) => x.chave === 'duracao_bloco_min');
+            const ls = ps.find((x) => x.chave === 'discursiva_limiar_sucesso');
+            const lp = ps.find((x) => x.chave === 'discursiva_limiar_parcial');
+            if (ls && lp) this.limiaresDiscursiva = { sucesso: Number(ls.valor), parcial: Number(lp.valor) };
             this.duracaoBloco = p ? Number(p.valor) : null;
             this.sugerirTempo();
           })
@@ -793,12 +872,25 @@ document.addEventListener('alpine:init', () => {
       return descreverSegmento(s);
     },
 
+    // D-134: o nível que a nota dá, pelos limiares de Ajustes (padrão 70 e 40), mostrado antes de gravar.
+    get resultadoDaNota() {
+      const n = Number(this.nota);
+      if (this.nota === null || this.nota === '' || Number.isNaN(n)) return '';
+      const sucesso = this.limiaresDiscursiva.sucesso;
+      const parcial = this.limiaresDiscursiva.parcial;
+      if (n >= sucesso) return `${n} → Reconstruí (a partir de ${sucesso})`;
+      if (n >= parcial) return `${n} → Faltou um pedaço (de ${parcial} a ${sucesso - 1})`;
+      return `${n} → Não veio (abaixo de ${parcial})`;
+    },
+
     selecionarTipo(tipo) {
       this.tipo = tipo;
       this.segmentoId = null;
       this.feitas = null;
       this.certas = null;
       this.previsao = null;
+      this.previsaoNivel = null;
+      this.nota = null;
       this.tempoEditado = false;
       this.sugerirTempo();
     },
@@ -831,8 +923,12 @@ document.addEventListener('alpine:init', () => {
       // especial" está selecionado (nunca null; um <option value="null">
       // literal já foi tentado e vira a STRING "null" no DOM, bug real
       // achado testando isto no navegador).
+      // D-134: a discursiva leva a nota (0–100) e a previsão em três níveis; o resultado sai da nota no servidor.
       const corpo = this.tipo === 'conteudo'
         ? { ...corpoBase, tipo: 'ESTUDO', segmentoId: this.segmentoId ? Number(this.segmentoId) : null }
+        : this.tipo === 'discursiva'
+        ? { ...corpoBase, tipo: 'DISCURSIVA', notaDiscursiva: this.nota === null || this.nota === '' ? null : Number(this.nota),
+            previsaoReconstrucao: this.previsaoNivel }
         : {
             ...corpoBase,
             tipo: this.tipo === 'questoes' ? 'QUESTOES' : 'FLASHCARDS',
@@ -1240,12 +1336,14 @@ document.addEventListener('alpine:init', () => {
     frente: null,
     divisoes: [],
     foco: null, // D-105: foco por dia e completos × encerrados antes; informação, nunca meta
+    pontosSimulados: [], // D-136: a nota em pontos do edital de cada simulado, com a nota de corte
 
     async init() {
       this.carregando = true;
       this.erro = null;
       try {
         this.foco = await api('/foco/resumo').catch(() => null);
+        this.pontosSimulados = await api('/simulados/pontos').catch(() => []);
         const disciplinas = await api('/disciplinas');
         this.disciplinasPorId = Object.fromEntries(disciplinas.map((d) => [d.id, d.nome]));
         await this.carregarM1();
@@ -1610,7 +1708,7 @@ document.addEventListener('alpine:init', () => {
     get grupos() {
       const nomeDoGrupo = (chave) => {
         if (chave.startsWith('teto_')) return 'Tetos';
-        if (chave.startsWith('limiar_')) return 'Limiares de resultado';
+        if (chave.startsWith('limiar_') || chave.startsWith('discursiva_')) return 'Limiares de resultado';
         if (chave.startsWith('duracao_')) return 'Turno';
         if (chave.startsWith('pomodoro_')) return 'Pomodoro';
         return 'Escada';
@@ -1656,6 +1754,22 @@ document.addEventListener('alpine:init', () => {
   // Concursos — concurso-alvo, histórico, edital novo (02_JORNADAS J-5, 04_FRONTEND §7J).
   Alpine.data('paginaConcursos', () => ({
     textoStatusProva,
+
+    // D-135: salva a régua inteira; a nota em pontos de todo o histórico passa a usar a nova (D-136).
+    async salvarRegua() {
+      this.erroRegua = null;
+      this.reguaSalva = false;
+      try {
+        this.regua = await api(`/concursos/${this.ativo.id}/regua`, { method: 'PUT', body: JSON.stringify({
+          erradaAnulaCerta: !!this.regua.erradaAnulaCerta,
+          notaCorte: this.regua.notaCorte === '' || this.regua.notaCorte === null ? null : Number(this.regua.notaCorte),
+          disciplinas: this.regua.disciplinas.map((d) => ({ disciplinaId: d.disciplinaId, nome: d.nome, pontos: Number(d.pontos) })),
+        }) });
+        this.reguaSalva = true;
+      } catch (e) {
+        this.erroRegua = e.message;
+      }
+    },
     carregando: true,
     erro: null,
     erroAcao: null,
@@ -1670,6 +1784,10 @@ document.addEventListener('alpine:init', () => {
     carregandoLista: false,
     avisos: null, // Sprint 25 — o que a conferência deixou por resolver no concurso-alvo
     provas: [], // J-6: as provas do concurso-alvo
+    regua: null, // D-135: a régua da prova do alvo
+    reguaAberta: false,
+    reguaSalva: false,
+    erroRegua: null,
 
     async init() {
       this.carregando = true;
@@ -1686,6 +1804,7 @@ document.addEventListener('alpine:init', () => {
         this.analises = analises.filter((a) => a.status !== 'CONFIRMADA');
         this.avisos = null;
         this.provas = this.ativo ? await api('/provas').catch(() => []) : [];
+        this.regua = this.ativo ? await api(`/concursos/${this.ativo.id}/regua`).catch(() => null) : null;
         if (this.ativo) {
           try {
             this.avisos = await api(`/concursos/${this.ativo.id}/avisos-de-conferencia`);

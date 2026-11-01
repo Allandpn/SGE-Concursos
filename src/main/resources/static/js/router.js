@@ -18,7 +18,7 @@ function renderizarRotaAtual() {
   const elProva = document.getElementById('pagina-prova');
   const elResolver = document.getElementById('pagina-resolver');
   const matchRecuperar = hash.match(/^#\/recuperar\/(\d+)$/);
-  const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards)\/(\d+)$/);
+  const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards|discursiva)\/(\d+)$/);
   const matchAssuntoDetalhe = hash.match(/^#\/assuntos\/(\d+)$/);
   const matchAssuntos = hash === '#/assuntos';
   const matchErros = hash.match(/^#\/erros\/(\d+)$/);

@@ -81,6 +81,10 @@ public class Sessao {
     @Setter
     private Integer questoesTotal;
 
+    /** D-134: só na DISCURSIVA, 0–100. */
+    @Setter
+    private Integer notaDiscursiva;
+
     @Setter
     @Enumerated(EnumType.STRING)
     private FormatoBanca formato;

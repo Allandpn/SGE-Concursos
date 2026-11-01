@@ -5,7 +5,7 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.14.0 |
+| Versão | 1.15.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
@@ -504,7 +504,7 @@ Antes de medir, o usuário declara o que espera. A métrica é `previsto − rea
 | Variante | Previsto | Real | Força |
 |---|---|---|---|
 | **Objetiva** (lote de questões) | percentual esperado | percentual apurado | Forte: o real é medida |
-| **Subjetiva** (recuperação livre) | vai conseguir reconstruir? | conseguiu? (§5.2.1) | Mais fraca: compara dois autorrelatos |
+| **Subjetiva** (recuperação livre e discursiva) | vai conseguir reconstruir? | conseguiu? (§5.2.1); na discursiva, o nível que a nota dá | Mais fraca: compara dois autorrelatos |
 
 A variante subjetiva parece circular e não é. O primeiro julgamento é feito
 **com o material à vista** e lê familiaridade; o segundo é feito **depois da
@@ -751,6 +751,7 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.15.0 | 2026-11-01 | Pedido do usuário (Sprint 23). **§7 M-3**: a discursiva entra na variante subjetiva (a nota costuma ser da própria pessoa). A nota de corte (`01_DOMINIO` §3.20) é comparação informativa e não muda §8.5: nenhuma probabilidade de aprovação |
 | 1.14.0 | 2026-11-01 | **§8.5**: o PDF próprio ligado a um assunto passa de decidido a especificado (`01_DOMINIO` §3.19, D-129 a D-132, ADR-054) |
 | 1.13.0 | 2026-11-01 | Pedido do usuário. **§5.2.1**: perguntas de recuperação preparadas pela IA, sem texto do material, com gabarito depois da tentativa e resultado sugerido, nunca decidido pelo sistema (`01_DOMINIO` §3.18, D-122 a D-128, ADR-053) |
 | 1.12.0 | 2026-11-01 | Pedido do usuário. **§8.5**: o editor de conteúdo deixa de ser recusado (leitor com marcações, `01_DOMINIO` §3.17, D-114 a D-121, ADR-052), e o PDF próprio ligado a um assunto entra como decidido, a especificar. **§5.2.1**: a tela de recuperação não oferece o material |

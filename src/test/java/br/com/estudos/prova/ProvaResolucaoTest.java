@@ -235,6 +235,41 @@ class ProvaResolucaoTest extends ProvaTestBase {
         assertEquals(2, ((Number) linhas.get(0).get("questoes_total")).intValue());
     }
 
+    /** D-135, D-136 (Sprint 23): a mesma prova em pontos do edital, com e sem errada anula certa, e o simulado que ela criou. */
+    @Test
+    void d136_pontosDaProvaEDoSimulado_pelaReguaDoConcurso() throws Exception {
+        var alvo = alvoDuasDisciplinas();
+        var prova = prova6(alvo);
+        var t = UUID.randomUUID();
+        mockMvc.perform(get("/api/provas/{id}/pontos", prova.getId())).andExpect(status().isOk()).andExpect(content().string(""));
+        abrir(prova, t).andExpect(status().isCreated());
+        responderComoNoExemplo(prova, t);
+        entregar(prova, t).andExpect(status().isOk());
+
+        // Sem régua: 1 ponto por questão, sem desconto = os acertos.
+        mockMvc.perform(get("/api/provas/{id}/pontos", prova.getId())).andExpect(status().isOk())
+            .andExpect(jsonPath("$.pontos").value(2)).andExpect(jsonPath("$.maximo").value(3)).andExpect(jsonPath("$.notaCorte").doesNotExist());
+
+        var disciplinas = jdbc.queryForList("SELECT DISTINCT disciplina_id FROM concurso_assunto WHERE concurso_id = ? ORDER BY 1", Long.class, alvo.concursoId());
+        var primeira = disciplinas.get(0);
+        var corpo = "{\"erradaAnulaCerta\":true,\"notaCorte\":3,\"disciplinas\":[{\"disciplinaId\":" + primeira + ",\"pontos\":2}]}";
+        mockMvc.perform(put("/api/concursos/{id}/regua", alvo.concursoId()).contentType(MediaType.APPLICATION_JSON).content(corpo))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.erradaAnulaCerta").value(true));
+        // A disciplina que vale 2 teve 1 certa e 1 errada: 2 − 2 = 0. A outra, 1 certa: 1. Global 1; corte 3; faltaram 2.
+        mockMvc.perform(get("/api/provas/{id}/pontos", prova.getId())).andExpect(status().isOk())
+            .andExpect(jsonPath("$.pontos").value(1)).andExpect(jsonPath("$.notaCorte").value(3)).andExpect(jsonPath("$.diferenca").value(-2));
+
+        var simulado = jdbc.queryForObject("SELECT simulado_id FROM tentativa_prova WHERE tentativa_id = ?::uuid", Long.class, t.toString());
+        var json = mockMvc.perform(get("/api/simulados/pontos")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var lista = JSON.readTree(json);
+        tools.jackson.databind.JsonNode doSimulado = null;
+        for (var item : lista) {
+            if (item.get("simuladoId").asLong() == simulado) doSimulado = item;
+        }
+        org.junit.jupiter.api.Assertions.assertNotNull(doSimulado, "o simulado criado pela entrega aparece");
+        assertEquals(1, doSimulado.get("nota").get("pontos").asInt(), "o simulado conta como a prova: 2 − 2 + 1");
+    }
+
     @Test
     void entregar_questaoSemResposta_contaNoTotalENaoComoAcerto() throws Exception {
         var alvo = alvoDuasDisciplinas();
