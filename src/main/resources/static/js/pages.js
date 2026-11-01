@@ -30,6 +30,7 @@ const ROTULOS_PARAMETRO = {
   pomodoro_focos_ate_longa: 'Focos até a pausa longa',
   discursiva_limiar_sucesso: 'Sucesso · discursiva (nota)',
   discursiva_limiar_parcial: 'Parcial · discursiva (nota)',
+  reta_final_semanas_aviso: 'Sugerir a reta final (semanas antes da prova)',
 };
 
 // Preferências do Pomodoro que são do aparelho, não do domínio (docs/SPRINT-29-POMODORO.md §6): ficam no navegador.
@@ -434,11 +435,75 @@ document.addEventListener('alpine:init', () => {
         this.vencidasAlemDoTeto = plano.vencidasAlemDoTeto;
         this.proximoBloco = plano.proximoBloco;
         this.antecipaveis = plano.antecipaveis;
+        // D-140 a D-144: a reta final ativa, o que ela escondeu e o simulado da semana; sem ela, a sugestão de entrar.
+        this.retaFinal = plano.retaFinal;
+        this.manutencoesEsperando = plano.manutencoesEsperando;
+        this.simuladoDaSemana = plano.simuladoDaSemana;
+        api('/reta-final').then((r) => { this.sugestaoReta = r && r.sugestao; }).catch(() => { this.sugestaoReta = null; });
         if (this.extraRecuperacoes === 0) this.passoDrenar = this.fila.length; // a fila sem pedido = o teto diário
       } catch (e) {
         this.erro = e.message;
       } finally {
         this.carregando = false;
+      }
+    },
+
+    retaFinal: null,
+    manutencoesEsperando: 0,
+    simuladoDaSemana: false,
+    sugestaoReta: null,
+    retaEntrada: null,
+    erroReta: null,
+    simForm: null,
+
+    // D-140: só entra por gesto da pessoa.
+    async entrarReta() {
+      this.erroReta = null;
+      try {
+        this.retaEntrada = await api(`/concursos/${this.sugestaoReta.concursoId}/reta-final`, { method: 'POST' });
+        this.sugestaoReta = null;
+        await this.carregar();
+      } catch (e) {
+        this.erroReta = e.message;
+      }
+    },
+
+    async agoraNaoReta() {
+      const id = this.sugestaoReta.concursoId;
+      this.sugestaoReta = null;
+      await api(`/concursos/${id}/reta-final/dispensar`, { method: 'POST' }).catch(() => {});
+    },
+
+    textoRetaEntrada() {
+      const e = this.retaEntrada;
+      if (!e) return '';
+      if (!e.antecipadas) return 'Reta final ligada. Nenhuma manutenção de peso alto precisou ser antecipada.';
+      return e.antecipadas + (e.antecipadas === 1 ? ' revisão de peso alto distribuída' : ' revisões de peso alto distribuídas')
+        + ' até ' + e.ate.split('-').reverse().join('/') + '.';
+    },
+
+    // D-144: o registro do simulado da semana (o de sempre, POST /simulados), com as disciplinas do concurso-alvo.
+    async abrirSimulado() {
+      const regua = await api(`/concursos/${this.retaFinal.concursoId}/regua`).catch(() => null);
+      this.simForm = { data: hojeISO(), duracao: 240, formato: 'MULTIPLA_ESCOLHA', erro: null, enviando: false,
+        linhas: (regua ? regua.disciplinas : []).map((d) => ({ disciplinaId: d.disciplinaId, nome: d.nome, total: '', certas: '' })) };
+    },
+
+    async registrarSimulado() {
+      const f = this.simForm;
+      const resultados = f.linhas.filter((l) => Number(l.total) > 0).map((l) => ({ disciplinaId: l.disciplinaId, formato: f.formato,
+        questoesCorretas: Number(l.certas || 0), questoesTotal: Number(l.total) }));
+      if (!resultados.length) { f.erro = 'Preencha ao menos uma disciplina.'; return; }
+      f.enviando = true;
+      f.erro = null;
+      try {
+        await api('/simulados', { method: 'POST', body: JSON.stringify({ data: f.data, duracaoMinutos: Number(f.duracao), resultados }) });
+        this.simForm = null;
+        await this.carregar();
+      } catch (e) {
+        f.erro = e.message;
+      } finally {
+        if (this.simForm) this.simForm.enviando = false;
       }
     },
 
@@ -1711,6 +1776,7 @@ document.addEventListener('alpine:init', () => {
         if (chave.startsWith('limiar_') || chave.startsWith('discursiva_')) return 'Limiares de resultado';
         if (chave.startsWith('duracao_')) return 'Turno';
         if (chave.startsWith('pomodoro_')) return 'Pomodoro';
+        if (chave.startsWith('reta_final_')) return 'Reta final';
         return 'Escada';
       };
       const porGrupo = {};
@@ -1718,7 +1784,7 @@ document.addEventListener('alpine:init', () => {
         const grupo = nomeDoGrupo(p.chave);
         (porGrupo[grupo] ??= []).push(p);
       }
-      return ['Tetos', 'Turno', 'Pomodoro', 'Limiares de resultado', 'Escada']
+      return ['Tetos', 'Turno', 'Pomodoro', 'Limiares de resultado', 'Reta final', 'Escada']
         .filter((nome) => porGrupo[nome])
         .map((nome) => ({ nome, itens: porGrupo[nome] }));
     },
@@ -1788,6 +1854,37 @@ document.addEventListener('alpine:init', () => {
     reguaAberta: false,
     // D-137 a D-139: o diagnóstico de um concurso; data e ritmo são simulação, nunca gravados.
     diag: null,
+    // D-140, D-141: a reta final do alvo — entrar (só com data futura) e sair.
+    retaAtiva: null,
+    retaAviso: null,
+
+    async carregarReta() {
+      const r = await api('/reta-final').catch(() => null);
+      this.retaAtiva = r && r.ativa;
+    },
+
+    get podeEntrarReta() {
+      return this.ativo && !this.retaAtiva && this.ativo.dataProva && this.ativo.dataProva > hojeISO();
+    },
+
+    async entrarRetaFinal() {
+      this.retaAviso = null;
+      try {
+        const e = await api(`/concursos/${this.ativo.id}/reta-final`, { method: 'POST' });
+        this.retaAviso = e.antecipadas ? e.antecipadas + (e.antecipadas === 1 ? ' revisão de peso alto distribuída' : ' revisões de peso alto distribuídas') + ' até ' + e.ate.split('-').reverse().join('/') + '.'
+          : 'Reta final ligada.';
+      } catch (err) {
+        this.retaAviso = err.message;
+      }
+      await this.carregarReta();
+    },
+
+    async sairRetaFinal() {
+      if (!window.confirm('Sair da reta final? As revisões já antecipadas ficam como estão.')) return;
+      await api(`/concursos/${this.ativo.id}/reta-final/sair`, { method: 'POST' }).catch((err) => { this.retaAviso = err.message; });
+      this.retaAviso = null;
+      await this.carregarReta();
+    },
 
     async abrirDiagnostico(c) {
       this.diag = { concurso: c, dados: null, carregando: true, erro: null, data: '', ritmo: '' };
@@ -1857,6 +1954,7 @@ document.addEventListener('alpine:init', () => {
       this.erroAcao = null;
       try {
         Alpine.store('ia').carregar(); // aviso de assinatura parada (ADR-045), sem esperar
+        this.carregarReta();
         const [concursos, ia, analises] = await Promise.all([
           api('/concursos'), api('/editais/ia'), api('/editais/analises'),
         ]);

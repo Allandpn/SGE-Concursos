@@ -71,7 +71,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 33 (ADR-054): os PDFs próprios; os blocos são segmentos (pdf_proprio_id).
                 "pdf_proprio",
                 // Sprint 23 (ADR-055): a régua da prova, pontos por disciplina do concurso.
-                "concurso_pontuacao");
+                "concurso_pontuacao",
+                // Sprint 21 (ADR-056): a entrada e a saída da reta final.
+                "reta_final");
         assertEquals(esperado, tabelasDoSchema());
     }
 

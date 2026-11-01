@@ -44,6 +44,7 @@ public class FrenteService {
     private final ParametroRepository parametroRepository;
     private final SegmentoRepository segmentoRepository;
     private final Clock clock;
+    private final br.com.estudos.retafinal.RetaFinalConsulta retaFinal;
 
     public FrenteService(
             AssuntoRepository assuntoRepository,
@@ -52,7 +53,8 @@ public class FrenteService {
             RevisaoRepository revisaoRepository,
             ParametroRepository parametroRepository,
             SegmentoRepository segmentoRepository,
-            Clock clock) {
+            Clock clock,
+            br.com.estudos.retafinal.RetaFinalConsulta retaFinal) {
         this.assuntoRepository = assuntoRepository;
         this.disciplinaRepository = disciplinaRepository;
         this.sessaoRepository = sessaoRepository;
@@ -60,6 +62,26 @@ public class FrenteService {
         this.parametroRepository = parametroRepository;
         this.segmentoRepository = segmentoRepository;
         this.clock = clock;
+        this.retaFinal = retaFinal;
+    }
+
+    /**
+     * D-143: na reta final, os assuntos consolidados de peso médio e baixo — a manutenção deles sai da fila (e do represado) sem
+     * ser reescrita; fora da reta final, nenhum (ADR-056).
+     */
+    @Transactional(readOnly = true)
+    public java.util.Set<Long> assuntosComManutencaoEscondida() {
+        if (retaFinal.ativa().isEmpty()) {
+            return java.util.Set.of();
+        }
+        var candidatos = assuntoRepository.listarAtivosDeDisciplinasAtivas().stream()
+            .filter(a -> a.getPeso() != br.com.estudos.shared.enums.TipoPeso.ALTO)
+            .toList();
+        var fases = fasesDe(candidatos);
+        return candidatos.stream()
+            .filter(a -> fases.get(a.getId()) == FaseAssunto.CONSOLIDADO)
+            .map(Assunto::getId)
+            .collect(Collectors.toSet());
     }
 
     /** docs/SPRINT-5-FRENTE.md §2.1. */
@@ -245,7 +267,12 @@ public class FrenteService {
     }
 
     private long represado() {
-        return revisaoRepository.countBySituacaoAndDataPrevistaBefore(SituacaoRevisao.PENDENTE, LocalDate.now(clock));
+        var hoje = LocalDate.now(clock);
+        var total = revisaoRepository.countBySituacaoAndDataPrevistaBefore(SituacaoRevisao.PENDENTE, hoje);
+        // D-143: a manutenção escondida pela reta final não represa — senão o alerta (D-56) pararia o plano por ela.
+        var escondidos = assuntosComManutencaoEscondida();
+        return escondidos.isEmpty() ? total
+            : total - revisaoRepository.countBySituacaoAndDataPrevistaBeforeAndAssuntoIdIn(SituacaoRevisao.PENDENTE, hoje, escondidos);
     }
 
     /**
@@ -262,10 +289,11 @@ public class FrenteService {
     @Transactional(readOnly = true)
     public Optional<Assunto> proximaVaga(Long disciplinaId) {
         var assuntosDaDisciplina = assuntoRepository.findByDisciplinaIdAndAtivoTrue(disciplinaId);
-        return proximaVaga(assuntosDaDisciplina, fasesDe(assuntosDaDisciplina), valorParametroInt("teto_disciplina_frente"));
+        return proximaVaga(assuntosDaDisciplina, fasesDe(assuntosDaDisciplina), valorParametroInt("teto_disciplina_frente"), false);
     }
 
-    private Optional<Assunto> proximaVaga(List<Assunto> assuntosDaDisciplina, Map<Long, FaseAssunto> fases, int tetoDisciplina) {
+    private Optional<Assunto> proximaVaga(List<Assunto> assuntosDaDisciplina, Map<Long, FaseAssunto> fases, int tetoDisciplina,
+            boolean soPesoAlto) {
         var frenteAtualDaDisciplina = assuntosDaDisciplina.stream()
             .filter(a -> fases.get(a.getId()) == FaseAssunto.FRENTE)
             .count();
@@ -275,6 +303,8 @@ public class FrenteService {
 
         return assuntosDaDisciplina.stream()
             .filter(a -> fases.get(a.getId()) == FaseAssunto.BACKLOG)
+            // D-142: na reta final, assunto novo só de peso alto.
+            .filter(a -> !soPesoAlto || a.getPeso() == br.com.estudos.shared.enums.TipoPeso.ALTO)
             .min(Comparator.comparing(Assunto::getOrdem));
     }
 
@@ -304,6 +334,7 @@ public class FrenteService {
         var porDisciplina = assuntos.stream()
             .collect(Collectors.groupingBy(a -> a.getDisciplina().getId()));
         var tetoDisciplina = valorParametroInt("teto_disciplina_frente");
+        var soPesoAlto = retaFinal.ativa().isPresent(); // D-142
         Comparator<Long> menosNaFrente = Comparator.comparingLong(disciplinaId ->
             porDisciplina.getOrDefault(disciplinaId, List.of()).stream()
                 .filter(a -> fases.get(a.getId()) == FaseAssunto.FRENTE)
@@ -313,7 +344,7 @@ public class FrenteService {
             .sorted(menosNaFrente.thenComparing(Comparator.naturalOrder()))
             .toList();
         for (var disciplinaId : disciplinas) {
-            var sugestao = proximaVaga(porDisciplina.getOrDefault(disciplinaId, List.of()), fases, tetoDisciplina);
+            var sugestao = proximaVaga(porDisciplina.getOrDefault(disciplinaId, List.of()), fases, tetoDisciplina, soPesoAlto);
             if (sugestao.isPresent()) return sugestao;
         }
         return Optional.empty();
