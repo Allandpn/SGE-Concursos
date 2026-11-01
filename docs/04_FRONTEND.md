@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.17.0 |
+| Versão | 1.18.0 |
 | Data | 2026-10-14 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -738,6 +738,8 @@ documento da sprint).
   Duas armadilhas do Alpine, as duas já vistas: **objeto do PDF.js não pode ficar no estado reativo** (o Proxy quebra os campos privados
   `#x` das classes dele) e **nada do estado reativo vai direto ao IndexedDB** (o Proxy não é clonável; mande uma cópia com
   `JSON.parse(JSON.stringify(...))`).
+- **`:disabled` com valor que pode ser `undefined`** (ex.: `ruins[p.id]` antes de existir) deixa o campo desabilitado: use
+  `:disabled="!!expr"`. Achado na Recuperar com perguntas (Sprint 32).
 - **Sem rede** (`js/offline.js`, ADR-052): cache `material-v1` para PDFs de bloco e IndexedDB `eagora` (`blocos`, `fila`). Trocar
   `CASCA_VERSAO` não os apaga. Detalhes em `docs/SPRINT-31-LEITOR.md` §5.
 
@@ -831,6 +833,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.18.0 | 2026-11-01 | §7L: a armadilha do `:disabled` com `undefined` (Sprint 32) |
 | 1.17.0 | 2026-11-01 | §7L: a porta do login (Sprint 30) e o leitor com o modo sem rede (Sprint 31), com as duas armadilhas do Alpine com o PDF.js e o IndexedDB |
 | 1.16.0 | 2026-10-17 | §7K: Concursos — lista do material por assunto |
 | 1.15.0 | 2026-10-17 | §7K: refazer o material do assunto e do concurso (D-66) |

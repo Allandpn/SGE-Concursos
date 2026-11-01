@@ -56,6 +56,7 @@ public abstract class IntegracaoTestBase {
         registro.add("spring.datasource.hikari.minimum-idle", () -> "1");
         // A varredura do Pomodoro (AvisoDeFase) não roda sozinha nos testes: eles a chamam, com o relógio na mão.
         registro.add("estudos.foco.varredura-cron", () -> "-");
+        registro.add("estudos.perguntas.varredura-cron", () -> "-"); // D-122: a varredura é chamada com a mão
         // O login (Sprint 30) fica de fora destes testes, que usam a API sem sessão; AcessoTestBase o liga.
         registro.add("estudos.acesso.desligado-em-teste", () -> "true");
     }

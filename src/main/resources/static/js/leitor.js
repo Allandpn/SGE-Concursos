@@ -80,7 +80,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     // Chamado pelo router em #/ler/{id}.
-    async abrir(segmentoId) {
+    async abrir(segmentoId, paginaPedida = null) {
       this.parar();
       this.segmentoId = segmentoId;
       this.leitura = null;
@@ -131,7 +131,8 @@ document.addEventListener('alpine:init', () => {
         return;
       }
       this.totalPaginas = pdf.doc.numPages;
-      this.pagina = Math.min(Math.max(this.leitura.ultimaPagina || 1, 1), this.totalPaginas); // D-121
+      // D-128: o ponto que faltou abre na página dele; sem pedido, a última página aberta (D-121).
+      this.pagina = Math.min(Math.max(paginaPedida || this.leitura.ultimaPagina || 1, 1), this.totalPaginas);
       this.carregando = false;
       await this.$nextTick();
       await this.desenhar();

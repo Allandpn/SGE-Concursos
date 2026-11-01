@@ -550,6 +550,13 @@ document.addEventListener('alpine:init', () => {
     enviando: false,
     erro: null,
     semDados: false,
+    // Perguntas de recuperação (01_DOMINIO §3.18): a etapa 1 só tem os enunciados; o gabarito chega na etapa 2 (D-125).
+    perguntas: [],
+    respostas: {}, // perguntaId → texto digitado; fica só na tela, nunca vai ao servidor (D-125)
+    gabarito: {}, // perguntaId → pontos
+    vieram: {}, // pontoId → true
+    ruins: {}, // perguntaId → true (D-127)
+    faltaram: [], // depois de gravar PARCIAL: os pontos que faltaram (D-128)
 
     // Chamado pelo router a cada navegação para #/recuperar/{id} — inclusive
     // quando confirmar() volta pra cá depois de uma falha de envio (§5.1).
@@ -574,11 +581,62 @@ document.addEventListener('alpine:init', () => {
       // D-101: o foco que correu ao lado é consumido por esta recuperação, sem tocar o tempo de tela.
       this.fasesIds = [];
       api(`/foco/livres?assuntoId=${assuntoId}`).then((l) => { this.fasesIds = l.fasesIds; }).catch(() => {});
+      this.perguntas = [];
+      this.respostas = {};
+      this.gabarito = {};
+      this.vieram = {};
+      this.ruins = {};
+      this.faltaram = [];
+      // D-124: sem pergunta (ou sem rede para buscá-las), a tela é a recuperação livre de sempre.
+      api(`/assuntos/${assuntoId}/perguntas`).then((ps) => { if (this.etapa === 1) this.perguntas = ps; }).catch(() => {});
     },
 
     prever(valor) {
       this.previsao = valor;
       this.etapa = 2;
+      if (this.perguntas.length) {
+        // D-125: o gabarito só existe a partir daqui.
+        api(`/perguntas/gabarito?ids=${this.perguntas.map((p) => p.id).join(',')}`)
+          .then((gs) => { this.gabarito = Object.fromEntries(gs.map((g) => [g.perguntaId, g.pontos])); })
+          .catch(() => { this.gabarito = {}; });
+      }
+    },
+
+    tipoDaPergunta(tipo) {
+      return { EVOCACAO: 'evocação', COMPLETAR: 'completar', PORQUE: 'porquê', COMPARACAO: 'comparação' }[tipo] || '';
+    },
+
+    alternarPonto(id) {
+      this.vieram = { ...this.vieram, [id]: !this.vieram[id] };
+    },
+
+    async alternarRuim(p) {
+      const ruim = !this.ruins[p.id];
+      this.ruins = { ...this.ruins, [p.id]: ruim };
+      try {
+        await api(`/perguntas/${p.id}/ruim`, { method: ruim ? 'POST' : 'DELETE' });
+      } catch (e) {
+        this.ruins = { ...this.ruins, [p.id]: !ruim };
+      }
+    },
+
+    // Os pontos das perguntas que contam (não tiradas como ruins).
+    get pontosQueContam() {
+      return this.perguntas.filter((p) => !this.ruins[p.id]).flatMap((p) => this.gabarito[p.id] || []);
+    },
+
+    // D-126: a sugestão pelos pontos principais (todos → SUCESSO; metade ou mais → PARCIAL; menos → FALHA). Só sugere.
+    get sugestao() {
+      const principais = this.pontosQueContam.filter((pt) => pt.principal);
+      if (!principais.length) return null;
+      const vieram = principais.filter((pt) => this.vieram[pt.id]).length;
+      if (vieram === principais.length) return 'SUCESSO';
+      return vieram * 2 >= principais.length ? 'PARCIAL' : 'FALHA';
+    },
+
+    get textoSugestao() {
+      const principais = this.pontosQueContam.filter((pt) => pt.principal);
+      return `Sugestão pelos pontos principais: ${principais.filter((pt) => this.vieram[pt.id]).length} de ${principais.length} vieram`;
     },
 
     async confirmar(valor) {
@@ -591,8 +649,17 @@ document.addEventListener('alpine:init', () => {
       // duração no wireframe (02_JORNADAS §4.1).
       const tempoMinutos = Math.max(1, Math.round((Date.now() - this.inicioEm) / 60000));
 
-      // Otimista (02_JORNADAS §5.1): volta pra Hoje antes da resposta confirmar.
-      window.location.hash = '#/hoje';
+      const temGabarito = this.pontosQueContam.length > 0;
+      const conferencia = temGabarito ? {
+        perguntasIds: this.perguntas.filter((p) => !this.ruins[p.id]).map((p) => p.id),
+        pontosQueVieram: this.pontosQueContam.filter((pt) => this.vieram[pt.id]).map((pt) => pt.id),
+      } : undefined;
+      // D-128: depois de PARCIAL, o que faltou aparece aqui, já gravado; FALHA leva os pontos ao reestudo de Hoje.
+      this.faltaram = valor === 'PARCIAL' ? this.pontosQueContam.filter((pt) => !this.vieram[pt.id]) : [];
+
+      // Otimista (02_JORNADAS §5.1): volta pra Hoje antes da resposta confirmar (ou mostra o que faltou).
+      if (this.faltaram.length) this.etapa = 3;
+      else window.location.hash = '#/hoje';
 
       try {
         await api('/sessoes', {
@@ -606,6 +673,7 @@ document.addEventListener('alpine:init', () => {
             resultado: this.resultado,
             tentativaId: this.tentativaId,
             fasesIds: this.fasesIds.length ? this.fasesIds : undefined,
+            conferencia,
           }),
         });
       } catch (e) {
@@ -845,6 +913,7 @@ document.addEventListener('alpine:init', () => {
     fase: null,
     segmentos: [],
     focoSegmentos: [], // D-105: estimado × real por segmento
+    perguntasEstado: [], // D-122: as perguntas de cada bloco (só o estado; as perguntas em si só na recuperação)
     lacuna: null,
     refazendo: false,
     refeito: false,
@@ -863,6 +932,14 @@ document.addEventListener('alpine:init', () => {
     textoFocoDoSegmento(s) {
       const f = this.focoSegmentos.find((x) => x.segmentoId === s.id);
       return f && f.realMin > 0 ? `foco real ${f.realMin} min` : '';
+    },
+
+    textoPerguntas(s) {
+      const e = this.perguntasEstado.find((x) => x.segmentoId === s.id);
+      if (!e) return '';
+      if (e.situacao === 'PRONTA') return `Perguntas: ${e.prontas} prontas` + (e.ruins ? ` · ${e.ruins} tiradas` : '');
+      return { NAO_LIDO: 'Perguntas: depois da leitura', PENDENTE: 'Perguntas: preparando…', SEM_TEXTO: 'Perguntas: o PDF não tem texto',
+        FALHOU: 'Perguntas: a IA não conseguiu preparar' }[e.situacao] || '';
     },
 
     async anexarPdfDoAssunto(l, evento) {
@@ -928,6 +1005,7 @@ document.addEventListener('alpine:init', () => {
         this.carregando = false;
       }
       this.focoSegmentos = await api(`/foco/assuntos/${assuntoId}/segmentos`).catch(() => []);
+      this.perguntasEstado = await api(`/assuntos/${assuntoId}/perguntas/estado`).catch(() => []);
 
       // D-65: sem segmento, o motivo de o acervo não ensinar o assunto, se houver.
       // 404 é o normal (sem lacuna); qualquer falha só esconde a linha.

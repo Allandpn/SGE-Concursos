@@ -387,6 +387,17 @@
                   <span class="block font-medium" x-text="item.nome"></span>
                   <span class="text-sm text-gray-600" x-text="'Falhou em ' + item.dataFalha.split('-').reverse().join('/') + ' · nível ' + item.nivel"></span>
                 </button>
+                <!-- D-128: os pontos que não vieram, cada um abrindo o leitor na página -->
+                <template x-if="item.pontos && item.pontos.length">
+                  <ul class="mt-1 space-y-1 rounded border border-alerta-600 bg-white p-2 text-sm">
+                    <template x-for="(pt, i) in item.pontos" :key="i">
+                      <li class="flex items-start justify-between gap-2">
+                        <span x-text="pt.texto"></span>
+                        <a class="whitespace-nowrap font-semibold text-primary-700" :href="'#/ler/' + pt.segmentoId + '?p=' + pt.pagina" x-text="'Bloco ' + pt.bloco + ' · p. ' + pt.pagina + ' →'"></a>
+                      </li>
+                    </template>
+                  </ul>
+                </template>
                 <!-- J-10: o reestudo abre o material no leitor (D-114) -->
                 <button type="button" x-show="reestudoBloco[item.assuntoId]" class="mt-1 flex min-h-11 items-center gap-2 px-1 text-sm font-semibold text-primary-700"
                   @click="window.location.hash = '#/ler/' + reestudoBloco[item.assuntoId]">Ler
@@ -494,6 +505,21 @@
              x-text="'Nível ' + nivel + (dataPrevista ? ' · previsto para ' + dataPrevista : '')"></p>
         </div>
 
+        <!-- D-123/D-124: as perguntas, sem gabarito (ele nem veio do servidor, D-125). A resposta é opcional e fica só na tela. -->
+        <template x-if="perguntas.length">
+          <div class="space-y-3">
+            <p class="text-sm text-gray-600">Feche o material e responda de memória: em voz alta, no papel ou aqui.</p>
+            <template x-for="(p, i) in perguntas" :key="p.id">
+              <div class="space-y-2 rounded border border-gray-200 bg-white p-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500" x-text="tipoDaPergunta(p.tipo)"></p>
+                <p class="font-medium" x-text="(i + 1) + '. ' + p.enunciado"></p>
+                <textarea rows="2" class="w-full rounded border border-dashed border-gray-300 p-2 text-sm" placeholder="responder (opcional)"
+                  :value="respostas[p.id] || ''" @input="respostas = { ...respostas, [p.id]: $event.target.value }"></textarea>
+              </div>
+            </template>
+          </div>
+        </template>
+
         <p class="font-medium">O que você espera?</p>
         <div class="space-y-2">
           <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('SUCESSO')">Vou reconstruir</button>
@@ -501,7 +527,7 @@
           <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('FALHA')">Não vai vir</button>
         </div>
 
-        <p class="text-sm text-gray-500">Feche o material e reconstrua de memória.</p>
+        <p x-show="!perguntas.length" class="text-sm text-gray-500">Feche o material e reconstrua de memória.</p>
       </div>
     </template>
 
@@ -514,23 +540,66 @@
           <span x-text="{SUCESSO: 'vou reconstruir', PARCIAL: 'vai faltar um pedaço', FALHA: 'não vai vir'}[previsao]"></span>
         </p>
 
+        <!-- D-125/D-126/D-127: o gabarito em pontos; a pessoa marca o que veio e a sugestão acompanha -->
+        <template x-if="perguntas.length">
+          <div class="space-y-3">
+            <p class="text-sm text-gray-600">Marque o que veio. <span class="inline-block h-2 w-2 rounded-full bg-gray-900 align-middle"></span> = ponto principal.</p>
+            <template x-for="(p, i) in perguntas" :key="p.id">
+              <div class="space-y-2 rounded border border-gray-200 bg-white p-3" :class="ruins[p.id] ? 'opacity-50' : ''">
+                <p class="font-medium" x-text="(i + 1) + '. ' + p.enunciado"></p>
+                <p x-show="respostas[p.id]" class="border-l-2 border-gray-200 pl-2 text-xs text-gray-500" x-text="'Você escreveu: ' + (respostas[p.id] || '')"></p>
+                <p x-show="!gabarito[p.id]" class="text-xs text-gray-500">Carregando o gabarito…</p>
+                <template x-for="pt in (gabarito[p.id] || [])" :key="pt.id">
+                  <label class="flex min-h-9 items-start gap-2 text-sm">
+                    <input type="checkbox" class="mt-0.5 h-5 w-5 flex-none" :checked="!!vieram[pt.id]" :disabled="!!ruins[p.id]" @change="alternarPonto(pt.id)">
+                    <span class="flex-1"><span x-text="pt.texto"></span><span x-show="pt.principal" class="ml-1 inline-block h-2 w-2 rounded-full bg-gray-900 align-middle" title="ponto principal"></span></span>
+                    <span class="whitespace-nowrap text-xs text-gray-400" x-text="'p. ' + pt.pagina"></span>
+                  </label>
+                </template>
+                <button type="button" class="block min-h-9 text-xs text-gray-500 underline" @click="alternarRuim(p)"
+                  x-text="ruins[p.id] ? 'Desfazer (pergunta tirada do banco)' : 'pergunta ruim'"></button>
+              </div>
+            </template>
+            <p x-show="sugestao" class="text-sm text-primary-700" x-text="textoSugestao"></p>
+          </div>
+        </template>
+
         <p class="font-medium">Conseguiu reconstruir?</p>
         <div class="space-y-2">
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('SUCESSO')">
+          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'SUCESSO' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('SUCESSO')">
             <span class="block">Reconstruí</span>
             <span class="text-sm text-gray-500">os pontos principais vieram; faltou detalhe, não estrutura</span>
           </button>
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('PARCIAL')">
+          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'PARCIAL' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('PARCIAL')">
             <span class="block">Faltou um pedaço</span>
             <span class="text-sm text-gray-500">a estrutura veio, mas um bloco inteiro não</span>
           </button>
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" :disabled="enviando" @click="confirmar('FALHA')">
+          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'FALHA' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('FALHA')">
             <span class="block">Não veio</span>
             <span class="text-sm text-gray-500">preciso reler antes de tentar de novo</span>
           </button>
         </div>
 
         <button type="button" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
+      </div>
+    </template>
+
+    <!-- D-128: depois de "Faltou um pedaço", o que faltou, já gravado — só agora o leitor pode abrir. Não cria reestudo (D-07). -->
+    <template x-if="!semDados && etapa === 3">
+      <div class="space-y-4">
+        <div class="rounded border border-primary-600 bg-white p-3">
+          <p class="font-semibold">Faltou um pedaço</p>
+          <p class="text-sm text-gray-500">A escada repete o nível.</p>
+        </div>
+        <div class="space-y-2 rounded bg-alerta-50 p-3 text-sm">
+          <p class="font-semibold">O que faltou</p>
+          <template x-for="pt in faltaram" :key="pt.id">
+            <p><span x-text="pt.texto"></span> — <a class="font-semibold text-primary-700" :href="'#/ler/' + pt.segmentoId + '?p=' + pt.pagina" x-text="'ler p. ' + pt.pagina + ' →'"></a></p>
+          </template>
+          <p class="text-xs text-gray-500">Opcional: não cria reestudo.</p>
+        </div>
+        <button type="button" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
+        <a href="#/hoje" class="block min-h-11 rounded bg-primary-600 px-4 py-3 text-center font-semibold text-white">Próxima recuperação</a>
       </div>
     </template>
   </section>
@@ -760,6 +829,7 @@
                 <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
                   @click="$store.foco.iniciar('FOCO', assuntoId, s.id, nome)">foco neste bloco</button>
                 <p class="text-xs text-gray-500" x-show="textoFocoDoSegmento(s)" x-text="textoFocoDoSegmento(s)"></p>
+                <p class="text-xs text-gray-500" x-show="textoPerguntas(s)" x-text="textoPerguntas(s)"></p>
               </li>
             </template>
           </ul>

@@ -26,7 +26,7 @@ function renderizarRotaAtual() {
   const matchEditalNovo = hash === '#/concursos/novo';
   const matchAnalise = hash.match(/^#\/concursos\/analise\/(\d+)$/);
   const matchConferencia = hash.match(/^#\/concursos\/analise\/(\d+)\/conferencia$/);
-  const matchLeitor = hash.match(/^#\/ler\/(\d+)$/);
+  const matchLeitor = hash.match(/^#\/ler\/(\d+)(?:\?p=(\d+))?$/);
 
   elHoje.hidden = true;
   elRecuperar.hidden = true;
@@ -49,7 +49,7 @@ function renderizarRotaAtual() {
 
   if (matchLeitor) {
     elLeitor.hidden = false;
-    Alpine.$data(elLeitor).abrir(Number(matchLeitor[1]));
+    Alpine.$data(elLeitor).abrir(Number(matchLeitor[1]), matchLeitor[2] ? Number(matchLeitor[2]) : null);
   } else if (matchRecuperar) {
     elRecuperar.hidden = false;
     Alpine.$data(elRecuperar).abrir(Number(matchRecuperar[1]));

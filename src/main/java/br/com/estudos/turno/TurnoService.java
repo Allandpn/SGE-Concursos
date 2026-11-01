@@ -31,6 +31,7 @@ public class TurnoService {
     private final FrenteService frenteService;
     private final ParametroRepository parametroRepository;
     private final Clock clock;
+    private final br.com.estudos.pergunta.PerguntaService perguntaService;
 
     public TurnoService(
             RevisaoRepository revisaoRepository,
@@ -38,7 +39,9 @@ public class TurnoService {
             SessaoRepository sessaoRepository,
             FrenteService frenteService,
             ParametroRepository parametroRepository,
+            br.com.estudos.pergunta.PerguntaService perguntaService,
             Clock clock) {
+        this.perguntaService = perguntaService;
         this.revisaoRepository = revisaoRepository;
         this.revisaoService = revisaoService;
         this.sessaoRepository = sessaoRepository;
@@ -86,7 +89,8 @@ public class TurnoService {
                 r.getAssunto().getId(),
                 r.getAssunto().getNome(),
                 r.getNivel(),
-                r.getSessaoOrigem().getData()))
+                r.getSessaoOrigem().getData(),
+                perguntaService.faltaram(r.getSessaoOrigem().getId())))
             .toList();
 
         // D-55: continuar a leitura antes de abrir assunto novo (docs/SPRINT-17-USO-REAL.md §1.2).
