@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.31.0 |
-| Data | 2026-10-30 |
+| Versão | 1.32.0 |
+| Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -53,6 +53,8 @@ Uma frase cada. Se um termo precisar de duas, é porque está mal definido.
 | **Fase** | Um trecho do Pomodoro, com início gravado e fim; só a de foco conta como tempo de estudo (§3.15) |
 | **Passkey** | A credencial do titular no login: biometria ou PIN do aparelho, sem senha (§3.16) |
 | **Sessão (de acesso)** | O que mantém a pessoa dentro depois de entrar: 30 dias, revogável (§3.16). Não é a sessão de estudo |
+| **Leitor** | Onde o material (o PDF de um bloco) abre dentro do app, para ler e marcar; nunca na recuperação (§3.17) |
+| **Marcação** | Destaque, nota de trecho ou nota de página feita no leitor, guardada à parte do PDF (§3.17) |
 
 Note a separação que a v1 não tinha: **revisão é compromisso, recuperação é
 evento.** A revisão agenda; a sessão de recuperação cumpre. Confundir os dois
@@ -753,6 +755,56 @@ internet pública. O aviso de push, o Pomodoro e o resto do estudo são os mesmo
 
 **O que o sistema não garante.** Que o aparelho do titular esteja limpo: quem controla o aparelho desbloqueado usa a sessão. E recuperar o
 acesso sem passkey nem código: não há segundo caminho nesta versão.
+
+### 3.17 O leitor: ler e marcar o material
+
+Até a v1.31.0 o sistema não exibia o material: "Abrir material" levava o PDF para fora do app, e a separação de aparelhos fazia o papel de
+fechar o material antes de recuperar (`02_JORNADAS` §1.1). Com o uso no celular e no tablet, essa separação não existe mais, e o PDF estava a um toque
+de qualquer tela. A pedido do usuário (2026-11-01), o material passa a abrir **dentro do app**, num leitor com marcações. O lugar dele é a
+**leitura**; a recuperação continua sem material.
+
+**Onde o leitor abre (D-114).** A partir de um bloco (segmento), no plano de Hoje, no detalhe do assunto e no reestudo. **A tela de recuperação
+nunca oferece material, leitor nem marcações**, nas duas etapas: a produção vem antes do material (`00_PRODUTO` §5.2.1). O sistema não consegue impedir
+a pessoa de abrir o leitor por outro caminho no meio de uma recuperação; consegue não oferecer o atalho, que é o que a regra da produção obrigatória
+pede.
+
+**O PDF nunca é alterado (D-115).** A marcação é guardada à parte, presa a **um bloco e uma página**. Há três tipos:
+
+| Tipo | O que é | Precisa de texto selecionável |
+|---|---|---|
+| **Destaque** | Um trecho do texto, marcado com uma cor | sim |
+| **Nota de trecho** | Comentário escrito ligado a um destaque; aparece ao tocar nele | sim (vem do destaque) |
+| **Nota de página** | Comentário numa posição da página, sem trecho | não: é o que serve à página escaneada |
+
+**As cores têm significado (D-116).** Três, fixas: **importante**, **dúvida** (não entendi) e **decorar**. O significado é dado que o sistema
+usa, não enfeite: é com ele que as perguntas de recuperação e o reestudo vão priorizar o que a pessoa marcou (§12). Cor livre não existe.
+
+**Nada se apaga (D-117).** Editar uma nota ou trocar a cor grava uma versão nova; remover tira a marcação da vista. As versões e as marcações
+removidas ficam no histórico (D-18). Quando o mesmo destaque é editado em dois aparelhos sem rede, **vale a edição feita por último** (a hora em que
+foi feita no aparelho), e a outra fica no histórico, à vista de quem procurar. Marcações novas nunca conflitam: somam-se.
+
+**Cada mudança conta uma vez (D-118).** Toda criação, edição ou remoção de marcação leva um identificador gerado no aparelho, no momento do gesto. A
+mesma mudança enviada duas vezes (a rede caiu, o aparelho tentou de novo) grava uma vez, como o registro de sessão (D-45).
+
+**Ler sem internet (D-119).** Ficam guardados no aparelho os blocos do **plano de Hoje** (inclusive os de reestudo), baixados sozinhos quando há rede,
+e os que a pessoa **escolher** com um toque. Os mais antigos saem quando o espaço guardado passa de um limite. Sem rede, o leitor abre esses blocos e
+permite **só ler e marcar**; registrar sessão, Pomodoro e o resto do app pedem rede. As marcações feitas sem rede sobem quando ela volta, e uma
+marcação que ainda não subiu nunca sai do aparelho por falta de espaço.
+
+**Terminar não é chegar ao fim (D-120).** Chegar à última página não registra nada: folhear até o fim não é ler. O botão **"Terminei"** (na última
+página, ou a qualquer hora) abre o registro de `ESTUDO` já com o assunto e o bloco, e o tempo dos focos livres do assunto (D-100); a pessoa confirma,
+como sempre. A escada e a leitura completa (D-54) seguem a sessão registrada, não o leitor.
+
+**Retomar de onde parou (D-121).** O leitor guarda a última página aberta de cada bloco e reabre nela, em qualquer aparelho. É conveniência, não
+dado de estudo: não entra em métrica nem decide nada.
+
+**O que não muda.** O bloco e o PDF são os mesmos (o leitor lê o arquivo que o app já serve); refazer o material cria blocos novos e as marcações
+continuam presas aos blocos antigos, que nunca são apagados (D-93). As oito telas do estudo continuam; o leitor é uma tela nova que serve à leitura
+(`02_JORNADAS` J-10).
+
+**O que o sistema não garante.** Que a pessoa não abra o material no meio da recuperação por outro caminho. Que o aparelho guarde os blocos baixados
+para sempre: o navegador pode liberar espaço, e então o bloco volta a pedir rede. Destaque em página escaneada: sem texto selecionável, só nota de
+página.
 
 ---
 
@@ -1625,6 +1677,14 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-111 | Cadastrar passkey novo exige sessão (ou código de recuperação); o último passkey não se remove | §3.16 |
 | D-112 | Tentativas de entrar são limitadas por origem e no total, com bloqueio temporário e nunca permanente; o código de recuperação tem limite mais estrito | §3.16 |
 | D-113 | As rotas internas do planejamento mantêm o token interno e nunca respondem a pedido vindo da internet pública | §3.16 |
+| D-114 | O material abre no leitor do app a partir do bloco, do assunto e do reestudo; a tela de recuperação nunca oferece material, leitor nem marcações | §3.17 |
+| D-115 | A marcação nunca altera o PDF: é guardada à parte, presa a um bloco e uma página, e é destaque, nota de trecho (ligada a um destaque) ou nota de página | §3.17 |
+| D-116 | O destaque tem uma de três cores de significado fixo (importante, dúvida, decorar), e o significado é dado que o sistema usa; não há cor livre | §3.17 |
+| D-117 | Marcação não se apaga: editar grava versão nova e remover a tira da vista, e tudo fica no histórico; entre edições concorrentes vale a feita por último no aparelho | §3.17 |
+| D-118 | Cada criação, edição ou remoção de marcação leva identificador gerado no aparelho e grava uma vez, chegue quantas vezes chegar | §3.17 |
+| D-119 | Sem rede, o leitor abre só os blocos guardados no aparelho (os do plano de Hoje, baixados sozinhos, e os escolhidos) e só lê e marca; as marcações sobem quando a rede volta e a que não subiu nunca é descartada | §3.17 |
+| D-120 | Chegar à última página não registra nada; "Terminei" abre o registro de ESTUDO preenchido com assunto, bloco e o tempo de foco livre, e a pessoa confirma | §3.17 |
+| D-121 | O leitor reabre cada bloco na última página aberta, em qualquer aparelho; é conveniência e não entra em métrica | §3.17 |
 
 ---
 
@@ -1659,6 +1719,8 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Login por passkey de um titular, com a rede deixando de ser a defesa | Manter o app só na tailnet; senha; reaproveitar o login do Guardian | Só tailnet impede usar fora de casa sem instalar o Tailscale em cada aparelho; senha exposta à internet convida força bruta; acoplar ao Guardian amarra dois sistemas de projetos diferentes (ADR-048 já recusou) |
 | Pomodoro como cronômetro que alimenta o registro, com início gravado no servidor | Pomodoro só no aparelho, ou Pomodoro que monta o turno em ciclos | Estado só no aparelho some ao limpar o navegador e não vale entre celular e tablet; montar o turno por ciclos mexeria em §7 por uma convenção que o próprio domínio diz arbitrária (§7.7) |
 | Questões e gabarito como material de consulta, fora dos segmentos | Segmentos de questões na escada | Resolver questão é feito no QConcursos, ligado ao nó; misturar com leitura inflaria o tempo do assunto e a contagem de leitura (D-54) |
+| Material dentro do app, num leitor com marcações, e nunca na recuperação | Continuar sem exibir o material (`02_JORNADAS` §1.1 até a v1.20.0) | A separação de aparelhos que fechava o material deixou de existir com o celular e o tablet; o link externo abria o PDF de qualquer tela, inclusive da recuperação. Dentro do app, o sistema escolhe onde o material aparece |
+| Três cores de destaque com significado fixo | Cores livres | Cor sem significado não diz nada ao sistema; com significado, a dúvida marcada vira ponto fraco e o "decorar" vira pergunta (§12) |
 
 ---
 
@@ -1697,6 +1759,18 @@ Para `02_JORNADAS.md` e para o documento de regras:
   de 100 fica apertada. É o número mais frágil de toda a conta, e o próprio
   sistema vai medi-lo nos primeiros meses.
 - Se as 2 h de teoria por assunto se confirmam. Também será medido.
+- **Decidido com o usuário em 2026-11-01, a especificar quando a sprint de cada um começar** (nada disso vale como regra antes):
+  - **Perguntas e gabarito da IA na recuperação.** A IA prepara, para cada bloco, **perguntas de evocação** e **frases de completar** (quando
+    couber), **nunca resumo para ler**: ler um resumo antes de tentar lembrar é reler. Na etapa 1 da recuperação aparecem só as perguntas; o
+    **gabarito** (os pontos que deviam ter vindo) aparece **depois** de declarada a tentativa, e a pessoa confere ponto a ponto antes de dar o resultado.
+    Os destaques (D-116) priorizam o que entra nas perguntas. Em aberto: quem gera (o worker do planejamento, que já lê o texto), quando (uma vez por
+    bloco, para poupar a assinatura), e como a conferência do gabarito vira `SUCESSO`/`PARCIAL`/`FALHA` sem tirar a decisão da pessoa.
+  - **Reestudo que aponta os trechos.** Depois de uma `FALHA`, o reestudo (§5.1) lista os pontos do gabarito que não vieram, cada um com bloco e
+    página, e abre o leitor ali; o bloco inteiro continua a um toque.
+  - **`PARCIAL` mostra o que faltou, sem obrigar.** Os pontos que faltaram aparecem na hora do resultado, com o atalho para os trechos; não cria
+    reestudo, e D-07 não muda.
+  - **PDFs próprios.** A pessoa sobe um PDF ligado a um assunto, e ele vira blocos pelo caminho do material automático (o de D-97, ampliado para
+    além da lacuna); entra na escada, no leitor e nas perguntas.
 
 ---
 
@@ -1704,6 +1778,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.32.0 | 2026-11-01 | Pedido do usuário (testando a jornada no MPPR), com `00_PRODUTO` v1.12.0 e `02_JORNADAS` v1.21.0. **§3.17** (o leitor: ler e marcar o material) e **D-114 a D-121**, com ADR-052: o material abre dentro do app e nunca na recuperação; destaques em três cores com significado, notas de trecho e de página, que nunca alteram o PDF; nada se apaga; leitura sem rede dos blocos de Hoje e dos escolhidos; "Terminei" abre o registro. §12 registra o que foi decidido e ainda não especificado: perguntas e gabarito da IA na recuperação, reestudo que aponta os trechos, `PARCIAL` que mostra o que faltou e PDFs próprios. 121 regras |
 | 1.31.0 | 2026-10-30 | Pedido do usuário: usar o app fora da rede de casa. **§3.16** (o acesso: login por passkey) e **D-106 a D-113**, com ADR-051 (substitui o ADR-015): toda rota exige sessão, um titular com passkey, primeiro cadastro só pela rede privada, sessão de 30 dias revogável, recuperação por 8 códigos de uso único, freio de tentativas e rotas internas fechadas à internet. 113 regras |
 | 1.30.0 | 2026-10-30 | Pedido do usuário (testando o fluxo de estudo), com `00_PRODUTO` v1.11.0. **§3.15** (Pomodoro: o foco cronometrado) e **D-98 a D-105**: o tempo de foco medido pré-preenche o registro sem substituir o declarado (§7.7), um só ativo por vez, nenhuma fase começa sozinha, durações em Ajustes, aviso de fim de fase com push opcional, e três consultas derivadas. 105 regras |
 | 1.29.0 | 2026-10-27 | Pedido do usuário, com `00_PRODUTO` v1.10.0. **§3.14** (PDF anexado a uma lacuna) e **D-97**: a lacuna do material se preenche com um PDF que a pessoa anexa, e ele vira segmentos |

@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.20.0 |
-| Data | 2026-10-30 |
+| Versão | 1.21.0 |
+| Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -46,9 +46,18 @@ volta com um toque, o que torna a regra dependente de força de vontade.
 Com tablet e computador separados, fechar o material é **largar um objeto e
 virar para outro**. O protocolo passa a ser físico em vez de mental.
 
-**Consequência:** o sistema **não** deve tentar exibir o material de estudo.
+~~**Consequência:** o sistema **não** deve tentar exibir o material de estudo.
 Nunca. Isso não é só escopo negativo (`00_PRODUTO` §8.5) — é que exibir o
-material destruiria o único mecanismo que garante a recuperação de verdade.
+material destruiria o único mecanismo que garante a recuperação de verdade.~~
+
+**Revogado em 2026-11-01, a pedido do usuário.** Com o uso no celular e no tablet
+(§1.2), a separação de aparelhos deixou de existir, e o link "Abrir material"
+levava o PDF a um toque de qualquer tela, inclusive da recuperação. A regra passa a
+ser: **o material só aparece na leitura, nunca na recuperação** (`01_DOMINIO`
+§3.17, D-114). Ele abre dentro do app, no leitor (J-10), a partir do bloco, do
+assunto e do reestudo; a tela Recuperar (§4.1) não oferece material, leitor nem
+marcação. O que protege a recuperação continua sendo o mesmo mecanismo: não
+oferecer o atalho.
 
 ### 1.2 Prioridade de plataforma
 
@@ -561,15 +570,36 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-10 · Ler um bloco e marcar
+
+Serve à leitura de cada bloco do material (`01_DOMINIO` §3.17). É a única jornada em que o material aparece.
+
+1. **Abrir.** Em Hoje, no bloco de conteúdo, no reestudo ou no detalhe do assunto, o bloco tem **"Ler"**. O leitor abre na última página que a
+   pessoa abriu desse bloco, em qualquer aparelho (D-121). O link para baixar o PDF continua no menu do leitor, para quem quiser abrir fora.
+2. **Marcar.** Selecionar um trecho mostra três cores — **importante** (amarelo), **dúvida** (vermelho), **decorar** (verde) — e "nota". Tocar num
+   destaque mostra a nota dele e permite trocar a cor, editar a nota ou remover. Tocar e segurar num ponto da página sem texto cria uma **nota de
+   página** (é como se marca uma página escaneada). Uma lista lateral mostra as marcações do bloco por página, com filtro por cor.
+3. **Sem rede.** Os blocos do plano de Hoje já estão no aparelho; qualquer outro se guarda com **"Guardar para ler sem rede"**. Sem rede, o leitor
+   abre só os guardados, marca normalmente e mostra "marcações por enviar: N" até a rede voltar. Bloco não guardado diz que precisa de rede.
+4. **Terminar.** **"Terminei"** (na última página, ou no menu a qualquer hora) abre o Registrar de conteúdo com assunto e bloco preenchidos e o tempo
+   dos focos livres (D-100). Confirmar grava a sessão e volta a Hoje. Fechar o leitor sem "Terminei" não registra nada (D-120).
+5. **Histórico.** No menu, **"Marcações removidas e versões"** mostra o que saiu da vista e as versões anteriores; nada some de vez (D-117).
+
+O leitor não existe dentro de Recuperar: nem botão, nem lista de marcações (D-114).
+
+Orçamento: abrir um bloco guardado em **< 2 s**; criar um destaque em **2 toques** depois de selecionar o texto; "Terminei" até a sessão gravada em
+**2 toques** (o mesmo do registro de hoje).
+
 ## 4. As telas
 
-Oito de estudo, mais a **porta** do login (J-9), que não mostra dado. Cada uma justificada por uma jornada — tela sem jornada não entra.
+Nove de estudo, mais a **porta** do login (J-9), que não mostra dado. Cada uma justificada por uma jornada — tela sem jornada não entra.
 
 | Tela | Serve a | Existe porque |
 |---|---|---|
 | **Hoje** | J-2, J-4 | A porta de entrada. O plano do turno como lista, e o gatilho de puxar mais (§4.3). No topo, o concurso-alvo e os dias até a prova (§4.4) |
 | **Recuperar** | J-2 | As duas etapas da §5.2.1. É a tela mais usada do sistema |
 | **Registrar sessão** | J-2 | Conteúdo, questões ou flashcards |
+| **Leitor** | J-10, J-2 | O PDF do bloco, com destaques e notas; nunca aberto a partir de Recuperar (§1.1) |
 | **Assuntos** | J-1, J-3 | Cadastro em lote, peso, frente × backlog — agrupado por disciplina, cada uma com seu resumo (§4.5) |
 | **Erros** | J-2, J-3 | Registro com causa e confiança; consulta por assunto |
 | **Progresso** | J-3 | As quatro métricas, com as regras de n de `00_PRODUTO` §7 |
@@ -628,6 +658,9 @@ Regras vinculantes:
   é o valor inteiro da M-3.
 - Não existe botão "pular". Existe sair da tela: nada é obrigatório
   (`01_DOMINIO` D-14), e o sistema não precisa de um botão para dizer isso.
+- **Nenhuma das duas etapas oferece o material** (`01_DOMINIO` D-114): sem
+  "Ler", sem "Abrir material", sem as marcações do assunto. A etapa 1 diz para
+  fechar o material; a tela não o reabre.
 
 ---
 
@@ -749,6 +782,7 @@ O documento de interface é quem amarra isso.
 | J-5 Edital novo e histórico | Concursos, Hoje, Assuntos | D-58 a D-63 |
 | J-9 Entrar no app | A porta (fora das oito), Ajustes | D-106 a D-113 |
 | J-8 Cronometrar o foco | Barra do Pomodoro, Hoje, Assuntos, Registrar, Ajustes, Progresso | D-98 a D-105 |
+| J-10 Ler um bloco e marcar | Leitor, Hoje, Assuntos, Registrar | D-114 a D-121, D-100, D-54 |
 
 ---
 
@@ -775,6 +809,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.21.0 | 2026-11-01 | Pedido do usuário. **§1.1 revogada**: o material deixa de ficar fora do app e passa a aparecer só na leitura, nunca na recuperação. Nova **J-10** (ler um bloco e marcar) e nona tela, **Leitor**, com `01_DOMINIO` v1.32.0 (D-114 a D-121) e ADR-052. §4.1 ganha a regra de que Recuperar não oferece material |
 | 1.20.0 | 2026-10-30 | **J-9** (entrar no app) com `01_DOMINIO` v1.31.0 (D-106 a D-113) e ADR-051. A porta do login fica fora das oito telas do estudo; Ajustes ganha "Acesso" (passkeys, códigos de recuperação, sair de todos) |
 | 1.19.0 | 2026-10-30 | **J-8** (cronometrar o foco, Pomodoro) com `01_DOMINIO` v1.30.0 (D-98 a D-105) e `00_PRODUTO` v1.11.0. A barra do Pomodoro não é tela nova: as oito telas de §4 ficam. Ajustes ganha "Pomodoro"; o campo de tempo do registro passa a vir do foco medido quando houver |
 | 1.18.0 | 2026-10-27 | **J-5, passo 9a**: lacuna com "estudar por fora", "ignorar" e **anexar PDF**, com `01_DOMINIO` v1.29.0 (D-97) e `00_PRODUTO` v1.10.0 |

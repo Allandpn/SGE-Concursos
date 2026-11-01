@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.19.0 |
-| Data | 2026-10-30 |
+| Versão | 1.20.0 |
+| Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 113 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 121 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 113 regras, classificadas
+## 3. As 121 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -225,8 +225,16 @@ conceitual — envelhecer por motivo errado.
 | D-111 | Invariante | **P** + S | Teste: remover o último passkey é recusado; cadastrar exige sessão ou código |
 | D-112 | Comportamento | S | Teste: após N falhas a origem é bloqueada por tempo; o bloqueio expira; código de recuperação tem limite mais estrito |
 | D-113 | Comportamento | S + I | Teste: pedido a `/internal` marcado como público é recusado mesmo com o token certo; sem a marca, o token interno segue valendo |
+| D-114 | Comportamento | I | Teste de tela: as duas etapas de Recuperar não têm link de material, leitor nem marcação; bloco, assunto e reestudo abrem o leitor |
+| D-115 | **Invariante** | **P** | Marcação sem bloco ou sem página → a escrita falha; nota de trecho sem destaque → falha; nota de página com trecho → falha; o arquivo do PDF não é escrito |
+| D-116 | Invariante | **P** | Destaque com cor fora de importante/dúvida/decorar → a escrita falha |
+| D-117 | Comportamento | S + **P** | Teste: editar cria versão e mantém a anterior; remover só tira da vista; entre duas edições do mesmo destaque vale a de hora mais recente no aparelho, chegue em que ordem chegar |
+| D-118 | **Invariante** | **P** | Duas gravações da mesma mudança de marcação (mesmo identificador do aparelho) são impossíveis |
+| D-119 | Comportamento | I | Teste de tela: sem rede, bloco guardado abre e aceita marcação, bloco não guardado diz que precisa de rede; a fila sobe ao voltar a rede; marcação pendente não é descartada ao liberar espaço |
+| D-120 | Comportamento | I + S | Teste: chegar à última página não cria sessão; "Terminei" abre o registro com assunto, bloco e foco livre, e só a confirmação grava |
+| D-121 | Comportamento | S | Teste: a última página aberta num aparelho é a de reabertura no outro; nenhuma métrica a lê |
 
-**Contagem:** 26 invariantes · 10 derivações · 68 comportamentos · 10 políticas — 114 linhas para 113 regras.
+**Contagem:** 29 invariantes · 10 derivações · 73 comportamentos · 10 políticas — 122 linhas para 121 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -275,6 +283,9 @@ dados — **como** cada uma é implementada é do documento de persistência.
 | D-106 | Nenhuma rota fora da lista fechada responde sem sessão |
 | D-107 | O contador de assinaturas de um passkey nunca regride |
 | D-111 | Existe sempre ao menos um passkey depois do primeiro |
+| D-115 | Toda marcação aponta para um bloco e uma página; nota de trecho aponta para um destaque, nota de página não tem trecho |
+| D-116 | Destaque tem uma das três cores de significado |
+| D-118 | Duas gravações da mesma mudança de marcação são impossíveis |
 | D-16, D-28 | *(por ausência — §4.2)* Não existe atributo de fase nem entidade de turno |
 
 ### 4.1 A crítica é a D-05
@@ -417,7 +428,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 113 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 121 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -540,6 +551,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.20.0 | 2026-11-01 | **D-114 a D-121** com `01_DOMINIO.md` v1.32.0 (o leitor e as marcações). Três invariantes (D-115, D-116, D-118), cinco comportamentos. Contagem: 122 linhas para 121 regras |
 | 1.19.0 | 2026-10-30 | **D-106 a D-113** com `01_DOMINIO.md` v1.31.0 (o acesso por passkey). Três invariantes (D-106, D-107, D-111), cinco comportamentos. Contagem: 114 linhas para 113 regras |
 | 1.18.0 | 2026-10-30 | **D-98 a D-105** com `01_DOMINIO.md` v1.30.0 (Pomodoro). Uma invariante (D-98), duas derivações (D-99, D-105), quatro comportamentos, uma política (D-103). Contagem: 106 linhas para 105 regras |
 | 1.17.0 | 2026-10-27 | **D-97** com `01_DOMINIO.md` v1.29.0 (PDF anexado a uma lacuna). Um comportamento. Contagem: 98 linhas para 97 regras |
