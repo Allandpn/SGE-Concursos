@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.21.0 |
+| Versão | 1.22.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -14,7 +14,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 ## 0. Por que este documento existe separado
 
-`01_DOMINIO` §10 lista as 128 regras e é **deliberadamente livre de
+`01_DOMINIO` §10 lista as 132 regras e é **deliberadamente livre de
 tecnologia** (§0 daquele documento). Mas *"esta regra é garantida por uma
 restrição de banco"* é afirmação tecnológica — não cabe lá.
 
@@ -105,7 +105,7 @@ conceitual — envelhecer por motivo errado.
 
 ---
 
-## 3. As 128 regras, classificadas
+## 3. As 132 regras, classificadas
 
 `P` = persistência · `S` = serviço · `I` = interface · `H` = revisão humana
 
@@ -240,8 +240,12 @@ conceitual — envelhecer por motivo errado.
 | D-126 | Comportamento | S + I | Teste: a sugestão pelas três faixas dos pontos principais; o gravado é o escolhido; os pontos marcados ficam com a sessão |
 | D-127 | Comportamento | S | Teste: pergunta ruim não volta e não entra na sugestão; continua no banco, marcada |
 | D-128 | Derivação | S | Teste: depois de FALHA, o reestudo traz os pontos que faltaram com bloco e página; depois de PARCIAL, nenhum reestudo novo; nada guardado além dos pontos marcados |
+| D-129 | Comportamento | S | Teste: PDF de N páginas no ritmo escolhido vira os blocos esperados, depois dos existentes, com o corte no marcador quando há; acima de 50 MB, não PDF ou protegido é recusado |
+| D-130 | Comportamento | S + I | Teste: o bloco próprio abre no leitor, entra na leitura completa (D-54) e na fila das perguntas; PDF sem texto é aceito e o bloco fica SEM_TEXTO |
+| D-131 | Comportamento | S | Teste: assunto com revisão pendente e bloco próprio não lido → o plano sugere o bloco em "Continuar leitura" e a revisão não muda |
+| D-132 | **Invariante** | **P** + S | Teste: tirar arquiva todos os blocos do PDF e nenhum outro; o bloco aponta sempre para o PDF de onde veio (`fk`), e nada é apagado |
 
-**Contagem:** 30 invariantes · 11 derivações · 78 comportamentos · 10 políticas — 129 linhas para 128 regras.
+**Contagem:** 31 invariantes · 11 derivações · 81 comportamentos · 10 políticas — 133 linhas para 132 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -294,6 +298,7 @@ dados — **como** cada uma é implementada é do documento de persistência.
 | D-116 | Destaque tem uma das três cores de significado |
 | D-118 | Duas gravações da mesma mudança de marcação são impossíveis |
 | D-123 | Toda pergunta tem um dos quatro tipos e ao menos um ponto; todo ponto tem página e é principal ou detalhe |
+| D-132 | Bloco de PDF próprio aponta para o PDF de onde veio; não existe caminho de remoção do PDF nem dos blocos |
 | D-16, D-28 | *(por ausência — §4.2)* Não existe atributo de fase nem entidade de turno |
 
 ### 4.1 A crítica é a D-05
@@ -436,7 +441,7 @@ a citação e nada acusa. A forma melhor é a citação ser **um elemento da
 linguagem** — algo que o compilador enxerga e que um teste consegue coletar por
 reflexão.
 
-Com isso, um único teste responde a pergunta que importa: **alguma das 128 regras
+Com isso, um único teste responde a pergunta que importa: **alguma das 132 regras
 ficou órfã?** Se uma refatoração levou embora a última citação de D-07, o build
 quebra na hora, não seis meses depois.
 
@@ -559,6 +564,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.22.0 | 2026-11-01 | **D-129 a D-132** com `01_DOMINIO.md` v1.34.0 (PDF próprio). Uma invariante (D-132), três comportamentos. Contagem: 133 linhas para 132 regras |
 | 1.21.0 | 2026-11-01 | **D-122 a D-128** com `01_DOMINIO.md` v1.33.0 (perguntas de recuperação). Uma invariante (D-123), uma derivação (D-128), cinco comportamentos. Contagem: 129 linhas para 128 regras |
 | 1.20.1 | 2026-11-01 | D-106 e D-107: testes ajustados ao texto de `01_DOMINIO` v1.32.1 (tela leva à porta; contador sempre 0 entra) |
 | 1.20.0 | 2026-11-01 | **D-114 a D-121** com `01_DOMINIO.md` v1.32.0 (o leitor e as marcações). Três invariantes (D-115, D-116, D-118), cinco comportamentos. Contagem: 122 linhas para 121 regras |

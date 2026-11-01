@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.20.0** |
+| Versão do documento | **2.21.0** |
 | Status | **Congelado** |
 | Data | 2026-11-01 |
-| Total | 53 ADRs — 38 vigentes, 14 substituídas, 1 revogada |
+| Total | 54 ADRs — 39 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -81,6 +81,7 @@ que custa e o que foi descartado.
 | [ADR-051](#adr-051--login-por-passkey-e-exposição-pela-internet) | Login por passkey e exposição pela internet | 2026-10-30 |
 | [ADR-052](#adr-052--leitor-de-pdf-no-app-com-marcações-e-leitura-sem-rede) | Leitor de PDF no app, com marcações e leitura sem rede | 2026-11-01 |
 | [ADR-053](#adr-053--perguntas-de-recuperação-preparadas-pelo-sge-ao-ler-o-bloco) | Perguntas de recuperação preparadas pelo SGE ao ler o bloco | 2026-11-01 |
+| [ADR-054](#adr-054--pdf-próprio-cortado-pelo-sge) | PDF próprio cortado pelo SGE | 2026-11-01 |
 
 ### 1.2 Históricas
 
@@ -981,6 +982,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.21.0 | 2026-11-01 | **ADR-054**, pedido do usuário: o PDF próprio é cortado pelo SGE (PDFBox), pelo ritmo escolhido e pelos marcadores. Com `01_DOMINIO` v1.34.0 (D-129 a D-132). Total 54, 39 vigentes |
 | 2.20.0 | 2026-11-01 | **ADR-053**, pedido do usuário: as perguntas de recuperação são preparadas pelo SGE (PDFBox + `ServicoIa`), numa fila em segundo plano, quando o bloco é lido. Com `01_DOMINIO` v1.33.0 (D-122 a D-128). Total 53, 38 vigentes |
 | 2.19.0 | 2026-11-01 | **ADR-052**, pedido do usuário: leitor de PDF no app (PDF.js local), marcações no banco com versões e identificador do aparelho, e leitura sem rede dos blocos com fila local de marcações (exceção ao ADR-038). Com `01_DOMINIO` v1.32.0 (D-114 a D-121). Total 52, 37 vigentes |
 | 2.18.0 | 2026-10-30 | **ADR-051**, pedido do usuário: login por passkey e exposição pela internet via Tailscale Funnel; substitui o ADR-015. Com `01_DOMINIO` v1.31.0 (D-106 a D-113). Total 51, 36 vigentes |
@@ -2129,6 +2131,38 @@ já serve os PDFs (`MATERIAL_DIR`), extrai texto com PDFBox (`ExtratorTextoPdf`)
 | Gerar quando o material fica pronto | Centenas de chamadas para blocos que talvez nunca sejam lidos |
 | Gerar na hora da recuperação | A tela esperaria a IA, e IA fora tiraria as perguntas exatamente quando são pedidas |
 | Resumo para revisar | Reler antes de tentar mede familiaridade, não evocação (`00_PRODUTO` §5.2.1) |
+
+## ADR-054 — PDF próprio cortado pelo SGE
+
+**Status:** Aceita · 2026-11-01 · pedido do usuário
+
+### Contexto
+
+O PDF próprio (`01_DOMINIO` §3.19, D-129 a D-132) precisa virar blocos. O material do acervo e o anexo de lacuna (ADR-049) são cortados
+pelo worker do planejamento (`montar_bloco.py`), em outro repositório, num ciclo de minutos.
+
+### Decisão
+
+- **O SGE corta**, com o PDFBox que já usa: páginas acumuladas até ~60 min pelo ritmo escolhido (2 ou 3 min por página), com o corte
+  movido para o início de seção mais próximo (marcadores do PDF, entre 75% e 125% do alvo, a mesma regra do fatiador do planejamento);
+  sem marcador na faixa, corta no alvo.
+- **Onde ficam:** no volume `editais` (`EDITAIS_DIR/proprios/<id-do-pdf>/`), o único que o app já escreve: o original e cada bloco
+  (`segmento-NN.pdf`). Servidos em `/material/proprios/**`, então o leitor, o cache sem rede e o "Ler" não distinguem um bloco próprio
+  de um do acervo. Cada bloco é um `segmento` com chave externa `proprio-<id>-<n>`, ordem continuando a do assunto.
+
+### Consequências
+
+- **O compose não muda**: o volume `material` continua só leitura no app (é do worker), e nada no deploy aparece como "mexe em segurança".
+- O backup do volume `editais` passa a incluir os PDFs próprios.
+- Nada muda no planejamento.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| O worker corta (como o anexo de lacuna) | Exige escrever no repositório do planejamento e o deploy dos dois; minutos de espera |
+| Um segmento só, com o PDF inteiro | Quebra o tamanho de bloco que o turno, o leitor e as perguntas supõem (~60 min) |
+| Gravar em `MATERIAL_DIR` | O volume é só leitura no app; dar escrita muda o compose (aviso vermelho no Guardian) para nada que o volume `editais` não resolva |
 
 ---
 

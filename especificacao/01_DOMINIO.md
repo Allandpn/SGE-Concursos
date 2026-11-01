@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.33.0 |
+| Versão | 1.34.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -57,6 +57,7 @@ Uma frase cada. Se um termo precisar de duas, é porque está mal definido.
 | **Marcação** | Destaque, nota de trecho ou nota de página feita no leitor, guardada à parte do PDF (§3.17) |
 | **Pergunta de recuperação** | Pista preparada pela IA a partir de um bloco lido, mostrada sem o material na recuperação, com um gabarito em pontos (§3.18) |
 | **Ponto do gabarito** | O que devia ter vindo na resposta: principal ou detalhe, com a página de origem (§3.18) |
+| **PDF próprio** | PDF que a pessoa adiciona a um assunto, cortado em blocos pelo próprio sistema (§3.19) |
 
 Note a separação que a v1 não tinha: **revisão é compromisso, recuperação é
 evento.** A revisão agenda; a sessão de recuperação cumpre. Confundir os dois
@@ -851,6 +852,31 @@ pontos guardados (D-16).
 **O que o sistema não garante.** Que a pergunta da IA esteja certa (por isso o gabarito diz a página e existe "pergunta ruim"); que a
 pessoa tenha produzido antes de conferir (o sistema não oferece o atalho, como sempre); que a sugestão acerte a régua da pessoa: ela
 é sugestão.
+
+### 3.19 PDF próprio
+
+Até aqui o material de um assunto vinha do acervo (pelo planejamento) ou do anexo de uma lacuna (§3.14). A pedido do usuário
+(2026-11-01), a pessoa pode **adicionar os próprios PDFs** a um assunto do edital — uma apostila de outro curso, um resumo, a lei
+seca —, e eles viram blocos como os outros.
+
+**Adicionar (D-129).** No detalhe do assunto, **"Adicionar meu PDF"**: o arquivo (até 50 MB) e o tipo de leitura, que define o
+ritmo — **apostila ou resumo** (cerca de 2 min por página) ou **lei seca** (cerca de 3 min por página). O sistema corta o PDF em
+blocos de cerca de 60 minutos, como o material (§3.7), cortando no início de uma seção quando o PDF tem marcadores. Os blocos entram
+**depois** dos que o assunto já tem, na ordem em que os PDFs foram enviados. Um assunto pode ter vários PDFs próprios.
+
+**Bloco como os outros (D-130).** O bloco de um PDF próprio abre no leitor, aceita marcações, entra no turno e na leitura completa
+(D-54) e ganha perguntas quando é lido (D-122). PDF **sem texto** (escaneado) é aceito, com aviso no envio: os blocos dele se leem e
+se marcam com notas de página, e não têm perguntas.
+
+**Assunto que já está na escada (D-131).** Se o assunto já entrou na escada, os blocos novos aparecem em Hoje como **leitura
+sugerida** ("Continuar leitura", como em D-55), e a revisão já marcada **não muda**: a escada segue. Num assunto ainda em estudo, os
+blocos novos fazem parte da leitura que falta, e a escada começa quando ela termina (D-54, sem mudança).
+
+**Tirar (D-132).** **"Tirar este PDF"** arquiva de uma vez os blocos que vieram dele. Nada se apaga (D-18): as sessões, as marcações e
+as perguntas desses blocos ficam no histórico. O arquivo enviado fica guardado no servidor.
+
+**O que o sistema não garante.** Que o PDF seja do assunto certo; que o corte caia sempre no fim de uma ideia (sem marcadores, o corte
+é pelo tempo); que um PDF escaneado tenha perguntas.
 
 ---
 
@@ -1738,6 +1764,10 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-126 | A pessoa marca os pontos que vieram; o sistema sugere o resultado pelos pontos principais (todos → Reconstruí; metade ou mais → Faltou um pedaço; menos → Não veio) e a pessoa confirma ou troca; os pontos marcados ficam guardados com a sessão | §3.18, §4.1 |
 | D-127 | "Pergunta ruim" tira a pergunta do banco e da sugestão daquela recuperação; a pergunta fica marcada, não apagada | §3.18 |
 | D-128 | Depois de Não veio, o reestudo lista os pontos que não vieram, com bloco e página, e abre o leitor ali; depois de Faltou um pedaço, eles aparecem na hora, sem criar reestudo; a lista é derivada | §3.18, §5.1 |
+| D-129 | A pessoa adiciona PDFs próprios a um assunto (até 50 MB cada, vários por assunto), dizendo o tipo de leitura (apostila ~2 min/página, lei seca ~3 min/página); o sistema corta em blocos de ~60 min, no início de seção quando há marcadores, e os põe depois dos blocos que o assunto já tem | §3.19 |
+| D-130 | O bloco de PDF próprio é bloco como os outros (leitor, marcações, turno, D-54, perguntas); PDF sem texto é aceito com aviso e não tem perguntas | §3.19 |
+| D-131 | Em assunto que já está na escada, os blocos próprios ainda não lidos aparecem em Hoje como leitura sugerida, sem mudar a revisão marcada | §3.19, §7.4 |
+| D-132 | "Tirar este PDF" arquiva de uma vez os blocos que vieram dele; sessões, marcações e perguntas ficam no histórico | §3.19 |
 
 ---
 
@@ -1777,6 +1807,8 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Perguntas e gabarito em pontos, sem resumo | Resumo da IA para revisar | Ler um resumo antes de tentar é reler: mede familiaridade, não evocação (`00_PRODUTO` §5.2.1). Pergunta sem texto preserva a produção |
 | A conferência sugere, a pessoa decide | O sistema decide pela proporção de pontos | A âncora é estrutura × detalhe, e só a pessoa sabe se o que veio foi estrutura; decidir por ela tiraria o julgamento depois da tentativa, que é o que calibra a M-3 |
 | Preparar quando o bloco é lido | Preparar o edital inteiro quando o material fica pronto | Centenas de chamadas da assinatura para blocos que talvez nunca sejam lidos; ao ler, a recuperação só vem no dia seguinte |
+| O SGE corta o PDF próprio | O worker do planejamento corta, como no anexo de lacuna | Exigiria escrever no outro repositório e o deploy dos dois; o SGE já lê PDF (PDFBox), e o bloco fica pronto em segundos |
+| Blocos novos de assunto na escada viram leitura sugerida | Assunto volta a "em estudo" | A escada mede retenção do que já foi lido; parar a escada por um PDF a mais regrediria por motivo falso (o mesmo raciocínio de D-54) |
 
 ---
 
@@ -1817,8 +1849,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 - Se as 2 h de teoria por assunto se confirmam. Também será medido.
 - **Decidido com o usuário em 2026-11-01, a especificar quando a sprint de cada um começar** (nada disso vale como regra antes):
   - ~~Perguntas e gabarito da IA na recuperação, reestudo que aponta os trechos e `PARCIAL` que mostra o que faltou~~: **especificados em §3.18** (D-122 a D-128), v1.33.0.
-  - **PDFs próprios.** A pessoa sobe um PDF ligado a um assunto, e ele vira blocos pelo caminho do material automático (o de D-97, ampliado para
-    além da lacuna); entra na escada, no leitor e nas perguntas.
+  - ~~PDFs próprios~~: **especificados em §3.19** (D-129 a D-132), v1.34.0, cortados pelo próprio SGE.
 
 ---
 
@@ -1826,6 +1857,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.34.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.14.0, `02_JORNADAS` v1.23.0 e ADR-054. **§3.19** (PDF próprio) e **D-129 a D-132**: PDFs da pessoa ligados a um assunto, cortados em blocos pelo SGE pelo ritmo escolhido; bloco como os outros; em assunto na escada, leitura sugerida sem mexer na revisão; tirar arquiva os blocos. 132 regras |
 | 1.33.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.13.0, `02_JORNADAS` v1.22.0 e ADR-053. **§3.18** (perguntas de recuperação) e **D-122 a D-128**: a IA prepara perguntas de quatro tipos e um gabarito em pontos (principal ou detalhe, com página) quando o bloco é lido; 3 a 5 por recuperação, variando; gabarito só depois da tentativa; a pessoa marca os pontos, o sistema sugere o resultado e ela decide; pergunta ruim sai do banco; o que faltou abre o leitor na página (reestudo depois de Não veio, na hora depois de Faltou um pedaço). §4.1 e §12 atualizados. 128 regras |
 | 1.32.1 | 2026-11-01 | Ao escrever a Sprint 30: **D-106** diz o que a tela faz sem sessão (leva à porta; só o dado responde 401), e **D-107** explicita o passkey que não conta (contador sempre 0, como os sincronizados), que de outro modo nunca entraria. Sem regra nova |
 | 1.32.0 | 2026-11-01 | Pedido do usuário (testando a jornada no MPPR), com `00_PRODUTO` v1.12.0 e `02_JORNADAS` v1.21.0. **§3.17** (o leitor: ler e marcar o material) e **D-114 a D-121**, com ADR-052: o material abre dentro do app e nunca na recuperação; destaques em três cores com significado, notas de trecho e de página, que nunca alteram o PDF; nada se apaga; leitura sem rede dos blocos de Hoje e dos escolhidos; "Terminei" abre o registro. §12 registra o que foi decidido e ainda não especificado: perguntas e gabarito da IA na recuperação, reestudo que aponta os trechos, `PARCIAL` que mostra o que faltou e PDFs próprios. 121 regras |
