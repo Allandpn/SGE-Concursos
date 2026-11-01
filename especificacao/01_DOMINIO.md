@@ -912,8 +912,9 @@ informativos: assuntos da cobertura que estão arquivados, e quantos assuntos at
 fase do assunto, que é um só (D-60): não separa de qual edital anterior veio o que já se sabe.
 
 **O valor em pontos (D-138).** Ao lado das contagens, quanto cada faixa vale da prova. Cada disciplina vale os **pontos por questão**
-da régua do concurso (D-135, padrão 1) vezes o **número de questões** que o edital deu a ela (o que a análise do edital leu, §3.9);
-sem número de questões, todas as disciplinas valem igual. O valor da disciplina divide-se igualmente entre os assuntos dela na
+da régua do concurso (D-135, padrão 1) vezes o **número de questões** que o edital deu a ela (o que a análise do edital leu, §3.9).
+Se falta o número de questões de alguma disciplina, nenhuma o usa: cada uma vale só os seus pontos por questão — sem régua, todas
+iguais —, para não comparar disciplina com contagem e disciplina sem. O valor da disciplina divide-se igualmente entre os assuntos dela na
 cobertura. "62% dos pontos da prova já encaminhados" é informação, nunca probabilidade de aprovação (`00_PRODUTO` §8.5).
 
 **O que cabe até a prova (D-139).** O **ritmo medido** é quantos assuntos tiveram a primeira sessão nas últimas 4 semanas, dividido
@@ -1822,7 +1823,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-135 | O concurso-alvo guarda a régua da prova: pontos por questão de cada disciplina (padrão 1), errada anula certa (sim/não) e a nota de corte em pontos; editáveis | §3.20 |
 | D-136 | A nota em pontos de prova resolvida e de simulado é derivada da régua vigente, mostrada com a nota de corte e a diferença; é informação, nunca probabilidade nem meta, e a M-1 continua em acertos | §3.20 |
 | D-137 | O diagnóstico de um concurso (alvo ou não) conta os assuntos ativos da cobertura pela fase derivada — consolidado (com manutenção), em escada, em estudo, nunca visto —, por disciplina e no total, com as faixas consolidado e encaminhado (consolidado + em escada); é derivado na leitura e abri-lo não muda nada | §3.21 |
-| D-138 | No diagnóstico, cada disciplina vale pontos por questão da régua (padrão 1) × questões que o edital lhe deu (sem número, todas iguais), dividido igualmente entre os assuntos dela na cobertura; a faixa em pontos é informação, nunca probabilidade | §3.21 |
+| D-138 | No diagnóstico, cada disciplina vale pontos por questão da régua (padrão 1) × questões que o edital lhe deu (faltando o número de alguma, só os pontos por questão; sem régua, todas iguais), dividido igualmente entre os assuntos dela na cobertura; a faixa em pontos é informação, nunca probabilidade | §3.21 |
 | D-139 | O que cabe até a data (a da prova, se futura, ou uma simulada não gravada) é semanas × ritmo medido (assuntos com a primeira sessão nas últimas 4 semanas ÷ 4, ou um ritmo digitado sem histórico) sobre os nunca vistos; os que não cabem são os últimos por peso e depois ordem do edital; nada é alterado | §3.21 |
 
 ---
