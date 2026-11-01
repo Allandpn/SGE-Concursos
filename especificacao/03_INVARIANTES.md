@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.20.0 |
+| Versão | 1.20.1 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -217,8 +217,8 @@ conceitual — envelhecer por motivo errado.
 | D-103 | Política | S | Teste: valor não positivo é recusado (validação única dos parâmetros, sem faixa por chave); sem edição vale o padrão 25 / 5 / 15 / 4; mudar o parâmetro não altera a fase em curso |
 | D-104 | Comportamento | S | Teste: sem inscrição não envia; com inscrição envia só no fim de fase iniciada pela pessoa; nenhum outro caminho envia; inscrição rejeitada (404/410) é removida |
 | D-105 | Derivação | S | Teste: as três consultas vêm dos dados gravados e não existe coluna que as guarde |
-| D-106 | **Invariante** | S + I | Teste estrutural: toda rota mapeada fora da lista fechada responde 401 sem sessão; rota nova sem entrada na lista nasce fechada |
-| D-107 | Invariante | S | Teste: passkey com contador menor ou igual ao guardado é recusado; não existe campo de senha |
+| D-106 | **Invariante** | S + I | Teste estrutural: toda rota mapeada fora da lista fechada responde 401 (dado) ou leva à porta (tela) sem sessão; rota nova sem entrada na lista nasce fechada |
+| D-107 | Invariante | S | Teste: passkey com contador menor que o guardado, ou igual a um guardado maior que zero, é recusado; contador sempre 0 entra; não existe campo de senha |
 | D-108 | Comportamento | S | Teste: sem credencial, cadastro vindo da rede privada abre; cadastro marcado como público é recusado; com um passkey, o caminho está fechado |
 | D-109 | Comportamento | S | Teste: cookie httpOnly, Secure e SameSite=Strict; sessão expira em 30 dias sem uso e renova com uso; o banco guarda só o resumo; sair e sair de todos a encerram; pedido que muda dado de outra origem é recusado |
 | D-110 | Comportamento | S | Teste: 8 códigos mostrados uma vez e guardados só como resumo; cada um vale uma vez; gerar novos invalida os antigos; código cadastra passkey novo |
@@ -551,6 +551,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.20.1 | 2026-11-01 | D-106 e D-107: testes ajustados ao texto de `01_DOMINIO` v1.32.1 (tela leva à porta; contador sempre 0 entra) |
 | 1.20.0 | 2026-11-01 | **D-114 a D-121** com `01_DOMINIO.md` v1.32.0 (o leitor e as marcações). Três invariantes (D-115, D-116, D-118), cinco comportamentos. Contagem: 122 linhas para 121 regras |
 | 1.19.0 | 2026-10-30 | **D-106 a D-113** com `01_DOMINIO.md` v1.31.0 (o acesso por passkey). Três invariantes (D-106, D-107, D-111), cinco comportamentos. Contagem: 114 linhas para 113 regras |
 | 1.18.0 | 2026-10-30 | **D-98 a D-105** com `01_DOMINIO.md` v1.30.0 (Pomodoro). Uma invariante (D-98), duas derivações (D-99, D-105), quatro comportamentos, uma política (D-103). Contagem: 106 linhas para 105 regras |

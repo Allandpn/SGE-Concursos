@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.32.0 |
+| Versão | 1.32.1 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -728,10 +728,10 @@ ser alcançável pela internet (ADR-051) e a rede deixa de ser defesa. A **porta
 **Um titular.** O sistema tem uma pessoa só, com um ou mais passkeys (WebAuthn: biometria ou PIN do aparelho). Não há senha, não há
 cadastro aberto, não há outro usuário (ADR-040 continua: multiusuário fica fora).
 
-**Tudo exige sessão (D-106).** Toda rota do app, de dado ou de tela, responde `401` sem sessão válida. O que fica aberto é uma **lista fechada**:
+**Tudo exige sessão (D-106).** Toda rota do app, de dado ou de tela, fica fechada sem sessão válida: a de dado responde `401`, a de tela leva à porta. O que fica aberto é uma **lista fechada**:
 a página e os arquivos da porta (entrar), as rotas do próprio login, e a verificação de saúde do contêiner. Rota nova nasce fechada.
 
-**O passkey (D-107).** A credencial é um passkey do titular; o contador de assinaturas do passkey nunca regride (assinatura clonada é recusada).
+**O passkey (D-107).** A credencial é um passkey do titular; o contador de assinaturas do passkey nunca regride (assinatura clonada é recusada). O passkey que não conta (sempre 0, caso dos passkeys sincronizados entre aparelhos) não tem contador a regredir.
 
 **O primeiro passkey (D-108).** Só se cadastra o primeiro quando **não existe nenhum** e **só por um pedido que não veio da internet pública** (a
 rede privada do Tailscale). Depois do primeiro, esse caminho fecha: cadastrar outro passkey exige já estar dentro (D-111) ou usar um código de
@@ -1669,8 +1669,8 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-103 | Durações do foco, da pausa curta e da pausa longa, e focos até a pausa longa, são parâmetros em Ajustes (padrão 25 / 5 / 15 / 4) | §3.15, §7.7 |
 | D-104 | O aviso de fim de fase é sinal na tela com o app aberto; Web Push é opcional, desligado por padrão e por aparelho, só de fase iniciada pela pessoa, sem lembrete, cobrança nem sequência | §3.15 |
 | D-105 | Tempo de foco por assunto e por dia, focos completos × encerrados e estimado × real do segmento são derivados, informação e nunca meta, ranking ou sequência | §3.15 |
-| D-106 | Toda rota do app exige sessão válida e responde 401 sem ela; as abertas são uma lista fechada (a porta, as rotas do login e a saúde), e rota nova nasce fechada | §3.16 |
-| D-107 | A credencial é um passkey (WebAuthn) do único titular, sem senha nem cadastro aberto; o contador de assinaturas do passkey nunca regride | §3.16 |
+| D-106 | Toda rota do app exige sessão válida: sem ela, a de dado responde 401 e a de tela leva à porta; as abertas são uma lista fechada (a porta, as rotas do login e a saúde), e rota nova nasce fechada | §3.16 |
+| D-107 | A credencial é um passkey (WebAuthn) do único titular, sem senha nem cadastro aberto; o contador de assinaturas do passkey nunca regride (o que está sempre em 0 não conta) | §3.16 |
 | D-108 | O primeiro passkey só se cadastra quando não existe nenhum e só por pedido que não veio da internet pública; depois dele esse caminho fecha | §3.16 |
 | D-109 | A sessão dura 30 dias, renovada ao usar, em cookie inacessível ao JavaScript, só HTTPS e mesmo site; o servidor guarda só o resumo, e ela é revogável (sair, sair de todos) | §3.16 |
 | D-110 | A recuperação é por 8 códigos de uso único, mostrados uma vez e guardados só como resumo; cada código vale para entrar e cadastrar um passkey novo e é consumido; gerar novos invalida os antigos | §3.16 |
@@ -1778,6 +1778,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.32.1 | 2026-11-01 | Ao escrever a Sprint 30: **D-106** diz o que a tela faz sem sessão (leva à porta; só o dado responde 401), e **D-107** explicita o passkey que não conta (contador sempre 0, como os sincronizados), que de outro modo nunca entraria. Sem regra nova |
 | 1.32.0 | 2026-11-01 | Pedido do usuário (testando a jornada no MPPR), com `00_PRODUTO` v1.12.0 e `02_JORNADAS` v1.21.0. **§3.17** (o leitor: ler e marcar o material) e **D-114 a D-121**, com ADR-052: o material abre dentro do app e nunca na recuperação; destaques em três cores com significado, notas de trecho e de página, que nunca alteram o PDF; nada se apaga; leitura sem rede dos blocos de Hoje e dos escolhidos; "Terminei" abre o registro. §12 registra o que foi decidido e ainda não especificado: perguntas e gabarito da IA na recuperação, reestudo que aponta os trechos, `PARCIAL` que mostra o que faltou e PDFs próprios. 121 regras |
 | 1.31.0 | 2026-10-30 | Pedido do usuário: usar o app fora da rede de casa. **§3.16** (o acesso: login por passkey) e **D-106 a D-113**, com ADR-051 (substitui o ADR-015): toda rota exige sessão, um titular com passkey, primeiro cadastro só pela rede privada, sessão de 30 dias revogável, recuperação por 8 códigos de uso único, freio de tentativas e rotas internas fechadas à internet. 113 regras |
 | 1.30.0 | 2026-10-30 | Pedido do usuário (testando o fluxo de estudo), com `00_PRODUTO` v1.11.0. **§3.15** (Pomodoro: o foco cronometrado) e **D-98 a D-105**: o tempo de foco medido pré-preenche o registro sem substituir o declarado (§7.7), um só ativo por vez, nenhuma fase começa sozinha, durações em Ajustes, aviso de fim de fase com push opcional, e três consultas derivadas. 105 regras |
