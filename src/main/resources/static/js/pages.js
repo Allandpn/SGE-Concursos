@@ -1786,6 +1786,68 @@ document.addEventListener('alpine:init', () => {
     provas: [], // J-6: as provas do concurso-alvo
     regua: null, // D-135: a régua da prova do alvo
     reguaAberta: false,
+    // D-137 a D-139: o diagnóstico de um concurso; data e ritmo são simulação, nunca gravados.
+    diag: null,
+
+    async abrirDiagnostico(c) {
+      this.diag = { concurso: c, dados: null, carregando: true, erro: null, data: '', ritmo: '' };
+      await this.carregarDiagnostico();
+    },
+
+    async carregarDiagnostico() {
+      const d = this.diag;
+      if (!d) return;
+      d.carregando = true;
+      d.erro = null;
+      const q = new URLSearchParams();
+      if (d.data) q.set('data', d.data);
+      if (d.ritmo !== '' && d.ritmo !== null && Number(d.ritmo) > 0) q.set('ritmo', String(d.ritmo));
+      try {
+        d.dados = await api(`/concursos/${d.concurso.id}/diagnostico` + (q.toString() ? '?' + q : ''));
+      } catch (e) {
+        d.erro = e.message;
+      } finally {
+        d.carregando = false;
+      }
+    },
+
+    // Barra empilhada de uma disciplina: largura de cada fase em % do total dela.
+    larguraFase(disc, n) {
+      return disc.total ? (100 * n / disc.total).toFixed(1) + '%' : '0%';
+    },
+
+    dataBr(iso) {
+      if (!iso) return '';
+      const [a, m, d] = iso.split('-');
+      return `${d}/${m}/${a}`;
+    },
+
+    minutosBr(min) {
+      if (!min) return '—';
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return h ? (m ? `${h} h ${m}` : `${h} h`) : `${m} min`;
+    },
+
+    numeroBr(n) {
+      return String(n).replace('.', ',');
+    },
+
+    textoCabe(c) {
+      const ritmo = this.numeroBr(c.ritmo);
+      const origem = c.ritmoMedido ? 'no seu ritmo (' + ritmo + ' assuntos novos por semana, últimas 4 semanas)' : 'a ' + ritmo + ' por semana';
+      if (c.nuncaVistos === 0) return 'Não há assunto nunca visto neste edital.';
+      return (c.cabem >= c.nuncaVistos ? 'Até ' + this.dataBr(c.data) + ', ' + origem + ', cabem todos os ' + c.nuncaVistos + ' nunca vistos.'
+        : 'Até ' + this.dataBr(c.data) + ', ' + origem + ', cabem ' + c.cabem + ' dos ' + c.nuncaVistos + ' nunca vistos.');
+    },
+
+    textoTodosVistos(c) {
+      if (!c.todosVistosEm) return '';
+      const dif = Math.round((new Date(c.todosVistosEm) - new Date(c.data)) / 86400000);
+      return 'Todos vistos em ' + this.dataBr(c.todosVistosEm)
+        + (dif > 0 ? ', ' + dif + (dif === 1 ? ' dia depois' : ' dias depois') + (c.simulada ? ' da data.' : ' da prova.')
+          : dif < 0 ? ', ' + (-dif) + (dif === -1 ? ' dia antes.' : ' dias antes.') : ', na própria data.');
+    },
     reguaSalva: false,
     erroRegua: null,
 

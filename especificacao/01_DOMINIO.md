@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.35.0 |
+| Versão | 1.36.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -898,6 +898,34 @@ nunca probabilidade de aprovação (`00_PRODUTO` §8.5), nunca meta, e **a M-1 c
 
 **O que o sistema não garante.** Que a régua informada seja a do edital; que o simulado registre brancos (ele guarda acertos e
 total, então, com errada anula certa, o que não foi acerto conta como erro).
+
+### 3.21 Diagnóstico do edital
+
+Quando um edital novo chega, a pergunta é "quanto disso eu já sei, e o que cabe até a prova?". A pedido do usuário (2026-11-01),
+cada concurso com cobertura tem um **diagnóstico**, calculado na hora e nunca guardado (D-16). Serve tanto ao alvo quanto a um
+concurso que ainda não é alvo: comparar editais antes de trocar (D-60) não custa nada, porque abrir o diagnóstico não muda nada.
+
+**A cobertura por fase (D-137).** Os assuntos ativos da cobertura do concurso, contados pela fase derivada (§8): **consolidado**
+(inclui em manutenção), **em escada**, **em estudo** e **nunca visto** (backlog); por disciplina e no total. Duas faixas resumem:
+**consolidado**, e **encaminhado** (consolidado + em escada) — assunto no primeiro nível da escada não finge estar pronto. À parte,
+informativos: assuntos da cobertura que estão arquivados, e quantos assuntos ativos estão **fora** deste edital. O diagnóstico lê a
+fase do assunto, que é um só (D-60): não separa de qual edital anterior veio o que já se sabe.
+
+**O valor em pontos (D-138).** Ao lado das contagens, quanto cada faixa vale da prova. Cada disciplina vale os **pontos por questão**
+da régua do concurso (D-135, padrão 1) vezes o **número de questões** que o edital deu a ela (o que a análise do edital leu, §3.9).
+Se falta o número de questões de alguma disciplina, nenhuma o usa: cada uma vale só os seus pontos por questão — sem régua, todas
+iguais —, para não comparar disciplina com contagem e disciplina sem. O valor da disciplina divide-se igualmente entre os assuntos dela na
+cobertura. "62% dos pontos da prova já encaminhados" é informação, nunca probabilidade de aprovação (`00_PRODUTO` §8.5).
+
+**O que cabe até a prova (D-139).** O **ritmo medido** é quantos assuntos tiveram a primeira sessão nas últimas 4 semanas, dividido
+por 4 (assuntos novos por semana). Com a data da prova do concurso no futuro — ou com uma **data simulada** que a pessoa digita e que
+não é gravada (edital sem data, ou prova já passada, usado como preparação) —, cabem `semanas até a data × ritmo` dos assuntos nunca
+vistos. Os que não cabem são os últimos na ordem **peso (alto, médio, baixo), depois a ordem do edital**, e aparecem listados, com o
+tempo estimado do material deles. Mostra também a data em que todos estariam vistos nesse ritmo. Sem ritmo medido (nenhum assunto
+novo em 4 semanas), a pessoa digita um ritmo para simular, também não gravado. Sem data, só a cobertura e os pontos.
+
+**O que o diagnóstico não faz.** Não muda peso, ordem, escada nem arquiva nada: os gestos continuam nas telas de sempre. Não
+considera a carga de revisões (ela já está dentro do ritmo medido) nem o esquecimento dos consolidados até a data.
 
 ---
 
@@ -1794,6 +1822,9 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-134 | `DISCURSIVA` é tipo de sessão: tempo, nota 0–100, previsão em três níveis, resultado derivado da nota pelos limiares (parâmetros, padrão 70 e 40); não alimenta a M-1, cumpre revisão, e a previsão entra na variante subjetiva da M-3 | §3.3, §4.1 |
 | D-135 | O concurso-alvo guarda a régua da prova: pontos por questão de cada disciplina (padrão 1), errada anula certa (sim/não) e a nota de corte em pontos; editáveis | §3.20 |
 | D-136 | A nota em pontos de prova resolvida e de simulado é derivada da régua vigente, mostrada com a nota de corte e a diferença; é informação, nunca probabilidade nem meta, e a M-1 continua em acertos | §3.20 |
+| D-137 | O diagnóstico de um concurso (alvo ou não) conta os assuntos ativos da cobertura pela fase derivada — consolidado (com manutenção), em escada, em estudo, nunca visto —, por disciplina e no total, com as faixas consolidado e encaminhado (consolidado + em escada); é derivado na leitura e abri-lo não muda nada | §3.21 |
+| D-138 | No diagnóstico, cada disciplina vale pontos por questão da régua (padrão 1) × questões que o edital lhe deu (faltando o número de alguma, só os pontos por questão; sem régua, todas iguais), dividido igualmente entre os assuntos dela na cobertura; a faixa em pontos é informação, nunca probabilidade | §3.21 |
+| D-139 | O que cabe até a data (a da prova, se futura, ou uma simulada não gravada) é semanas × ritmo medido (assuntos com a primeira sessão nas últimas 4 semanas ÷ 4, ou um ritmo digitado sem histórico) sobre os nunca vistos; os que não cabem são os últimos por peso e depois ordem do edital; nada é alterado | §3.21 |
 
 ---
 
@@ -1885,6 +1916,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.36.0 | 2026-11-01 | Pedido do usuário (Sprint 20), decidido em duas rodadas, com `02_JORNADAS` v1.25.0. **§3.21** (diagnóstico do edital) e **D-137 a D-139**: cobertura por fase com as faixas consolidado e encaminhado, valor em pontos pela régua e pelas questões do edital, o que cabe até a data pelo ritmo medido (data e ritmo simulados não gravados). Nada guardado |
 | 1.35.0 | 2026-11-01 | Pedido do usuário (Sprint 23), com `00_PRODUTO` v1.15.0, `02_JORNADAS` v1.24.0 e ADR-055. **§3.3**: quinto tipo de sessão, `DISCURSIVA` (D-134). **§3.20** (nota de corte e pontuação do edital) e **D-135, D-136**. **D-133**: "Fiz questões" na fila de Hoje. §4.1 ganha a apuração da discursiva. 136 regras |
 | 1.34.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.14.0, `02_JORNADAS` v1.23.0 e ADR-054. **§3.19** (PDF próprio) e **D-129 a D-132**: PDFs da pessoa ligados a um assunto, cortados em blocos pelo SGE pelo ritmo escolhido; bloco como os outros; em assunto na escada, leitura sugerida sem mexer na revisão; tirar arquiva os blocos. 132 regras |
 | 1.33.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.13.0, `02_JORNADAS` v1.22.0 e ADR-053. **§3.18** (perguntas de recuperação) e **D-122 a D-128**: a IA prepara perguntas de quatro tipos e um gabarito em pontos (principal ou detalhe, com página) quando o bloco é lido; 3 a 5 por recuperação, variando; gabarito só depois da tentativa; a pessoa marca os pontos, o sistema sugere o resultado e ela decide; pergunta ruim sai do banco; o que faltou abre o leitor na página (reestudo depois de Não veio, na hora depois de Faltou um pedaço). §4.1 e §12 atualizados. 128 regras |

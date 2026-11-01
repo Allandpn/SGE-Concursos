@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.23.0 |
+| Versão | 1.24.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -248,8 +248,11 @@ conceitual — envelhecer por motivo errado.
 | D-134 | **Invariante** | **P** + S | Sessão DISCURSIVA sem nota, ou com nota fora de 0–100, ou com contagem de questões → a escrita falha; teste: as três faixas viram SUCESSO/PARCIAL/FALHA pelos limiares; não entra na M-1; entra na M-3 subjetiva |
 | D-135 | Comportamento | S | Teste: régua salva e lida; pontos por disciplina positivos; sem régua, padrão 1 e sem desconto |
 | D-136 | Derivação | S | Teste: nota em pontos de prova e de simulado pela régua, com e sem errada anula certa, nunca abaixo de zero; mudar a régua muda a conta; nada guardado |
+| D-137 | Derivação | S | Teste: as contagens por fase do diagnóstico batem com a fase derivada de cada assunto da cobertura, para o alvo e para um concurso não alvo; abrir não grava nada |
+| D-138 | Derivação | S | Teste (unitário): valor por assunto = pontos × questões da disciplina ÷ assuntos dela; sem questões, disciplinas iguais; mudar a régua muda o percentual |
+| D-139 | Derivação | S | Teste (unitário + API): ritmo pelas primeiras sessões das últimas 4 semanas; cabem = semanas × ritmo; ficam de fora os últimos por peso e ordem; data e ritmo simulados não gravados |
 
-**Contagem:** 32 invariantes · 12 derivações · 83 comportamentos · 10 políticas — 137 linhas para 136 regras.
+**Contagem:** 32 invariantes · 15 derivações · 83 comportamentos · 10 políticas — 140 linhas para 139 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -569,6 +572,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.24.0 | 2026-11-01 | **D-137 a D-139** com `01_DOMINIO.md` v1.36.0 (diagnóstico do edital). Três derivações. Contagem: 140 linhas para 139 regras |
 | 1.23.0 | 2026-11-01 | **D-133 a D-136** com `01_DOMINIO.md` v1.35.0 (lote rápido, discursiva, régua e nota de corte). Uma invariante (D-134), uma derivação (D-136), dois comportamentos. Contagem: 137 linhas para 136 regras |
 | 1.22.0 | 2026-11-01 | **D-129 a D-132** com `01_DOMINIO.md` v1.34.0 (PDF próprio). Uma invariante (D-132), três comportamentos. Contagem: 133 linhas para 132 regras |
 | 1.21.0 | 2026-11-01 | **D-122 a D-128** com `01_DOMINIO.md` v1.33.0 (perguntas de recuperação). Uma invariante (D-123), uma derivação (D-128), cinco comportamentos. Contagem: 129 linhas para 128 regras |

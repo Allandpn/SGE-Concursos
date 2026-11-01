@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.24.0 |
+| Versão | 1.25.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -572,6 +572,20 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-13 · Diagnóstico de um edital
+
+Serve a quando um edital chega ou se aproxima (`01_DOMINIO` §3.21). Rara; orçamento de atenção, mas abre em **< 2 s**.
+
+1. Em **Concursos**, cada concurso tem **"Diagnóstico"** (o alvo e os do histórico, ou um recém-importado antes de ativar).
+2. No topo, as duas faixas: **consolidado** e **encaminhado**, em assuntos e em pontos da prova ("41 de 120 assuntos · 38% dos
+   pontos"). Abaixo, por disciplina, a barra empilhada das quatro fases (D-137, D-138).
+3. **O que cabe.** Com data de prova futura: "no seu ritmo (3,5 assuntos novos por semana), cabem 38 dos 54 nunca vistos até
+   12/03; ficam de fora 16" e "tudo visto em 19/04". A lista dos que ficam de fora, com peso e tempo de material. Sem data, um campo
+   **"simular com a data"**; sem ritmo medido, **"simular com o ritmo"** — nenhum dos dois é gravado (D-139).
+4. Informativos no fim: arquivados da cobertura e assuntos ativos fora do edital, cada número levando à lista em Assuntos.
+
+Nada muda ao abrir nem ao simular.
+
 ### J-12 · Treino discursivo e nota de corte
 
 1. **Discursiva.** Em Registrar (ou no detalhe do assunto), **Discursiva**: o assunto, a previsão em três níveis (*vou bem / vai faltar
@@ -866,6 +880,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.25.0 | 2026-11-01 | Nova **J-13** (diagnóstico de um edital), com `01_DOMINIO` v1.36.0 (D-137 a D-139) |
 | 1.24.0 | 2026-11-01 | J-2 ganha o lote rápido ("Fiz questões", ≤ 12 s, D-133) e a discursiva (≤ 20 s); nova **J-12** (treino discursivo e nota de corte), com `01_DOMINIO` v1.35.0 (D-133 a D-136) |
 | 1.23.0 | 2026-11-01 | Nova **J-11** (adicionar meu PDF), com `01_DOMINIO` v1.34.0 (D-129 a D-132) e ADR-054 |
 | 1.22.0 | 2026-11-01 | §4.1 ganha a tela Recuperar com perguntas (etapa 1: perguntas e resposta opcional; etapa 2: gabarito em pontos, sugestão, pergunta ruim, o que faltou abrindo o leitor), com `01_DOMINIO` v1.33.0 (D-122 a D-128) |
