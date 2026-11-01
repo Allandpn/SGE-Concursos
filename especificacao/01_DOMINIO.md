@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.32.1 |
+| Versão | 1.33.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -55,6 +55,8 @@ Uma frase cada. Se um termo precisar de duas, é porque está mal definido.
 | **Sessão (de acesso)** | O que mantém a pessoa dentro depois de entrar: 30 dias, revogável (§3.16). Não é a sessão de estudo |
 | **Leitor** | Onde o material (o PDF de um bloco) abre dentro do app, para ler e marcar; nunca na recuperação (§3.17) |
 | **Marcação** | Destaque, nota de trecho ou nota de página feita no leitor, guardada à parte do PDF (§3.17) |
+| **Pergunta de recuperação** | Pista preparada pela IA a partir de um bloco lido, mostrada sem o material na recuperação, com um gabarito em pontos (§3.18) |
+| **Ponto do gabarito** | O que devia ter vindo na resposta: principal ou detalhe, com a página de origem (§3.18) |
 
 Note a separação que a v1 não tinha: **revisão é compromisso, recuperação é
 evento.** A revisão agenda; a sessão de recuperação cumpre. Confundir os dois
@@ -806,6 +808,50 @@ continuam presas aos blocos antigos, que nunca são apagados (D-93). As oito tel
 para sempre: o navegador pode liberar espaço, e então o bloco volta a pedir rede. Destaque em página escaneada: sem texto selecionável, só nota de
 página.
 
+### 3.18 Perguntas de recuperação
+
+A recuperação livre (`00_PRODUTO` §5.2) pede para reconstruir o assunto "de memória", e o único apoio era o nome dele. A pedido do
+usuário (2026-11-01), a IA prepara **perguntas** a partir do que foi lido, e um **gabarito** para conferir depois da tentativa. As
+perguntas são pistas de evocação, não material: nenhuma traz o texto do bloco, e nenhuma é resumo para ler (ler antes de tentar é
+reler, a ilusão que §3.4 de `00_PRODUTO` combate).
+
+**Quando são preparadas (D-122).** Quando o estudo de um bloco é registrado (sessão `ESTUDO` com o segmento), a IA lê o texto daquele
+bloco e as marcações feitas nele (§3.17) e prepara um banco de cerca de dez perguntas. Os blocos já lidos antes desta regra são
+preparados aos poucos, em segundo plano, os dos assuntos com recuperação mais próxima primeiro. A IA indisponível nunca vira pergunta
+nem resultado: a preparação pausa e retoma (como D-75). Bloco sem texto (PDF escaneado) não tem perguntas.
+
+**Como é uma pergunta (D-123).** De um de quatro tipos — **evocação** ("quais são os mecanismos de…"), **completar** ("a ____ retoma
+um termo já dito"), **porquê** ("por que a elipse é coesão e não coerência?") e **comparação** ("qual a diferença entre…") — e com
+um **gabarito em pontos**: o que a resposta devia trazer. Cada ponto é **principal** (estrutura do assunto) ou **detalhe**, e diz a
+página do bloco de onde veio. Trechos marcados como *dúvida* puxam perguntas de porquê e comparação; *decorar* puxa completar;
+*importante* puxa evocação.
+
+**Quais aparecem (D-124).** Cada recuperação mostra **3 a 5** perguntas do assunto, dos blocos já lidos, e muda a cada vez: primeiro as
+nunca vistas, depois as que tiveram ponto principal faltando na última vez, e entre elas as de trechos marcados como *dúvida* ou
+*decorar*. Sem pergunta disponível (IA fora, bloco não lido, assunto sem segmento), a tela é a recuperação livre de sempre: as
+perguntas ajudam, não são condição.
+
+**Primeiro tentar, depois conferir (D-125).** A etapa 1 mostra só as perguntas e a previsão; cada pergunta tem um campo de texto
+**opcional** (responder de cabeça ou no papel também vale). O gabarito só aparece na etapa 2, depois de "Já tentei", ao lado do que a
+pessoa digitou. O que foi digitado não é guardado.
+
+**A conferência sugere, a pessoa decide (D-126).** Na etapa 2, a pessoa marca os pontos que vieram. O sistema **sugere** o resultado
+pelas âncoras de §4.1, lidas nos pontos principais: todos vieram → **Reconstruí**; pelo menos metade → **Faltou um pedaço**; menos
+que metade → **Não veio**. A sugestão vem pré-selecionada e a pessoa confirma ou troca; o resultado gravado é o dela. Os pontos
+marcados ficam guardados com a sessão (fato registrado, D-18), e a previsão da etapa 1 continua intocada (M-3).
+
+**Pergunta ruim (D-127).** Um toque em "pergunta ruim" tira a pergunta do banco: ela não volta, e os pontos dela não entram na
+sugestão daquela recuperação. Nada se apaga: a pergunta fica marcada.
+
+**O que faltou vira caminho (D-128).** Depois de um **Não veio**, o reestudo (§5.1) lista os pontos que não vieram naquela sessão,
+cada um com o bloco e a página, e abre o leitor ali; o bloco inteiro continua a um toque. Depois de um **Faltou um pedaço**, os
+pontos que faltaram aparecem na hora do resultado, com o mesmo atalho, sem criar reestudo: D-07 não muda. A lista é derivada dos
+pontos guardados (D-16).
+
+**O que o sistema não garante.** Que a pergunta da IA esteja certa (por isso o gabarito diz a página e existe "pergunta ruim"); que a
+pessoa tenha produzido antes de conferir (o sistema não oferece o atalho, como sempre); que a sugestão acerte a régua da pessoa: ela
+é sugestão.
+
 ---
 
 ## 4. O resultado da recuperação
@@ -821,7 +867,7 @@ SUCESSO · PARCIAL · FALHA
 | Tipo | Apuração |
 |---|---|
 | `QUESTOES`, `FLASHCARDS` | Percentual de acerto, contra dois limiares |
-| `RECUPERACAO` | Declarado após a produção, com as âncoras abaixo |
+| `RECUPERACAO` | Declarado após a produção, com as âncoras abaixo. Com perguntas (§3.18), a conferência do gabarito sugere a âncora e a pessoa decide (D-126) |
 
 #### As âncoras da recuperação livre
 
@@ -1685,6 +1731,13 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-119 | Sem rede, o leitor abre só os blocos guardados no aparelho (os do plano de Hoje, baixados sozinhos, e os escolhidos) e só lê e marca; as marcações sobem quando a rede volta e a que não subiu nunca é descartada | §3.17 |
 | D-120 | Chegar à última página não registra nada; "Terminei" abre o registro de ESTUDO preenchido com assunto, bloco e o tempo de foco livre, e a pessoa confirma | §3.17 |
 | D-121 | O leitor reabre cada bloco na última página aberta, em qualquer aparelho; é conveniência e não entra em métrica | §3.17 |
+| D-122 | As perguntas de um bloco são preparadas pela IA, do texto e das marcações dele, quando o estudo do bloco é registrado; os blocos já lidos, aos poucos, os de recuperação mais próxima primeiro; IA indisponível pausa e retoma, nunca vira pergunta nem resultado | §3.18 |
+| D-123 | Pergunta é de evocação, completar, porquê ou comparação, nunca traz o texto do material, e tem gabarito em pontos, cada um principal ou detalhe e com a página de origem | §3.18 |
+| D-124 | A recuperação mostra 3 a 5 perguntas do assunto, dos blocos lidos, variando a cada vez (nunca vistas, depois as com ponto principal faltando, priorizando dúvida e decorar); sem pergunta, é a recuperação livre | §3.18 |
+| D-125 | O gabarito só aparece depois de declarada a tentativa; a resposta digitada é opcional e não é guardada | §3.18 |
+| D-126 | A pessoa marca os pontos que vieram; o sistema sugere o resultado pelos pontos principais (todos → Reconstruí; metade ou mais → Faltou um pedaço; menos → Não veio) e a pessoa confirma ou troca; os pontos marcados ficam guardados com a sessão | §3.18, §4.1 |
+| D-127 | "Pergunta ruim" tira a pergunta do banco e da sugestão daquela recuperação; a pergunta fica marcada, não apagada | §3.18 |
+| D-128 | Depois de Não veio, o reestudo lista os pontos que não vieram, com bloco e página, e abre o leitor ali; depois de Faltou um pedaço, eles aparecem na hora, sem criar reestudo; a lista é derivada | §3.18, §5.1 |
 
 ---
 
@@ -1721,6 +1774,9 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Questões e gabarito como material de consulta, fora dos segmentos | Segmentos de questões na escada | Resolver questão é feito no QConcursos, ligado ao nó; misturar com leitura inflaria o tempo do assunto e a contagem de leitura (D-54) |
 | Material dentro do app, num leitor com marcações, e nunca na recuperação | Continuar sem exibir o material (`02_JORNADAS` §1.1 até a v1.20.0) | A separação de aparelhos que fechava o material deixou de existir com o celular e o tablet; o link externo abria o PDF de qualquer tela, inclusive da recuperação. Dentro do app, o sistema escolhe onde o material aparece |
 | Três cores de destaque com significado fixo | Cores livres | Cor sem significado não diz nada ao sistema; com significado, a dúvida marcada vira ponto fraco e o "decorar" vira pergunta (§12) |
+| Perguntas e gabarito em pontos, sem resumo | Resumo da IA para revisar | Ler um resumo antes de tentar é reler: mede familiaridade, não evocação (`00_PRODUTO` §5.2.1). Pergunta sem texto preserva a produção |
+| A conferência sugere, a pessoa decide | O sistema decide pela proporção de pontos | A âncora é estrutura × detalhe, e só a pessoa sabe se o que veio foi estrutura; decidir por ela tiraria o julgamento depois da tentativa, que é o que calibra a M-3 |
+| Preparar quando o bloco é lido | Preparar o edital inteiro quando o material fica pronto | Centenas de chamadas da assinatura para blocos que talvez nunca sejam lidos; ao ler, a recuperação só vem no dia seguinte |
 
 ---
 
@@ -1760,15 +1816,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
   sistema vai medi-lo nos primeiros meses.
 - Se as 2 h de teoria por assunto se confirmam. Também será medido.
 - **Decidido com o usuário em 2026-11-01, a especificar quando a sprint de cada um começar** (nada disso vale como regra antes):
-  - **Perguntas e gabarito da IA na recuperação.** A IA prepara, para cada bloco, **perguntas de evocação** e **frases de completar** (quando
-    couber), **nunca resumo para ler**: ler um resumo antes de tentar lembrar é reler. Na etapa 1 da recuperação aparecem só as perguntas; o
-    **gabarito** (os pontos que deviam ter vindo) aparece **depois** de declarada a tentativa, e a pessoa confere ponto a ponto antes de dar o resultado.
-    Os destaques (D-116) priorizam o que entra nas perguntas. Em aberto: quem gera (o worker do planejamento, que já lê o texto), quando (uma vez por
-    bloco, para poupar a assinatura), e como a conferência do gabarito vira `SUCESSO`/`PARCIAL`/`FALHA` sem tirar a decisão da pessoa.
-  - **Reestudo que aponta os trechos.** Depois de uma `FALHA`, o reestudo (§5.1) lista os pontos do gabarito que não vieram, cada um com bloco e
-    página, e abre o leitor ali; o bloco inteiro continua a um toque.
-  - **`PARCIAL` mostra o que faltou, sem obrigar.** Os pontos que faltaram aparecem na hora do resultado, com o atalho para os trechos; não cria
-    reestudo, e D-07 não muda.
+  - ~~Perguntas e gabarito da IA na recuperação, reestudo que aponta os trechos e `PARCIAL` que mostra o que faltou~~: **especificados em §3.18** (D-122 a D-128), v1.33.0.
   - **PDFs próprios.** A pessoa sobe um PDF ligado a um assunto, e ele vira blocos pelo caminho do material automático (o de D-97, ampliado para
     além da lacuna); entra na escada, no leitor e nas perguntas.
 
@@ -1778,6 +1826,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.33.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.13.0, `02_JORNADAS` v1.22.0 e ADR-053. **§3.18** (perguntas de recuperação) e **D-122 a D-128**: a IA prepara perguntas de quatro tipos e um gabarito em pontos (principal ou detalhe, com página) quando o bloco é lido; 3 a 5 por recuperação, variando; gabarito só depois da tentativa; a pessoa marca os pontos, o sistema sugere o resultado e ela decide; pergunta ruim sai do banco; o que faltou abre o leitor na página (reestudo depois de Não veio, na hora depois de Faltou um pedaço). §4.1 e §12 atualizados. 128 regras |
 | 1.32.1 | 2026-11-01 | Ao escrever a Sprint 30: **D-106** diz o que a tela faz sem sessão (leva à porta; só o dado responde 401), e **D-107** explicita o passkey que não conta (contador sempre 0, como os sincronizados), que de outro modo nunca entraria. Sem regra nova |
 | 1.32.0 | 2026-11-01 | Pedido do usuário (testando a jornada no MPPR), com `00_PRODUTO` v1.12.0 e `02_JORNADAS` v1.21.0. **§3.17** (o leitor: ler e marcar o material) e **D-114 a D-121**, com ADR-052: o material abre dentro do app e nunca na recuperação; destaques em três cores com significado, notas de trecho e de página, que nunca alteram o PDF; nada se apaga; leitura sem rede dos blocos de Hoje e dos escolhidos; "Terminei" abre o registro. §12 registra o que foi decidido e ainda não especificado: perguntas e gabarito da IA na recuperação, reestudo que aponta os trechos, `PARCIAL` que mostra o que faltou e PDFs próprios. 121 regras |
 | 1.31.0 | 2026-10-30 | Pedido do usuário: usar o app fora da rede de casa. **§3.16** (o acesso: login por passkey) e **D-106 a D-113**, com ADR-051 (substitui o ADR-015): toda rota exige sessão, um titular com passkey, primeiro cadastro só pela rede privada, sessão de 30 dias revogável, recuperação por 8 códigos de uso único, freio de tentativas e rotas internas fechadas à internet. 113 regras |

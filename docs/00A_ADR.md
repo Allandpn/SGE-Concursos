@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.19.0** |
+| Versão do documento | **2.20.0** |
 | Status | **Congelado** |
 | Data | 2026-11-01 |
-| Total | 52 ADRs — 37 vigentes, 14 substituídas, 1 revogada |
+| Total | 53 ADRs — 38 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -80,6 +80,7 @@ que custa e o que foi descartado.
 | [ADR-050](#adr-050--pomodoro-com-início-gravado-no-servidor) | Pomodoro com início gravado no servidor | 2026-10-30 |
 | [ADR-051](#adr-051--login-por-passkey-e-exposição-pela-internet) | Login por passkey e exposição pela internet | 2026-10-30 |
 | [ADR-052](#adr-052--leitor-de-pdf-no-app-com-marcações-e-leitura-sem-rede) | Leitor de PDF no app, com marcações e leitura sem rede | 2026-11-01 |
+| [ADR-053](#adr-053--perguntas-de-recuperação-preparadas-pelo-sge-ao-ler-o-bloco) | Perguntas de recuperação preparadas pelo SGE ao ler o bloco | 2026-11-01 |
 
 ### 1.2 Históricas
 
@@ -980,6 +981,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.20.0 | 2026-11-01 | **ADR-053**, pedido do usuário: as perguntas de recuperação são preparadas pelo SGE (PDFBox + `ServicoIa`), numa fila em segundo plano, quando o bloco é lido. Com `01_DOMINIO` v1.33.0 (D-122 a D-128). Total 53, 38 vigentes |
 | 2.19.0 | 2026-11-01 | **ADR-052**, pedido do usuário: leitor de PDF no app (PDF.js local), marcações no banco com versões e identificador do aparelho, e leitura sem rede dos blocos com fila local de marcações (exceção ao ADR-038). Com `01_DOMINIO` v1.32.0 (D-114 a D-121). Total 52, 37 vigentes |
 | 2.18.0 | 2026-10-30 | **ADR-051**, pedido do usuário: login por passkey e exposição pela internet via Tailscale Funnel; substitui o ADR-015. Com `01_DOMINIO` v1.31.0 (D-106 a D-113). Total 51, 36 vigentes |
 | 2.17.0 | 2026-10-30 | **ADR-050**, pedido do usuário: o Pomodoro grava o início da fase no servidor e reutiliza o Web Push do ADR-048 para o fim de fase. Com `00_PRODUTO` v1.11.0 e `01_DOMINIO` v1.30.0 (D-98 a D-105). Total 50, 36 vigentes |
@@ -2089,6 +2091,44 @@ só a casca, sem fila offline de `/api/**`.
 | Biblioteca comercial de anotação de PDF | Licença paga e dependência pesada para um usuário; PDF.js resolve a leitura e a camada de texto |
 | Só online | O usuário pediu ler sem rede (2026-11-01) |
 | Fila offline para todo `/api/**` | O resto do app depende de estado do servidor (escada, turno); enfileirar registro de sessão sem rede mudaria a escada só depois, sem a pessoa ver. Só marcação é independente o bastante |
+
+## ADR-053 — Perguntas de recuperação preparadas pelo SGE ao ler o bloco
+
+**Status:** Aceita · 2026-11-01 · pedido do usuário
+
+### Contexto
+
+As perguntas de recuperação (`01_DOMINIO` §3.18, D-122 a D-128) precisam do texto de cada bloco e de uma chamada de IA por bloco. Há
+dois lugares que leem PDF e chamam IA: o worker do planejamento (outro repositório, contrato por rotas internas) e o próprio SGE, que
+já serve os PDFs (`MATERIAL_DIR`), extrai texto com PDFBox (`ExtratorTextoPdf`) e chama a IA pela assinatura do usuário (ADR-045,
+`ServicoIa`).
+
+### Decisão
+
+- **O SGE prepara as perguntas**, sem mudar o contrato com o planejamento: o texto vem do PDF do bloco (PDFBox), as marcações vêm do
+  banco (§3.17) e a IA é a mesma da leitura do edital (`ServicoIa`, assinatura do Claude; OpenRouter só por escolha, ADR-045).
+- **Fila no banco, processada em segundo plano**: registrar o estudo de um bloco enfileira; uma varredura agendada prepara um bloco por
+  vez. Bloco já lido antes da regra entra na mesma fila, por ordem de recuperação mais próxima, alguns por varredura. IA indisponível
+  deixa o item pendente para a próxima (como D-75); falha que se repete marca o item, que não trava os outros.
+- **A IA responde JSON** com as perguntas (tipo, enunciado) e os pontos (texto, principal ou detalhe, página); o servidor confere a
+  forma antes de gravar (D-123) e recusa resposta fora dela, que volta à fila uma vez.
+- **Nenhum texto do material vai para a tela da recuperação**: o servidor só entrega enunciado na etapa 1 e o gabarito na etapa 2.
+
+### Consequências
+
+- Custo: uma chamada por bloco lido (~10 perguntas). Um edital com 300 blocos lidos ao longo de meses são 300 chamadas, espalhadas.
+- O planejamento não muda. O worker continua com o material; o SGE ganha a fila de perguntas.
+- PDF sem texto não gera perguntas (a recuperação continua livre).
+- O app Android nativo (ADR-041) não ganha a tela nova nesta decisão.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Gerar no worker do planejamento | Exige contrato novo entre os dois repositórios para algo que o SGE já sabe fazer sozinho (PDF, IA, marcações estão aqui) |
+| Gerar quando o material fica pronto | Centenas de chamadas para blocos que talvez nunca sejam lidos |
+| Gerar na hora da recuperação | A tela esperaria a IA, e IA fora tiraria as perguntas exatamente quando são pedidas |
+| Resumo para revisar | Reler antes de tentar mede familiaridade, não evocação (`00_PRODUTO` §5.2.1) |
 
 ---
 

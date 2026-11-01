@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.21.0 |
+| Versão | 1.22.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -662,6 +662,37 @@ Regras vinculantes:
   "Ler", sem "Abrir material", sem as marcações do assunto. A etapa 1 diz para
   fechar o material; a tela não o reabre.
 
+#### Com perguntas (`01_DOMINIO` §3.18)
+
+Quando o assunto tem perguntas preparadas, a mesma tela ganha duas coisas, e a sequência não muda:
+
+```
+ETAPA 1                                       ETAPA 2
+┌─────────────────────────────────┐          ┌─────────────────────────────────┐
+│ Coesão textual · Nível 3        │          │ 1. Quais são os mecanismos de   │
+│ Feche o material e responda:    │          │    coesão referencial?          │
+│                                 │          │    Você escreveu: "anáfora e…"  │
+│ 1. Quais são os mecanismos de   │          │    ☑ anáfora e catáfora (p. 7)● │
+│    coesão referencial?          │   ───▶   │    ☐ elipse (p. 7)              │
+│    [ responder (opcional) ]     │          │    ☑ sinônimos e pronomes (p. 8)│
+│ 2. A ____ retoma; a ____        │          │ 2. …                            │
+│    antecipa.                    │          │    pergunta ruim                │
+│ 3. Por que a elipse é coesão?   │          │                                 │
+│                                 │          │ Sugestão: Faltou um pedaço      │
+│ O que você espera?  [3 botões]  │          │ ( Reconstruí ) (●Faltou) ( Não )│
+│              [ Já tentei ]      │          │ Faltou: elipse — ler p. 7 →     │
+└─────────────────────────────────┘          └─────────────────────────────────┘
+```
+
+- **Etapa 1:** 3 a 5 perguntas e, em cada uma, um campo de resposta **opcional**. A previsão continua aqui, antes.
+- **Etapa 2:** cada pergunta com o que a pessoa digitou ao lado do gabarito em pontos; ● marca o ponto principal. A pessoa marca o que
+  veio; a sugestão vem pré-selecionada e muda conforme marca; ela confirma ou troca. "Pergunta ruim" em cada pergunta.
+- **Depois de Faltou um pedaço**, a etapa 2 lista os pontos que faltaram com "ler p. N →", que abre o leitor só depois de gravar o
+  resultado. **Depois de Não veio**, os mesmos pontos vão para o reestudo em Hoje (cada um abre o leitor na página).
+- Sem perguntas, a tela é exatamente a de cima.
+
+Orçamento: marcar os pontos custa um toque por ponto; com a sugestão certa, confirmar continua sendo **1 toque**.
+
 ---
 
 ### 4.2 O erro se registra de qualquer lugar
@@ -783,6 +814,7 @@ O documento de interface é quem amarra isso.
 | J-9 Entrar no app | A porta (fora das oito), Ajustes | D-106 a D-113 |
 | J-8 Cronometrar o foco | Barra do Pomodoro, Hoje, Assuntos, Registrar, Ajustes, Progresso | D-98 a D-105 |
 | J-10 Ler um bloco e marcar | Leitor, Hoje, Assuntos, Registrar | D-114 a D-121, D-100, D-54 |
+| J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 
 ---
 
@@ -809,6 +841,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.22.0 | 2026-11-01 | §4.1 ganha a tela Recuperar com perguntas (etapa 1: perguntas e resposta opcional; etapa 2: gabarito em pontos, sugestão, pergunta ruim, o que faltou abrindo o leitor), com `01_DOMINIO` v1.33.0 (D-122 a D-128) |
 | 1.21.0 | 2026-11-01 | Pedido do usuário. **§1.1 revogada**: o material deixa de ficar fora do app e passa a aparecer só na leitura, nunca na recuperação. Nova **J-10** (ler um bloco e marcar) e nona tela, **Leitor**, com `01_DOMINIO` v1.32.0 (D-114 a D-121) e ADR-052. §4.1 ganha a regra de que Recuperar não oferece material |
 | 1.20.0 | 2026-10-30 | **J-9** (entrar no app) com `01_DOMINIO` v1.31.0 (D-106 a D-113) e ADR-051. A porta do login fica fora das oito telas do estudo; Ajustes ganha "Acesso" (passkeys, códigos de recuperação, sair de todos) |
 | 1.19.0 | 2026-10-30 | **J-8** (cronometrar o foco, Pomodoro) com `01_DOMINIO` v1.30.0 (D-98 a D-105) e `00_PRODUTO` v1.11.0. A barra do Pomodoro não é tela nova: as oito telas de §4 ficam. Ajustes ganha "Pomodoro"; o campo de tempo do registro passa a vir do foco medido quando houver |

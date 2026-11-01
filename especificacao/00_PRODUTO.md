@@ -5,7 +5,7 @@ Para que este sistema existe, e como saberemos se funcionou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.12.0 |
+| Versão | 1.13.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento seguinte | `01_DOMINIO.md` |
@@ -246,6 +246,11 @@ o atalho.
 Desde 2026-11-01 o material abre dentro do app (`01_DOMINIO` §3.17), e a mesma
 lógica vale para ele: a tela de recuperação **não oferece o material**, nem nas
 duas etapas (D-114). O lugar do material é a leitura.
+
+**Perguntas, não resumo (2026-11-01).** A recuperação pode trazer perguntas preparadas pela IA a partir do que foi lido
+(`01_DOMINIO` §3.18). Elas são pistas de evocação: nenhuma traz o texto do material, e o gabarito só aparece depois da tentativa.
+A regra continua a mesma: *"tente lembrar — conseguiu?"*, agora com uma pergunta concreta no lugar do nome do assunto, e a
+conferência sugere o resultado sem decidir por você.
 
 ### 5.3 A aritmética que decide isto
 
@@ -746,6 +751,7 @@ está em `01_DOMINIO` §12.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.13.0 | 2026-11-01 | Pedido do usuário. **§5.2.1**: perguntas de recuperação preparadas pela IA, sem texto do material, com gabarito depois da tentativa e resultado sugerido, nunca decidido pelo sistema (`01_DOMINIO` §3.18, D-122 a D-128, ADR-053) |
 | 1.12.0 | 2026-11-01 | Pedido do usuário. **§8.5**: o editor de conteúdo deixa de ser recusado (leitor com marcações, `01_DOMINIO` §3.17, D-114 a D-121, ADR-052), e o PDF próprio ligado a um assunto entra como decidido, a especificar. **§5.2.1**: a tela de recuperação não oferece o material |
 | 1.11.0 | 2026-10-30 | Pedido do usuário: um Pomodoro para medir o tempo real de estudo. **§8.1**: o Pomodoro não promove horas a meta. **§8.5**: segunda exceção à recusa de push, o aviso de fim de fase, opcional e por aparelho (`01_DOMINIO` §3.15, D-98 a D-105, ADR-050) |
 | 1.10.0 | 2026-10-27 | Pedido do usuário: as leis específicas do edital (e o que o acervo não ensina) não têm material. **§8.5**: o anexo de um PDF para preencher uma lacuna do material deixa de ser recusado; continua recusado todo outro anexo e upload (`01_DOMINIO` D-97, ADR-049) |
