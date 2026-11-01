@@ -148,7 +148,8 @@ public class MetricaService {
         var mediaDesvio = desvios.length == 0 ? 0.0 : Arrays.stream(desvios).average().orElseThrow();
         var objetiva = new M3ObjetivaResponse(mediaDesvio, desvios.length);
 
-        var subjetivas = sessaoRepository.findByTipoAndPrevisaoReconstrucaoNotNull(TipoSessao.RECUPERACAO);
+        // D-134: a discursiva entra na variante subjetiva (00_PRODUTO §7 M-3, v1.15.0).
+        var subjetivas = sessaoRepository.findByTipoInAndPrevisaoReconstrucaoNotNull(List.of(TipoSessao.RECUPERACAO, TipoSessao.DISCURSIVA));
         var superestimou = 0;
         var subestimou = 0;
         var acertouPrevisao = 0;

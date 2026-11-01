@@ -26,6 +26,15 @@ function placarTexto(placar) {
   return placar ? `${placar.corretas} de ${placar.total}` : '';
 }
 
+// D-136: "Em pontos do edital: 62 · corte 70 · faltaram 8". Só informação: nunca probabilidade de aprovação (00_PRODUTO §8.5).
+function textoPontos(n) {
+  if (!n) return '';
+  const base = `Em pontos do edital: ${n.pontos} de ${n.maximo}`;
+  if (n.notaCorte === null || n.notaCorte === undefined) return base;
+  const d = Number(n.diferenca);
+  return `${base} · corte ${n.notaCorte} · ${d < 0 ? `faltaram ${-d}` : d > 0 ? `sobraram ${d}` : 'no corte'}`;
+}
+
 async function enviarFormulario(caminho, dados) {
   return api(caminho, { method: 'POST', body: dados, headers: {} });
 }
@@ -38,6 +47,7 @@ document.addEventListener('alpine:init', () => {
     id: null,
     prova: null, // Detalhe
     relatorio: null,
+    pontos: null, // D-136
     assuntos: [],
     carregando: false,
     trabalhando: false,
@@ -89,6 +99,7 @@ document.addEventListener('alpine:init', () => {
       this.carregando = true;
       try {
         this.relatorio = await api(`/provas/${id}/relatorio`);
+        this.pontos = await api(`/provas/${id}/pontos`).catch(() => null);
       } catch (e) {
         this.erro = e.message;
       } finally {
@@ -274,6 +285,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     placarTexto,
+    textoPontos,
     textoStatusProva,
   }));
 

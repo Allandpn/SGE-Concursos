@@ -420,6 +420,16 @@
             <template x-for="d in relatorio.nota.porDisciplina" :key="d.disciplina">
               <p class="text-gray-600" x-text="d.disciplina + ': ' + placarTexto(d.placar)"></p>
             </template>
+            <!-- D-136: em pontos do edital, ao lado dos acertos -->
+            <template x-if="pontos">
+              <div class="mt-2 border-t border-gray-100 pt-2">
+                <p class="font-medium" x-text="textoPontos(pontos)"></p>
+                <div x-show="pontos.notaCorte !== null" class="relative mt-1 h-2 rounded bg-gray-100">
+                  <div class="absolute inset-y-0 left-0 rounded bg-primary-600" :style="'width:' + Math.min(100, pontos.pontos * 100 / Math.max(pontos.maximo, 1)) + '%'"></div>
+                  <div class="absolute -inset-y-1 w-0.5 bg-alerta-600" :style="'left:' + Math.min(100, pontos.notaCorte * 100 / Math.max(pontos.maximo, 1)) + '%'"></div>
+                </div>
+              </div>
+            </template>
           </div>
         </template>
         <div class="rounded border border-gray-200 bg-white p-3 text-sm" x-show="relatorio.porDisciplina.length">
@@ -550,6 +560,34 @@
   </section>
 
   <section id="pagina-hoje" x-data="paginaHoje()">
+    <!-- D-133: o lote rápido — assunto, formato e tempo preenchidos; feitas, certas e a previsão em faixas -->
+    <template x-if="lote">
+      <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/30" @click.self="lote = null">
+        <div class="w-full max-w-md space-y-3 rounded-t-2xl bg-white p-4 shadow-2xl">
+          <div class="flex items-center justify-between">
+            <p class="font-semibold" x-text="lote.nome + ' · questões'"></p>
+            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="lote = null" aria-label="Fechar">✕</button>
+          </div>
+          <p class="text-xs text-gray-500" x-text="(lote.formato === 'CERTO_ERRADO' ? 'Certo/errado' : 'Múltipla escolha') + ' · tempo ' + (lote.tempo || '—') + ' min' + (lote.doFoco ? ' (do Pomodoro)' : '')"></p>
+          <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Antes de conferir: quanto espera acertar?</p>
+          <div class="grid grid-cols-5 gap-1">
+            <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
+              <button type="button" class="min-h-11 rounded border text-sm" :class="lote.previsao === f ? 'border-primary-600 bg-primary-50 font-semibold' : 'border-gray-200'"
+                @click="lote.previsao = f" x-text="f + '%'"></button>
+            </template>
+          </div>
+          <div class="flex gap-3">
+            <label class="flex-1 text-sm text-gray-500">Feitas<input type="number" min="1" inputmode="numeric" x-model="lote.feitas" @input="atualizarTempoDoLote()" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+            <label class="flex-1 text-sm text-gray-500">Certas<input type="number" min="0" inputmode="numeric" x-model="lote.certas" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+          </div>
+          <p x-show="textoLote()" class="text-xs text-primary-700" x-text="textoLote()"></p>
+          <p x-show="lote.erro" class="text-sm text-red-700" role="alert" x-text="lote.erro"></p>
+          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="lote.enviando" @click="registrarLote()">Registrar</button>
+          <button type="button" class="block w-full text-center text-xs text-gray-500 underline" @click="maisCamposDoLote()">mais campos (formato, tempo)</button>
+        </div>
+      </div>
+    </template>
+
 
     <!-- 02_JORNADAS §4.4: o concurso-alvo no topo — contexto, não alarme -->
     <template x-if="concursoCarregado">
@@ -641,6 +679,8 @@
                   <span class="block font-medium" x-text="item.nome"></span>
                   <span class="text-sm text-gray-500" x-text="'Nível ' + item.nivel"></span>
                 </button>
+                <!-- D-133: a revisão também se cumpre com um lote de questões, em dois números -->
+                <button type="button" class="mt-1 min-h-9 px-1 text-sm font-medium text-primary-700 underline" @click="abrirLote(item)">Fiz questões</button>
               </li>
             </template>
           </ul>
@@ -911,7 +951,33 @@
             class="rounded-full px-3 py-1 text-sm"
             :class="tipo === 'flashcards' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('flashcards')">Flashcards</button>
+          <!-- D-134: recuperação escrita, com nota -->
+          <button type="button"
+            class="rounded-full px-3 py-1 text-sm"
+            :class="tipo === 'discursiva' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            @click="selecionarTipo('discursiva')">Discursiva</button>
         </div>
+
+        <!-- D-134: a discursiva — previsão em três níveis, a nota de 0 a 100 e o resultado que ela dá -->
+        <template x-if="tipo === 'discursiva'">
+          <div class="space-y-3">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-500">O que você espera?</label>
+              <div class="flex gap-2">
+                <template x-for="o in [['SUCESSO', 'Vou bem'], ['PARCIAL', 'Vai faltar um pedaço'], ['FALHA', 'Não vai vir']]" :key="o[0]">
+                  <button type="button" class="min-h-11 flex-1 rounded border px-2 text-sm"
+                    :class="previsaoNivel === o[0] ? 'border-primary-600 bg-primary-50 font-semibold' : 'border-gray-200 bg-white'"
+                    @click="previsaoNivel = o[0]" x-text="o[1]"></button>
+                </template>
+              </div>
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-500">Nota (0–100), a sua ou a do corretor</label>
+              <input type="number" min="0" max="100" inputmode="numeric" x-model="nota" class="w-full rounded border border-gray-200 bg-white p-2">
+              <p x-show="resultadoDaNota" class="mt-1 text-xs text-primary-700" x-text="resultadoDaNota"></p>
+            </div>
+          </div>
+        </template>
 
         <!-- Segmento: ausente do DOM quando o assunto não tem nenhum, não desabilitado -->
         <div x-show="tipo === 'conteudo' && temSegmentos">
@@ -1292,6 +1358,25 @@
 
     <template x-if="!carregando && !erro">
       <div class="space-y-6">
+        <!-- D-136: simulados em pontos do edital, com a nota de corte; os acertos continuam na M-1 -->
+        <div x-show="pontosSimulados.length" class="space-y-2">
+          <h2 class="text-sm font-medium text-gray-500">Simulados em pontos do edital</h2>
+          <template x-for="sm in pontosSimulados" :key="sm.simuladoId">
+            <div class="rounded border border-gray-200 bg-white p-3 text-sm">
+              <p class="font-medium" x-text="'Simulado de ' + dataBR(sm.data)"></p>
+              <p x-text="textoPontos(sm.nota)"></p>
+              <div x-show="sm.nota.notaCorte !== null" class="relative mt-1 h-2 rounded bg-gray-100">
+                <div class="absolute inset-y-0 left-0 rounded bg-primary-600" :style="'width:' + Math.min(100, sm.nota.pontos * 100 / Math.max(sm.nota.maximo, 1)) + '%'"></div>
+                <div class="absolute -inset-y-1 w-0.5 bg-alerta-600" :style="'left:' + Math.min(100, sm.nota.notaCorte * 100 / Math.max(sm.nota.maximo, 1)) + '%'"></div>
+              </div>
+              <template x-for="d in sm.nota.porDisciplina" :key="d.disciplinaId">
+                <p class="text-xs text-gray-600" x-text="d.disciplina + ': ' + d.pontos + ' de ' + d.maximo"></p>
+              </template>
+            </div>
+          </template>
+          <p class="text-xs text-gray-500">É comparação com a régua que você informou em Concursos, não previsão de aprovação.</p>
+        </div>
+
         <!-- D-105: o que o Pomodoro mediu, pequeno e sem meta (00_PRODUTO §8.1) -->
         <div x-show="focoTemDados" class="space-y-2">
           <h2 class="text-sm font-medium text-gray-500">Foco medido <span class="font-normal">· últimos 7 dias</span></h2>
@@ -1675,6 +1760,26 @@
                 <span x-text="textoAvisos"></span>
                 <a :href="'#/concursos/analise/' + avisos.analiseId + '/conferencia'" class="ml-1 underline">Conferir</a>
               </p>
+              <!-- D-135: a régua da prova e a nota de corte -->
+              <div class="mt-3 border-t border-gray-100 pt-3" x-show="regua">
+                <button type="button" class="text-sm font-medium text-primary-700 underline" @click="reguaAberta = !reguaAberta"
+                  x-text="reguaAberta ? 'Fechar a pontuação da prova' : 'Pontuação da prova' + (regua && regua.notaCorte !== null ? ' · corte ' + regua.notaCorte : '')"></button>
+                <template x-if="reguaAberta && regua">
+                  <div class="mt-2 space-y-2 text-sm">
+                    <template x-for="d in regua.disciplinas" :key="d.disciplinaId">
+                      <label class="flex items-center justify-between gap-2"><span x-text="d.nome"></span>
+                        <span class="flex items-center gap-1"><input type="number" min="0.1" step="0.1" x-model="d.pontos" class="w-20 rounded border border-gray-300 p-1 text-right"> pt</span></label>
+                    </template>
+                    <label class="flex min-h-11 items-center justify-between gap-2"><span>Errada anula certa <span class="block text-xs text-gray-500">uma errada desconta uma certa; branco não desconta</span></span>
+                      <input type="checkbox" x-model="regua.erradaAnulaCerta" class="h-5 w-5"></label>
+                    <label class="flex items-center justify-between gap-2"><span>Nota de corte (pontos)</span>
+                      <input type="number" min="0" step="0.5" x-model="regua.notaCorte" class="w-24 rounded border border-gray-300 p-1 text-right"></label>
+                    <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white" @click="salvarRegua()">Salvar</button>
+                    <p x-show="reguaSalva" class="text-xs text-green-800">Salvo. As notas em pontos usam a régua nova.</p>
+                    <p x-show="erroRegua" class="text-xs text-red-700" x-text="erroRegua"></p>
+                  </div>
+                </template>
+              </div>
               <!-- J-6/J-7: verificar o material com uma prova, e resolvê-la -->
               <div class="mt-3 border-t border-gray-100 pt-3">
                 <div class="flex items-center justify-between gap-2">

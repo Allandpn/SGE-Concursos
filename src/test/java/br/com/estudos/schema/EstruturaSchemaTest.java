@@ -69,7 +69,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // O que faltou é consulta sobre sessao_ponto (D-128, D-16).
                 "pergunta_preparo", "pergunta", "pergunta_ponto", "sessao_pergunta", "sessao_ponto",
                 // Sprint 33 (ADR-054): os PDFs próprios; os blocos são segmentos (pdf_proprio_id).
-                "pdf_proprio");
+                "pdf_proprio",
+                // Sprint 23 (ADR-055): a régua da prova, pontos por disciplina do concurso.
+                "concurso_pontuacao");
         assertEquals(esperado, tabelasDoSchema());
     }
 

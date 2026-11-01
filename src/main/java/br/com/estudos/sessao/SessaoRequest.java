@@ -55,14 +55,26 @@ public record SessaoRequest(
     List<Long> fasesIds,
 
     @Schema(description = "Só em RECUPERACAO com perguntas: as perguntas usadas e os pontos que vieram (D-126)", nullable = true)
-    br.com.estudos.pergunta.PerguntaService.Conferencia conferencia
+    br.com.estudos.pergunta.PerguntaService.Conferencia conferencia,
+
+    @Schema(description = "Só em DISCURSIVA: a nota de 0 a 100 (D-134)", nullable = true)
+    Integer notaDiscursiva
 ) {
+    /** Forma anterior à discursiva. */
+    public SessaoRequest(Long assuntoId, TipoSessao tipo, LocalDate data, Integer tempoMinutos, Integer questoesCorretas,
+            Integer questoesTotal, FormatoBanca formato, Short previsaoPercentual, ResultadoSessao previsaoReconstrucao,
+            ResultadoSessao resultado, UUID tentativaId, Long segmentoId, List<Long> fasesIds,
+            br.com.estudos.pergunta.PerguntaService.Conferencia conferencia) {
+        this(assuntoId, tipo, data, tempoMinutos, questoesCorretas, questoesTotal, formato, previsaoPercentual,
+            previsaoReconstrucao, resultado, tentativaId, segmentoId, fasesIds, conferencia, null);
+    }
+
     /** Forma anterior às perguntas de recuperação: sem conferência. */
     public SessaoRequest(Long assuntoId, TipoSessao tipo, LocalDate data, Integer tempoMinutos, Integer questoesCorretas,
             Integer questoesTotal, FormatoBanca formato, Short previsaoPercentual, ResultadoSessao previsaoReconstrucao,
             ResultadoSessao resultado, UUID tentativaId, Long segmentoId, List<Long> fasesIds) {
         this(assuntoId, tipo, data, tempoMinutos, questoesCorretas, questoesTotal, formato, previsaoPercentual,
-            previsaoReconstrucao, resultado, tentativaId, segmentoId, fasesIds, null);
+            previsaoReconstrucao, resultado, tentativaId, segmentoId, fasesIds, null, null);
     }
 
     /** Forma anterior ao Pomodoro: sem focos. */
@@ -70,6 +82,6 @@ public record SessaoRequest(
             Integer questoesTotal, FormatoBanca formato, Short previsaoPercentual, ResultadoSessao previsaoReconstrucao,
             ResultadoSessao resultado, UUID tentativaId, Long segmentoId) {
         this(assuntoId, tipo, data, tempoMinutos, questoesCorretas, questoesTotal, formato, previsaoPercentual,
-            previsaoReconstrucao, resultado, tentativaId, segmentoId, null, null);
+            previsaoReconstrucao, resultado, tentativaId, segmentoId, null, null, null);
     }
 }

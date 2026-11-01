@@ -100,6 +100,7 @@ public class SessaoService {
         sessao.setPrevisaoPercentual(request.previsaoPercentual());
         sessao.setPrevisaoReconstrucao(request.previsaoReconstrucao());
         sessao.setTentativaId(request.tentativaId());
+        sessao.setNotaDiscursiva(request.notaDiscursiva());
         sessao.setAtivo(true);
         sessao.setResultado(calcularResultado(request));
         if (request.segmentoId() != null) {
@@ -173,6 +174,16 @@ public class SessaoService {
             case FLASHCARDS -> {
                 exigirContagemDeQuestoes(request);
                 yield calcularPorLimiar(request, limiaresFlashcards());
+            }
+            case DISCURSIVA -> {
+                // D-134: a nota (0–100) dá o resultado pelos limiares; o resultado do request é ignorado.
+                var nota = request.notaDiscursiva();
+                if (nota == null || nota < 0 || nota > 100) {
+                    throw new ValidationException("A nota da discursiva vai de 0 a 100.", "NOTA_DISCURSIVA_INVALIDA", "notaDiscursiva");
+                }
+                if (nota >= valorParametro("discursiva_limiar_sucesso")) yield ResultadoSessao.SUCESSO;
+                if (nota >= valorParametro("discursiva_limiar_parcial")) yield ResultadoSessao.PARCIAL;
+                yield ResultadoSessao.FALHA;
             }
         };
     }

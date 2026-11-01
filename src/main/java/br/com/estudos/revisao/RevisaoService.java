@@ -52,7 +52,7 @@ public class RevisaoService {
     public void processarSessao(Sessao sessao) {
         switch (sessao.getTipo()) {
             case ESTUDO -> agendarPrimeira(sessao);
-            case QUESTOES, FLASHCARDS, RECUPERACAO -> processarRecuperacao(sessao);
+            case QUESTOES, FLASHCARDS, RECUPERACAO, DISCURSIVA -> processarRecuperacao(sessao); // D-134: a discursiva cumpre revisão
         }
     }
 
