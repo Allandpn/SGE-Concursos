@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.21.0** |
+| Versão do documento | **2.22.0** |
 | Status | **Congelado** |
 | Data | 2026-11-01 |
-| Total | 54 ADRs — 39 vigentes, 14 substituídas, 1 revogada |
+| Total | 55 ADRs — 40 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -82,6 +82,7 @@ que custa e o que foi descartado.
 | [ADR-052](#adr-052--leitor-de-pdf-no-app-com-marcações-e-leitura-sem-rede) | Leitor de PDF no app, com marcações e leitura sem rede | 2026-11-01 |
 | [ADR-053](#adr-053--perguntas-de-recuperação-preparadas-pelo-sge-ao-ler-o-bloco) | Perguntas de recuperação preparadas pelo SGE ao ler o bloco | 2026-11-01 |
 | [ADR-054](#adr-054--pdf-próprio-cortado-pelo-sge) | PDF próprio cortado pelo SGE | 2026-11-01 |
+| [ADR-055](#adr-055--discursiva-como-tipo-de-sessão-e-régua-do-edital-derivada) | Discursiva como tipo de sessão e régua do edital derivada | 2026-11-01 |
 
 ### 1.2 Históricas
 
@@ -982,6 +983,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.22.0 | 2026-11-01 | **ADR-055**, pedido do usuário: `DISCURSIVA` como tipo de sessão, com a nota e os limiares; a régua da prova no concurso, e a nota em pontos derivada. Com `01_DOMINIO` v1.35.0 (D-133 a D-136). Total 55, 40 vigentes |
 | 2.21.0 | 2026-11-01 | **ADR-054**, pedido do usuário: o PDF próprio é cortado pelo SGE (PDFBox), pelo ritmo escolhido e pelos marcadores. Com `01_DOMINIO` v1.34.0 (D-129 a D-132). Total 54, 39 vigentes |
 | 2.20.0 | 2026-11-01 | **ADR-053**, pedido do usuário: as perguntas de recuperação são preparadas pelo SGE (PDFBox + `ServicoIa`), numa fila em segundo plano, quando o bloco é lido. Com `01_DOMINIO` v1.33.0 (D-122 a D-128). Total 53, 38 vigentes |
 | 2.19.0 | 2026-11-01 | **ADR-052**, pedido do usuário: leitor de PDF no app (PDF.js local), marcações no banco com versões e identificador do aparelho, e leitura sem rede dos blocos com fila local de marcações (exceção ao ADR-038). Com `01_DOMINIO` v1.32.0 (D-114 a D-121). Total 52, 37 vigentes |
@@ -2163,6 +2165,35 @@ pelo worker do planejamento (`montar_bloco.py`), em outro repositório, num cicl
 | O worker corta (como o anexo de lacuna) | Exige escrever no repositório do planejamento e o deploy dos dois; minutos de espera |
 | Um segmento só, com o PDF inteiro | Quebra o tamanho de bloco que o turno, o leitor e as perguntas supõem (~60 min) |
 | Gravar em `MATERIAL_DIR` | O volume é só leitura no app; dar escrita muda o compose (aviso vermelho no Guardian) para nada que o volume `editais` não resolva |
+
+## ADR-055 — Discursiva como tipo de sessão e régua do edital derivada
+
+**Status:** Aceita · 2026-11-01 · pedido do usuário
+
+### Contexto
+
+A Sprint 23 traz o treino discursivo (`01_DOMINIO` §3.3, D-134) e a comparação com a nota de corte (§3.20, D-135, D-136). A sessão
+tem uma matriz de tipos que decide as métricas, e o resultado de qualquer sessão que cumpre revisão é `SUCESSO`/`PARCIAL`/`FALHA`.
+
+### Decisão
+
+- **`DISCURSIVA` entra no enum de tipos** e na restrição de forma da sessão: `nota_discursiva` (0–100) obrigatória só nela, sem
+  contagem de questões; a previsão usa `previsao_reconstrucao` (os três níveis), como a recuperação livre. O resultado é calculado no
+  serviço pelos limiares (`discursiva_limiar_sucesso`, `discursiva_limiar_parcial`), e a revisão anda pelo mesmo caminho de D-07.
+- **A régua mora no concurso**: `errada_anula_certa`, `nota_corte` e uma tabela `concurso_pontuacao` (concurso, disciplina, pontos).
+  A nota em pontos é calculada na leitura (relatório da prova, Progresso), nunca guardada.
+
+### Consequências
+
+- A M-1 e as consultas de M-3 ganham o filtro do tipo novo (M-1 o exclui; M-3 subjetiva o inclui).
+- O app Android nativo (ADR-041) precisa conhecer o tipo novo para não quebrar ao listar sessões.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Discursiva como `RECUPERACAO` com nota opcional | Duas formas de apurar o mesmo tipo; a restrição de forma ficaria condicional demais |
+| Guardar a nota em pontos | Derivável (D-16); mudar a régua exigiria recalcular o histórico |
 
 ---
 

@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.34.0 |
+| Versão | 1.35.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -232,7 +232,7 @@ numa transação só.
 Uma estratégia, um assunto, uma vez. Relação com assunto: **1:1**
 (`00_PRODUTO` §6.2).
 
-Quatro tipos. Cada um existe porque alimenta uma combinação diferente de
+Cinco tipos. Cada um existe porque alimenta uma combinação diferente de
 métricas — tipo que não se distingue nessa matriz não deve existir:
 
 | Tipo | Tempo | Contagem de acertos | Previsão | Resultado | Alimenta M-1 | Cumpre revisão |
@@ -241,6 +241,7 @@ métricas — tipo que não se distingue nessa matriz não deve existir:
 | **QUESTOES** | sim | sim | sim | derivado da contagem | **sim** | sim |
 | **FLASHCARDS** | sim | sim | sim | derivado da contagem | **não** | sim |
 | **RECUPERACAO** | sim | não | sim | declarado após produção | não | sim |
+| **DISCURSIVA** | sim | não (nota 0–100) | sim | derivado da nota (D-134) | não | sim |
 
 Três consequências que essa matriz decide:
 
@@ -251,6 +252,9 @@ Três consequências que essa matriz decide:
    62% em questões de banca infla a métrica que sustenta a tese inteira. Por
    isso é tipo próprio e não um rótulo de `QUESTOES`.
 3. **`RECUPERACAO` é o caminho principal**, por aritmética (`00_PRODUTO` §5.3).
+4. **`DISCURSIVA` é recuperação escrita** (2026-11-01, pedido do usuário): escrever uma resposta discursiva ou um estudo de caso
+   sobre o assunto, de memória, e dar a nota (a própria ou a de um corretor). Distingue-se de `RECUPERACAO` porque o resultado
+   sai de uma nota e não de uma âncora declarada, e de `QUESTOES` porque não é acerto de banca: não entra na M-1 (D-134).
 
 ### 3.3.1 Registrar duas vezes conta uma
 
@@ -878,6 +882,23 @@ as perguntas desses blocos ficam no histórico. O arquivo enviado fica guardado 
 **O que o sistema não garante.** Que o PDF seja do assunto certo; que o corte caia sempre no fim de uma ideia (sem marcadores, o corte
 é pelo tempo); que um PDF escaneado tenha perguntas.
 
+### 3.20 Nota de corte e pontuação do edital
+
+A nota de prova e de simulado é contada em acertos (D-78, §3.6), e é isso que a M-1 usa. Para comparar com a **nota de corte** de
+um concurso, é preciso a régua do edital, que raramente é "um ponto por questão". A pedido do usuário (2026-11-01):
+
+**A régua (D-135).** No concurso-alvo, a pessoa informa: os **pontos por questão de cada disciplina** (padrão 1), se a prova é de
+**errada anula certa** (o regime da CEBRASPE em certo/errado) e a **nota de corte**, em pontos. Tudo editável a qualquer momento.
+
+**A nota em pontos (D-136).** Para cada prova resolvida e cada simulado, o sistema calcula, na hora, a nota em pontos pela régua
+vigente: soma dos pontos das certas; com errada anula certa, menos os pontos das erradas (em branco não desconta); a global nunca
+fica abaixo de zero. Aparece ao lado da nota de corte, com a diferença ("62 pontos · corte 70 · faltaram 8"). É **informação**:
+nunca probabilidade de aprovação (`00_PRODUTO` §8.5), nunca meta, e **a M-1 continua em acertos** (§3.6). Nada disso é guardado
+(D-16): mudar a régua muda a conta de todo o histórico.
+
+**O que o sistema não garante.** Que a régua informada seja a do edital; que o simulado registre brancos (ele guarda acertos e
+total, então, com errada anula certa, o que não foi acerto conta como erro).
+
 ---
 
 ## 4. O resultado da recuperação
@@ -893,6 +914,7 @@ SUCESSO · PARCIAL · FALHA
 | Tipo | Apuração |
 |---|---|
 | `QUESTOES`, `FLASHCARDS` | Percentual de acerto, contra dois limiares |
+| `DISCURSIVA` | A nota de 0 a 100 contra dois limiares: a partir do primeiro (padrão 70) `SUCESSO`; a partir do segundo (padrão 40) `PARCIAL`; abaixo, `FALHA` (D-134) |
 | `RECUPERACAO` | Declarado após a produção, com as âncoras abaixo. Com perguntas (§3.18), a conferência do gabarito sugere a âncora e a pessoa decide (D-126) |
 
 #### As âncoras da recuperação livre
@@ -1768,6 +1790,10 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-130 | O bloco de PDF próprio é bloco como os outros (leitor, marcações, turno, D-54, perguntas); PDF sem texto é aceito com aviso e não tem perguntas | §3.19 |
 | D-131 | Em assunto que já está na escada, os blocos próprios ainda não lidos aparecem em Hoje como leitura sugerida, sem mudar a revisão marcada | §3.19, §7.4 |
 | D-132 | "Tirar este PDF" arquiva de uma vez os blocos que vieram dele; sessões, marcações e perguntas ficam no histórico | §3.19 |
+| D-133 | Cada assunto da fila de recuperação em Hoje tem "Fiz questões": o lote abre com assunto e formato preenchidos (o da última sessão de questões do assunto, senão o do concurso-alvo) e o tempo pelos focos livres (D-100), senão 2 min por questão; a pessoa digita feitas e certas e toca a previsão em faixas de 10%; cumpre a revisão como qualquer lote | §3.3, §7.4 |
+| D-134 | `DISCURSIVA` é tipo de sessão: tempo, nota 0–100, previsão em três níveis, resultado derivado da nota pelos limiares (parâmetros, padrão 70 e 40); não alimenta a M-1, cumpre revisão, e a previsão entra na variante subjetiva da M-3 | §3.3, §4.1 |
+| D-135 | O concurso-alvo guarda a régua da prova: pontos por questão de cada disciplina (padrão 1), errada anula certa (sim/não) e a nota de corte em pontos; editáveis | §3.20 |
+| D-136 | A nota em pontos de prova resolvida e de simulado é derivada da régua vigente, mostrada com a nota de corte e a diferença; é informação, nunca probabilidade nem meta, e a M-1 continua em acertos | §3.20 |
 
 ---
 
@@ -1809,6 +1835,8 @@ Com a alternativa recusada, para não serem reabertas por engano.
 | Preparar quando o bloco é lido | Preparar o edital inteiro quando o material fica pronto | Centenas de chamadas da assinatura para blocos que talvez nunca sejam lidos; ao ler, a recuperação só vem no dia seguinte |
 | O SGE corta o PDF próprio | O worker do planejamento corta, como no anexo de lacuna | Exigiria escrever no outro repositório e o deploy dos dois; o SGE já lê PDF (PDFBox), e o bloco fica pronto em segundos |
 | Blocos novos de assunto na escada viram leitura sugerida | Assunto volta a "em estudo" | A escada mede retenção do que já foi lido; parar a escada por um PDF a mais regrediria por motivo falso (o mesmo raciocínio de D-54) |
+| `DISCURSIVA` como tipo próprio | Rótulo dentro de `RECUPERACAO` ou de `QUESTOES` | Em `QUESTOES` a nota entraria na M-1, que mede acerto de banca; em `RECUPERACAO` o resultado seria âncora declarada e a nota se perderia |
+| Nota em pontos derivada, M-1 em acertos | M-1 ponderada pela régua | Mudaria a tese e o histórico já registrado; a régua é do edital, a M-1 é da retenção |
 
 ---
 
@@ -1857,6 +1885,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.35.0 | 2026-11-01 | Pedido do usuário (Sprint 23), com `00_PRODUTO` v1.15.0, `02_JORNADAS` v1.24.0 e ADR-055. **§3.3**: quinto tipo de sessão, `DISCURSIVA` (D-134). **§3.20** (nota de corte e pontuação do edital) e **D-135, D-136**. **D-133**: "Fiz questões" na fila de Hoje. §4.1 ganha a apuração da discursiva. 136 regras |
 | 1.34.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.14.0, `02_JORNADAS` v1.23.0 e ADR-054. **§3.19** (PDF próprio) e **D-129 a D-132**: PDFs da pessoa ligados a um assunto, cortados em blocos pelo SGE pelo ritmo escolhido; bloco como os outros; em assunto na escada, leitura sugerida sem mexer na revisão; tirar arquiva os blocos. 132 regras |
 | 1.33.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.13.0, `02_JORNADAS` v1.22.0 e ADR-053. **§3.18** (perguntas de recuperação) e **D-122 a D-128**: a IA prepara perguntas de quatro tipos e um gabarito em pontos (principal ou detalhe, com página) quando o bloco é lido; 3 a 5 por recuperação, variando; gabarito só depois da tentativa; a pessoa marca os pontos, o sistema sugere o resultado e ela decide; pergunta ruim sai do banco; o que faltou abre o leitor na página (reestudo depois de Não veio, na hora depois de Faltou um pedaço). §4.1 e §12 atualizados. 128 regras |
 | 1.32.1 | 2026-11-01 | Ao escrever a Sprint 30: **D-106** diz o que a tela faz sem sessão (leva à porta; só o dado responde 401), e **D-107** explicita o passkey que não conta (contador sempre 0, como os sincronizados), que de outro modo nunca entraria. Sem regra nova |

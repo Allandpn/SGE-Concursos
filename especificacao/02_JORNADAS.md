@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.23.0 |
+| Versão | 1.24.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -290,6 +290,8 @@ apaga** (`01_DOMINIO` D-18).
 | Cada recuperação | Duas etapas, sem campo de resultado na primeira | **≤ 15 s** de registro |
 | Bloco de conteúdo | Assunto já preenchido pelo plano; tempo (já preenchido com a estimativa) e tipo | **≤ 20 s** |
 | Lote de questões | Assunto, formato, feitas, certas, previsão, tempo | **≤ 25 s** |
+| Lote rápido ("Fiz questões" na fila, D-133) | Feitas, certas, previsão; o resto preenchido | **≤ 12 s** |
+| Discursiva | Nota, previsão, tempo | **≤ 20 s** |
 
 O orçamento total de registro num turno de 1 h 30: **5 × 15 s + 20 s ≈ 1 min
 35 s.** Menos de 2% do turno. Acima disso, o sistema começa a competir com o
@@ -570,6 +572,16 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-12 · Treino discursivo e nota de corte
+
+1. **Discursiva.** Em Registrar (ou no detalhe do assunto), **Discursiva**: o assunto, a previsão em três níveis (*vou bem / vai faltar
+   um pedaço / não vai vir*), depois de escrever a nota de 0 a 100 e o tempo (pré-preenchido pelo foco). O resultado sai da nota (D-134)
+   e a revisão pendente é cumprida.
+2. **Régua da prova.** Em Concursos, no alvo, **Pontuação da prova**: pontos por questão de cada disciplina (padrão 1), "errada anula
+   certa" e a nota de corte. Salvar não mexe em nada gravado (D-135).
+3. **A comparação.** No relatório da prova resolvida e em Progresso (simulados): "Em pontos do edital: 62 · corte 70 · faltaram 8",
+   global e por disciplina, ao lado dos acertos. Sem régua, só os acertos (D-136).
+
 ### J-11 · Adicionar meu PDF
 
 Serve a quem estuda um assunto por material que não veio do acervo (`01_DOMINIO` §3.19). Rara, como a J-5: orçamento de atenção.
@@ -827,6 +839,7 @@ O documento de interface é quem amarra isso.
 | J-10 Ler um bloco e marcar | Leitor, Hoje, Assuntos, Registrar | D-114 a D-121, D-100, D-54 |
 | J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
+| J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
 
 ---
 
@@ -853,6 +866,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.24.0 | 2026-11-01 | J-2 ganha o lote rápido ("Fiz questões", ≤ 12 s, D-133) e a discursiva (≤ 20 s); nova **J-12** (treino discursivo e nota de corte), com `01_DOMINIO` v1.35.0 (D-133 a D-136) |
 | 1.23.0 | 2026-11-01 | Nova **J-11** (adicionar meu PDF), com `01_DOMINIO` v1.34.0 (D-129 a D-132) e ADR-054 |
 | 1.22.0 | 2026-11-01 | §4.1 ganha a tela Recuperar com perguntas (etapa 1: perguntas e resposta opcional; etapa 2: gabarito em pontos, sugestão, pergunta ruim, o que faltou abrindo o leitor), com `01_DOMINIO` v1.33.0 (D-122 a D-128) |
 | 1.21.0 | 2026-11-01 | Pedido do usuário. **§1.1 revogada**: o material deixa de ficar fora do app e passa a aparecer só na leitura, nunca na recuperação. Nova **J-10** (ler um bloco e marcar) e nona tela, **Leitor**, com `01_DOMINIO` v1.32.0 (D-114 a D-121) e ADR-052. §4.1 ganha a regra de que Recuperar não oferece material |
