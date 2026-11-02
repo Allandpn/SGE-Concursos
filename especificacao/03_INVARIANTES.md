@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.26.0 |
+| Versão | 1.27.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -259,8 +259,10 @@ conceitual — envelhecer por motivo errado.
 | D-145 | Derivação | S | Teste: conta só a mesma banca (CESPE = Cebraspe), só avaliável com assunto, só dos últimos N anos (sem ano conta); abaixo do mínimo, sem proposta |
 | D-146 | Derivação | S | Teste (unitário): os terços com e sem empate, zero conta, alto não sobe, baixo não desce, a base é o peso do edital; nada guardado |
 | D-147 | **Invariante** | **P** + S | Dois ajustes vigentes do mesmo assunto no mesmo concurso → a escrita falha (índice único parcial); teste: aceitar aplica ao assunto, reimportar mantém, desfazer volta ao edital, prova nova não muda o peso |
+| D-148 | **Invariante** | **P** + S | Brancos negativos ou certas + brancos acima do total → a escrita falha; teste: a M-1 ignora os brancos; a nota em pontos com errada anula certa desconta só total − certas − brancos |
+| D-149 | Comportamento | S | Teste: arquivado some da M-1, da lista principal, dos pontos e do simulado da semana; a linha continua no banco |
 
-**Contagem:** 34 invariantes · 17 derivações · 87 comportamentos · 10 políticas — 148 linhas para 147 regras.
+**Contagem:** 35 invariantes · 17 derivações · 88 comportamentos · 10 políticas — 150 linhas para 149 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -580,6 +582,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.27.0 | 2026-11-02 | **D-148 e D-149** com `01_DOMINIO.md` v1.39.0 (registro de simulado com brancos, arquivamento). Uma invariante (D-148), um comportamento. Contagem: 150 linhas para 149 regras |
 | 1.26.0 | 2026-11-02 | **D-145 a D-147** com `01_DOMINIO.md` v1.38.0 (peso pela banca). Uma invariante (D-147), duas derivações. Contagem: 148 linhas para 147 regras |
 | 1.25.0 | 2026-11-01 | **D-140 a D-144** com `01_DOMINIO.md` v1.37.0 (reta final). Uma invariante (D-141), quatro comportamentos. Contagem: 145 linhas para 144 regras |
 | 1.24.0 | 2026-11-01 | **D-137 a D-139** com `01_DOMINIO.md` v1.36.0 (diagnóstico do edital). Três derivações. Contagem: 140 linhas para 139 regras |

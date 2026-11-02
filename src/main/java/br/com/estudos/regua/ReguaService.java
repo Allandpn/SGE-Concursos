@@ -110,15 +110,20 @@ public class ReguaService {
         }
         long concursoId = alvo.get(0);
         var regua = regua(concursoId);
-        var simulados = jdbc.query("SELECT id, data FROM simulado ORDER BY data DESC, id DESC",
+        // D-149: arquivado não conta.
+        var simulados = jdbc.query("SELECT id, data FROM simulado WHERE arquivado_em IS NULL ORDER BY data DESC, id DESC",
             (rs, n) -> new Object[] {rs.getLong("id"), rs.getString("data")});
         return simulados.stream().map(sm -> {
             var linhas = jdbc.query("""
-                SELECT d.id, d.nome, p.pontos, sum(r.questoes_corretas) AS certas, sum(r.questoes_total - r.questoes_corretas) AS erradas
+                SELECT d.id, d.nome, p.pontos, sum(r.questoes_corretas) AS certas,
+                       sum(r.questoes_total - r.questoes_corretas - coalesce(r.questoes_em_branco, 0)) AS erradas,
+                       sum(coalesce(r.questoes_em_branco, 0)) AS brancos
                 FROM resultado_simulado r JOIN disciplina d ON d.id = r.disciplina_id
                 LEFT JOIN concurso_pontuacao p ON p.disciplina_id = d.id AND p.concurso_id = ?
                 WHERE r.simulado_id = ? GROUP BY d.id, d.nome, p.pontos ORDER BY d.nome""",
-                (rs, n) -> new Regua.Linha(rs.getLong("id"), rs.getString("nome"), rs.getInt("certas"), rs.getInt("erradas"), 0, rs.getBigDecimal("pontos")),
+                // D-148: com brancos informados, erradas = total − certas − brancos; sem eles, o que não é acerto conta como erro.
+                (rs, n) -> new Regua.Linha(rs.getLong("id"), rs.getString("nome"), rs.getInt("certas"), rs.getInt("erradas"), rs.getInt("brancos"),
+                    rs.getBigDecimal("pontos")),
                 concursoId, sm[0]);
             return new PontosDoSimulado((Long) sm[0], (String) sm[1], Regua.pontuar(linhas, regua.erradaAnulaCerta(), regua.notaCorte()));
         }).toList();

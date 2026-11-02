@@ -8,5 +8,6 @@ public record ResultadoSimuladoResponse(
     @Schema(description = "Disciplina deste resultado") Long disciplinaId,
     @Schema(description = "Formato da banca") FormatoBanca formato,
     @Schema(description = "Questões corretas nesta disciplina") int questoesCorretas,
-    @Schema(description = "Total de questões nesta disciplina") int questoesTotal
+    @Schema(description = "Total de questões nesta disciplina") int questoesTotal,
+    @Schema(description = "Questões em branco — null se não informado (D-148)") Integer questoesEmBranco
 ) {}

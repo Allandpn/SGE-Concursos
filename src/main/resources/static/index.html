@@ -560,37 +560,6 @@
   </section>
 
   <section id="pagina-hoje" x-data="paginaHoje()">
-    <!-- D-144: o simulado da semana, registrado como sempre (POST /simulados), com as disciplinas do concurso-alvo -->
-    <template x-if="simForm">
-      <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/30" @click.self="simForm = null">
-        <div class="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl" id="simulado-form">
-          <div class="flex items-center justify-between">
-            <p class="font-semibold">Registrar simulado</p>
-            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="simForm = null" aria-label="Fechar">✕</button>
-          </div>
-          <div class="flex gap-3">
-            <label class="flex-1 text-sm text-gray-500">Data<input type="date" x-model="simForm.data" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
-            <label class="w-28 text-sm text-gray-500">Duração (min)<input type="number" min="1" inputmode="numeric" x-model="simForm.duracao" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
-          </div>
-          <label class="block text-sm text-gray-500">Formato
-            <select x-model="simForm.formato" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900">
-              <option value="MULTIPLA_ESCOLHA">Múltipla escolha</option>
-              <option value="CERTO_ERRADO">Certo/errado</option>
-            </select></label>
-          <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Por disciplina (deixe em branco a que não caiu)</p>
-          <template x-for="l in simForm.linhas" :key="l.disciplinaId">
-            <div class="flex items-center gap-2 text-sm">
-              <span class="flex-1" x-text="l.nome"></span>
-              <input type="number" min="0" inputmode="numeric" placeholder="certas" x-model="l.certas" class="w-20 rounded border border-gray-200 p-2" :aria-label="'Certas em ' + l.nome">
-              <span class="text-gray-400">/</span>
-              <input type="number" min="0" inputmode="numeric" placeholder="total" x-model="l.total" class="w-20 rounded border border-gray-200 p-2" :aria-label="'Total em ' + l.nome">
-            </div>
-          </template>
-          <p x-show="simForm.erro" class="text-sm text-red-700" role="alert" x-text="simForm.erro"></p>
-          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="simForm.enviando" @click="registrarSimulado()">Registrar</button>
-        </div>
-      </div>
-    </template>
     <!-- D-133: o lote rápido — assunto, formato e tempo preenchidos; feitas, certas e a previsão em faixas -->
     <template x-if="lote">
       <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/30" @click.self="lote = null">
@@ -809,7 +778,7 @@
           <h2 class="mb-2 text-sm font-medium text-gray-500">Segundo bloco</h2>
           <div class="flex items-center gap-3 rounded border-2 border-dashed border-primary-600 bg-white p-3">
             <div class="flex-1"><p class="font-medium">Simulado da semana</p><p class="text-xs text-gray-500">nenhum simulado desde segunda</p></div>
-            <button type="button" class="min-h-11 rounded bg-primary-600 px-4 text-sm font-semibold text-white" @click="abrirSimulado()">Registrar</button>
+            <a href="#/registrar/simulado" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white">Registrar</a>
           </div>
         </div>
 
@@ -985,6 +954,82 @@
   </section>
 
   <!-- Tela Registrar sessão — Conteúdo/Questões/Flashcards (04_FRONTEND.md §7A) -->
+  <!-- J-16: registrar um simulado (D-148). Sem assunto: as linhas são as disciplinas do edital do alvo -->
+  <section id="pagina-simulado" x-data="paginaSimulado()" hidden>
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold">Registrar</h2>
+      <!-- As mesmas pílulas do Registrar; as quatro primeiras pedem um assunto (§7A) -->
+      <div class="flex flex-wrap gap-2">
+        <template x-for="t in ['Conteúdo', 'Questões', 'Flashcards', 'Discursiva']" :key="t">
+          <span class="rounded-full border border-gray-200 bg-white px-3 py-1 text-sm text-gray-300" :title="'Escolha um assunto em Hoje ou Assuntos'" x-text="t"></span>
+        </template>
+        <span class="rounded-full bg-primary-600 px-3 py-1 text-sm text-white">Simulado</span>
+      </div>
+
+      <template x-if="resultado">
+        <div class="space-y-2 rounded border border-primary-600 bg-primary-50 p-3 text-sm" id="simulado-resultado">
+          <p x-text="'Simulado de ' + resultado.data.split('-').reverse().join('/') + ' registrado.'"></p>
+          <p x-text="'Acertos: ' + resultado.acertos + ' de ' + resultado.total + ' (' + Math.round(100 * resultado.acertos / Math.max(resultado.total, 1)) + '%)'"></p>
+          <template x-if="resultado.nota">
+            <div class="space-y-1">
+              <p x-text="textoPontos(resultado.nota)"></p>
+              <div x-show="resultado.nota.notaCorte !== null" class="relative h-2 rounded bg-gray-100">
+                <div class="absolute inset-y-0 left-0 rounded bg-primary-600" :style="'width:' + Math.min(100, resultado.nota.pontos * 100 / Math.max(resultado.nota.maximo, 1)) + '%'"></div>
+                <div class="absolute -inset-y-1 w-0.5 bg-alerta-600" :style="'left:' + Math.min(100, (resultado.nota.notaCorte ?? 0) * 100 / Math.max(resultado.nota.maximo, 1)) + '%'"></div>
+              </div>
+            </div>
+          </template>
+          <div class="flex gap-2 pt-1">
+            <a href="#/progresso" class="flex min-h-11 items-center rounded border border-gray-300 bg-white px-3">Ver em Progresso</a>
+            <a href="#/hoje" class="flex min-h-11 items-center rounded border border-gray-300 bg-white px-3">Voltar a Hoje</a>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="!resultado">
+        <div class="space-y-4">
+          <div class="flex gap-3">
+            <label class="flex-1 text-sm text-gray-500">Data<input type="date" x-model="data" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+            <label class="w-32 text-sm text-gray-500">Duração (min)<input type="number" min="1" inputmode="numeric" x-model="duracao" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+          </div>
+          <label class="block text-sm text-gray-500">Formato
+            <select x-model="formato" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900">
+              <option value="MULTIPLA_ESCOLHA">Múltipla escolha</option>
+              <option value="CERTO_ERRADO">Certo/errado</option>
+            </select></label>
+          <p x-show="semAlvo" class="text-sm text-gray-600">Sem concurso-alvo: acrescente as disciplinas uma a uma.</p>
+          <div class="space-y-2" id="simulado-linhas">
+            <div class="grid grid-cols-[1fr_4rem_4rem_4rem] gap-2 text-xs uppercase tracking-wide text-gray-500">
+              <span>disciplina</span><span>certas</span><span>total</span><span>branco</span>
+            </div>
+            <template x-for="l in linhas" :key="l.disciplinaId">
+              <div>
+                <div class="grid grid-cols-[1fr_4rem_4rem_4rem] items-center gap-2 text-sm">
+                  <span x-text="l.nome"></span>
+                  <input type="number" min="0" inputmode="numeric" x-model="l.certas" class="rounded border border-gray-200 p-2 text-right" :aria-label="'Certas em ' + l.nome">
+                  <input type="number" min="0" inputmode="numeric" x-model="l.total" class="rounded border border-gray-200 p-2 text-right" :aria-label="'Total em ' + l.nome">
+                  <input type="number" min="0" inputmode="numeric" x-model="l.brancos" class="rounded border p-2 text-right"
+                         :class="erroDaLinha(l) ? 'border-red-400 text-red-700' : 'border-gray-200'" :aria-label="'Em branco em ' + l.nome">
+                </div>
+                <p x-show="erroDaLinha(l)" class="text-xs text-red-700" x-text="erroDaLinha(l)"></p>
+              </div>
+            </template>
+          </div>
+          <div class="flex items-center gap-2" x-show="foraDoEdital.length">
+            <select x-model="outra" class="flex-1 rounded border border-gray-200 p-2 text-sm" aria-label="Outra disciplina">
+              <option value="">+ outra disciplina</option>
+              <template x-for="d in foraDoEdital" :key="d.id"><option :value="d.id" x-text="d.nome"></option></template>
+            </select>
+            <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" :disabled="!outra" @click="acrescentar()">Acrescentar</button>
+          </div>
+          <p class="text-xs text-gray-500">Disciplina sem total não entra. "Em branco" é opcional.</p>
+          <p x-show="erro || avisoDasLinhas" class="text-sm text-red-700" role="alert" x-text="erro || avisoDasLinhas"></p>
+          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="enviando" @click="registrar()">Registrar simulado</button>
+        </div>
+      </template>
+    </div>
+  </section>
+
   <section id="pagina-registrar" x-data="paginaRegistrar()" hidden>
 
     <template x-if="semDados">
@@ -1024,6 +1069,8 @@
             class="rounded-full px-3 py-1 text-sm"
             :class="tipo === 'discursiva' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('discursiva')">Discursiva</button>
+          <!-- D-148: o simulado não tem assunto; tem a própria tela (J-16) -->
+          <a href="#/registrar/simulado" class="rounded-full border border-gray-200 bg-white px-3 py-1 text-sm text-gray-700">Simulado</a>
         </div>
 
         <!-- D-134: a discursiva — previsão em três níveis, a nota de 0 a 100 e o resultado que ela dá -->
@@ -1426,23 +1473,44 @@
 
     <template x-if="!carregando && !erro">
       <div class="space-y-6">
-        <!-- D-136: simulados em pontos do edital, com a nota de corte; os acertos continuam na M-1 -->
-        <div x-show="pontosSimulados.length" class="space-y-2">
-          <h2 class="text-sm font-medium text-gray-500">Simulados em pontos do edital</h2>
-          <template x-for="sm in pontosSimulados" :key="sm.simuladoId">
+        <!-- J-16: os simulados — acertos, os pontos do edital com o corte (D-136) e arquivar (D-149) -->
+        <div class="space-y-2" id="progresso-simulados">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-medium text-gray-500">Simulados</h2>
+            <a href="#/registrar/simulado" class="flex min-h-11 items-center rounded border border-gray-300 bg-white px-3 text-sm text-primary-700">Registrar simulado</a>
+          </div>
+          <p x-show="!simuladosValendo.length" class="text-sm text-gray-500">Nenhum simulado registrado.</p>
+          <template x-for="sm in simuladosValendo" :key="sm.id">
             <div class="rounded border border-gray-200 bg-white p-3 text-sm">
-              <p class="font-medium" x-text="'Simulado de ' + dataBR(sm.data)"></p>
-              <p x-text="textoPontos(sm.nota)"></p>
-              <div x-show="sm.nota.notaCorte !== null" class="relative mt-1 h-2 rounded bg-gray-100">
-                <div class="absolute inset-y-0 left-0 rounded bg-primary-600" :style="'width:' + Math.min(100, sm.nota.pontos * 100 / Math.max(sm.nota.maximo, 1)) + '%'"></div>
-                <div class="absolute -inset-y-1 w-0.5 bg-alerta-600" :style="'left:' + Math.min(100, sm.nota.notaCorte * 100 / Math.max(sm.nota.maximo, 1)) + '%'"></div>
+              <div class="flex items-baseline justify-between gap-2">
+                <p class="font-medium" x-text="'Simulado de ' + dataBR(sm.data)"></p>
+                <span class="font-mono text-xs text-gray-500" x-text="acertosDe(sm)"></span>
               </div>
-              <template x-for="d in sm.nota.porDisciplina" :key="d.disciplinaId">
-                <p class="text-xs text-gray-600" x-text="d.disciplina + ': ' + d.pontos + ' de ' + d.maximo"></p>
+              <template x-if="pontosDe(sm.id)">
+                <div>
+                  <p x-text="textoPontos(pontosDe(sm.id))"></p>
+                  <div x-show="pontosDe(sm.id).notaCorte !== null" class="relative mt-1 h-2 rounded bg-gray-100">
+                    <div class="absolute inset-y-0 left-0 rounded bg-primary-600" :style="'width:' + Math.min(100, pontosDe(sm.id).pontos * 100 / Math.max(pontosDe(sm.id).maximo, 1)) + '%'"></div>
+                    <div class="absolute -inset-y-1 w-0.5 bg-alerta-600" :style="'left:' + Math.min(100, (pontosDe(sm.id).notaCorte ?? 0) * 100 / Math.max(pontosDe(sm.id).maximo, 1)) + '%'"></div>
+                  </div>
+                  <template x-for="d in pontosDe(sm.id).porDisciplina" :key="d.disciplinaId">
+                    <p class="text-xs text-gray-600" x-text="d.disciplina + ': ' + d.pontos + ' de ' + d.maximo"></p>
+                  </template>
+                </div>
               </template>
+              <div class="mt-1 text-right"><button type="button" class="min-h-11 text-xs text-red-700 underline" @click="arquivarSimulado(sm)">Arquivar</button></div>
             </div>
           </template>
-          <p class="text-xs text-gray-500">É comparação com a régua que você informou em Concursos, não previsão de aprovação.</p>
+          <p x-show="pontosSimulados.length" class="text-xs text-gray-500">Os pontos comparam com a régua que você informou em Concursos; não são previsão de aprovação.</p>
+          <div x-show="simuladosArquivados.length">
+            <button type="button" class="min-h-11 text-sm text-gray-500" @click="mostrarArquivados = !mostrarArquivados"
+                    x-text="(mostrarArquivados ? '▾' : '▸') + ' Arquivados (' + simuladosArquivados.length + ')'"></button>
+            <ul x-show="mostrarArquivados" class="space-y-1 pl-3 text-sm text-gray-500">
+              <template x-for="sm in simuladosArquivados" :key="sm.id">
+                <li x-text="'Simulado de ' + dataBR(sm.data) + ' · ' + acertosDe(sm)"></li>
+              </template>
+            </ul>
+          </div>
         </div>
 
         <!-- D-105: o que o Pomodoro mediu, pequeno e sem meta (00_PRODUTO §8.1) -->

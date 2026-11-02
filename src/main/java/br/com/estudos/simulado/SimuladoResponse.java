@@ -10,5 +10,6 @@ public record SimuladoResponse(
     @Schema(description = "Identificador do simulado") Long id,
     @Schema(description = "Data em que o simulado foi feito") LocalDate data,
     @Schema(description = "Duração total em minutos") Integer duracaoMinutos,
+    @Schema(description = "Quando foi arquivado — null se vale (D-149)") java.time.Instant arquivadoEm,
     @Schema(description = "Resultado por disciplina") List<ResultadoSimuladoResponse> resultados
 ) {}

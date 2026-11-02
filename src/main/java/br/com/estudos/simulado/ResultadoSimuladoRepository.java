@@ -35,6 +35,7 @@ public interface ResultadoSimuladoRepository extends JpaRepository<ResultadoSimu
         from ResultadoSimulado rs
         join rs.simulado s
         where s.data between :inicio and :fim
+          and s.arquivadoEm is null
         """)
     List<AcertoLinha> listarAcerto(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 }

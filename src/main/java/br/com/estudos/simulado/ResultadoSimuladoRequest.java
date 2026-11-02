@@ -15,5 +15,13 @@ public record ResultadoSimuladoRequest(
     Integer questoesCorretas,
 
     @Schema(description = "Total de questões nesta disciplina", example = "40")
-    Integer questoesTotal
-) {}
+    Integer questoesTotal,
+
+    @Schema(description = "Questões em branco nesta disciplina — opcional; certas + brancos ≤ total (D-148)", example = "3")
+    Integer questoesEmBranco
+) {
+    /** Sem brancos: o formato de antes da Sprint 34 (a prova hospedada e os testes antigos). */
+    public ResultadoSimuladoRequest(Long disciplinaId, FormatoBanca formato, Integer questoesCorretas, Integer questoesTotal) {
+        this(disciplinaId, formato, questoesCorretas, questoesTotal, null);
+    }
+}

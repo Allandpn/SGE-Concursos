@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.38.0 |
+| Versão | 1.39.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -350,7 +350,13 @@ preditor isolado de desempenho na prova.
 Quando o simulado é uma **prova hospedada** (§3.11), é resolvido no sistema e a nota entra em M-1
 por disciplina e global (D-78); o desempenho por assunto só informa.
 
-Desenho decidido; implementação adiada.
+**Registrar um simulado feito fora (D-148).** Em Registrar, a pílula **Simulado**: data, duração, formato e, para cada
+disciplina do edital do concurso-alvo (mais "outra disciplina", entre as ativas), **certas**, **total** e, opcional, **em branco**.
+Disciplina deixada sem total não entra. Os brancos não mudam a M-1 (acerto é acerto), mas mudam a nota em pontos com errada anula
+certa (§3.20): erradas = total − certas − brancos.
+
+**Corrigir (D-149).** Simulado registrado errado é **arquivado**, nunca editado nem apagado (D-18): sai da M-1, da nota em pontos e da
+contagem do simulado da semana (D-144); a pessoa registra o certo.
 
 ### 3.7 Segmento
 
@@ -896,8 +902,8 @@ fica abaixo de zero. Aparece ao lado da nota de corte, com a diferença ("62 pon
 nunca probabilidade de aprovação (`00_PRODUTO` §8.5), nunca meta, e **a M-1 continua em acertos** (§3.6). Nada disso é guardado
 (D-16): mudar a régua muda a conta de todo o histórico.
 
-**O que o sistema não garante.** Que a régua informada seja a do edital; que o simulado registre brancos (ele guarda acertos e
-total, então, com errada anula certa, o que não foi acerto conta como erro).
+**O que o sistema não garante.** Que a régua informada seja a do edital. Simulado registrado sem brancos (os de antes do campo, ou
+deixado vazio) conta, com errada anula certa, o que não foi acerto como erro (D-148).
 
 ### 3.21 Diagnóstico do edital
 
@@ -1894,6 +1900,8 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-145 | A incidência da banca conta as questões avaliáveis e com assunto das provas hospedadas da mesma banca (nome normalizado; CESPE = Cebraspe), de qualquer concurso, dos últimos N anos (parâmetro, padrão 5; sem ano conta), por assunto da cobertura dentro da disciplina; a banca é a do concurso, senão a da prova hospedada mais recente dele; com menos de 2 provas ou 30 questões na disciplina (parâmetros), ou sem banca, não há proposta | §3.23 |
 | D-146 | A proposta parte do peso do edital: sobe um degrau quem tem mais questões que ao menos dois terços dos outros assuntos da disciplina, desce quem tem menos que ao menos dois terços; zero conta; alto não sobe e baixo não desce; derivada, nunca guardada | §3.23 |
 | D-147 | O peso pela banca só entra por aceite da pessoa; o ajuste aceito vale em toda aplicação da cobertura (ativar, reativar, reimportar) até ser desfeito, que volta ao peso do edital; prova nova muda a proposta, nunca o peso; no máximo um ajuste vigente por assunto e concurso | §3.23 |
+| D-148 | Simulado registrado à mão leva, por disciplina, certas, total e, opcional, em branco, com certas + brancos ≤ total; os brancos não entram na M-1 e, na nota em pontos com errada anula certa, erradas = total − certas − brancos | §3.6, §3.20 |
+| D-149 | Simulado errado é arquivado, nunca editado nem apagado; arquivado sai da M-1, da nota em pontos e do simulado da semana | §3.6 |
 
 ---
 
@@ -1985,6 +1993,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.39.0 | 2026-11-02 | Pedido do usuário (tela de simulado), decidido numa rodada, com `02_JORNADAS` v1.28.0. **§3.6**: o registro à mão com brancos (D-148) e o arquivamento (D-149); sai "implementação adiada". **§3.20**: a limitação dos brancos passa a valer só para quem não os informa |
 | 1.38.0 | 2026-11-02 | Pedido do usuário (Sprint 22), decidido em duas rodadas, com `02_JORNADAS` v1.27.0 e ADR-057. **§3.23** (peso pela banca) e **D-145 a D-147**: a incidência medida nas provas hospedadas da mesma banca (5 anos, mínimo de 2 provas e 30 questões por disciplina), a proposta de um degrau pelos terços dentro da disciplina, o aceite que sobrevive à reimportação até ser desfeito |
 | 1.37.0 | 2026-11-01 | Pedido do usuário (Sprint 21), decidido em duas rodadas, com `02_JORNADAS` v1.26.0 e ADR-056. **§3.22** (reta final) e **D-140 a D-144**: entra só por gesto da pessoa, sugerida a 8 semanas (parâmetro); ativa derivada, termina sozinha depois da prova; assunto novo só de peso alto; manutenção de médio e baixo fora da fila sem reescrever, a de peso alto antecipada até prova − 7 dias; simulado no fim de semana. §7.4 aponta para lá |
 | 1.36.0 | 2026-11-01 | Pedido do usuário (Sprint 20), decidido em duas rodadas, com `02_JORNADAS` v1.25.0. **§3.21** (diagnóstico do edital) e **D-137 a D-139**: cobertura por fase com as faixas consolidado e encaminhado, valor em pontos pela régua e pelas questões do edital, o que cabe até a data pelo ritmo medido (data e ritmo simulados não gravados). Nada guardado |
