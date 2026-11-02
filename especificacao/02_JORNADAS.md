@@ -578,7 +578,7 @@ Uma vez por semana ou menos; orçamento de atenção, não de segundos.
 
 1. Em **Registrar**, a pílula **Simulado** (também pelo cartão do simulado da semana, na reta final, e por "Registrar simulado" em
    Progresso). Data (hoje), duração e formato preenchidos.
-2. As disciplinas do edital do alvo, na ordem dele: **certas / total** e, se quiser, **em branco**. A que não caiu fica vazia; "outra
+2. As disciplinas do edital do alvo, em ordem alfabética: **certas / total** e, se quiser, **em branco**. A que não caiu fica vazia; "outra
    disciplina" acrescenta uma ativa fora do edital.
 3. Registrar grava e mostra a nota em acertos e, com régua, em pontos com o corte (D-136, D-148). Certas + brancos acima do total é
    recusado na linha.
@@ -921,7 +921,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
-| 1.28.0 | 2026-11-02 | Nova **J-16** (registrar um simulado) e o orçamento dele, com `01_DOMINIO` v1.39.0 (D-148, D-149) |
+| 1.28.0 | 2026-11-02 | Nova **J-16** (registrar um simulado) e o orçamento dele, com `01_DOMINIO` v1.39.0 (D-148, D-149). As disciplinas vêm em ordem alfabética (ajustado ao escrever o código: o edital não ordena as disciplinas entre si) |
 | 1.27.0 | 2026-11-02 | Nova **J-15** (peso pela banca), com `01_DOMINIO` v1.38.0 (D-145 a D-147) e ADR-057 |
 | 1.26.0 | 2026-11-01 | Nova **J-14** (reta final), com `01_DOMINIO` v1.37.0 (D-140 a D-144) e ADR-056 |
 | 1.25.0 | 2026-11-01 | Nova **J-13** (diagnóstico de um edital), com `01_DOMINIO` v1.36.0 (D-137 a D-139) |

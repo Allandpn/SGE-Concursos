@@ -33,8 +33,15 @@ public class SimuladoController {
         return ResponseEntity.created(uri).body(SimuladoMapper.toResponse(registrado.simulado(), registrado.resultados()));
     }
 
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/arquivar")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    @Operation(summary = "Arquiva o simulado (D-149): sai da M-1 e dos pontos, nunca é apagado")
+    public void arquivar(@org.springframework.web.bind.annotation.PathVariable Long id) {
+        simuladoService.arquivar(id);
+    }
+
     @GetMapping
-    @Operation(summary = "Lista os simulados com seus resultados")
+    @Operation(summary = "Lista os simulados com seus resultados", description = "Inclui os arquivados, com arquivadoEm preenchido (D-149).")
     public List<SimuladoResponse> listar() {
         return simuladoService.listarComResultados().stream()
             .map(registrado -> SimuladoMapper.toResponse(registrado.simulado(), registrado.resultados()))

@@ -71,6 +71,7 @@ public class SimuladoService {
             resultado.setFormato(resultadoRequest.formato());
             resultado.setQuestoesCorretas(resultadoRequest.questoesCorretas());
             resultado.setQuestoesTotal(resultadoRequest.questoesTotal());
+            resultado.setQuestoesEmBranco(resultadoRequest.questoesEmBranco());
 
             try {
                 resultados.add(resultadoSimuladoRepository.save(resultado));
@@ -80,6 +81,17 @@ public class SimuladoService {
         }
 
         return new SimuladoRegistrado(simulado, resultados);
+    }
+
+    /** D-149: arquivar tira o simulado da M-1, dos pontos e do simulado da semana; nada é apagado nem editado. */
+    @Transactional
+    public void arquivar(Long id) {
+        var simulado = simuladoRepository.findById(id)
+            .orElseThrow(() -> new br.com.estudos.shared.exception.NotFoundException("Simulado não encontrado.", "SIMULADO_INEXISTENTE"));
+        if (simulado.getArquivadoEm() == null) {
+            simulado.setArquivadoEm(java.time.Instant.now());
+            simuladoRepository.save(simulado);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -115,6 +127,11 @@ public class SimuladoService {
         if (resultadoRequest.questoesCorretas() == null || resultadoRequest.questoesTotal() == null) {
             throw new ValidationException(
                 "questoesCorretas e questoesTotal são obrigatórios em cada resultado.", "QUESTOES_OBRIGATORIAS", "questoesTotal");
+        }
+        // D-148: em branco é opcional; com ele, certas + brancos nunca passam do total.
+        var brancos = resultadoRequest.questoesEmBranco();
+        if (brancos != null && (brancos < 0 || resultadoRequest.questoesCorretas() + brancos > resultadoRequest.questoesTotal())) {
+            throw new ValidationException("Certas e em branco somados passam do total.", "BRANCOS_INVALIDOS", "questoesEmBranco");
         }
     }
 

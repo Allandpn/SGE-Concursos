@@ -17,6 +17,8 @@ function renderizarRotaAtual() {
   const elLeitor = document.getElementById('pagina-leitor');
   const elProva = document.getElementById('pagina-prova');
   const elResolver = document.getElementById('pagina-resolver');
+  const elSimulado = document.getElementById('pagina-simulado');
+  const matchSimulado = hash === '#/registrar/simulado'; // D-148: o simulado não tem assunto
   const matchRecuperar = hash.match(/^#\/recuperar\/(\d+)$/);
   const matchRegistrar = hash.match(/^#\/registrar\/(conteudo|questoes|flashcards|discursiva)\/(\d+)$/);
   const matchAssuntoDetalhe = hash.match(/^#\/assuntos\/(\d+)$/);
@@ -48,6 +50,7 @@ function renderizarRotaAtual() {
   elLeitor.hidden = true;
   elProva.hidden = true;
   elResolver.hidden = true;
+  elSimulado.hidden = true;
   if (!matchProva) Alpine.$data(elProva).parar(); // o acompanhamento da prova só vive na tela dela
   if (!matchResolver) Alpine.$data(elResolver).parar();
   if (!matchLeitor) Alpine.$data(elLeitor).parar(); // o envio periódico da fila só vive com o leitor aberto
@@ -57,7 +60,10 @@ function renderizarRotaAtual() {
   principal.classList.toggle('max-w-3xl', !!matchConferencia || !!matchLeitor);
   Alpine.$data(elEdital).parar(); // a consulta periódica da análise só vive na tela dela
 
-  if (matchProvaNova) {
+  if (matchSimulado) {
+    elSimulado.hidden = false;
+    Alpine.$data(elSimulado).abrir();
+  } else if (matchProvaNova) {
     elProva.hidden = false;
     Alpine.$data(elProva).abrirNova();
   } else if (matchProva) {

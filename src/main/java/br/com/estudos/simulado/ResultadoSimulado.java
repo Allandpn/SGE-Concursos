@@ -64,6 +64,10 @@ public class ResultadoSimulado {
     @Column(nullable = false)
     private Integer questoesTotal;
 
+    /** D-148: opcional; não entra na M-1, só na nota em pontos com errada anula certa. */
+    @Setter
+    private Integer questoesEmBranco;
+
     @CreationTimestamp
     private Instant criadoEm;
 

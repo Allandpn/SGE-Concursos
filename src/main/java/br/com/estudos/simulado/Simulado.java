@@ -42,6 +42,10 @@ public class Simulado {
     @Column(nullable = false)
     private Integer duracaoMinutos;
 
+    /** D-149: arquivado sai da M-1, dos pontos e do simulado da semana; nunca é apagado. */
+    @Setter
+    private Instant arquivadoEm;
+
     @CreationTimestamp
     private Instant criadoEm;
 

@@ -158,6 +158,6 @@ public class TurnoService {
             return false;
         }
         var segunda = hoje.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
-        return jdbc.queryForObject("SELECT count(*) FROM simulado WHERE data BETWEEN ? AND ?", Integer.class, segunda, hoje) == 0;
+        return jdbc.queryForObject("SELECT count(*) FROM simulado WHERE data BETWEEN ? AND ? AND arquivado_em IS NULL", Integer.class, segunda, hoje) == 0;
     }
 }

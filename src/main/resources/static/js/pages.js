@@ -457,7 +457,6 @@ document.addEventListener('alpine:init', () => {
     sugestaoReta: null,
     retaEntrada: null,
     erroReta: null,
-    simForm: null,
 
     // D-140: só entra por gesto da pessoa.
     async entrarReta() {
@@ -483,31 +482,6 @@ document.addEventListener('alpine:init', () => {
       if (!e.antecipadas) return 'Reta final ligada. Nenhuma manutenção de peso alto precisou ser antecipada.';
       return e.antecipadas + (e.antecipadas === 1 ? ' revisão de peso alto distribuída' : ' revisões de peso alto distribuídas')
         + ' até ' + e.ate.split('-').reverse().join('/') + '.';
-    },
-
-    // D-144: o registro do simulado da semana (o de sempre, POST /simulados), com as disciplinas do concurso-alvo.
-    async abrirSimulado() {
-      const regua = await api(`/concursos/${this.retaFinal.concursoId}/regua`).catch(() => null);
-      this.simForm = { data: hojeISO(), duracao: 240, formato: 'MULTIPLA_ESCOLHA', erro: null, enviando: false,
-        linhas: (regua ? regua.disciplinas : []).map((d) => ({ disciplinaId: d.disciplinaId, nome: d.nome, total: '', certas: '' })) };
-    },
-
-    async registrarSimulado() {
-      const f = this.simForm;
-      const resultados = f.linhas.filter((l) => Number(l.total) > 0).map((l) => ({ disciplinaId: l.disciplinaId, formato: f.formato,
-        questoesCorretas: Number(l.certas || 0), questoesTotal: Number(l.total) }));
-      if (!resultados.length) { f.erro = 'Preencha ao menos uma disciplina.'; return; }
-      f.enviando = true;
-      f.erro = null;
-      try {
-        await api('/simulados', { method: 'POST', body: JSON.stringify({ data: f.data, duracaoMinutos: Number(f.duracao), resultados }) });
-        this.simForm = null;
-        await this.carregar();
-      } catch (e) {
-        f.erro = e.message;
-      } finally {
-        if (this.simForm) this.simForm.enviando = false;
-      }
     },
 
     // D-133: "Fiz questões" — formato pelo histórico, tempo pelos focos livres (D-100) ou 2 min por questão.
@@ -836,6 +810,96 @@ document.addEventListener('alpine:init', () => {
     abrirErro() {
       Alpine.store('erro').selecionar({ assuntoId: this.assuntoId, nome: this.nome });
       window.location.hash = `#/erros/${this.assuntoId}`;
+    },
+  }));
+
+  // D-148: o registro do simulado (J-16). Sem assunto; as linhas vêm da régua do alvo (as disciplinas do edital).
+  Alpine.data('paginaSimulado', () => ({
+    data: null,
+    duracao: 240,
+    formato: 'MULTIPLA_ESCOLHA',
+    linhas: [],
+    disciplinasAtivas: [],
+    outra: '',
+    semAlvo: false,
+    enviando: false,
+    erro: null,
+    resultado: null, // depois de registrar: { acertos, total, pontos }
+    tentou: false, // o aviso das linhas só aparece depois da primeira tentativa, e some quando elas ficam certas
+
+    get avisoDasLinhas() {
+      return this.tentou && this.linhas.some((l) => this.erroDaLinha(l)) ? 'Confira as linhas marcadas.' : '';
+    },
+
+    async abrir() {
+      this.data = hojeISO();
+      this.duracao = 240;
+      this.formato = 'MULTIPLA_ESCOLHA';
+      this.erro = null;
+      this.tentou = false;
+      this.resultado = null;
+      this.outra = '';
+      this.linhas = [];
+      const alvo = await api('/concursos/ativo').catch(() => null);
+      this.semAlvo = !alvo || !alvo.id;
+      const [regua, disciplinas] = await Promise.all([
+        alvo && alvo.id ? api(`/concursos/${alvo.id}/regua`).catch(() => null) : null,
+        api('/disciplinas').catch(() => []),
+      ]);
+      this.disciplinasAtivas = disciplinas.filter((d) => d.ativo !== false);
+      this.linhas = (regua ? regua.disciplinas : []).map((d) => this.novaLinha(d.disciplinaId, d.nome));
+    },
+
+    novaLinha(disciplinaId, nome) {
+      return { disciplinaId, nome, certas: '', total: '', brancos: '' };
+    },
+
+    get foraDoEdital() {
+      const ja = new Set(this.linhas.map((l) => l.disciplinaId));
+      return this.disciplinasAtivas.filter((d) => !ja.has(d.id));
+    },
+
+    acrescentar() {
+      const d = this.disciplinasAtivas.find((x) => String(x.id) === String(this.outra));
+      if (d) this.linhas.push(this.novaLinha(d.id, d.nome));
+      this.outra = '';
+    },
+
+    // D-148: certas + em branco não passam do total — avisado na linha, recusado também no servidor e no banco.
+    erroDaLinha(l) {
+      if (l.total === '' || l.total === null) return '';
+      const t = Number(l.total), c = Number(l.certas || 0), b = Number(l.brancos || 0);
+      if (t <= 0) return 'total precisa ser maior que zero';
+      if (c > t) return 'certas passam do total';
+      if (c + b > t) return 'certas + em branco passam do total';
+      return '';
+    },
+
+    get preenchidas() {
+      return this.linhas.filter((l) => l.total !== '' && l.total !== null && Number(l.total) > 0);
+    },
+
+    async registrar() {
+      this.erro = null;
+      if (!this.preenchidas.length) { this.erro = 'Preencha o total de ao menos uma disciplina.'; return; }
+      this.tentou = true;
+      if (this.linhas.some((l) => this.erroDaLinha(l))) return;
+      this.enviando = true;
+      try {
+        const corpo = { data: this.data, duracaoMinutos: Number(this.duracao), resultados: this.preenchidas.map((l) => ({
+          disciplinaId: l.disciplinaId, formato: this.formato, questoesCorretas: Number(l.certas || 0), questoesTotal: Number(l.total),
+          questoesEmBranco: l.brancos === '' || l.brancos === null ? null : Number(l.brancos) })) };
+        const salvo = await api('/simulados', { method: 'POST', body: JSON.stringify(corpo) });
+        const acertos = salvo.resultados.reduce((s, r) => s + r.questoesCorretas, 0);
+        const total = salvo.resultados.reduce((s, r) => s + r.questoesTotal, 0);
+        const pontos = await api('/simulados/pontos').catch(() => []);
+        const meu = pontos.find((p) => p.simuladoId === salvo.id);
+        this.resultado = { data: salvo.data, acertos, total, nota: meu && meu.nota.porDisciplina.length ? meu.nota : null };
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.enviando = false;
+      }
     },
   }));
 
@@ -1405,6 +1469,34 @@ document.addEventListener('alpine:init', () => {
     divisoes: [],
     foco: null, // D-105: foco por dia e completos × encerrados antes; informação, nunca meta
     pontosSimulados: [], // D-136: a nota em pontos do edital de cada simulado, com a nota de corte
+    simulados: [], // J-16: todos, com arquivadoEm (D-149)
+    mostrarArquivados: false,
+
+    get simuladosValendo() {
+      return this.simulados.filter((s) => !s.arquivadoEm);
+    },
+
+    get simuladosArquivados() {
+      return this.simulados.filter((s) => s.arquivadoEm);
+    },
+
+    acertosDe(sm) {
+      const c = sm.resultados.reduce((s, r) => s + r.questoesCorretas, 0);
+      const t = sm.resultados.reduce((s, r) => s + r.questoesTotal, 0);
+      return c + '/' + t + ' acertos';
+    },
+
+    pontosDe(id) {
+      const p = this.pontosSimulados.find((x) => x.simuladoId === id);
+      return p && p.nota.porDisciplina.length ? p.nota : null;
+    },
+
+    // D-149: arquivar, nunca apagar nem editar.
+    async arquivarSimulado(sm) {
+      if (!window.confirm('Arquivar o simulado de ' + dataBR(sm.data) + '? Ele sai das métricas e dos pontos, mas não é apagado.')) return;
+      await api(`/simulados/${sm.id}/arquivar`, { method: 'POST' }).catch(() => {});
+      [this.simulados, this.pontosSimulados] = await Promise.all([api('/simulados').catch(() => []), api('/simulados/pontos').catch(() => [])]);
+    },
 
     async init() {
       this.carregando = true;
@@ -1412,6 +1504,7 @@ document.addEventListener('alpine:init', () => {
       try {
         this.foco = await api('/foco/resumo').catch(() => null);
         this.pontosSimulados = await api('/simulados/pontos').catch(() => []);
+        this.simulados = await api('/simulados').catch(() => []);
         const disciplinas = await api('/disciplinas');
         this.disciplinasPorId = Object.fromEntries(disciplinas.map((d) => [d.id, d.nome]));
         await this.carregarM1();

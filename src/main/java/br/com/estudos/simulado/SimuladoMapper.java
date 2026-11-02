@@ -12,6 +12,7 @@ public final class SimuladoMapper {
             simulado.getId(),
             simulado.getData(),
             simulado.getDuracaoMinutos(),
+            simulado.getArquivadoEm(),
             resultados.stream().map(SimuladoMapper::toResultadoResponse).toList()
         );
     }
@@ -21,7 +22,8 @@ public final class SimuladoMapper {
             resultado.getDisciplina().getId(),
             resultado.getFormato(),
             resultado.getQuestoesCorretas(),
-            resultado.getQuestoesTotal()
+            resultado.getQuestoesTotal(),
+            resultado.getQuestoesEmBranco()
         );
     }
 }
