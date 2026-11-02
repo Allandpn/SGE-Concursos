@@ -1833,6 +1833,10 @@
                 <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
                         @click="abrirDiagnostico(ativo)">Diagnóstico</button>
                 <!-- D-140, D-141: a reta final só entra por gesto; sair a qualquer hora -->
+                <!-- J-15: o peso pela banca (D-145 a D-147) -->
+                <button type="button" x-show="banca" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700"
+                        @click="bancaAberta = true"
+                        x-text="'Peso pela banca' + (banca && banca.totalPropostas ? ' · ' + banca.totalPropostas + (banca.totalPropostas === 1 ? ' proposta' : ' propostas') : '')"></button>
                 <button type="button" x-show="podeEntrarReta" class="min-h-11 rounded border border-primary-600 px-3 text-sm font-medium text-primary-700"
                         @click="entrarRetaFinal()">Entrar na reta final</button>
                 <span x-show="retaAtiva" class="rounded-full border border-primary-600 px-2 py-0.5 text-xs text-primary-700"
@@ -1967,6 +1971,69 @@
               </li>
             </template>
           </ul>
+        </div>
+      </div>
+    </template>
+
+    <!-- J-15: o peso pela banca. A proposta é derivada; só o aceite grava (D-146, D-147) -->
+    <template x-if="bancaAberta && banca">
+      <div class="fixed inset-0 z-40 flex justify-end bg-black/20" @click.self="bancaAberta = false" @keydown.escape.window="bancaAberta = false">
+        <div class="h-full w-full max-w-md overflow-y-auto bg-white p-4 shadow-xl" role="dialog" aria-label="Peso pela banca" id="peso-banca">
+          <div class="mb-3 flex items-start justify-between gap-2">
+            <div>
+              <p class="text-xs uppercase tracking-wide text-gray-500">Peso pela banca</p>
+              <p class="font-medium" x-text="banca.banca || 'Banca não informada'"></p>
+            </div>
+            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="bancaAberta = false" aria-label="Fechar">✕</button>
+          </div>
+          <p x-show="!banca.banca" class="text-sm text-gray-600">O concurso não tem banca e nenhuma prova dele foi hospedada: não há como medir a incidência.</p>
+          <template x-if="banca.banca">
+            <div class="space-y-4 text-sm">
+              <p class="text-xs text-gray-600" x-text="banca.provas + (banca.provas === 1 ? ' prova' : ' provas') + ' da banca'
+                + (banca.anoMinimo ? ' (' + banca.anoMinimo + (banca.anoMaximo !== banca.anoMinimo ? '–' + banca.anoMaximo : '') + ')' : '')
+                + ' · ' + banca.questoes + ' questões com assunto'"></p>
+              <p x-show="bancaErro" class="rounded border border-red-300 bg-red-50 p-2 text-red-700" x-text="bancaErro"></p>
+              <div class="flex justify-end" x-show="banca.totalPropostas > 0">
+                <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white"
+                        @click="aceitarBanca(todasPropostas())" x-text="'Aceitar todos (' + banca.totalPropostas + ')'"></button>
+              </div>
+              <template x-for="d in banca.disciplinas" :key="d.disciplinaId">
+                <div class="space-y-2 rounded border border-gray-200 p-3">
+                  <div class="flex justify-between gap-2"><span class="font-medium" x-text="d.nome"></span>
+                    <span class="whitespace-nowrap font-mono text-xs text-gray-500" x-text="d.provas + (d.provas === 1 ? ' prova' : ' provas') + ' · ' + d.questoes + ' q'"></span></div>
+                  <p x-show="!d.suficiente" class="text-xs text-gray-500">Sem amostra suficiente da banca.</p>
+                  <p x-show="d.suficiente && d.propostas.length === 0" class="text-xs text-gray-500">Nada a mudar.</p>
+                  <template x-for="p in d.propostas" :key="p.assuntoId">
+                    <div class="flex items-center gap-2 border-t border-dashed border-gray-200 pt-2">
+                      <div class="min-w-0 flex-1">
+                        <p x-text="p.nome"></p>
+                        <p class="text-xs text-gray-500" x-text="p.questoes + ' de ' + d.questoes + ' questões' + (p.questoes === 0 ? ' · a banca nunca cobrou' : '')"></p>
+                        <p x-show="p.sobeParaAlto" class="text-xs text-alerta-700">pede mais degraus na escada antes de consolidar</p>
+                      </div>
+                      <span class="whitespace-nowrap font-mono text-xs" x-text="pesoBr(p.pesoAtual) + ' → ' + pesoBr(p.proposto)"></span>
+                      <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="aceitarBanca([p.assuntoId])">Aceitar</button>
+                    </div>
+                  </template>
+                  <button type="button" x-show="d.propostas.length > 1" class="text-xs text-primary-700 underline"
+                          @click="aceitarBanca(d.propostas.map((p) => p.assuntoId))" x-text="'aceitar todos desta disciplina (' + d.propostas.length + ')'"></button>
+                </div>
+              </template>
+              <div x-show="banca.ajustados.length > 0" class="space-y-2 border-t border-gray-100 pt-3">
+                <p class="text-xs uppercase tracking-wide text-gray-500" x-text="'Ajustados pela banca (' + banca.ajustados.length + ')'"></p>
+                <template x-for="a in banca.ajustados" :key="a.assuntoId">
+                  <div class="flex items-center gap-2">
+                    <div class="min-w-0 flex-1">
+                      <p x-text="a.nome"></p>
+                      <p class="text-xs text-gray-500" x-text="'aceito em ' + dataInstante(a.aceitoEm) + (a.propostaHoje && a.propostaHoje !== a.peso ? ' · hoje a proposta seria ' + pesoBr(a.propostaHoje) : '')"></p>
+                    </div>
+                    <span class="whitespace-nowrap font-mono text-xs" x-text="'edital ' + pesoBr(a.pesoEdital) + ' · ' + pesoBr(a.peso)"></span>
+                    <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-gray-600" @click="desfazerBanca(a.assuntoId)">Desfazer</button>
+                  </div>
+                </template>
+                <p class="text-xs text-gray-500">Reimportar o edital ou concluir a conferência de novo mantém estes pesos. Desfazer volta ao do edital.</p>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </template>

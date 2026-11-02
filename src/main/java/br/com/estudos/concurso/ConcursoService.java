@@ -44,6 +44,7 @@ public class ConcursoService {
     private final MaterialService materialService;
     private final br.com.estudos.conferencia.MaterialDaConferencia materialDaConferencia;
     private final Clock clock;
+    private final br.com.estudos.pesobanca.PesoBancaService pesoBanca;
     private final br.com.estudos.push.AvisoDeProcesso avisos;
 
     public ConcursoService(
@@ -53,8 +54,10 @@ public class ConcursoService {
             MaterialService materialService,
             br.com.estudos.conferencia.MaterialDaConferencia materialDaConferencia,
             Clock clock,
-            br.com.estudos.push.AvisoDeProcesso avisos) {
+            br.com.estudos.push.AvisoDeProcesso avisos,
+            br.com.estudos.pesobanca.PesoBancaService pesoBanca) {
         this.avisos = avisos;
+        this.pesoBanca = pesoBanca;
         this.concursoRepository = concursoRepository;
         this.coberturaRepository = coberturaRepository;
         this.assuntoRepository = assuntoRepository;
@@ -197,7 +200,7 @@ public class ConcursoService {
             .filter(c -> c.getAssunto().isAtivo())
             .map(c -> new ItemCobertura(c.getAssunto(), c.getDisciplina(), c.getPeso(), c.getOrdem()))
             .toList();
-        aplicarCobertura(itens);
+        aplicarCobertura(comAjustesDaBanca(id, itens));
         return ativar(concurso);
     }
 
@@ -209,7 +212,8 @@ public class ConcursoService {
      */
     @Transactional
     public Concurso ativarComCobertura(Concurso concurso, List<ItemCobertura> itens) {
-        aplicarCobertura(itens);
+        // D-147: o peso aceito pela banca vale na aplicação; a cobertura gravada fica com o peso do edital (ADR-057).
+        aplicarCobertura(comAjustesDaBanca(concurso.getId(), itens));
         var salvo = ativar(concurso);
         coberturaRepository.removerDoConcurso(salvo.getId());
         coberturaRepository.flush();
@@ -217,6 +221,17 @@ public class ConcursoService {
             .map(i -> new CoberturaEdital(salvo, i.assunto(), i.disciplina(), i.peso(), i.ordem()))
             .toList());
         return salvo;
+    }
+
+    /** D-147: troca o peso do edital pelo ajuste vigente da banca, quando há (ADR-057). */
+    private List<ItemCobertura> comAjustesDaBanca(Long concursoId, List<ItemCobertura> itens) {
+        var vigentes = pesoBanca.vigentes(concursoId);
+        if (vigentes.isEmpty()) return itens;
+        return itens.stream()
+            .map(i -> vigentes.containsKey(i.assunto().getId())
+                ? new ItemCobertura(i.assunto(), i.disciplina(), vigentes.get(i.assunto().getId()), i.ordem())
+                : i)
+            .toList();
     }
 
     /**

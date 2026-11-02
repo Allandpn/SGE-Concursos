@@ -31,6 +31,9 @@ const ROTULOS_PARAMETRO = {
   discursiva_limiar_sucesso: 'Sucesso · discursiva (nota)',
   discursiva_limiar_parcial: 'Parcial · discursiva (nota)',
   reta_final_semanas_aviso: 'Sugerir a reta final (semanas antes da prova)',
+  banca_anos: 'Provas da banca dos últimos (anos)',
+  banca_provas_minimas: 'Mínimo de provas por disciplina',
+  banca_questoes_minimas: 'Mínimo de questões por disciplina',
 };
 
 // Preferências do Pomodoro que são do aparelho, não do domínio (docs/SPRINT-29-POMODORO.md §6): ficam no navegador.
@@ -1777,6 +1780,7 @@ document.addEventListener('alpine:init', () => {
         if (chave.startsWith('duracao_')) return 'Turno';
         if (chave.startsWith('pomodoro_')) return 'Pomodoro';
         if (chave.startsWith('reta_final_')) return 'Reta final';
+        if (chave.startsWith('banca_')) return 'Peso pela banca';
         return 'Escada';
       };
       const porGrupo = {};
@@ -1784,7 +1788,7 @@ document.addEventListener('alpine:init', () => {
         const grupo = nomeDoGrupo(p.chave);
         (porGrupo[grupo] ??= []).push(p);
       }
-      return ['Tetos', 'Turno', 'Pomodoro', 'Limiares de resultado', 'Reta final', 'Escada']
+      return ['Tetos', 'Turno', 'Pomodoro', 'Limiares de resultado', 'Reta final', 'Peso pela banca', 'Escada']
         .filter((nome) => porGrupo[nome])
         .map((nome) => ({ nome, itens: porGrupo[nome] }));
     },
@@ -1854,6 +1858,42 @@ document.addEventListener('alpine:init', () => {
     reguaAberta: false,
     // D-137 a D-139: o diagnóstico de um concurso; data e ritmo são simulação, nunca gravados.
     diag: null,
+    // D-145 a D-147: o peso pela banca do alvo — a proposta é derivada; só entra por aceite.
+    banca: null,
+    bancaAberta: false,
+    bancaErro: null,
+
+    async carregarBanca() {
+      if (!this.ativo) { this.banca = null; return; }
+      this.banca = await api(`/concursos/${this.ativo.id}/peso-banca`).catch(() => null);
+    },
+
+    async aceitarBanca(assuntoIds) {
+      this.bancaErro = null;
+      try {
+        this.banca = await api(`/concursos/${this.ativo.id}/peso-banca/aceitar`, { method: 'POST', body: JSON.stringify({ assuntoIds }) });
+      } catch (e) {
+        this.bancaErro = e.message;
+      }
+    },
+
+    async desfazerBanca(assuntoId) {
+      this.bancaErro = null;
+      try {
+        this.banca = await api(`/concursos/${this.ativo.id}/peso-banca/${assuntoId}/desfazer`, { method: 'POST' });
+      } catch (e) {
+        this.bancaErro = e.message;
+      }
+    },
+
+    todasPropostas() {
+      return (this.banca ? this.banca.disciplinas : []).flatMap((d) => d.propostas.map((p) => p.assuntoId));
+    },
+
+    pesoBr(p) {
+      return { ALTO: 'alto', MEDIO: 'médio', BAIXO: 'baixo' }[p] || p;
+    },
+
     // D-140, D-141: a reta final do alvo — entrar (só com data futura) e sair.
     retaAtiva: null,
     retaAviso: null,
@@ -1965,6 +2005,7 @@ document.addEventListener('alpine:init', () => {
         this.avisos = null;
         this.provas = this.ativo ? await api('/provas').catch(() => []) : [];
         this.regua = this.ativo ? await api(`/concursos/${this.ativo.id}/regua`).catch(() => null) : null;
+        this.carregarBanca(); // D-146: a contagem de propostas no botão
         if (this.ativo) {
           try {
             this.avisos = await api(`/concursos/${this.ativo.id}/avisos-de-conferencia`);

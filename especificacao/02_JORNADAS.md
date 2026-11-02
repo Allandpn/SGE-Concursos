@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.26.0 |
+| Versão | 1.27.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -572,6 +572,19 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-15 · Peso pela banca
+
+Rara: quando chega edital novo ou prova nova da banca. Orçamento de atenção; aceitar tudo em **2 toques**.
+
+1. Em **Concursos**, no alvo, **"Peso pela banca"**. No topo: a banca, quantas provas e questões dela entraram (últimos 5 anos).
+2. Por disciplina: a amostra ("FGV · 3 provas · 64 questões") ou "sem amostra suficiente da banca". Abaixo, só os assuntos cujo peso
+   mudaria: nome, **edital → proposto**, "12 de 64 questões", e **Aceitar**. No fim da disciplina, "aceitar todos desta disciplina"; no
+   topo, "aceitar todos" (D-146, D-147).
+3. Subir para alto mostra: "pede mais dois degraus na escada antes de consolidar".
+4. Os aceitos ficam numa lista "Ajustados pela banca", cada um com **Desfazer** (volta ao peso do edital).
+
+Nada muda ao abrir. Prova nova da banca só muda o que é proposto.
+
 ### J-14 · Reta final
 
 Rara: uma vez por concurso. Orçamento de atenção; entrar e sair em **2 toques**.
@@ -894,6 +907,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.27.0 | 2026-11-02 | Nova **J-15** (peso pela banca), com `01_DOMINIO` v1.38.0 (D-145 a D-147) e ADR-057 |
 | 1.26.0 | 2026-11-01 | Nova **J-14** (reta final), com `01_DOMINIO` v1.37.0 (D-140 a D-144) e ADR-056 |
 | 1.25.0 | 2026-11-01 | Nova **J-13** (diagnóstico de um edital), com `01_DOMINIO` v1.36.0 (D-137 a D-139) |
 | 1.24.0 | 2026-11-01 | J-2 ganha o lote rápido ("Fiz questões", ≤ 12 s, D-133) e a discursiva (≤ 20 s); nova **J-12** (treino discursivo e nota de corte), com `01_DOMINIO` v1.35.0 (D-133 a D-136) |

@@ -73,7 +73,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 23 (ADR-055): a régua da prova, pontos por disciplina do concurso.
                 "concurso_pontuacao",
                 // Sprint 21 (ADR-056): a entrada e a saída da reta final.
-                "reta_final");
+                "reta_final",
+                // Sprint 22 (ADR-057): o ajuste de peso aceito pela banca.
+                "peso_banca");
         assertEquals(esperado, tabelasDoSchema());
     }
 
