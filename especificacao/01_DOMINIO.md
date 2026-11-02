@@ -966,7 +966,8 @@ refinar o peso de cada assunto. O edital continua mandando; a banca refina, e s�
 **A incidência (D-145).** Para o concurso-alvo, contam-se as questões **avaliáveis e com assunto** das provas hospedadas da **mesma
 banca** (o nome sem acento e sem caixa; CESPE e Cebraspe são a mesma), de **qualquer concurso**, dos **últimos N anos** (parâmetro,
 padrão 5; prova sem ano conta). A contagem é por assunto da cobertura, dentro de cada disciplina. Disciplina com menos de **2 provas**
-ou **30 questões** (parâmetros) fica "sem amostra suficiente da banca" e não recebe proposta. Concurso sem banca, idem.
+ou **30 questões** (parâmetros) fica "sem amostra suficiente da banca" e não recebe proposta. A banca é a do concurso; sem ela (o
+concurso importado do planejamento não a traz), a da prova hospedada mais recente do próprio concurso; sem nenhuma, não há proposta.
 
 **A proposta (D-146).** Partindo do **peso do edital** de cada assunto: **sobe um degrau** (baixo → médio → alto) quem tem mais
 questões que pelo menos dois terços dos outros assuntos da disciplina; **desce um degrau** quem tem menos que pelo menos dois terços.
@@ -1890,7 +1891,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-142 | Na reta final, o bloco de conteúdo continua o que está em estudo e só abre assunto novo de peso alto; a escada segue normal em qualquer peso | §3.22, §7.4 |
 | D-143 | Na reta final, a manutenção de consolidado de peso médio e baixo sai da fila sem ser reescrita; ao entrar, a manutenção pendente dos consolidados de peso alto que venceria depois de prova − 7 dias é antecipada e distribuída por igual entre amanhã e prova − 7 dias, guardando a data anterior | §3.22 |
 | D-144 | Na reta final, no sábado e no domingo, sem simulado registrado desde a segunda-feira da semana, o plano traz "Simulado" no lugar do segundo bloco de conteúdo | §3.22 |
-| D-145 | A incidência da banca conta as questões avaliáveis e com assunto das provas hospedadas da mesma banca (nome normalizado; CESPE = Cebraspe), de qualquer concurso, dos últimos N anos (parâmetro, padrão 5; sem ano conta), por assunto da cobertura dentro da disciplina; com menos de 2 provas ou 30 questões na disciplina (parâmetros), ou sem banca no concurso, não há proposta | §3.23 |
+| D-145 | A incidência da banca conta as questões avaliáveis e com assunto das provas hospedadas da mesma banca (nome normalizado; CESPE = Cebraspe), de qualquer concurso, dos últimos N anos (parâmetro, padrão 5; sem ano conta), por assunto da cobertura dentro da disciplina; a banca é a do concurso, senão a da prova hospedada mais recente dele; com menos de 2 provas ou 30 questões na disciplina (parâmetros), ou sem banca, não há proposta | §3.23 |
 | D-146 | A proposta parte do peso do edital: sobe um degrau quem tem mais questões que ao menos dois terços dos outros assuntos da disciplina, desce quem tem menos que ao menos dois terços; zero conta; alto não sobe e baixo não desce; derivada, nunca guardada | §3.23 |
 | D-147 | O peso pela banca só entra por aceite da pessoa; o ajuste aceito vale em toda aplicação da cobertura (ativar, reativar, reimportar) até ser desfeito, que volta ao peso do edital; prova nova muda a proposta, nunca o peso; no máximo um ajuste vigente por assunto e concurso | §3.23 |
 
