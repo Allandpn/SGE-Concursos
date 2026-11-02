@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.37.0 |
+| Versão | 1.38.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -957,6 +957,33 @@ passou. Termina sozinha no dia seguinte à prova, ao trocar de alvo, ou por "Sai
 **O que a reta final não faz.** Não muda peso, ordem, a escada nem o teto diário; não apaga revisão (D-18); não decide pela pessoa que
 é hora de entrar.
 
+### 3.23 Peso pela banca
+
+O peso vem do edital, por disciplina (D-61): todos os assuntos de uma disciplina saem com o mesmo. Dentro dela, porém, a banca
+cobra uns muito mais que outros. A pedido do usuário (2026-11-02), o sistema mede isso nas **provas hospedadas** (§3.11) e propõe
+refinar o peso de cada assunto. O edital continua mandando; a banca refina, e só com o aceite da pessoa.
+
+**A incidência (D-145).** Para o concurso-alvo, contam-se as questões **avaliáveis e com assunto** das provas hospedadas da **mesma
+banca** (o nome sem acento e sem caixa; CESPE e Cebraspe são a mesma), de **qualquer concurso**, dos **últimos N anos** (parâmetro,
+padrão 5; prova sem ano conta). A contagem é por assunto da cobertura, dentro de cada disciplina. Disciplina com menos de **2 provas**
+ou **30 questões** (parâmetros) fica "sem amostra suficiente da banca" e não recebe proposta. Concurso sem banca, idem.
+
+**A proposta (D-146).** Partindo do **peso do edital** de cada assunto: **sobe um degrau** (baixo → médio → alto) quem tem mais
+questões que pelo menos dois terços dos outros assuntos da disciplina; **desce um degrau** quem tem menos que pelo menos dois terços.
+Assunto que a banca nunca cobrou tem zero e entra na conta como os outros. Alto não sobe; baixo não desce. A proposta é calculada na
+hora e nunca guardada; mostra, para cada assunto, o peso do edital, o proposto e "12 de 64 questões da banca na disciplina".
+
+**Aceitar e desfazer (D-147).** Nada muda sem gesto: a pessoa aceita um a um ou "aceitar todos". O aceite vira um **ajuste**
+(concurso, assunto, peso) e passa a ser o peso do assunto. O ajuste vale sempre que a cobertura do concurso é aplicada — ativar,
+reativar, reimportar o edital, concluir a conferência de novo — até a pessoa **desfazer**, que volta ao peso do edital. Prova nova da
+banca muda a proposta, nunca o peso: a diferença aparece como proposta nova. No máximo um ajuste vigente por assunto em cada concurso.
+
+**O que muda com o peso.** O mesmo que o edital mudaria (D-23, D-60): o nível-alvo da escada, a ordem de abertura (D-41) e, na
+reta final, o que é "peso alto" (§3.22). Subir para alto pede mais degraus antes de consolidar; a tela avisa.
+
+**O que o sistema não garante.** Que as provas hospedadas representem a banca: duas provas são uma amostra pequena, e a atribuição
+de cada questão a assunto (§3.11) pode errar. Por isso o mínimo de amostra, os números à vista e o aceite.
+
 ---
 
 ## 4. O resultado da recuperação
@@ -1863,6 +1890,9 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-142 | Na reta final, o bloco de conteúdo continua o que está em estudo e só abre assunto novo de peso alto; a escada segue normal em qualquer peso | §3.22, §7.4 |
 | D-143 | Na reta final, a manutenção de consolidado de peso médio e baixo sai da fila sem ser reescrita; ao entrar, a manutenção pendente dos consolidados de peso alto que venceria depois de prova − 7 dias é antecipada e distribuída por igual entre amanhã e prova − 7 dias, guardando a data anterior | §3.22 |
 | D-144 | Na reta final, no sábado e no domingo, sem simulado registrado desde a segunda-feira da semana, o plano traz "Simulado" no lugar do segundo bloco de conteúdo | §3.22 |
+| D-145 | A incidência da banca conta as questões avaliáveis e com assunto das provas hospedadas da mesma banca (nome normalizado; CESPE = Cebraspe), de qualquer concurso, dos últimos N anos (parâmetro, padrão 5; sem ano conta), por assunto da cobertura dentro da disciplina; com menos de 2 provas ou 30 questões na disciplina (parâmetros), ou sem banca no concurso, não há proposta | §3.23 |
+| D-146 | A proposta parte do peso do edital: sobe um degrau quem tem mais questões que ao menos dois terços dos outros assuntos da disciplina, desce quem tem menos que ao menos dois terços; zero conta; alto não sobe e baixo não desce; derivada, nunca guardada | §3.23 |
+| D-147 | O peso pela banca só entra por aceite da pessoa; o ajuste aceito vale em toda aplicação da cobertura (ativar, reativar, reimportar) até ser desfeito, que volta ao peso do edital; prova nova muda a proposta, nunca o peso; no máximo um ajuste vigente por assunto e concurso | §3.23 |
 
 ---
 
@@ -1954,6 +1984,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.38.0 | 2026-11-02 | Pedido do usuário (Sprint 22), decidido em duas rodadas, com `02_JORNADAS` v1.27.0 e ADR-057. **§3.23** (peso pela banca) e **D-145 a D-147**: a incidência medida nas provas hospedadas da mesma banca (5 anos, mínimo de 2 provas e 30 questões por disciplina), a proposta de um degrau pelos terços dentro da disciplina, o aceite que sobrevive à reimportação até ser desfeito |
 | 1.37.0 | 2026-11-01 | Pedido do usuário (Sprint 21), decidido em duas rodadas, com `02_JORNADAS` v1.26.0 e ADR-056. **§3.22** (reta final) e **D-140 a D-144**: entra só por gesto da pessoa, sugerida a 8 semanas (parâmetro); ativa derivada, termina sozinha depois da prova; assunto novo só de peso alto; manutenção de médio e baixo fora da fila sem reescrever, a de peso alto antecipada até prova − 7 dias; simulado no fim de semana. §7.4 aponta para lá |
 | 1.36.0 | 2026-11-01 | Pedido do usuário (Sprint 20), decidido em duas rodadas, com `02_JORNADAS` v1.25.0. **§3.21** (diagnóstico do edital) e **D-137 a D-139**: cobertura por fase com as faixas consolidado e encaminhado, valor em pontos pela régua e pelas questões do edital, o que cabe até a data pelo ritmo medido (data e ritmo simulados não gravados). Nada guardado |
 | 1.35.0 | 2026-11-01 | Pedido do usuário (Sprint 23), com `00_PRODUTO` v1.15.0, `02_JORNADAS` v1.24.0 e ADR-055. **§3.3**: quinto tipo de sessão, `DISCURSIVA` (D-134). **§3.20** (nota de corte e pontuação do edital) e **D-135, D-136**. **D-133**: "Fiz questões" na fila de Hoje. §4.1 ganha a apuração da discursiva. 136 regras |

@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.23.0** |
+| Versão do documento | **2.24.0** |
 | Status | **Congelado** |
 | Data | 2026-11-01 |
-| Total | 56 ADRs — 41 vigentes, 14 substituídas, 1 revogada |
+| Total | 57 ADRs — 42 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -84,6 +84,7 @@ que custa e o que foi descartado.
 | [ADR-054](#adr-054--pdf-próprio-cortado-pelo-sge) | PDF próprio cortado pelo SGE | 2026-11-01 |
 | [ADR-055](#adr-055--discursiva-como-tipo-de-sessão-e-régua-do-edital-derivada) | Discursiva como tipo de sessão e régua do edital derivada | 2026-11-01 |
 | [ADR-056](#adr-056--reta-final-regime-derivado-só-a-antecipação-grava) | Reta final: regime derivado, só a antecipação grava | 2026-11-01 |
+| [ADR-057](#adr-057--peso-pela-banca-proposta-derivada-ajuste-aceito-em-tabela-própria) | Peso pela banca: proposta derivada, ajuste aceito em tabela própria | 2026-11-02 |
 
 ### 1.2 Históricas
 
@@ -984,6 +985,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.24.0 | 2026-11-02 | **ADR-057**, pedido do usuário: a proposta de peso pela banca é consulta; o ajuste aceito mora em `peso_banca` e substitui o peso do edital em toda aplicação da cobertura até ser desfeito |
 | 2.23.0 | 2026-11-01 | **ADR-056**, pedido do usuário: reta final com só entrada e saída guardadas; a manutenção de médio e baixo escondida por filtro; a de peso alto antecipada uma vez ao entrar, com a data anterior guardada |
 | 2.22.0 | 2026-11-01 | **ADR-055**, pedido do usuário: `DISCURSIVA` como tipo de sessão, com a nota e os limiares; a régua da prova no concurso, e a nota em pontos derivada. Com `01_DOMINIO` v1.35.0 (D-133 a D-136). Total 55, 40 vigentes |
 | 2.21.0 | 2026-11-01 | **ADR-054**, pedido do usuário: o PDF próprio é cortado pelo SGE (PDFBox), pelo ritmo escolhido e pelos marcadores. Com `01_DOMINIO` v1.34.0 (D-129 a D-132). Total 54, 39 vigentes |
@@ -2227,6 +2229,38 @@ recuperação sai das revisões pendentes vencidas. A reta final muda o plano po
 | Reescrever a data das manutenções de médio e baixo para depois da prova | Estado reescrito a desfazer ao sair cedo ou ao mudar a data da prova; o filtro não deixa resto |
 | Antecipar os de peso alto por derivação no plano | A data "distribuída" dependeria do conjunto de assuntos em cada dia; mudaria sozinha e a pessoa não saberia quando cada um vem |
 | Flag `reta_final` no concurso | Sem histórico de entradas e saídas; D-18 pede que nada se perca |
+
+## ADR-057 — Peso pela banca: proposta derivada, ajuste aceito em tabela própria
+
+**Status:** Aceita · 2026-11-02 · pedido do usuário
+
+### Contexto
+
+A Sprint 22 traz o peso pela banca (`01_DOMINIO` §3.23, D-145 a D-147). O peso de cada assunto no concurso mora na cobertura
+(`concurso_assunto`), que a importação e a conclusão da conferência **substituem inteira** a cada vez (`ConcursoService.ativarComCobertura`).
+O ajuste aceito precisa sobreviver a isso.
+
+### Decisão
+
+- **A proposta é consulta**: a incidência e os terços são calculados na leitura, a partir de `prova`, `questao` e da cobertura.
+- **O aceite mora em `peso_banca`** (concurso, assunto, peso, aceito em, desfeito em), com no máximo um vigente por (concurso, assunto)
+  (índice único parcial, D-147). A cobertura continua guardando o peso do edital.
+- **Toda aplicação da cobertura troca o peso do edital pelo do ajuste vigente** antes de aplicar (ativar, reativar, reimportar). Desfazer
+  marca `desfeito_em` e, se o concurso é o alvo, devolve ao assunto o peso da cobertura.
+
+### Consequências
+
+- `ConcursoService` ganha um passo antes de `aplicarCobertura`; o resto do domínio só vê `assunto.peso`, como antes.
+- O diagnóstico (D-138) não muda: ele lê a disciplina, não o peso do assunto. A ordem dos nunca vistos (D-139) e a reta final (D-142,
+  D-143) passam a ver o peso ajustado, porque leem o assunto ou a cobertura aplicada.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Coluna `peso_banca` em `concurso_assunto` | A cobertura é apagada e regravada na reimportação; o ajuste se perderia |
+| Gravar a proposta | Derivável (D-16); prova nova exigiria recalcular o que está guardado |
+| Aplicar sozinho ao chegar prova nova | O usuário escolheu aprovar; duas provas são amostra pequena |
 
 ---
 
