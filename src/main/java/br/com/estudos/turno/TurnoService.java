@@ -32,6 +32,8 @@ public class TurnoService {
     private final ParametroRepository parametroRepository;
     private final Clock clock;
     private final br.com.estudos.pergunta.PerguntaService perguntaService;
+    private final br.com.estudos.retafinal.RetaFinalConsulta retaFinal;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     public TurnoService(
             RevisaoRepository revisaoRepository,
@@ -40,8 +42,12 @@ public class TurnoService {
             FrenteService frenteService,
             ParametroRepository parametroRepository,
             br.com.estudos.pergunta.PerguntaService perguntaService,
-            Clock clock) {
+            Clock clock,
+            br.com.estudos.retafinal.RetaFinalConsulta retaFinal,
+            org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.perguntaService = perguntaService;
+        this.retaFinal = retaFinal;
+        this.jdbc = jdbc;
         this.revisaoRepository = revisaoRepository;
         this.revisaoService = revisaoService;
         this.sessaoRepository = sessaoRepository;
@@ -70,7 +76,11 @@ public class TurnoService {
         // D-40: o teto limita o que é OFERECIDO aqui, nunca o que é permitido — nenhum
         // endpoint bloqueia registrar mais que isto; "puxar mais" é só chamar de novo
         // depois de registrar (emergente, sem endpoint dedicado, docs/SPRINT-6-TURNO.md §2).
-        var vencidas = revisaoRepository.listarVencidasPorAtraso(hoje);
+        // D-143: na reta final, a manutenção de médio e baixo sai da fila sem ser reescrita.
+        var escondidos = frenteService.assuntosComManutencaoEscondida();
+        var todasVencidas = revisaoRepository.listarVencidasPorAtraso(hoje);
+        var vencidas = todasVencidas.stream().filter(r -> !escondidos.contains(r.getAssunto().getId())).toList();
+        var manutencoesEsperando = todasVencidas.size() - vencidas.size();
         var limiteFila = tetoDiario + Math.max(0, extraRecuperacoes);
         var fila = vencidas.stream()
             .limit(limiteFila)
@@ -121,6 +131,7 @@ public class TurnoService {
                     prox.getPaginaInicial(), prox.getPaginaFinal(), prox.getTempoEstimadoMin())))
             .orElse(null);
         var antecipaveis = revisaoService.antecipaveis(hoje, LIMITE_ANTECIPAVEIS).stream()
+            .filter(r -> !escondidos.contains(r.getAssunto().getId()))
             .map(r -> new FilaRecuperacaoItemResponse(
                 r.getAssunto().getId(),
                 r.getAssunto().getNome(),
@@ -129,8 +140,24 @@ public class TurnoService {
                 ChronoUnit.DAYS.between(r.getDataPrevista(), hoje)))
             .toList();
 
+        // D-144: na reta final, no fim de semana sem simulado desde a segunda, o simulado é o segundo bloco.
+        var ativa = retaFinal.ativa().orElse(null);
+        var simuladoDaSemana = ativa != null && simuladoPendente(hoje);
         return new TurnoPlanoResponse(fila, reestudos, blocoConteudo, continuacao, segmento, represamento.alerta(),
             diasSemEstudar, represamento.represado(), represamento.estimativaDiasParaNormalizar(),
-            vencidasAlemDoTeto, proximoBloco, antecipaveis);
+            vencidasAlemDoTeto, simuladoDaSemana ? null : proximoBloco, antecipaveis, ativa, manutencoesEsperando, simuladoDaSemana);
+    }
+
+    /** D-144: o simulado da semana só entra no sábado e no domingo. */
+    public static boolean diaDoSimulado(LocalDate dia) {
+        return dia.getDayOfWeek() == java.time.DayOfWeek.SATURDAY || dia.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
+    }
+
+    private boolean simuladoPendente(LocalDate hoje) {
+        if (!diaDoSimulado(hoje)) {
+            return false;
+        }
+        var segunda = hoje.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        return jdbc.queryForObject("SELECT count(*) FROM simulado WHERE data BETWEEN ? AND ?", Integer.class, segunda, hoje) == 0;
     }
 }

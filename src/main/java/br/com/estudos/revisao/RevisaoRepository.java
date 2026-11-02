@@ -35,6 +35,9 @@ public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
     // Represamento (docs/SPRINT-5-FRENTE.md §2.2): pendentes cuja data já passou.
     long countBySituacaoAndDataPrevistaBefore(SituacaoRevisao situacao, LocalDate data);
 
+    /** D-143: as vencidas dos assuntos cuja manutenção a reta final esconde. */
+    long countBySituacaoAndDataPrevistaBeforeAndAssuntoIdIn(SituacaoRevisao situacao, LocalDate data, java.util.Collection<Long> assuntoIds);
+
     // Fila de recuperação do turno (docs/SPRINT-6-TURNO.md §2): mais atrasada
     // primeiro. join fetch: o plano mostra o nome do assunto sem N+1.
     @Query("""

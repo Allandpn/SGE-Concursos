@@ -41,5 +41,14 @@ public record TurnoPlanoResponse(
     SegmentoSugeridoResponse proximoBloco,
 
     @Schema(description = "Revisões futuras cuja janela de tolerância já abriu — antecipar cumpre, mas encurta o espaçamento (01_DOMINIO §5.4, 02_JORNADAS §4.3)")
-    List<FilaRecuperacaoItemResponse> antecipaveis
+    List<FilaRecuperacaoItemResponse> antecipaveis,
+
+    @Schema(description = "A reta final ativa (concurso, data da prova, dias) — null fora dela (D-141)")
+    br.com.estudos.retafinal.RetaFinalConsulta.Ativa retaFinal,
+
+    @Schema(description = "Manutenções de peso médio e baixo vencidas que a reta final tirou da fila (D-143)")
+    long manutencoesEsperando,
+
+    @Schema(description = "Na reta final, sábado ou domingo sem simulado desde a segunda: o segundo bloco é o simulado (D-144)")
+    boolean simuladoDaSemana
 ) {}

@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.36.0 |
+| Versão | 1.37.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -927,6 +927,36 @@ novo em 4 semanas), a pessoa digita um ritmo para simular, também não gravado.
 **O que o diagnóstico não faz.** Não muda peso, ordem, escada nem arquiva nada: os gestos continuam nas telas de sempre. Não
 considera a carga de revisões (ela já está dentro do ritmo medido) nem o esquecimento dos consolidados até a data.
 
+### 3.22 Reta final
+
+Perto da prova, o estudo muda de regime: menos assunto novo, a manutenção concentrada no que mais vale, simulado toda semana. A
+pedido do usuário (2026-10-17 e 2026-11-01), com uma condição que manda em todo o resto: **a reta final nunca entra sozinha**. O
+usuário estuda editais de prova já passada ou em cima da hora como preparação para o próximo; a data perto não basta.
+
+**Entrar (D-140).** Quando o concurso-alvo tem data de prova futura a até N semanas (parâmetro, padrão 8), Hoje **sugere**: "Faltam
+8 semanas para a prova: entrar na reta final?", com *Entrar* e *Agora não*. *Agora não* cala a sugestão daquele concurso. Em
+Concursos, o alvo com data futura tem "Entrar na reta final" a qualquer momento, com ou sem sugestão. Sem data futura, não há reta
+final.
+
+**Enquanto dura (D-141).** A reta final está ativa enquanto: a pessoa entrou e não saiu, o concurso é o alvo e a data da prova não
+passou. Termina sozinha no dia seguinte à prova, ao trocar de alvo, ou por "Sair da reta final". Só se guardam a entrada e a saída;
+"ativa" é derivado. Um concurso tem no máximo uma reta final aberta.
+
+**O que muda no plano** (§7.4), e só isso:
+
+- **Assunto novo só de peso alto (D-142).** O bloco de conteúdo continua o que está em estudo (D-55) e só abre do backlog assunto de
+  peso alto. A escada dos assuntos em subida segue normal, em qualquer peso.
+- **Manutenção (D-143).** A manutenção de consolidado de peso **médio e baixo** sai da fila de recuperação enquanto a reta final está
+  ativa — nada é reescrito; ao terminar, ela volta vencida e o teto diário a espalha (§5.3). Ao entrar, a manutenção pendente dos
+  consolidados de peso **alto** que venceria depois de *prova − 7 dias* é **antecipada**, distribuída por igual entre amanhã e
+  *prova − 7 dias*, e a data anterior fica guardada. A última semana fica para questões e o simulado.
+- **Simulado da semana (D-144).** No sábado e no domingo, se não há simulado registrado desde a segunda-feira daquela semana, o plano
+  traz **"Simulado"** no lugar do segundo bloco de conteúdo. O registro é o de sempre (§3.6); a nota em pontos aparece pela régua
+  (D-136).
+
+**O que a reta final não faz.** Não muda peso, ordem, a escada nem o teto diário; não apaga revisão (D-18); não decide pela pessoa que
+é hora de entrar.
+
 ---
 
 ## 4. O resultado da recuperação
@@ -1531,6 +1561,9 @@ a cada pedido, a partir da fila de revisões vencidas, da frente e dos tetos. Se
 o usuário fizer outra coisa, nada quebra — ele nunca prometeu nada
 (`00_PRODUTO` §6.6).
 
+**Na reta final (§3.22)** o plano muda em três pontos e só neles: assunto novo só de peso alto (D-142), manutenção de médio e
+baixo fora da fila (D-143) e o simulado da semana no lugar do segundo bloco do fim de semana (D-144).
+
 ### 7.5 O que é ajustável, e o que só parece ser
 
 A tentação natural é criar um parâmetro "quantas revisões por dia". **Ele já
@@ -1825,6 +1858,11 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-137 | O diagnóstico de um concurso (alvo ou não) conta os assuntos ativos da cobertura pela fase derivada — consolidado (com manutenção), em escada, em estudo, nunca visto —, por disciplina e no total, com as faixas consolidado e encaminhado (consolidado + em escada); é derivado na leitura e abri-lo não muda nada | §3.21 |
 | D-138 | No diagnóstico, cada disciplina vale pontos por questão da régua (padrão 1) × questões que o edital lhe deu (faltando o número de alguma, só os pontos por questão; sem régua, todas iguais), dividido igualmente entre os assuntos dela na cobertura; a faixa em pontos é informação, nunca probabilidade | §3.21 |
 | D-139 | O que cabe até a data (a da prova, se futura, ou uma simulada não gravada) é semanas × ritmo medido (assuntos com a primeira sessão nas últimas 4 semanas ÷ 4, ou um ritmo digitado sem histórico) sobre os nunca vistos; os que não cabem são os últimos por peso e depois ordem do edital; nada é alterado | §3.21 |
+| D-140 | A reta final só começa por gesto da pessoa: o sistema sugere quando o alvo tem data de prova futura a até N semanas (parâmetro, padrão 8), "agora não" cala a sugestão daquele concurso, e "Entrar na reta final" fica no alvo com data futura; sem data futura não há reta final | §3.22 |
+| D-141 | A reta final está ativa enquanto houve entrada sem saída, o concurso é o alvo e a data da prova não passou; termina sozinha no dia seguinte à prova, ao trocar de alvo ou por "sair"; guarda-se só entrada e saída, no máximo uma aberta por concurso | §3.22 |
+| D-142 | Na reta final, o bloco de conteúdo continua o que está em estudo e só abre assunto novo de peso alto; a escada segue normal em qualquer peso | §3.22, §7.4 |
+| D-143 | Na reta final, a manutenção de consolidado de peso médio e baixo sai da fila sem ser reescrita; ao entrar, a manutenção pendente dos consolidados de peso alto que venceria depois de prova − 7 dias é antecipada e distribuída por igual entre amanhã e prova − 7 dias, guardando a data anterior | §3.22 |
+| D-144 | Na reta final, no sábado e no domingo, sem simulado registrado desde a segunda-feira da semana, o plano traz "Simulado" no lugar do segundo bloco de conteúdo | §3.22 |
 
 ---
 
@@ -1916,6 +1954,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.37.0 | 2026-11-01 | Pedido do usuário (Sprint 21), decidido em duas rodadas, com `02_JORNADAS` v1.26.0 e ADR-056. **§3.22** (reta final) e **D-140 a D-144**: entra só por gesto da pessoa, sugerida a 8 semanas (parâmetro); ativa derivada, termina sozinha depois da prova; assunto novo só de peso alto; manutenção de médio e baixo fora da fila sem reescrever, a de peso alto antecipada até prova − 7 dias; simulado no fim de semana. §7.4 aponta para lá |
 | 1.36.0 | 2026-11-01 | Pedido do usuário (Sprint 20), decidido em duas rodadas, com `02_JORNADAS` v1.25.0. **§3.21** (diagnóstico do edital) e **D-137 a D-139**: cobertura por fase com as faixas consolidado e encaminhado, valor em pontos pela régua e pelas questões do edital, o que cabe até a data pelo ritmo medido (data e ritmo simulados não gravados). Nada guardado |
 | 1.35.0 | 2026-11-01 | Pedido do usuário (Sprint 23), com `00_PRODUTO` v1.15.0, `02_JORNADAS` v1.24.0 e ADR-055. **§3.3**: quinto tipo de sessão, `DISCURSIVA` (D-134). **§3.20** (nota de corte e pontuação do edital) e **D-135, D-136**. **D-133**: "Fiz questões" na fila de Hoje. §4.1 ganha a apuração da discursiva. 136 regras |
 | 1.34.0 | 2026-11-01 | Pedido do usuário, com `00_PRODUTO` v1.14.0, `02_JORNADAS` v1.23.0 e ADR-054. **§3.19** (PDF próprio) e **D-129 a D-132**: PDFs da pessoa ligados a um assunto, cortados em blocos pelo SGE pelo ritmo escolhido; bloco como os outros; em assunto na escada, leitura sugerida sem mexer na revisão; tirar arquiva os blocos. 132 regras |

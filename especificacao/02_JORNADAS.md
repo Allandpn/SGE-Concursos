@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.25.0 |
+| Versão | 1.26.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -572,6 +572,20 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-14 · Reta final
+
+Rara: uma vez por concurso. Orçamento de atenção; entrar e sair em **2 toques**.
+
+1. **A sugestão.** A 8 semanas da prova do alvo (parâmetro), Hoje mostra: "Faltam 8 semanas para a prova. Entrar na reta final?" e
+   o que muda em três linhas (só assunto novo de peso alto; manutenção de médio e baixo depois da prova; simulado no fim de semana).
+   *Entrar* ou *Agora não* (D-140). Também dá para entrar em Concursos, no alvo.
+2. **Ao entrar**, uma linha diz quantas manutenções de peso alto foram antecipadas e até quando ("12 revisões de peso alto
+   distribuídas até 05/03"). Hoje passa a mostrar a faixa **Reta final · 54 dias** no topo.
+3. **No dia a dia**, o plano é o mesmo de sempre com as três mudanças (D-142 a D-144). No sábado e no domingo, sem simulado na
+   semana, o segundo bloco é **Simulado**, com "Registrar simulado".
+4. **A saída.** No dia seguinte à prova a faixa some sozinha; "Sair da reta final" está em Concursos a qualquer hora (D-141). As
+   manutenções que esperavam voltam vencidas e o teto diário as espalha.
+
 ### J-13 · Diagnóstico de um edital
 
 Serve a quando um edital chega ou se aproxima (`01_DOMINIO` §3.21). Rara; orçamento de atenção, mas abre em **< 2 s**.
@@ -880,6 +894,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.26.0 | 2026-11-01 | Nova **J-14** (reta final), com `01_DOMINIO` v1.37.0 (D-140 a D-144) e ADR-056 |
 | 1.25.0 | 2026-11-01 | Nova **J-13** (diagnóstico de um edital), com `01_DOMINIO` v1.36.0 (D-137 a D-139) |
 | 1.24.0 | 2026-11-01 | J-2 ganha o lote rápido ("Fiz questões", ≤ 12 s, D-133) e a discursiva (≤ 20 s); nova **J-12** (treino discursivo e nota de corte), com `01_DOMINIO` v1.35.0 (D-133 a D-136) |
 | 1.23.0 | 2026-11-01 | Nova **J-11** (adicionar meu PDF), com `01_DOMINIO` v1.34.0 (D-129 a D-132) e ADR-054 |

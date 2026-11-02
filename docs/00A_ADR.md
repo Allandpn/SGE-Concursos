@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.22.0** |
+| Versão do documento | **2.23.0** |
 | Status | **Congelado** |
 | Data | 2026-11-01 |
-| Total | 55 ADRs — 40 vigentes, 14 substituídas, 1 revogada |
+| Total | 56 ADRs — 41 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -83,6 +83,7 @@ que custa e o que foi descartado.
 | [ADR-053](#adr-053--perguntas-de-recuperação-preparadas-pelo-sge-ao-ler-o-bloco) | Perguntas de recuperação preparadas pelo SGE ao ler o bloco | 2026-11-01 |
 | [ADR-054](#adr-054--pdf-próprio-cortado-pelo-sge) | PDF próprio cortado pelo SGE | 2026-11-01 |
 | [ADR-055](#adr-055--discursiva-como-tipo-de-sessão-e-régua-do-edital-derivada) | Discursiva como tipo de sessão e régua do edital derivada | 2026-11-01 |
+| [ADR-056](#adr-056--reta-final-regime-derivado-só-a-antecipação-grava) | Reta final: regime derivado, só a antecipação grava | 2026-11-01 |
 
 ### 1.2 Históricas
 
@@ -983,6 +984,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.23.0 | 2026-11-01 | **ADR-056**, pedido do usuário: reta final com só entrada e saída guardadas; a manutenção de médio e baixo escondida por filtro; a de peso alto antecipada uma vez ao entrar, com a data anterior guardada |
 | 2.22.0 | 2026-11-01 | **ADR-055**, pedido do usuário: `DISCURSIVA` como tipo de sessão, com a nota e os limiares; a régua da prova no concurso, e a nota em pontos derivada. Com `01_DOMINIO` v1.35.0 (D-133 a D-136). Total 55, 40 vigentes |
 | 2.21.0 | 2026-11-01 | **ADR-054**, pedido do usuário: o PDF próprio é cortado pelo SGE (PDFBox), pelo ritmo escolhido e pelos marcadores. Com `01_DOMINIO` v1.34.0 (D-129 a D-132). Total 54, 39 vigentes |
 | 2.20.0 | 2026-11-01 | **ADR-053**, pedido do usuário: as perguntas de recuperação são preparadas pelo SGE (PDFBox + `ServicoIa`), numa fila em segundo plano, quando o bloco é lido. Com `01_DOMINIO` v1.33.0 (D-122 a D-128). Total 53, 38 vigentes |
@@ -2194,6 +2196,37 @@ tem uma matriz de tipos que decide as métricas, e o resultado de qualquer sess�
 |---|---|
 | Discursiva como `RECUPERACAO` com nota opcional | Duas formas de apurar o mesmo tipo; a restrição de forma ficaria condicional demais |
 | Guardar a nota em pontos | Derivável (D-16); mudar a régua exigiria recalcular o histórico |
+
+## ADR-056 — Reta final: regime derivado, só a antecipação grava
+
+**Status:** Aceita · 2026-11-01 · pedido do usuário
+
+### Contexto
+
+A Sprint 21 traz a reta final (`01_DOMINIO` §3.22, D-140 a D-144). O plano do turno é derivado e efêmero (§7.4); a fila de
+recuperação sai das revisões pendentes vencidas. A reta final muda o plano por algumas semanas e precisa voltar ao normal sem resto.
+
+### Decisão
+
+- **Guardar só o gesto**: tabela `reta_final` (concurso, entrou em, saiu em), com no máximo uma aberta por concurso (índice único
+  parcial, D-141). "Ativa" é consulta: aberta, concurso alvo, hoje até a data da prova.
+- **Esconder em vez de adiar**: a manutenção de médio e baixo sai da fila por filtro no plano, sem mexer em `data_prevista`. Ao terminar,
+  o filtro some e elas aparecem vencidas.
+- **A única escrita é a antecipação dos de peso alto**, feita uma vez ao entrar: `data_prevista` passa à data distribuída e a anterior
+  fica em `data_prevista_antes_reta_final`. Sair cedo não desfaz (a revisão antecipada só encurta um intervalo).
+
+### Consequências
+
+- O plano (`TurnoService`, `FrenteService.proximaVaga`) ganha a consulta da reta final ativa; sem ela, nada muda.
+- O app Android nativo (ADR-041) mostra o plano que o servidor devolve; não precisa conhecer a regra.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Reescrever a data das manutenções de médio e baixo para depois da prova | Estado reescrito a desfazer ao sair cedo ou ao mudar a data da prova; o filtro não deixa resto |
+| Antecipar os de peso alto por derivação no plano | A data "distribuída" dependeria do conjunto de assuntos em cada dia; mudaria sozinha e a pessoa não saberia quando cada um vem |
+| Flag `reta_final` no concurso | Sem histórico de entradas e saídas; D-18 pede que nada se perca |
 
 ---
 
