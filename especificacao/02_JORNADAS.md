@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.27.0 |
+| Versão | 1.28.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -572,6 +572,19 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-16 · Registrar um simulado
+
+Uma vez por semana ou menos; orçamento de atenção, não de segundos.
+
+1. Em **Registrar**, a pílula **Simulado** (também pelo cartão do simulado da semana, na reta final, e por "Registrar simulado" em
+   Progresso). Data (hoje), duração e formato preenchidos.
+2. As disciplinas do edital do alvo, na ordem dele: **certas / total** e, se quiser, **em branco**. A que não caiu fica vazia; "outra
+   disciplina" acrescenta uma ativa fora do edital.
+3. Registrar grava e mostra a nota em acertos e, com régua, em pontos com o corte (D-136, D-148). Certas + brancos acima do total é
+   recusado na linha.
+4. Em **Progresso**, cada simulado tem **Arquivar** (com confirmação); arquivado some da M-1 e dos pontos e fica num "Arquivados"
+   recolhido (D-149).
+
 ### J-15 · Peso pela banca
 
 Rara: quando chega edital novo ou prova nova da banca. Orçamento de atenção; aceitar tudo em **2 toques**.
@@ -837,6 +850,7 @@ Requisitos, não metas. Medidos com cronômetro, no aparelho real.
 | Registrar bloco de conteúdo | 20 s | 3 (assunto, tipo, tempo) — tempo já preenchido (`01_DOMINIO` §7.7) |
 | Registrar lote de questões | 25 s | 6 (assunto, formato, feitas, certas, previsão, tempo) |
 | Registrar erro | 30 s | 3 (descrição, causa, confiança) |
+| Registrar simulado | 90 s | 2 a 3 por disciplina (certas, total, brancos) |
 | Cadastrar uma disciplina inteira | 2 min | lista colada + peso em bloco |
 
 Estourar qualquer um desses é **defeito**, tratado com a mesma gravidade de um
@@ -907,6 +921,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.28.0 | 2026-11-02 | Nova **J-16** (registrar um simulado) e o orçamento dele, com `01_DOMINIO` v1.39.0 (D-148, D-149) |
 | 1.27.0 | 2026-11-02 | Nova **J-15** (peso pela banca), com `01_DOMINIO` v1.38.0 (D-145 a D-147) e ADR-057 |
 | 1.26.0 | 2026-11-01 | Nova **J-14** (reta final), com `01_DOMINIO` v1.37.0 (D-140 a D-144) e ADR-056 |
 | 1.25.0 | 2026-11-01 | Nova **J-13** (diagnóstico de um edital), com `01_DOMINIO` v1.36.0 (D-137 a D-139) |
