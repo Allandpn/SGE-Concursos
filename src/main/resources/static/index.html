@@ -114,6 +114,14 @@
       <div class="relative">
         <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 text-gray-600" aria-label="Mais" @click="menuAberto = !menuAberto">⋮</button>
         <div x-show="menuAberto" @click.outside="menuAberto = false" class="absolute right-0 z-30 mt-1 w-64 rounded border border-gray-200 bg-white py-1 text-sm shadow-lg">
+          <!-- J-10: como passar as páginas; a escolha fica no aparelho -->
+          <button type="button" class="block min-h-11 w-full px-3 py-1 text-left hover:bg-gray-50" :class="modo === 'continua' ? 'bg-primary-50 font-semibold' : ''" @click="escolherModo('continua')">
+            <span class="block" x-text="(modo === 'continua' ? '✓ ' : '') + 'Rolagem contínua'"></span>
+            <span class="block text-xs font-normal text-gray-500">as páginas uma embaixo da outra</span></button>
+          <button type="button" class="block min-h-11 w-full px-3 py-1 text-left hover:bg-gray-50" :class="modo === 'pagina' ? 'bg-primary-50 font-semibold' : ''" @click="escolherModo('pagina')">
+            <span class="block" x-text="(modo === 'pagina' ? '✓ ' : '') + 'Uma página por vez (deslizar)'"></span>
+            <span class="block text-xs font-normal text-gray-500">deslize para o lado para trocar</span></button>
+          <div class="my-1 border-t border-gray-100"></div>
           <button type="button" class="block min-h-11 w-full px-3 text-left hover:bg-gray-50 disabled:opacity-50" :disabled="guardado || guardando || !online" @click="guardarSemRede()"
             x-text="guardado ? 'Guardado para ler sem rede ✓' : (guardando ? 'Guardando…' : 'Guardar para ler sem rede')"></button>
           <a x-show="leitura?.arquivo" :href="leitura?.arquivo" target="_blank" rel="noopener" class="flex min-h-11 items-center px-3 hover:bg-gray-50">Abrir fora do app</a>
@@ -144,17 +152,15 @@
     </template>
 
     <div x-show="!carregando && !naoGuardado && !semArquivo && !erro" class="relative">
-      <div x-ref="rolagem" class="overflow-auto bg-gray-100 p-2" style="max-height: calc(100vh - 170px)">
-        <div x-ref="pagina" class="leitor-pagina" @click="tocarPagina($event)" @dblclick.prevent="criarNotaDePagina(pontoNaPagina($event))"
-             @touchstart.passive="comecarToque($event)" @touchend="cancelarToque()" @touchmove.passive="cancelarToque()">
-          <canvas x-ref="canvas"></canvas>
-          <div x-ref="marcas" class="leitor-marcas"></div>
-          <div x-ref="texto" class="textLayer"></div>
-          <div x-ref="pinos" class="leitor-pinos"></div>
+      <!-- J-10: rolagem contínua ou uma página por vez; pinça e deslizar. touch-action deixa a pinça para o leitor, não para o navegador -->
+      <div x-ref="rolagem" class="overflow-auto bg-gray-100 p-2" style="max-height: calc(100vh - 170px); touch-action: pan-x pan-y"
+           @scroll.passive="aoRolar()" @touchstart.passive="gestoInicio($event)" @touchmove.passive="gestoMovimento($event)" @touchend="gestoFim($event)">
+        <div class="relative">
+          <div x-ref="paginas" class="leitor-paginas"></div>
           <!-- Selecionar texto: as três cores e a nota (D-116) -->
           <template x-if="selecao">
             <div class="absolute z-10 flex items-center gap-1 rounded-lg border border-gray-900 bg-white p-1 shadow-lg"
-                 :style="'left:' + (selecao.x * 100) + '%; top: calc(' + (selecao.y * 100) + '% + 6px)'" @click.stop>
+                 :style="'left:' + selecao.left + 'px; top:' + selecao.top + 'px'" @click.stop>
               <template x-for="c in ['IMPORTANTE', 'DUVIDA', 'DECORAR']" :key="c">
                 <button type="button" class="flex min-h-11 min-w-11 flex-col items-center justify-center px-1 text-[10px] text-gray-600" @click="marcar(c)">
                   <span class="block h-6 w-6 rounded-full border border-gray-300" :style="'background:' + corDe(c)"></span>
@@ -170,15 +176,30 @@
         </div>
       </div>
       <div class="flex items-center gap-2 border-t border-gray-200 bg-white px-3 py-2 text-sm">
-        <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 disabled:opacity-40" :disabled="pagina <= 1" @click="irPara(pagina - 1)" aria-label="Página anterior">‹</button>
-        <span class="tabular-nums text-gray-600" x-text="pagina + ' / ' + totalPaginas"></span>
-        <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 disabled:opacity-40" :disabled="pagina >= totalPaginas" @click="irPara(pagina + 1)" aria-label="Próxima página">›</button>
+        <!-- J-10: o contador segue a página mais visível; tocado, abre "ir para a página" -->
+        <button type="button" class="min-h-11 rounded border border-gray-200 px-3 tabular-nums text-gray-700 underline decoration-dotted" id="leitor-contador"
+                @click="abrirIrPara()" aria-label="Ir para a página" x-text="pagina + ' / ' + totalPaginas"></button>
         <span class="flex-1"></span>
         <a x-show="pagina >= totalPaginas && blocoSeguinte" :href="'#/ler/' + blocoSeguinte?.id" class="text-sm text-primary-700 underline">Próximo bloco</a>
         <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white disabled:opacity-40" :disabled="!online" @click="terminei()"
           :title="online ? '' : 'Registrar a sessão precisa de rede'">Terminei</button>
       </div>
     </div>
+
+    <!-- J-10: ir para a página -->
+    <template x-if="irParaAberto">
+      <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/30" @click.self="irParaAberto = false">
+        <form class="w-full max-w-md space-y-3 rounded-t-2xl bg-white p-4 shadow-2xl" @submit.prevent="irPara(irParaNumero)" id="leitor-ir-para">
+          <div class="mx-auto h-1 w-9 rounded bg-gray-300"></div>
+          <p class="font-semibold">Ir para a página</p>
+          <div class="flex items-center gap-2">
+            <input type="number" min="1" :max="totalPaginas" inputmode="numeric" x-model="irParaNumero" class="flex-1 rounded border border-gray-900 p-2 text-lg tabular-nums" aria-label="Página" x-init="$nextTick(() => $el.select())">
+            <span class="text-sm text-gray-500" x-text="'de ' + totalPaginas"></span>
+          </div>
+          <button type="submit" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white">Ir</button>
+        </form>
+      </div>
+    </template>
 
     <!-- Tocar num destaque ou criar nota de página (D-115, D-117) -->
     <template x-if="painel">

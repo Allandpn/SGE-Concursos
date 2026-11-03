@@ -5,6 +5,8 @@
    (Apache-2.0), e as camadas de marcação. O texto é transparente: o que se vê é o canvas; o texto existe para selecionar. */
 .leitor-pagina { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); --scale-round-x: 1px; --scale-round-y: 1px; }
 .leitor-pagina canvas { display: block; }
+.leitor-paginas > .leitor-pagina + .leitor-pagina { margin-top: 8px; }
+.leitor-paginas { will-change: transform; }
 .leitor-marcas, .leitor-pinos { position: absolute; inset: 0; }
 .leitor-marcas { pointer-events: none; z-index: 1; }
 .leitor-pinos { pointer-events: none; z-index: 3; }
