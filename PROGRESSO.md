@@ -45,6 +45,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 32 | Perguntas e gabarito da IA na recuperação | Perguntas de evocação, completar, porquê e comparação por bloco, preparadas pelo SGE ao ler o bloco; 3 a 5 por recuperação; gabarito em pontos depois da tentativa; a conferência sugere o resultado; pergunta ruim; o que faltou abre o leitor (reestudo depois de Não veio). Especificação (`01_DOMINIO` §3.18, D-122 a D-128, `02_JORNADAS` §4.1, ADR-053) — `docs/SPRINT-32-PERGUNTAS.md` | **em andamento** — itens 32.0 a 32.5 feitos; falta o 32.6 (deploy pelo Guardian) |
 | 33 | PDFs próprios | PDF da pessoa ligado a um assunto, cortado pelo SGE em blocos pelo ritmo escolhido; bloco como os outros; leitura sugerida em assunto na escada; tirar arquiva. Especificação (`01_DOMINIO` §3.19, D-129 a D-132, J-11, ADR-054) — `docs/SPRINT-33-PDF-PROPRIO.md` | **em andamento** — itens 33.0 a 33.4 feitos; falta o 33.5 (deploy pelo Guardian) |
 | 34 | Registro de simulado | Pílula Simulado no Registrar (disciplinas do alvo, certas, total e brancos), arquivar em Progresso. Especificação (`01_DOMINIO` §3.6, D-148, D-149, J-16) — `docs/SPRINT-34-REGISTRO-SIMULADO.md` | **em andamento** — itens 34.0 a 34.3 feitos; falta o 34.4 (deploy pelo Guardian) |
+| 35 | Leitor: rolagem contínua, deslizar e pinça | Pedido do usuário (2026-11-03). Rolagem contínua por padrão, "uma página por vez (deslizar)" no menu, zoom por pinça, contador que leva a "ir para a página" (`02_JORNADAS` J-10) | **em andamento** — especificação feita; falta o wireframe |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -1106,6 +1107,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.99.0 | 2026-11-03 | **Sprint 35 (leitor: rolagem contínua, deslizar e pinça): especificação**, decidida numa rodada: `02_JORNADAS` v1.29.0 (J-10). Comportamento de tela, sem regra de domínio nova. Nenhum código ainda |
 | 1.98.0 | 2026-11-02 | **Sprint 34 na `main`** (PR #8) e `release/7` criada pelo usuário. Texto desatualizado corrigido no mapa: a linha 7 dizia "Progresso ainda sem tela", feito na Sprint 14 |
 | 1.97.0 | 2026-11-02 | **Sprint 34 (registro de simulado), itens 34.1 a 34.3**, wireframe aprovado. `V30` (brancos com `ck_resultado_simulado_d148_brancos`, `simulado.arquivado_em`); arquivar pela API; M-1, pontos e simulado da semana ignoram arquivados; a tela `#/registrar/simulado` e a lista em Progresso; `CASCA_VERSAO` sobe. 3 testes novos; J-16 conferida no Chromium |
 | 1.96.0 | 2026-11-02 | **Sprint 22 na `main`** (PR #7) e `release/6` criada pelo usuário (a sessão tentou e o envio da etiqueta foi recusado). **Sprint 34 (registro de simulado): especificação**, decidida numa rodada: `01_DOMINIO` v1.39.0 (§3.6, D-148, D-149), `02_JORNADAS` v1.28.0 (J-16), `03_INVARIANTES` v1.27.0. Nenhum código ainda |

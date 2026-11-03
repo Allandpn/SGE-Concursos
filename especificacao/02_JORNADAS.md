@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.28.0 |
+| Versão | 1.29.0 |
 | Data | 2026-11-01 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -653,6 +653,11 @@ Serve à leitura de cada bloco do material (`01_DOMINIO` §3.17). É a única jo
 
 1. **Abrir.** Em Hoje, no bloco de conteúdo, no reestudo ou no detalhe do assunto, o bloco tem **"Ler"**. O leitor abre na última página que a
    pessoa abriu desse bloco, em qualquer aparelho (D-121). O link para baixar o PDF continua no menu do leitor, para quem quiser abrir fora.
+   **Passar as páginas.** Por padrão, **rolagem contínua**: as páginas ficam uma embaixo da outra e o dedo rola o bloco inteiro; cada página
+   é desenhada quando chega perto da tela. No menu, **"Uma página por vez (deslizar)"**: deslizar o dedo para o lado troca a página, e o gesto
+   é ignorado enquanto há texto selecionado ou com a página ampliada além da largura. A escolha fica guardada no aparelho. **Pinça** com dois
+   dedos amplia e reduz as páginas (não a tela do app); os botões − e + continuam. O contador "12 / 30" no topo acompanha a página mais
+   visível e, tocado, abre "ir para a página". Na rolagem contínua, "a última página aberta" de D-121 é a mais visível.
 2. **Marcar.** Selecionar um trecho mostra três cores — **importante** (amarelo), **dúvida** (vermelho), **decorar** (verde) — e "nota". Tocar num
    destaque mostra a nota dele e permite trocar a cor, editar a nota ou remover. Tocar e segurar num ponto da página sem texto cria uma **nota de
    página** (é como se marca uma página escaneada). Uma lista lateral mostra as marcações do bloco por página, com filtro por cor.
@@ -921,6 +926,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.29.0 | 2026-11-03 | Pedido do usuário. **J-10** ganha "passar as páginas": rolagem contínua por padrão, "uma página por vez (deslizar)" no menu, pinça para o zoom, o contador que leva a "ir para a página"; na rolagem contínua, a página de D-121 é a mais visível. Sem regra nova |
 | 1.28.0 | 2026-11-02 | Nova **J-16** (registrar um simulado) e o orçamento dele, com `01_DOMINIO` v1.39.0 (D-148, D-149). As disciplinas vêm em ordem alfabética (ajustado ao escrever o código: o edital não ordena as disciplinas entre si) |
 | 1.27.0 | 2026-11-02 | Nova **J-15** (peso pela banca), com `01_DOMINIO` v1.38.0 (D-145 a D-147) e ADR-057 |
 | 1.26.0 | 2026-11-01 | Nova **J-14** (reta final), com `01_DOMINIO` v1.37.0 (D-140 a D-144) e ADR-056 |
