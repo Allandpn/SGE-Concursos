@@ -12,5 +12,6 @@ public record ErroResponse(
     @Schema(description = "Descrição livre do erro cometido") String descricao,
     @Schema(description = "Causa raiz apontada pelo usuário") CausaErro causa,
     @Schema(description = "Confiança do usuário na causa apontada") NivelConfianca confianca,
-    @Schema(description = "Se o usuário já marcou este erro como resolvido") boolean resolvido
+    @Schema(description = "Se o usuário já marcou este erro como resolvido") boolean resolvido,
+    @Schema(description = "Número da questão no QConcursos, se houver (D-156)") String questaoExterna
 ) {}

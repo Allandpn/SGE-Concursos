@@ -34,6 +34,7 @@ const ROTULOS_PARAMETRO = {
   banca_anos: 'Provas da banca dos últimos (anos)',
   banca_provas_minimas: 'Mínimo de provas por disciplina',
   banca_questoes_minimas: 'Mínimo de questões por disciplina',
+  minutos_por_questao: 'Minutos por questão',
 };
 
 // Preferências do Pomodoro que são do aparelho, não do domínio (docs/SPRINT-29-POMODORO.md §6): ficam no navegador.
@@ -353,7 +354,6 @@ document.addEventListener('alpine:init', () => {
     segmentoSugerido: null,
     guardados: new Set(), // D-119: blocos já no aparelho (selo "sem rede ✓")
     reestudoBloco: {}, // assuntoId → o primeiro bloco ativo, para o "Ler" do reestudo (J-10)
-    lote: null, // D-133: o lote rápido aberto ("Fiz questões")
     alertaRepresamento: false,
     diasSemEstudar: null,
     represado: 0,
@@ -438,6 +438,9 @@ document.addEventListener('alpine:init', () => {
         this.vencidasAlemDoTeto = plano.vencidasAlemDoTeto;
         this.proximoBloco = plano.proximoBloco;
         this.antecipaveis = plano.antecipaveis;
+        // D-150 a D-154: os atalhos do QConcursos da fila e das antecipáveis, em lote (auxiliar)
+        Alpine.store('qc').esquecer();
+        Alpine.store('qc').carregar([...this.fila, ...this.antecipaveis].map((i) => i.assuntoId));
         // D-140 a D-144: a reta final ativa, o que ela escondeu e o simulado da semana; sem ela, a sugestão de entrar.
         this.retaFinal = plano.retaFinal;
         this.manutencoesEsperando = plano.manutencoesEsperando;
@@ -482,69 +485,6 @@ document.addEventListener('alpine:init', () => {
       if (!e.antecipadas) return 'Reta final ligada. Nenhuma manutenção de peso alto precisou ser antecipada.';
       return e.antecipadas + (e.antecipadas === 1 ? ' revisão de peso alto distribuída' : ' revisões de peso alto distribuídas')
         + ' até ' + e.ate.split('-').reverse().join('/') + '.';
-    },
-
-    // D-133: "Fiz questões" — formato pelo histórico, tempo pelos focos livres (D-100) ou 2 min por questão.
-    async abrirLote(item) {
-      this.lote = { assuntoId: item.assuntoId, nome: item.nome, formato: 'MULTIPLA_ESCOLHA', tempo: null, doFoco: false, fasesIds: [],
-        previsao: null, feitas: null, certas: null, erro: null, enviando: false, tentativaId: crypto.randomUUID(), limiares: null };
-      const [sugerido, livres, parametros] = await Promise.all([
-        api(`/assuntos/${item.assuntoId}/lote-sugerido`).catch(() => null),
-        api(`/foco/livres?assuntoId=${item.assuntoId}`).catch(() => null),
-        api('/parametros').catch(() => []),
-      ]);
-      if (!this.lote) return;
-      if (sugerido) this.lote.formato = sugerido.formato;
-      if (livres && livres.minutos > 0) { this.lote.tempo = livres.minutos; this.lote.doFoco = true; this.lote.fasesIds = livres.fasesIds; }
-      const sufixo = this.lote.formato === 'CERTO_ERRADO' ? 'certo_errado' : 'multipla_escolha';
-      const valor = (chave) => Number((parametros.find((x) => x.chave === chave) || {}).valor);
-      this.lote.limiares = { sucesso: valor(`limiar_sucesso_${sufixo}`), parcial: valor(`limiar_parcial_${sufixo}`) };
-    },
-
-    atualizarTempoDoLote() {
-      if (this.lote && !this.lote.doFoco) {
-        const n = Number(this.lote.feitas);
-        this.lote.tempo = n > 0 ? n * 2 : null;
-      }
-    },
-
-    textoLote() {
-      const l = this.lote;
-      const feitas = Number(l.feitas);
-      const certas = Number(l.certas);
-      if (!(feitas > 0) || l.certas === null || l.certas === '' || certas > feitas) return '';
-      const pct = Math.round((certas * 100) / feitas);
-      if (!l.limiares || Number.isNaN(l.limiares.sucesso)) return `${pct}%`;
-      const r = pct >= l.limiares.sucesso ? 'reconstruí (a revisão sobe)' : pct >= l.limiares.parcial ? 'faltou um pedaço (a revisão repete o nível)' : 'não veio (volta para o reestudo)';
-      return `${pct}% · ${r}`;
-    },
-
-    async registrarLote() {
-      const l = this.lote;
-      l.erro = null;
-      const feitas = Number(l.feitas);
-      const certas = Number(l.certas);
-      if (!(feitas > 0) || l.certas === null || l.certas === '' || certas < 0 || certas > feitas) { l.erro = 'Informe quantas fez e quantas acertou.'; return; }
-      if (l.previsao === null) { l.erro = 'Toque na previsão.'; return; }
-      l.enviando = true;
-      try {
-        await api('/sessoes', { method: 'POST', body: JSON.stringify({
-          assuntoId: l.assuntoId, tipo: 'QUESTOES', data: hojeISO(), tempoMinutos: Math.max(1, Number(l.tempo) || feitas * 2),
-          formato: l.formato, questoesTotal: feitas, questoesCorretas: certas, previsaoPercentual: l.previsao, tentativaId: l.tentativaId,
-          fasesIds: l.fasesIds.length ? l.fasesIds : undefined }) });
-        this.lote = null;
-        await this.carregar();
-      } catch (e) {
-        l.erro = e.message; // o mesmo tentativaId no reenvio: nunca duplica (D-45)
-      } finally {
-        if (this.lote) this.lote.enviando = false;
-      }
-    },
-
-    maisCamposDoLote() {
-      const l = this.lote;
-      this.lote = null;
-      this.abrirRegistroDeQuestoes({ id: l.assuntoId, nome: l.nome });
     },
 
     abrirRegistroDeQuestoes(assunto) {
@@ -1279,6 +1219,7 @@ document.addEventListener('alpine:init', () => {
       this.assuntoId = assuntoId;
       this.nome = item.assunto.nome;
       this.disciplinaNome = item.disciplina.nome;
+      Alpine.store('qc').carregar([assuntoId]); // D-154 (auxiliar)
       this.peso = item.assunto.peso;
       this.fase = item.assunto.fase;
       this.lacuna = null;
@@ -1874,6 +1815,7 @@ document.addEventListener('alpine:init', () => {
         if (chave.startsWith('pomodoro_')) return 'Pomodoro';
         if (chave.startsWith('reta_final_')) return 'Reta final';
         if (chave.startsWith('banca_')) return 'Peso pela banca';
+        if (chave === 'minutos_por_questao' || chave === 'lote_minimo_questoes') return 'Questões';
         return 'Escada';
       };
       const porGrupo = {};
@@ -1881,7 +1823,7 @@ document.addEventListener('alpine:init', () => {
         const grupo = nomeDoGrupo(p.chave);
         (porGrupo[grupo] ??= []).push(p);
       }
-      return ['Tetos', 'Turno', 'Pomodoro', 'Limiares de resultado', 'Reta final', 'Peso pela banca', 'Escada']
+      return ['Tetos', 'Turno', 'Pomodoro', 'Questões', 'Limiares de resultado', 'Reta final', 'Peso pela banca', 'Escada']
         .filter((nome) => porGrupo[nome])
         .map((nome) => ({ nome, itens: porGrupo[nome] }));
     },
@@ -1955,10 +1897,36 @@ document.addEventListener('alpine:init', () => {
     banca: null,
     bancaAberta: false,
     bancaErro: null,
+    // D-151: a banca do alvo no catálogo do QConcursos e o "trocar" por endereço colado.
+    bancaQc: null,
+    bancaQcAberta: false,
+    bancaQcEndereco: '',
+    bancaQcErro: null,
 
     async carregarBanca() {
-      if (!this.ativo) { this.banca = null; return; }
+      if (!this.ativo) { this.banca = null; this.bancaQc = null; return; }
       this.banca = await api(`/concursos/${this.ativo.id}/peso-banca`).catch(() => null);
+      this.bancaQc = await api(`/concursos/${this.ativo.id}/banca-qconcursos`).catch(() => null);
+      this.carregarAtalhosDaBanca();
+    },
+
+    // D-154: os atalhos das propostas e dos ajustados (auxiliar).
+    carregarAtalhosDaBanca() {
+      if (!this.banca) return;
+      const ids = this.banca.disciplinas.flatMap((d) => d.propostas.map((p) => p.assuntoId)).concat(this.banca.ajustados.map((a) => a.assuntoId));
+      Alpine.store('qc').carregar(ids);
+    },
+
+    async aprenderBancaQc() {
+      this.bancaQcErro = null;
+      try {
+        this.bancaQc = await api(`/concursos/${this.ativo.id}/banca-qconcursos`, { method: 'PUT', body: JSON.stringify({ endereco: this.bancaQcEndereco }) });
+        this.bancaQcAberta = false;
+        Alpine.store('qc').esquecer(); // os atalhos já carregados levavam a banca antiga
+        this.carregarAtalhosDaBanca();
+      } catch (e) {
+        this.bancaQcErro = e.message;
+      }
     },
 
     async aceitarBanca(assuntoIds) {
@@ -2034,6 +2002,7 @@ document.addEventListener('alpine:init', () => {
       if (d.ritmo !== '' && d.ritmo !== null && Number(d.ritmo) > 0) q.set('ritmo', String(d.ritmo));
       try {
         d.dados = await api(`/concursos/${d.concurso.id}/diagnostico` + (q.toString() ? '?' + q : ''));
+        if (d.dados.cabe) Alpine.store('qc').carregar(d.dados.cabe.ficamDeFora.map((f) => f.assuntoId)); // D-154 (auxiliar)
       } catch (e) {
         d.erro = e.message;
       } finally {

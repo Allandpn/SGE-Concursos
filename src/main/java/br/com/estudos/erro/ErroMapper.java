@@ -13,7 +13,8 @@ public final class ErroMapper {
             erro.getDescricao(),
             erro.getCausa(),
             erro.getConfianca(),
-            erro.isResolvido()
+            erro.isResolvido(),
+            erro.getQuestaoExterna()
         );
     }
 }

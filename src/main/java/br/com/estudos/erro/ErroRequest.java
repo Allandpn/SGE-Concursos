@@ -19,5 +19,12 @@ public record ErroRequest(
     CausaErro causa,
 
     @Schema(description = "Confiança do usuário na causa apontada")
-    NivelConfianca confianca
-) {}
+    NivelConfianca confianca,
+
+    @Schema(description = "Número da questão no QConcursos, opcional (D-156)", example = "Q2318890")
+    String questaoExterna
+) {
+    public ErroRequest(Long assuntoId, Long sessaoId, String descricao, CausaErro causa, NivelConfianca confianca) {
+        this(assuntoId, sessaoId, descricao, causa, confianca, null);
+    }
+}

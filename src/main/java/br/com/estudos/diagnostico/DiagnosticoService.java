@@ -117,7 +117,9 @@ public class DiagnosticoService {
             .stream().filter(id -> !coberto.contains(id)).count();
 
         var ritmoMedido = Diagnostico.ritmo(jdbc.queryForObject("""
-            SELECT count(*) FROM (SELECT assunto_id FROM sessao WHERE ativo GROUP BY assunto_id HAVING min(data) > ? AND min(data) <= ?) x""",
+            SELECT count(*) FROM (SELECT s.assunto_id FROM sessao s WHERE s.ativo
+                AND (s.tipo <> 'QUESTOES' OR EXISTS (SELECT 1 FROM revisao r WHERE r.assunto_id = s.assunto_id))
+                GROUP BY s.assunto_id HAVING min(s.data) > ? AND min(s.data) <= ?) x""",
             Integer.class, hoje.minusDays(28), hoje));
 
         return new DiagnosticoResponse(concursoId, (String) concurso.get(0)[0], (LocalDate) concurso.get(0)[1], ativos.size(),

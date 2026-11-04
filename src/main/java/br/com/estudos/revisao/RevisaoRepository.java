@@ -15,6 +15,9 @@ import br.com.estudos.shared.enums.SituacaoRevisao;
 
 public interface RevisaoRepository extends JpaRepository<Revisao, Long> {
 
+    // D-155: o assunto já teve alguma revisão (qualquer situação).
+    boolean existsByAssuntoId(Long assuntoId);
+
     // D-05: no máximo uma pendente por assunto — Optional, não List.
     Optional<Revisao> findByAssuntoIdAndSituacao(Long assuntoId, SituacaoRevisao situacao);
 

@@ -71,6 +71,11 @@ public class Erro {
     @Column(nullable = false)
     private boolean resolvido = false;
 
+    /** D-156: o número da questão no QConcursos (Q2318890), quando o erro veio de um lote de lá. */
+    @Setter
+    @Column(name = "questao_externa", length = 20)
+    private String questaoExterna;
+
     @CreationTimestamp
     private Instant criadoEm;
 

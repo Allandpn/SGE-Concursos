@@ -40,6 +40,7 @@
   <script src="js/offline.js"></script>
   <script src="js/leitor.js"></script>
   <script src="js/prova.js"></script>
+  <script src="js/qconcursos.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/router.js"></script>
   <script>
@@ -580,34 +581,70 @@
     <p x-show="carregando" class="text-sm text-gray-500">Carregando…</p>
   </section>
 
-  <section id="pagina-hoje" x-data="paginaHoje()">
-    <!-- D-133: o lote rápido — assunto, formato e tempo preenchidos; feitas, certas e a previsão em faixas -->
-    <template x-if="lote">
-      <div class="fixed inset-0 z-40 flex items-end justify-center bg-black/30" @click.self="lote = null">
+    <!-- D-133, D-153, D-156: o lote rápido global — "Fiz questões" e a volta do QConcursos, em qualquer tela; depois, os erros -->
+  <div x-data>
+    <template x-if="$store.lote.visivel">
+      <div id="lote-rapido" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30" @click.self="$store.lote.fechar()">
         <div class="w-full max-w-md space-y-3 rounded-t-2xl bg-white p-4 shadow-2xl">
-          <div class="flex items-center justify-between">
-            <p class="font-semibold" x-text="lote.nome + ' · questões'"></p>
-            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="lote = null" aria-label="Fechar">✕</button>
-          </div>
-          <p class="text-xs text-gray-500" x-text="(lote.formato === 'CERTO_ERRADO' ? 'Certo/errado' : 'Múltipla escolha') + ' · tempo ' + (lote.tempo || '—') + ' min' + (lote.doFoco ? ' (do Pomodoro)' : '')"></p>
-          <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Antes de conferir: quanto espera acertar?</p>
-          <div class="grid grid-cols-5 gap-1">
-            <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
-              <button type="button" class="min-h-11 rounded border text-sm" :class="lote.previsao === f ? 'border-primary-600 bg-primary-50 font-semibold' : 'border-gray-200'"
-                @click="lote.previsao = f" x-text="f + '%'"></button>
-            </template>
-          </div>
-          <div class="flex gap-3">
-            <label class="flex-1 text-sm text-gray-500">Feitas<input type="number" min="1" inputmode="numeric" x-model="lote.feitas" @input="atualizarTempoDoLote()" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
-            <label class="flex-1 text-sm text-gray-500">Certas<input type="number" min="0" inputmode="numeric" x-model="lote.certas" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
-          </div>
-          <p x-show="textoLote()" class="text-xs text-primary-700" x-text="textoLote()"></p>
-          <p x-show="lote.erro" class="text-sm text-red-700" role="alert" x-text="lote.erro"></p>
-          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="lote.enviando" @click="registrarLote()">Registrar</button>
-          <button type="button" class="block w-full text-center text-xs text-gray-500 underline" @click="maisCamposDoLote()">mais campos (formato, tempo)</button>
+          <template x-if="$store.lote.atual.etapa === 'lote'">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <p class="font-semibold" x-text="$store.lote.atual.nome + ' · questões'"></p>
+                <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="$store.lote.fechar()" aria-label="Fechar">✕</button>
+              </div>
+              <p x-show="$store.lote.atual.daVolta" class="text-xs font-medium text-primary-700">Voltou do QConcursos</p>
+              <p class="text-xs text-gray-500" x-text="$store.lote.rotuloTempo()"></p>
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Antes de conferir: quanto espera acertar?</p>
+              <div class="grid grid-cols-5 gap-1">
+                <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
+                  <button type="button" class="min-h-11 rounded border text-sm" :class="$store.lote.atual.previsao === f ? 'border-primary-600 bg-primary-50 font-semibold' : 'border-gray-200'"
+                    @click="$store.lote.atual.previsao = f" x-text="f + '%'"></button>
+                </template>
+              </div>
+              <div class="flex gap-3">
+                <label class="flex-1 text-sm text-gray-500">Feitas<input type="number" min="1" inputmode="numeric" x-model="$store.lote.atual.feitas" @input="$store.lote.atualizarTempo()" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+                <label class="flex-1 text-sm text-gray-500">Certas<input type="number" min="0" inputmode="numeric" x-model="$store.lote.atual.certas" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+              </div>
+              <p x-show="$store.lote.texto()" class="text-xs text-primary-700" x-text="$store.lote.texto()"></p>
+              <p x-show="$store.lote.atual.erro" class="text-sm text-red-700" role="alert" x-text="$store.lote.atual.erro"></p>
+              <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="$store.lote.atual.enviando" @click="$store.lote.registrar()">Registrar</button>
+              <button type="button" x-show="$store.lote.atual.daVolta" class="min-h-11 w-full rounded border border-gray-300 text-sm text-gray-700" @click="$store.lote.naoFiz()">Não fiz</button>
+              <button type="button" class="block w-full text-center text-xs text-gray-500 underline" @click="$store.lote.maisCampos()">mais campos (formato, tempo)</button>
+            </div>
+          </template>
+          <template x-if="$store.lote.atual.etapa === 'erros'">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <p class="font-semibold" x-text="'Registrado · ' + $store.lote.atual.resumo"></p>
+                <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="$store.lote.fechar()" aria-label="Fechar">✕</button>
+              </div>
+              <p class="text-sm text-gray-600" x-text="'Anotar a questão errada? Opcional · ' + ($store.lote.atual.anotados + 1) + ' de ' + $store.lote.atual.erradas"></p>
+              <label class="block text-sm text-gray-500">Questão no QConcursos<input type="text" id="lote-erro-questao" placeholder="Q2318890" autocapitalize="characters" x-model="$store.lote.atual.novoErro.questao" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+              <label class="block text-sm text-gray-500">Por que errei (uma frase)<input type="text" id="lote-erro-descricao" x-model="$store.lote.atual.novoErro.descricao" class="mt-1 w-full rounded border border-gray-200 p-2 text-gray-900"></label>
+              <div class="flex flex-wrap gap-1">
+                <template x-for="c in $store.lote.causas" :key="c[0]">
+                  <button type="button" class="min-h-9 rounded-full border px-3 text-xs" :class="$store.lote.atual.novoErro.causa === c[0] ? 'border-primary-600 bg-primary-50 font-semibold' : 'border-gray-200'"
+                    @click="$store.lote.atual.novoErro.causa = c[0]" x-text="c[1]"></button>
+                </template>
+              </div>
+              <div class="flex flex-wrap items-center gap-1">
+                <span class="text-xs text-gray-500">Confiança ao errar:</span>
+                <template x-for="c in [['BAIXA', 'Baixa'], ['MEDIA', 'Média'], ['ALTA', 'Alta']]" :key="c[0]">
+                  <button type="button" class="min-h-9 rounded-full border px-3 text-xs" :class="$store.lote.atual.novoErro.confianca === c[0] ? 'border-primary-600 bg-primary-50 font-semibold' : 'border-gray-200'"
+                    @click="$store.lote.atual.novoErro.confianca = c[0]" x-text="c[1]"></button>
+                </template>
+              </div>
+              <p x-show="$store.lote.atual.erro" class="text-sm text-red-700" role="alert" x-text="$store.lote.atual.erro"></p>
+              <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="$store.lote.atual.enviando" @click="$store.lote.salvarErro()">Salvar erro</button>
+              <button type="button" class="min-h-11 w-full rounded border border-gray-300 text-sm text-gray-700" @click="$store.lote.fechar()">Pular</button>
+            </div>
+          </template>
         </div>
       </div>
     </template>
+  </div>
+
+  <section id="pagina-hoje" x-data="paginaHoje()" @sge:sessao-registrada.window="carregar()">
 
 
     <!-- 02_JORNADAS §4.4: o concurso-alvo no topo — contexto, não alarme -->
@@ -727,7 +764,16 @@
                   <span class="text-sm text-gray-500" x-text="'Nível ' + item.nivel"></span>
                 </button>
                 <!-- D-133: a revisão também se cumpre com um lote de questões, em dois números -->
-                <button type="button" class="mt-1 min-h-9 px-1 text-sm font-medium text-primary-700 underline" @click="abrirLote(item)">Fiz questões</button>
+                <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-1">
+                  <button type="button" class="min-h-9 text-sm font-medium text-primary-700 underline" @click="$store.lote.abrir(item)">Fiz questões</button>
+                  <!-- D-150 a D-154: o atalho filtrado para o QConcursos; a volta abre o lote -->
+                  <template x-if="$store.qc.de(item.assuntoId)">
+                    <a class="qc-atalho min-h-9 text-sm font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                       :href="$store.qc.de(item.assuntoId).url" @click="$store.qc.sair($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
+                  </template>
+                </div>
+                <p x-show="$store.qc.de(item.assuntoId)" class="px-1 text-xs" :class="$store.qc.largo($store.qc.de(item.assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
+                   x-text="$store.qc.detalhe($store.qc.de(item.assuntoId))"></p>
               </li>
             </template>
           </ul>
@@ -839,6 +885,10 @@
                       <span class="block font-medium" x-text="item.nome"></span>
                       <span class="text-sm text-gray-500" x-text="'Prevista para ' + item.dataPrevista.split('-').reverse().join('/') + ' (' + (-item.diasAtraso) + (item.diasAtraso === -1 ? ' dia antes)' : ' dias antes)')"></span>
                     </button>
+                    <template x-if="$store.qc.de(item.assuntoId)">
+                      <a class="qc-atalho mt-1 inline-block min-h-9 px-1 text-sm font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                         :href="$store.qc.de(item.assuntoId).url" @click="$store.qc.sair($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
+                    </template>
                   </li>
                 </template>
               </ul>
@@ -1268,6 +1318,16 @@
           <button type="button" @click="irErros()" class="flex-1 rounded border border-gray-200 bg-white p-2 text-center text-sm hover:bg-gray-50">Erros</button>
         </div>
 
+        <!-- D-150 a D-154: resolver no QConcursos, com o filtro à vista para conferir -->
+        <template x-if="$store.qc.de(assuntoId)">
+          <div class="space-y-1">
+            <a class="qc-atalho inline-flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-medium text-white hover:bg-primary-700" target="_blank" rel="noopener"
+               :href="$store.qc.de(assuntoId).url" @click="$store.qc.sair($store.qc.de(assuntoId), nome)">Resolver no QConcursos ↗</a>
+            <p class="text-xs" :class="$store.qc.largo($store.qc.de(assuntoId)) ? 'text-alerta-700' : 'text-gray-500'" x-text="$store.qc.detalhe($store.qc.de(assuntoId))"></p>
+            <p class="text-xs text-gray-500" x-text="'Filtro: ' + $store.qc.de(assuntoId).filtro.join(', ')"></p>
+          </div>
+        </template>
+
         <!-- 01_DOMINIO §3.12: as partes do edital e o nó de cada uma; aviso quando ainda falta filtro de questões -->
         <div x-show="partesEdital.length > 0" class="space-y-2">
           <h3 class="text-sm font-medium text-gray-500">O que o edital pede</h3>
@@ -1464,6 +1524,7 @@
             <template x-for="e in erros" :key="e.id">
               <li class="rounded border border-gray-200 bg-white p-3">
                 <p class="text-sm" x-text="e.descricao"></p>
+                <a x-show="e.questaoExterna" class="text-xs text-primary-700 underline" target="_blank" rel="noopener" :href="e.questaoExterna && linkQuestaoQc(e.questaoExterna)" x-text="e.questaoExterna + ' ↗'"></a>
                 <div class="mt-1 flex gap-2">
                   <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
                         x-text="{FALTA_CONHECIMENTO: 'Falta de conhecimento', ESQUECIMENTO: 'Esquecimento', INTERPRETACAO: 'Interpretação', DESATENCAO: 'Desatenção', PEGADINHA: 'Pegadinha', CHUTE: 'Chute', GESTAO_TEMPO: 'Gestão de tempo'}[e.causa]"></span>
@@ -1917,6 +1978,24 @@
                 <span x-text="textoAvisos"></span>
                 <a :href="'#/concursos/analise/' + avisos.analiseId + '/conferencia'" class="ml-1 underline">Conferir</a>
               </p>
+              <!-- D-151: a banca no catálogo do QConcursos; fora dele, colar um endereço filtrado por ela -->
+              <div x-show="bancaQc" class="mt-2 text-xs text-gray-600" id="banca-qconcursos">
+                <span>Banca no QConcursos: </span>
+                <span x-show="bancaQc && bancaQc.numero" x-text="bancaQc && ((bancaQc.nomeNoCatalogo || bancaQc.banca) + ' · nº ' + bancaQc.numero + (bancaQc.origem === 'ENDERECO' ? ' (do endereço)' : ' (catálogo)'))"></span>
+                <span x-show="bancaQc && bancaQc.banca && !bancaQc.numero" class="text-alerta-700" x-text="bancaQc && (bancaQc.banca + ' · fora do catálogo, o atalho vai sem filtro de banca')"></span>
+                <span x-show="bancaQc && !bancaQc.banca" class="text-gray-500">sem banca no concurso</span>
+                <button type="button" x-show="bancaQc && bancaQc.banca && !bancaQcAberta" class="ml-1 underline text-primary-700" @click="bancaQcAberta = true; bancaQcEndereco = ''; bancaQcErro = null">trocar</button>
+                <div x-show="bancaQcAberta" class="mt-2 space-y-2 rounded border border-gray-200 p-2">
+                  <p>No QConcursos, filtre só por essa banca, copie o endereço da barra do navegador e cole aqui (ou digite o número).</p>
+                  <input type="text" id="banca-qconcursos-endereco" x-model="bancaQcEndereco" placeholder="https://www.qconcursos.com/questoes-de-concursos/questoes?examining_board_ids%5B%5D=…"
+                         class="w-full rounded border border-gray-200 p-2 text-sm text-gray-900">
+                  <p x-show="bancaQcErro" class="text-red-700" role="alert" x-text="bancaQcErro"></p>
+                  <div class="flex gap-2">
+                    <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white" @click="aprenderBancaQc()">Salvar</button>
+                    <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="bancaQcAberta = false">Cancelar</button>
+                  </div>
+                </div>
+              </div>
               <!-- D-137: o diagnóstico do edital -->
               <div class="mt-3 flex flex-wrap items-center gap-2">
                 <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
@@ -2101,6 +2180,10 @@
                       </div>
                       <span class="whitespace-nowrap font-mono text-xs" x-text="pesoBr(p.pesoAtual) + ' → ' + pesoBr(p.proposto)"></span>
                       <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="aceitarBanca([p.assuntoId])">Aceitar</button>
+                      <template x-if="$store.qc.de(p.assuntoId)">
+                          <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                             :href="$store.qc.de(p.assuntoId).url" @click="$store.qc.sair($store.qc.de(p.assuntoId), p.nome)">QConcursos ↗</a>
+                        </template>
                     </div>
                   </template>
                   <button type="button" x-show="d.propostas.length > 1" class="text-xs text-primary-700 underline"
@@ -2117,6 +2200,10 @@
                     </div>
                     <span class="whitespace-nowrap font-mono text-xs" x-text="'edital ' + pesoBr(a.pesoEdital) + ' · ' + pesoBr(a.peso)"></span>
                     <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-gray-600" @click="desfazerBanca(a.assuntoId)">Desfazer</button>
+                    <template x-if="$store.qc.de(a.assuntoId)">
+                          <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                             :href="$store.qc.de(a.assuntoId).url" @click="$store.qc.sair($store.qc.de(a.assuntoId), a.nome)">QConcursos ↗</a>
+                        </template>
                   </div>
                 </template>
                 <p class="text-xs text-gray-500">Reimportar o edital ou concluir a conferência de novo mantém estes pesos. Desfazer volta ao do edital.</p>
@@ -2200,11 +2287,18 @@
                           <template x-for="f in diag.dados.cabe.ficamDeFora" :key="f.assuntoId">
                             <li class="flex justify-between gap-2 border-b border-dashed border-gray-200 py-1 text-xs">
                               <span x-text="f.nome"></span>
-                              <span class="whitespace-nowrap font-mono text-gray-500" x-text="f.peso.toLowerCase().replace('medio', 'médio') + (f.minutos ? ' · ' + minutosBr(f.minutos) : '')"></span>
+                              <span class="flex items-baseline gap-2">
+                                <span class="whitespace-nowrap font-mono text-gray-500" x-text="f.peso.toLowerCase().replace('medio', 'médio') + (f.minutos ? ' · ' + minutosBr(f.minutos) : '')"></span>
+                        <template x-if="$store.qc.de(f.assuntoId)">
+                          <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                             :href="$store.qc.de(f.assuntoId).url" @click="$store.qc.sair($store.qc.de(f.assuntoId), f.nome)">QConcursos ↗</a>
+                        </template>
+                              </span>
                             </li>
                           </template>
                         </ul>
                         <p class="mt-1 text-xs text-gray-500">Pela ordem: peso, depois a ordem do edital.</p>
+                        <p class="mt-1 text-xs text-gray-500">Questões de assunto que você ainda não leu contam nas métricas; a escada só começa depois da leitura.</p>
                       </div>
                     </template>
                   </div>
