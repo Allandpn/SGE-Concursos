@@ -1991,6 +1991,16 @@
       <p class="text-xs text-gray-500">Vale só neste aparelho.</p>
     </div>
 
+    <!-- A versão do app neste aparelho e a do servidor: diferentes, "Atualizar agora" troca a casca (sw.js) -->
+    <div x-data="versaoApp()" class="mb-6 space-y-2 rounded-xl border border-gray-200 bg-white p-4" id="ajustes-versao">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500">Versão do app</h2>
+      <p class="text-sm">Neste aparelho: <b class="font-mono" x-text="instalada || '—'"></b></p>
+      <p class="text-sm">No servidor: <b class="font-mono" x-text="servidor || '—'"></b></p>
+      <p x-show="instalada && servidor && instalada !== servidor" class="text-sm text-alerta-700">Há uma versão nova.</p>
+      <button type="button" class="min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-primary-700" :disabled="atualizando" @click="atualizar()"
+              x-text="atualizando ? 'Atualizando…' : 'Atualizar agora'"></button>
+    </div>
+
     <template x-if="carregando">
       <p class="text-gray-500">Carregando...</p>
     </template>

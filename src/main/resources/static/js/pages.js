@@ -886,6 +886,8 @@ document.addEventListener('alpine:init', () => {
           }),
         });
         window.dispatchEvent(new CustomEvent('sge:sessao-registrada')); // §8B: Hoje recarrega o progresso do dia
+        // D-45: a tentativa gravada acabou; abrir esta tela de novo (mesmo assunto) começa outra, com o formulário limpo.
+        this.tentativaId = null;
       } catch (e) {
         // Falha não destrutiva: volta pra cá com previsão/resultado intactos.
         // Reenviar usa o MESMO tentativaId (D-45) — nunca duplica, mesmo que
@@ -1231,6 +1233,8 @@ document.addEventListener('alpine:init', () => {
       try {
         await api('/sessoes', { method: 'POST', body: JSON.stringify(corpo) });
         window.dispatchEvent(new CustomEvent('sge:sessao-registrada')); // §8B: Hoje recarrega o progresso do dia
+        // D-45: a tentativa gravada acabou; abrir esta tela de novo (mesmo assunto) começa outra, com o formulário limpo.
+        this.tentativaId = null;
       } catch (e) {
         // Falha não destrutiva: volta pra cá com os campos intactos.
         // Reenviar usa o MESMO tentativaId (D-45) — nunca duplica.
