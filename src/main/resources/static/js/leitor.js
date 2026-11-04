@@ -56,6 +56,8 @@ document.addEventListener('alpine:init', () => {
 
   Alpine.data('paginaLeitor', () => ({
     segmentoId: null,
+    // D-158: a prévia é só leitura — sem marcar, sem "Terminei" e sem guardar a página.
+    previa: false,
     leitura: null,
     carregando: false,
     erro: null,
@@ -93,9 +95,10 @@ document.addEventListener('alpine:init', () => {
     },
 
     // Chamado pelo router em #/ler/{id}.
-    async abrir(segmentoId, paginaPedida = null) {
+    async abrir(segmentoId, paginaPedida = null, previa = false) {
       this.parar();
       this.segmentoId = segmentoId;
+      this.previa = previa;
       this.leitura = null;
       this.erro = null;
       this.semArquivo = false;
@@ -190,6 +193,7 @@ document.addEventListener('alpine:init', () => {
 
     // Um gesto: aplica aqui, guarda na fila e tenta mandar.
     async mudar(m) {
+      if (this.previa) return; // D-158
       // Cópia simples: os arrays vindos do estado do Alpine são Proxies, e o IndexedDB não os clona.
       const mudanca = JSON.parse(JSON.stringify({ mudancaId: crypto.randomUUID(), editadaEm: new Date().toISOString(), removida: false, ...m }));
       this.aplicarLocal(mudanca);
@@ -364,6 +368,7 @@ document.addEventListener('alpine:init', () => {
 
     // D-121: guarda a página (com rede); sem rede, só o que está aberto.
     guardarPaginaDepois() {
+      if (this.previa) return; // D-158: a última página guardada não muda
       clearTimeout(this._timerPagina);
       this._timerPagina = setTimeout(() => {
         if (navigator.onLine) api(`/segmentos/${this.segmentoId}/leitura`, { method: 'PUT', body: JSON.stringify({ pagina: this.pagina }) }).catch(() => {});
@@ -516,7 +521,7 @@ document.addEventListener('alpine:init', () => {
 
     // A seleção de texto na camada do PDF.js vira retângulos em fração da página.
     lerSelecao() {
-      if (!pdf.doc || this.painel) return;
+      if (!pdf.doc || this.painel || this.previa) return;
       const sel = window.getSelection();
       const p = sel && sel.anchorNode ? pdf.paginas.find((x) => x.texto.contains(sel.anchorNode)) : null;
       if (!sel || sel.isCollapsed || !sel.rangeCount || !p) {
@@ -579,6 +584,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     criarNotaDePagina(ponto, n) {
+      if (this.previa) return; // D-158
       this.selecao = null;
       this.painel = { novo: true, tipo: 'NOTA_PAGINA', pagina: n, posicaoX: Math.round(ponto.x * 10000) / 10000, posicaoY: Math.round(ponto.y * 10000) / 10000 };
       this.notaTexto = '';

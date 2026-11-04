@@ -1059,7 +1059,8 @@ da recuperação deixa o resultado melhor do que a memória está (`00_PRODUTO` 
 **O ensaio (D-159).** Dos próximos 7 dias e do detalhe de qualquer assunto, "Ensaiar" abre a tela de **recuperação** (com as
 perguntas e o gabarito, §3.18), de **questões**, de **discursiva** ou de **flashcards** em modo ensaio. Antes de abrir, a tela avisa
 que ver as perguntas antes contamina a recuperação real. No lugar de Registrar, **"Ver o que aconteceria"** mostra o resultado e a
-revisão seguinte (nível e data) calculados pela mesma regra do registro, e nada é gravado: nem sessão, nem revisão, nem "pergunta
+revisão seguinte (nível e data) calculados pela mesma regra do registro — a partir dos próximos dias, como se fosse feito **no dia
+previsto** da revisão; do detalhe, hoje —, e nada é gravado: nem sessão, nem revisão, nem "pergunta
 ruim". O ensaio não deixa marca.
 
 **O que o sistema não garante.** Que a pessoa não se lembre, no dia, do que viu no ensaio. Por isso o aviso; a decisão é dela.
@@ -1984,7 +1985,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-156 | Depois do lote, "Anotar erros" (opcional) cria até feitas − certas erros do assunto ligados à sessão, cada um com o número da questão no QConcursos, a descrição, a causa e a confiança | §3.24, §3.5 |
 | D-157 | A visão dos próximos 7 dias mostra, de amanhã a +7, as revisões pendentes previstas para cada dia (assunto, nível, subida ou manutenção) e a contagem contra o teto diário com aviso acima dele; na reta final, sem as manutenções de médio e baixo (contadas à parte), com o simulado do fim de semana e os dias até a prova; e uma estimativa de assuntos novos na semana pelo ritmo medido; derivada, nada guardado | §3.25 |
 | D-158 | A prévia do material abre o bloco no leitor só para ler: sem "Terminei", sem marcações, sem guardar a última página e sem sessão, com a faixa de prévia | §3.25 |
-| D-159 | O ensaio abre recuperação (com perguntas e gabarito), questões, discursiva ou flashcards a partir dos próximos 7 dias e do detalhe do assunto, depois do aviso; "Ver o que aconteceria" mostra o resultado e a revisão seguinte pela mesma regra do registro; nada é gravado e não fica marca | §3.25 |
+| D-159 | O ensaio abre recuperação (com perguntas e gabarito), questões, discursiva ou flashcards a partir dos próximos 7 dias e do detalhe do assunto, depois do aviso; "Ver o que aconteceria" mostra o resultado e a revisão seguinte pela mesma regra do registro, no dia previsto da revisão (dos próximos dias) ou hoje (do detalhe); nada é gravado e não fica marca | §3.25 |
 
 ---
 

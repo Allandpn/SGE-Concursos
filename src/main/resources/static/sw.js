@@ -9,7 +9,7 @@
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-11-04-1';
+const CASCA_VERSAO = 'casca-2026-11-04-2';
 // ADR-052: os PDFs guardados para ler sem rede ficam num cache próprio, que a troca de casca não apaga.
 const CACHE_MATERIAL = 'material-v1';
 
@@ -27,6 +27,7 @@ const CASCA = [
   'vendor/pdfjs-4.10.38/pdf.worker.min.mjs',
   'entrar.html',
   'js/qconcursos.js',
+  'js/ensaio.js',
   'js/pages.js',
   'js/router.js',
   'vendor/alpinejs-3.14.3.min.js',

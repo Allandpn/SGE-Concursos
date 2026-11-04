@@ -34,7 +34,8 @@ function renderizarRotaAtual() {
   const matchProva = hash.match(/^#\/provas\/(\d+)$/);
   const matchRelatorioProva = hash.match(/^#\/provas\/(\d+)\/relatorio$/);
   const matchResolver = hash.match(/^#\/provas\/(\d+)\/resolver$/);
-  const matchLeitor = hash.match(/^#\/ler\/(\d+)(?:\?p=(\d+))?$/);
+  const matchLeitor = hash.match(/^#\/ler\/(\d+)(?:\?(.*))?$/); // ?p=N (D-121) e ?previa=1 (D-158)
+  const paramsLeitor = matchLeitor ? new URLSearchParams(matchLeitor[2] || '') : null;
 
   elHoje.hidden = true;
   elRecuperar.hidden = true;
@@ -59,6 +60,10 @@ function renderizarRotaAtual() {
   principal.classList.toggle('max-w-md', !matchConferencia && !matchLeitor);
   principal.classList.toggle('max-w-3xl', !!matchConferencia || !!matchLeitor);
   Alpine.$data(elEdital).parar(); // a consulta periódica da análise só vive na tela dela
+  // D-157: Hoje ganha a coluna dos próximos 7 dias no computador; a largura volta ao sair de Hoje (ajustada no fim, abaixo).
+  principal.classList.remove('lg:max-w-5xl');
+  // D-159: o ensaio só vive nas telas de Recuperar e Registrar; sair delas o encerra.
+  if (!matchRecuperar && !matchRegistrar) Alpine.store('ensaio').sair();
 
   if (matchSimulado) {
     elSimulado.hidden = false;
@@ -77,7 +82,7 @@ function renderizarRotaAtual() {
     Alpine.$data(elResolver).abrir(Number(matchResolver[1]));
   } else if (matchLeitor) {
     elLeitor.hidden = false;
-    Alpine.$data(elLeitor).abrir(Number(matchLeitor[1]), matchLeitor[2] ? Number(matchLeitor[2]) : null);
+    Alpine.$data(elLeitor).abrir(Number(matchLeitor[1]), paramsLeitor.get('p') ? Number(paramsLeitor.get('p')) : null, paramsLeitor.get('previa') === '1');
   } else if (matchRecuperar) {
     elRecuperar.hidden = false;
     Alpine.$data(elRecuperar).abrir(Number(matchRecuperar[1]));
@@ -113,6 +118,7 @@ function renderizarRotaAtual() {
     Alpine.$data(elEdital).abrir(Number(matchAnalise[1]));
   } else {
     elHoje.hidden = false;
+    principal.classList.add('lg:max-w-5xl');
     Alpine.$data(elHoje).init();
   }
 }
