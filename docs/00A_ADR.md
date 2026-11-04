@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.25.0** |
+| Versão do documento | **2.26.0** |
 | Status | **Congelado** |
 | Data | 2026-11-04 |
-| Total | 58 ADRs — 43 vigentes, 14 substituídas, 1 revogada |
+| Total | 59 ADRs — 44 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -86,6 +86,7 @@ que custa e o que foi descartado.
 | [ADR-056](#adr-056--reta-final-regime-derivado-só-a-antecipação-grava) | Reta final: regime derivado, só a antecipação grava | 2026-11-01 |
 | [ADR-057](#adr-057--peso-pela-banca-proposta-derivada-ajuste-aceito-em-tabela-própria) | Peso pela banca: proposta derivada, ajuste aceito em tabela própria | 2026-11-02 |
 | [ADR-058](#adr-058--qconcursos-por-atalho-e-volta-sem-api-sem-moldura-sem-raspagem) | QConcursos por atalho e volta: sem API, sem moldura, sem raspagem | 2026-11-04 |
+| [ADR-059](#adr-059--o-ensaio-calcula-pelo-registro-real-numa-transação-desfeita) | O ensaio calcula pelo registro real, numa transação desfeita | 2026-11-04 |
 
 ### 1.2 Históricas
 
@@ -986,6 +987,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.26.0 | 2026-11-04 | **ADR-059**, pedido do usuário: "ver o que aconteceria" do ensaio chama o registro real numa transação desfeita; nada sai dela. Com `01_DOMINIO` v1.41.0 (D-157 a D-159). Total 59, 44 vigentes |
 | 2.25.0 | 2026-11-04 | **ADR-058**, pedido do usuário: o QConcursos entra por um endereço filtrado montado pelo SGE, aberto fora dele, e pela volta guardada no aparelho; sem API, sem moldura, sem automação; a banca pelo número do usuário ou por tabela embutida. Com `01_DOMINIO` v1.40.0 (D-150 a D-154). Total 58, 43 vigentes |
 | 2.24.0 | 2026-11-02 | **ADR-057**, pedido do usuário: a proposta de peso pela banca é consulta; o ajuste aceito mora em `peso_banca` e substitui o peso do edital em toda aplicação da cobertura até ser desfeito |
 | 2.23.0 | 2026-11-01 | **ADR-056**, pedido do usuário: reta final com só entrada e saída guardadas; a manutenção de médio e baixo escondida por filtro; a de peso alto antecipada uma vez ao entrar, com a data anterior guardada |
@@ -2305,6 +2307,40 @@ cadernos. A página de questões passa por um desafio do Cloudflare e responde c
 | Buscar a lista de bancas no `brokk` em tempo de uso | Responde 403 do Cloudflare; o atalho dependeria de um serviço que recusa acesso automático |
 | Atualizar o catálogo raspando a página com navegador automatizado | A página passa por verificação anti-robô; o catálogo cresce pelos endereços que a pessoa copia |
 | Guardar a saída no servidor | Ela só importa ao aparelho que saiu; no servidor viraria estado a limpar e abriria o lote em outro aparelho |
+
+---
+
+## ADR-059 — O ensaio calcula pelo registro real, numa transação desfeita
+
+**Status:** Aceita · 2026-11-04 · pedido do usuário
+
+### Contexto
+
+O ensaio (`01_DOMINIO` §3.25, D-159) mostra o que aconteceria com uma sessão — o resultado, a revisão cumprida, a próxima revisão e a
+consolidação — sem gravar nada. A regra que decide isso mora no registro (`SessaoService`, `RevisaoService`: limiares, janela de
+tolerância, roteamento, lote mínimo, consolidação, D-155).
+
+### Decisão
+
+- **"Ver o que aconteceria" chama o mesmo registro** dentro de uma transação marcada para desfazer (`rollbackOnly`), lê o resultado
+  e a revisão pendente que ele deixaria, e desfaz. Nenhuma regra é copiada.
+- **Nada sai da transação**: o registro não pode disparar efeito fora do banco (fila de preparo, aviso, arquivo) antes do commit;
+  efeito desse tipo só vale depois do commit, e o ensaio nunca faz commit. Um teste confere que o banco fica igual.
+- **A prévia e o ensaio são estados da tela**: o leitor e as telas de registro recebem a marca de prévia ou ensaio pela rota e
+  escondem o que grava.
+
+### Consequências
+
+- O ensaio nunca diverge do registro real, porque é o registro real desfeito.
+- `tentativaId` do ensaio é sempre novo e descartado; a unicidade de D-45 não é tocada.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Um simulador próprio da escada | Duplicaria limiares, janela, roteamento e consolidação; divergiria do registro na primeira mudança de regra |
+| Calcular no navegador | O navegador não tem a revisão pendente, a janela nem o histórico de resultados no alvo |
+| Gravar e apagar depois | Apagar fere D-18 e deixaria rastro em sequências e métricas |
 
 ---
 

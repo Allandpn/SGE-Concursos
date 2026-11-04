@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.40.0 |
+| Versão | 1.41.0 |
 | Data | 2026-11-04 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -1041,6 +1041,31 @@ navegador; o catálogo guarda quais foram conferidos assim. Se o endereço mudar
 
 ---
 
+### 3.25 Os próximos 7 dias e o ensaio
+
+Hoje mostra só o turno de hoje. A pedido do usuário (2026-11-04), a tela ganha a **visão dos próximos 7 dias** e a possibilidade de
+**ver e testar** o que vem pela frente sem bagunçar o fluxo: nada do que se faz nela grava sessão, revisão ou marcação.
+
+**Os próximos 7 dias (D-157).** De amanhã até daqui a 7 dias, cada dia mostra as **revisões pendentes previstas** para ele (assunto,
+nível, subida ou manutenção) e a contagem do dia contra o **teto diário**, com aviso quando passa. Na reta final, as manutenções de
+peso médio e baixo não aparecem nos dias (esperam a prova, D-143) e são contadas à parte; o sábado e o domingo do simulado da semana
+(D-144) e os dias até a prova aparecem marcados. Uma linha **estimada** diz quantos assuntos novos o ritmo medido (D-139) abre na
+semana; é estimativa, porque o bloco de leitura de cada dia só é calculado no próprio dia. Tudo derivado, nada guardado (D-16).
+
+**A prévia do material (D-158).** Tocar num assunto dos próximos dias abre os blocos dele no leitor **só para ler**: sem
+"Terminei", sem destaques nem notas, sem guardar a última página (D-121) e sem sessão. Uma faixa diz que é prévia e que reler antes
+da recuperação deixa o resultado melhor do que a memória está (`00_PRODUTO` §5.2.1).
+
+**O ensaio (D-159).** Dos próximos 7 dias e do detalhe de qualquer assunto, "Ensaiar" abre a tela de **recuperação** (com as
+perguntas e o gabarito, §3.18), de **questões**, de **discursiva** ou de **flashcards** em modo ensaio. Antes de abrir, a tela avisa
+que ver as perguntas antes contamina a recuperação real. No lugar de Registrar, **"Ver o que aconteceria"** mostra o resultado e a
+revisão seguinte (nível e data) calculados pela mesma regra do registro, e nada é gravado: nem sessão, nem revisão, nem "pergunta
+ruim". O ensaio não deixa marca.
+
+**O que o sistema não garante.** Que a pessoa não se lembre, no dia, do que viu no ensaio. Por isso o aviso; a decisão é dela.
+
+---
+
 ## 4. O resultado da recuperação
 
 Três níveis, iguais para todo tipo (`00_PRODUTO` §6.3):
@@ -1957,6 +1982,9 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-154 | O atalho aparece em cada recuperação de Hoje, no detalhe do assunto, nos que ficam de fora do Diagnóstico e nas propostas e ajustados do Peso pela banca | §3.24 |
 | D-155 | Sessão de questões em assunto nunca lido (sem sessão que não seja de questões e sem revisão) conta nas métricas, mas não cria revisão nem tira o assunto do backlog; fase, frente, ritmo e diagnóstico ignoram essas sessões até a leitura começar | §3.24, §3.3, §8 |
 | D-156 | Depois do lote, "Anotar erros" (opcional) cria até feitas − certas erros do assunto ligados à sessão, cada um com o número da questão no QConcursos, a descrição, a causa e a confiança | §3.24, §3.5 |
+| D-157 | A visão dos próximos 7 dias mostra, de amanhã a +7, as revisões pendentes previstas para cada dia (assunto, nível, subida ou manutenção) e a contagem contra o teto diário com aviso acima dele; na reta final, sem as manutenções de médio e baixo (contadas à parte), com o simulado do fim de semana e os dias até a prova; e uma estimativa de assuntos novos na semana pelo ritmo medido; derivada, nada guardado | §3.25 |
+| D-158 | A prévia do material abre o bloco no leitor só para ler: sem "Terminei", sem marcações, sem guardar a última página e sem sessão, com a faixa de prévia | §3.25 |
+| D-159 | O ensaio abre recuperação (com perguntas e gabarito), questões, discursiva ou flashcards a partir dos próximos 7 dias e do detalhe do assunto, depois do aviso; "Ver o que aconteceria" mostra o resultado e a revisão seguinte pela mesma regra do registro; nada é gravado e não fica marca | §3.25 |
 
 ---
 
@@ -2048,6 +2076,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.41.0 | 2026-11-04 | Pedido do usuário (Sprint 38), decidido em duas rodadas, com `02_JORNADAS` v1.31.0 e ADR-059. **§3.25** (os próximos 7 dias e o ensaio) e **D-157 a D-159**: a visão derivada dos próximos dias, a prévia do material só para ler e o ensaio que mostra o que aconteceria sem gravar nada. 159 regras |
 | 1.40.0 | 2026-11-04 | Pedido do usuário (Sprint 36), decidido em duas rodadas, com `02_JORNADAS` v1.30.0 e ADR-058. **§3.24** (questões no QConcursos) e **D-150 a D-154**: o atalho filtrado pelos nós do assunto (ou pela disciplina, com aviso), pela banca do alvo, sem anuladas e desatualizadas, só não resolvidas e dos últimos N anos; a sugestão de quantas pelo foco; a volta com o lote rápido aberto, guardada só no aparelho; onde o atalho aparece. **D-133**: o tempo sem foco passa a ser o parâmetro "minutos por questão" (padrão 3, antes 2 fixo). Numa segunda rodada: a modalidade do alvo no filtro, o catálogo de bancas que aprende pelos endereços colados, **D-155** (questões antes de ler só contam nas métricas; §8 ajustada) e **D-156** (anotar os erros do lote). 156 regras |
 | 1.39.0 | 2026-11-02 | Pedido do usuário (tela de simulado), decidido numa rodada, com `02_JORNADAS` v1.28.0. **§3.6**: o registro à mão com brancos (D-148) e o arquivamento (D-149); sai "implementação adiada". **§3.20**: a limitação dos brancos passa a valer só para quem não os informa |
 | 1.38.0 | 2026-11-02 | Pedido do usuário (Sprint 22), decidido em duas rodadas, com `02_JORNADAS` v1.27.0 e ADR-057. **§3.23** (peso pela banca) e **D-145 a D-147**: a incidência medida nas provas hospedadas da mesma banca (5 anos, mínimo de 2 provas e 30 questões por disciplina), a proposta de um degrau pelos terços dentro da disciplina, o aceite que sobrevive à reimportação até ser desfeito |

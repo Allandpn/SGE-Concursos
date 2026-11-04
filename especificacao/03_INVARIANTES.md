@@ -5,7 +5,7 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.28.0 |
+| Versão | 1.29.0 |
 | Data | 2026-11-04 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
@@ -267,9 +267,12 @@ conceitual — envelhecer por motivo errado.
 | D-153 | Comportamento | I | Chromium: sair pelo atalho, voltar e achar o lote aberto com o tempo; "Não fiz" descarta, ✕ adia, mais de 6 h descarta sem abrir; nada gravado no servidor antes de registrar |
 | D-154 | Comportamento | I | Chromium: o atalho na recuperação de Hoje, no detalhe do assunto, no Diagnóstico e no Peso pela banca |
 | D-155 | Comportamento | S | Teste: questões num assunto nunca lido entram na M-1 e não criam revisão; a fase segue backlog e o diagnóstico o conta como nunca visto; depois de uma sessão de estudo, questões sem revisão abrem a escada como antes |
+| D-157 | Derivação | S | Teste: as revisões pendentes caem no dia previsto, de amanhã a +7; a contagem e o aviso acima do teto; na reta final, as manutenções de médio e baixo contadas à parte e o simulado no fim de semana; a estimativa pelo ritmo; nada gravado |
+| D-158 | Comportamento | I | Chromium: a prévia abre o bloco com a faixa, sem "Terminei", sem marcar e sem mudar a última página guardada |
+| D-159 | Comportamento | S + I | Teste: "o que aconteceria" devolve o resultado e a próxima revisão iguais aos do registro real, e o banco fica igual (sessões, revisões, perguntas); Chromium: ensaio de recuperação e de questões sem gravar |
 | D-156 | Comportamento | S + I | Teste: os erros anotados ficam ligados ao assunto e à sessão, com o número Q; mais erros que feitas − certas é recusado; Chromium: anotar dois erros depois do lote |
 
-**Contagem:** 35 invariantes · 20 derivações · 92 comportamentos · 10 políticas — 157 linhas para 156 regras.
+**Contagem:** 35 invariantes · 21 derivações · 94 comportamentos · 10 políticas — 160 linhas para 159 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -589,6 +592,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.29.0 | 2026-11-04 | **D-157 a D-159** com `01_DOMINIO.md` v1.41.0 (os próximos 7 dias e o ensaio). Uma derivação, dois comportamentos. Contagem: 160 linhas para 159 regras |
 | 1.28.0 | 2026-11-04 | **D-150 a D-156** com `01_DOMINIO.md` v1.40.0 (questões no QConcursos). Três derivações, quatro comportamentos. Contagem: 157 linhas para 156 regras |
 | 1.27.0 | 2026-11-02 | **D-148 e D-149** com `01_DOMINIO.md` v1.39.0 (registro de simulado com brancos, arquivamento). Uma invariante (D-148), um comportamento. Contagem: 150 linhas para 149 regras |
 | 1.26.0 | 2026-11-02 | **D-145 a D-147** com `01_DOMINIO.md` v1.38.0 (peso pela banca). Uma invariante (D-147), duas derivações. Contagem: 148 linhas para 147 regras |

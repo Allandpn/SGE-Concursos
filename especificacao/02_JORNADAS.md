@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.30.0 |
+| Versão | 1.31.0 |
 | Data | 2026-11-04 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -573,6 +573,20 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-18 · Ver os próximos dias e ensaiar
+
+Ocasional: planejar a semana ou testar uma tela. Orçamento de atenção; abrir uma prévia ou um ensaio em **2 toques**.
+
+1. No computador, Hoje tem à direita a coluna **Próximos 7 dias**; no celular, um bloco recolhido no fim de Hoje. Cada dia: as
+   revisões previstas, "6 de 8" contra o teto (ou o aviso "11 · passa do teto de 8"), o simulado e os dias até a prova na reta final;
+   no topo, "~3 assuntos novos na semana (estimativa)" (D-157).
+2. Tocar num assunto mostra **Ver o material** e **Ensaiar** (D-158, D-159).
+3. **Ver o material** abre o leitor com a faixa "Prévia", sem marcar e sem "Terminei".
+4. **Ensaiar** avisa que ver antes contamina a recuperação real e pede o tipo (recuperação, questões, discursiva, flashcards). A tela é a
+   de sempre, com a faixa "Ensaio · nada é gravado"; no fim, **Ver o que aconteceria**: "88% · reconstruí → a revisão subiria para o
+   nível 3 em 12/11".
+5. O detalhe de qualquer assunto também tem **Ensaiar**.
+
 ### J-17 · Resolver no QConcursos
 
 Frequente: em boa parte dos turnos. Ida em **1 toque**; a volta no orçamento do lote rápido (**≤ 12 s**).
@@ -916,6 +930,7 @@ O documento de interface é quem amarra isso.
 | J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
 | J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
+| J-18 Próximos dias e ensaio | Hoje, Leitor, Recuperar, Registrar, Assuntos (detalhe) | D-157 a D-159, D-121, D-143, D-144 |
 | J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-133 |
 
 ---
@@ -943,6 +958,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.31.0 | 2026-11-04 | Nova **J-18** (os próximos 7 dias, a prévia do material e o ensaio), com `01_DOMINIO` v1.41.0 (D-157 a D-159) e ADR-059 |
 | 1.30.0 | 2026-11-04 | Nova **J-17** (resolver no QConcursos: o atalho filtrado e a volta com o lote rápido aberto), com `01_DOMINIO` v1.40.0 (D-150 a D-156) e ADR-058; a volta entra no orçamento do lote rápido; anotar erros fica fora dele |
 | 1.29.0 | 2026-11-03 | Pedido do usuário. **J-10** ganha "passar as páginas": rolagem contínua por padrão, "uma página por vez (deslizar)" no menu, pinça para o zoom, o contador que leva a "ir para a página"; na rolagem contínua, a página de D-121 é a mais visível. Sem regra nova |
 | 1.28.0 | 2026-11-02 | Nova **J-16** (registrar um simulado) e o orçamento dele, com `01_DOMINIO` v1.39.0 (D-148, D-149). As disciplinas vêm em ordem alfabética (ajustado ao escrever o código: o edital não ordena as disciplinas entre si) |
