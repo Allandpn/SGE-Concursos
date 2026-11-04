@@ -845,7 +845,9 @@ Sans) fica; o que muda é a disciplina com que ela é aplicada.
 
 ### O tema claro e o escuro
 
-O escuro segue o aparelho (`prefers-color-scheme`); em Ajustes, **Aparência** fixa claro ou escuro, guardado só no aparelho. Os
+O escuro segue o aparelho (`prefers-color-scheme`); em Ajustes, **Aparência** fixa claro ou escuro, guardado só no aparelho.
+Medido na Sprint 39, o principal de §8A não chegava a 4,5:1 com texto branco; no claro, `primary-600` passou a `#057f8c`,
+`primary-700` a `#046f7b` e `alerta-700` a `#b8430a` (`docs/SPRINT-39-INTERFACE.md` §2). Os
 tokens de §8A e os neutros passam a ser variáveis (ADR-060): cada cor tem o par claro e escuro, com o contraste de texto de pelo menos
 4,5:1 nos dois. O texto sobre a cor principal é sempre branco.
 

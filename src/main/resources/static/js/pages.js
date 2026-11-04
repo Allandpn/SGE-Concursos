@@ -363,6 +363,7 @@ document.addEventListener('alpine:init', () => {
     antecipaveis: [],
     // D-157: os próximos 7 dias (consulta) e se o bloco fica aberto no celular (preferência do aparelho).
     proximos: null,
+    feitasHoje: 0, // §8B: sessões registradas hoje (o progresso do dia)
     proximosAberto: proximosAbertoNoAparelho(),
     mostrarAntecipaveis: false,
     // "Drenar mais" (02_JORNADAS §4.3): cada pedido soma um teto diário à fila,
@@ -416,6 +417,82 @@ document.addEventListener('alpine:init', () => {
       return dias === 1 ? 'prova amanhã' : `prova em ${dias} dias`;
     },
 
+    // §8B: a próxima ação, pela ordem do plano: corrigir (reestudo) antes de recuperar, recuperar antes de abrir (01_DOMINIO §7.4).
+    get proximaAcao() {
+      if (this.reestudos.length) return { tipo: 'reestudo', item: this.reestudos[0] };
+      if (this.fila.length) return { tipo: 'recuperacao', item: this.fila[0] };
+      if (this.blocoConteudo) return { tipo: 'conteudo' };
+      if (this.simuladoDaSemana) return { tipo: 'simulado' };
+      return null;
+    },
+
+    get filaDepois() {
+      return this.proximaAcao?.tipo === 'recuperacao' ? this.fila.slice(1) : this.fila;
+    },
+
+    get reestudosDepois() {
+      return this.proximaAcao?.tipo === 'reestudo' ? this.reestudos.slice(1) : this.reestudos;
+    },
+
+    get totalDoDia() {
+      return this.feitasHoje + this.fila.length + this.reestudos.length + (this.blocoConteudo ? 1 : 0) + (this.simuladoDaSemana ? 1 : 0);
+    },
+
+    textoFaltaHoje() {
+      const partes = [];
+      if (this.reestudos.length) partes.push(this.reestudos.length + (this.reestudos.length === 1 ? ' reestudo' : ' reestudos'));
+      if (this.fila.length) partes.push(this.fila.length + (this.fila.length === 1 ? ' recuperação' : ' recuperações'));
+      if (this.blocoConteudo) {
+        const min = this.segmentoSugerido?.tempoEstimadoMin;
+        partes.push(min ? `1 bloco de ${min} min` : '1 bloco de leitura');
+      }
+      if (this.simuladoDaSemana) partes.push('o simulado');
+      return partes.length ? 'falta: ' + partes.join(' · ') : 'tudo feito';
+    },
+
+    tituloProximaAcao() {
+      const p = this.proximaAcao;
+      if (!p) return '';
+      if (p.tipo === 'reestudo') return 'Reestudar ' + p.item.nome;
+      if (p.tipo === 'recuperacao') return 'Recuperar ' + p.item.nome;
+      if (p.tipo === 'conteudo') return (this.blocoContinuacao ? 'Continuar ' : 'Ler ') + this.blocoConteudo.nome;
+      return 'Simulado da semana';
+    },
+
+    detalheProximaAcao() {
+      const p = this.proximaAcao;
+      if (!p) return '';
+      if (p.tipo === 'reestudo') return 'Não veio ' + dataHumana(p.item.dataFalha) + ' · nível ' + p.item.nivel;
+      if (p.tipo === 'recuperacao') return 'Nível ' + p.item.nivel + (p.item.dataPrevista ? ' · prevista para ' + dataHumana(p.item.dataPrevista) + atrasoHumano(p.item.dataPrevista) : '');
+      if (p.tipo === 'conteudo') return this.segmentoSugerido ? this.descricaoSegmento : (this.blocoContinuacao ? 'Continuar a leitura' : 'Assunto novo');
+      return 'Nenhum simulado desde segunda';
+    },
+
+    botaoProximaAcao() {
+      const p = this.proximaAcao;
+      if (!p) return '';
+      if (p.tipo === 'reestudo') return this.reestudoBloco[p.item.assuntoId] ? 'Ler o material' : 'Reestudar';
+      if (p.tipo === 'recuperacao') return 'Começar a recuperação';
+      if (p.tipo === 'conteudo') return this.segmentoSugerido && this.materialLocal(this.segmentoSugerido) ? 'Ler o bloco' : 'Registrar a leitura';
+      return 'Registrar o simulado';
+    },
+
+    fazerProximaAcao() {
+      const p = this.proximaAcao;
+      if (!p) return;
+      if (p.tipo === 'reestudo') {
+        if (this.reestudoBloco[p.item.assuntoId]) window.location.hash = '#/ler/' + this.reestudoBloco[p.item.assuntoId];
+        else this.abrirReestudo(p.item);
+      } else if (p.tipo === 'recuperacao') {
+        this.abrirRecuperacao(p.item);
+      } else if (p.tipo === 'conteudo') {
+        if (this.segmentoSugerido && this.materialLocal(this.segmentoSugerido)) window.location.hash = '#/ler/' + this.segmentoSugerido.id;
+        else this.abrirBlocoConteudo();
+      } else {
+        window.location.hash = '#/registrar/simulado';
+      }
+    },
+
     alternarProximos() {
       this.proximosAberto = !this.proximosAberto;
       guardarProximosAberto(this.proximosAberto);
@@ -453,6 +530,7 @@ document.addEventListener('alpine:init', () => {
         this.vencidasAlemDoTeto = plano.vencidasAlemDoTeto;
         this.proximoBloco = plano.proximoBloco;
         this.antecipaveis = plano.antecipaveis;
+        this.feitasHoje = plano.feitasHoje || 0;
         // D-150 a D-154: os atalhos do QConcursos da fila e das antecipáveis, em lote (auxiliar)
         Alpine.store('qc').esquecer();
         api('/turno/proximos-dias').then((p) => { this.proximos = p; }).catch(() => { this.proximos = null; });
@@ -629,6 +707,42 @@ document.addEventListener('alpine:init', () => {
     // D-159: em ensaio, "o que aconteceria" no lugar de gravar.
     ensaio: false,
     ensaioTexto: '',
+    // §8B: Prever (1) · Reconstruir (2) · Conferir (3) · o que faltou (4); a escolha do resultado vai para o botão fixo.
+    escolha: null,
+    resultados: [
+      { valor: 'SUCESSO', rotulo: 'Reconstruí', ancora: 'os pontos principais vieram; faltou detalhe, não estrutura' },
+      { valor: 'PARCIAL', rotulo: 'Faltou um pedaço', ancora: 'a estrutura veio, mas um bloco inteiro não' },
+      { valor: 'FALHA', rotulo: 'Não veio', ancora: 'preciso reler antes de tentar de novo' },
+    ],
+
+    get etapaVisivel() {
+      return Math.min(this.etapa, 3);
+    },
+
+    get escolhaEfetiva() {
+      return this.escolha || this.sugestao;
+    },
+
+    rotuloResultado(v) {
+      return { SUCESSO: 'reconstruí', PARCIAL: 'faltou um pedaço', FALHA: 'não veio' }[v] || '';
+    },
+
+    rotuloPrevisao() {
+      return { SUCESSO: 'vou reconstruir', PARCIAL: 'vai faltar um pedaço', FALHA: 'não vai vir' }[this.previsao] || '';
+    },
+
+    textoPrevista() {
+      const partes = [];
+      if (this.nivel) partes.push('Nível ' + this.nivel);
+      if (this.dataPrevista) partes.push('prevista para ' + dataHumana(this.dataPrevista) + atrasoHumano(this.dataPrevista));
+      return partes.join(' · ');
+    },
+
+    // §8B: sair no meio pergunta antes; a recuperação não é gravada.
+    sair() {
+      if (this.etapa >= 2 && this.etapa <= 3 && !this.ensaio && !window.confirm('Sair sem registrar esta recuperação?')) return;
+      window.location.hash = '#/hoje';
+    },
 
     // Chamado pelo router a cada navegação para #/recuperar/{id} — inclusive
     // quando confirmar() volta pra cá depois de uma falha de envio (§5.1).
@@ -648,6 +762,7 @@ document.addEventListener('alpine:init', () => {
       this.nivel = this.semDados ? null : item.nivel;
       this.dataPrevista = this.semDados ? null : item.dataPrevista;
       this.etapa = 1;
+      this.escolha = null;
       this.previsao = null;
       this.resultado = null;
       this.erro = null;
@@ -663,12 +778,16 @@ document.addEventListener('alpine:init', () => {
       this.ruins = {};
       this.faltaram = [];
       // D-124: sem pergunta (ou sem rede para buscá-las), a tela é a recuperação livre de sempre.
-      api(`/assuntos/${assuntoId}/perguntas`).then((ps) => { if (this.etapa === 1) this.perguntas = ps; }).catch(() => {});
+      api(`/assuntos/${assuntoId}/perguntas`).then((ps) => { if (this.etapa <= 2) this.perguntas = ps; }).catch(() => {});
     },
 
     prever(valor) {
       this.previsao = valor;
       this.etapa = 2;
+    },
+
+    conferir() {
+      this.etapa = 3;
       if (this.perguntas.length) {
         // D-125: o gabarito só existe a partir daqui.
         api(`/perguntas/gabarito?ids=${this.perguntas.map((p) => p.id).join(',')}`)
@@ -748,7 +867,7 @@ document.addEventListener('alpine:init', () => {
       this.faltaram = valor === 'PARCIAL' ? this.pontosQueContam.filter((pt) => !this.vieram[pt.id]) : [];
 
       // Otimista (02_JORNADAS §5.1): volta pra Hoje antes da resposta confirmar (ou mostra o que faltou).
-      if (this.faltaram.length) this.etapa = 3;
+      if (this.faltaram.length) this.etapa = 4;
       else window.location.hash = '#/hoje';
 
       try {
@@ -766,6 +885,7 @@ document.addEventListener('alpine:init', () => {
             conferencia,
           }),
         });
+        window.dispatchEvent(new CustomEvent('sge:sessao-registrada')); // §8B: Hoje recarrega o progresso do dia
       } catch (e) {
         // Falha não destrutiva: volta pra cá com previsão/resultado intactos.
         // Reenviar usa o MESMO tentativaId (D-45) — nunca duplica, mesmo que
@@ -888,6 +1008,7 @@ document.addEventListener('alpine:init', () => {
     previsaoNivel: null, // D-134: a previsão da discursiva, em três níveis
     nota: null, // D-134: a nota da discursiva, 0–100
     limiaresDiscursiva: { sucesso: 70, parcial: 40 },
+    limiaresLote: null, // §8B: para o botão dizer o que vai acontecer
     assuntoId: null,
     nome: null,
     segmentos: [],
@@ -945,6 +1066,12 @@ document.addEventListener('alpine:init', () => {
             const ls = ps.find((x) => x.chave === 'discursiva_limiar_sucesso');
             const lp = ps.find((x) => x.chave === 'discursiva_limiar_parcial');
             if (ls && lp) this.limiaresDiscursiva = { sucesso: Number(ls.valor), parcial: Number(lp.valor) };
+            const valor = (chave) => Number((ps.find((x) => x.chave === chave) || {}).valor);
+            this.limiaresLote = {
+              MULTIPLA_ESCOLHA: { sucesso: valor('limiar_sucesso_multipla_escolha'), parcial: valor('limiar_parcial_multipla_escolha') },
+              CERTO_ERRADO: { sucesso: valor('limiar_sucesso_certo_errado'), parcial: valor('limiar_parcial_certo_errado') },
+              FLASHCARDS: { sucesso: valor('limiar_sucesso_flashcards'), parcial: valor('limiar_parcial_flashcards') },
+            };
             this.duracaoBloco = p ? Number(p.valor) : null;
             this.sugerirTempo();
           })
@@ -1010,6 +1137,37 @@ document.addEventListener('alpine:init', () => {
       this.sugerirTempo();
     },
 
+    rotuloTipo() {
+      return { conteudo: 'Conteúdo', questoes: 'Questões', flashcards: 'Flashcards', discursiva: 'Discursiva' }[this.tipo] || 'Registrar';
+    },
+
+    // §8B: 1 Dados (feitas e certas) · 2 Previsão · 3 Registrar.
+    get etapaDoLote() {
+      const dados = Number(this.feitas) > 0 && this.certas !== null && this.certas !== '';
+      if (!dados) return 1;
+      return this.previsao === null || this.previsao === '' ? 2 : 3;
+    },
+
+    rotuloRegistrar() {
+      const verbo = this.ensaio ? 'Ver o que aconteceria' : 'Registrar';
+      if ((this.tipo !== 'questoes' && this.tipo !== 'flashcards') || this.etapaDoLote < 3) return verbo;
+      const feitas = Number(this.feitas);
+      const certas = Number(this.certas);
+      if (!(feitas > 0) || certas > feitas) return verbo;
+      const pct = Math.round((certas * 100) / feitas);
+      const l = this.limiaresLote && this.limiaresLote[this.tipo === 'flashcards' ? 'FLASHCARDS' : this.formato];
+      if (!l || Number.isNaN(l.sucesso)) return `${verbo} · ${pct}%`;
+      const r = pct >= l.sucesso ? 'reconstruí' : pct >= l.parcial ? 'faltou um pedaço' : 'não veio';
+      return `${verbo} · ${pct}% · ${r}`;
+    },
+
+    // §8B: sair com algo preenchido pergunta antes.
+    sair() {
+      const preenchido = this.feitas || this.certas || this.nota || (this.tempoEditado && this.tempo);
+      if (preenchido && !this.ensaio && !window.confirm('Sair sem registrar?')) return;
+      window.location.hash = '#/hoje';
+    },
+
     get temSegmentos() {
       return this.segmentos.length > 0;
     },
@@ -1072,6 +1230,7 @@ document.addEventListener('alpine:init', () => {
 
       try {
         await api('/sessoes', { method: 'POST', body: JSON.stringify(corpo) });
+        window.dispatchEvent(new CustomEvent('sge:sessao-registrada')); // §8B: Hoje recarrega o progresso do dia
       } catch (e) {
         // Falha não destrutiva: volta pra cá com os campos intactos.
         // Reenviar usa o MESMO tentativaId (D-45) — nunca duplica.

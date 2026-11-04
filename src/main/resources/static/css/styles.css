@@ -12,7 +12,7 @@
 .leitor-pinos { pointer-events: none; z-index: 3; }
 .leitor-destaque { position: absolute; border-radius: 2px; mix-blend-mode: multiply; }
 .leitor-pino { position: absolute; pointer-events: auto; transform: translate(-30%, -100%); width: 26px; height: 26px; border-radius: 6px 6px 6px 0;
-  background: #0694a2; color: #fff; font-size: 13px; line-height: 26px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+  background: #057f8c; color: #fff; font-size: 13px; line-height: 26px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
 .leitor-pino-nota { transform: translate(0, -60%); width: 20px; height: 20px; line-height: 20px; font-size: 11px; background: #1d2421; border-radius: 50%; }
 .textLayer { position: absolute; text-align: initial; inset: 0; overflow: clip; opacity: 1; line-height: 1; -webkit-text-size-adjust: none;
   text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; caret-color: CanvasText; z-index: 2; }

@@ -85,3 +85,41 @@ function dataBR(iso) {
 function dataInstante(instante) {
   return instante ? new Date(instante).toLocaleDateString('pt-BR') : '';
 }
+
+// §8B: datas humanas — "hoje", "amanhã", "ontem", "segunda, 02/11"; nunca AAAA-MM-DD na tela.
+const DIAS_DA_SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+
+function dataLocal(iso) {
+  const [a, m, d] = iso.split('-').map(Number);
+  return new Date(a, m - 1, d);
+}
+
+function diasAte(iso) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return Math.round((dataLocal(iso) - hoje) / 86400000);
+}
+
+function diaEMes(d) {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function dataHumana(iso) {
+  if (!iso) return '';
+  const n = diasAte(iso);
+  if (n === 0) return 'hoje';
+  if (n === 1) return 'amanhã';
+  if (n === -1) return 'ontem';
+  const d = dataLocal(iso);
+  return `${DIAS_DA_SEMANA[d.getDay()]}, ${diaEMes(d)}`;
+}
+
+function atrasoHumano(iso) {
+  const n = iso ? -diasAte(iso) : 0;
+  return n > 0 ? ` (${n} ${n === 1 ? 'dia' : 'dias'} de atraso)` : '';
+}
+
+function hojeHumano() {
+  const d = new Date();
+  return `${DIAS_DA_SEMANA[d.getDay()]}, ${diaEMes(d)}`;
+}
