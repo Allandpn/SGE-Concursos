@@ -50,5 +50,8 @@ public record TurnoPlanoResponse(
     long manutencoesEsperando,
 
     @Schema(description = "Na reta final, sábado ou domingo sem simulado desde a segunda: o segundo bloco é o simulado (D-144)")
-    boolean simuladoDaSemana
+    boolean simuladoDaSemana,
+
+    @Schema(description = "Sessões registradas hoje, de qualquer tipo — o progresso do dia em Hoje (04_FRONTEND §8B)")
+    long feitasHoje
 ) {}

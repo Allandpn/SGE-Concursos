@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>eAgora</title>
-  <meta name="theme-color" content="#0694a2">
+  <meta name="theme-color" content="#057f8c" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1514" media="(prefers-color-scheme: dark)">
   <!-- App instalável (ADR-038): manifesto, ícones e service worker da casca. -->
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -13,6 +14,14 @@
   <meta name="apple-mobile-web-app-title" content="eAgora">
   <!-- Dependências locais, versão no nome (ADR-038) — nada de CDN. -->
   <link rel="stylesheet" href="vendor/fonts/open-sans.css">
+  <link rel="stylesheet" href="css/tema.css">
+  <script>
+    // ADR-060: a escolha de Aparência (Ajustes) vale antes do primeiro desenho, para não piscar.
+    try {
+      const aparencia = localStorage.getItem('aparencia');
+      if (aparencia === 'claro' || aparencia === 'escuro') document.documentElement.classList.add(aparencia);
+    } catch (e) { /* sem armazenamento: segue o aparelho */ }
+  </script>
   <script src="vendor/tailwindcss-play-3.4.16.js"></script>
   <script>
     // Paleta (docs/04_FRONTEND.md §8A) — extraída do qconcursos.com, cor
@@ -22,9 +31,16 @@
     tailwind.config = {
       theme: {
         extend: {
+          // ADR-060: cada cor é uma variável de css/tema.css, com o par claro e escuro.
           colors: {
-            primary: { 50: '#e6f7f8', 100: '#c7edf0', 300: '#6cc8d1', 600: '#0694a2', 700: '#057885', 800: '#045e68' },
-            alerta: { 50: '#fff4ed', 600: '#fe6112', 700: '#e2530a' },
+            white: 'rgb(var(--c-white) / <alpha-value>)',
+            sobre: 'rgb(var(--c-sobre) / <alpha-value>)',
+            gray: { 50: 'rgb(var(--c-gray-50) / <alpha-value>)', 100: 'rgb(var(--c-gray-100) / <alpha-value>)', 200: 'rgb(var(--c-gray-200) / <alpha-value>)', 300: 'rgb(var(--c-gray-300) / <alpha-value>)', 400: 'rgb(var(--c-gray-400) / <alpha-value>)', 500: 'rgb(var(--c-gray-500) / <alpha-value>)', 600: 'rgb(var(--c-gray-600) / <alpha-value>)', 700: 'rgb(var(--c-gray-700) / <alpha-value>)', 800: 'rgb(var(--c-gray-800) / <alpha-value>)', 900: 'rgb(var(--c-gray-900) / <alpha-value>)' },
+            primary: { 50: 'rgb(var(--c-primary-50) / <alpha-value>)', 100: 'rgb(var(--c-primary-100) / <alpha-value>)', 300: 'rgb(var(--c-primary-300) / <alpha-value>)', 600: 'rgb(var(--c-primary-600) / <alpha-value>)', 700: 'rgb(var(--c-primary-700) / <alpha-value>)', 800: 'rgb(var(--c-primary-800) / <alpha-value>)' },
+            alerta: { 50: 'rgb(var(--c-alerta-50) / <alpha-value>)', 600: 'rgb(var(--c-alerta-600) / <alpha-value>)', 700: 'rgb(var(--c-alerta-700) / <alpha-value>)' },
+            red: { 50: 'rgb(var(--c-red-50) / <alpha-value>)', 200: 'rgb(var(--c-red-200) / <alpha-value>)', 300: 'rgb(var(--c-red-300) / <alpha-value>)', 400: 'rgb(var(--c-red-400) / <alpha-value>)', 500: 'rgb(var(--c-red-500) / <alpha-value>)', 600: 'rgb(var(--c-red-600) / <alpha-value>)', 700: 'rgb(var(--c-red-700) / <alpha-value>)', 800: 'rgb(var(--c-red-800) / <alpha-value>)' },
+            green: { 50: 'rgb(var(--c-green-50) / <alpha-value>)', 100: 'rgb(var(--c-green-100) / <alpha-value>)', 200: 'rgb(var(--c-green-200) / <alpha-value>)', 600: 'rgb(var(--c-green-600) / <alpha-value>)', 700: 'rgb(var(--c-green-700) / <alpha-value>)', 800: 'rgb(var(--c-green-800) / <alpha-value>)', 900: 'rgb(var(--c-green-900) / <alpha-value>)' },
+            amber: { 100: 'rgb(var(--c-amber-100) / <alpha-value>)', 700: 'rgb(var(--c-amber-700) / <alpha-value>)', 800: 'rgb(var(--c-amber-800) / <alpha-value>)', 900: 'rgb(var(--c-amber-900) / <alpha-value>)' },
           },
           fontFamily: {
             sans: ['"Open Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
@@ -43,6 +59,7 @@
   <script src="js/qconcursos.js"></script>
   <script src="js/ensaio.js"></script>
   <script src="js/pages.js"></script>
+  <script src="js/navegacao.js"></script>
   <script src="js/router.js"></script>
   <script>
     // ADR-038: registra o service worker da casca. Só funciona em contexto
@@ -55,20 +72,82 @@
 </head>
 <body class="bg-gray-50 text-gray-900">
 
-<header class="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
-  <a href="#/hoje" class="text-lg font-semibold">eAgora</a>
-  <nav class="flex gap-4">
-    <a href="#/concursos" class="text-sm text-gray-500 hover:text-gray-900">Concursos</a>
-    <a href="#/assuntos" class="text-sm text-gray-500 hover:text-gray-900">Assuntos</a>
-    <a href="#/progresso" class="text-sm text-gray-500 hover:text-gray-900">Progresso</a>
-    <a href="#/ajustes" class="text-sm text-gray-500 hover:text-gray-900">Ajustes</a>
-  </nav>
+<!-- §8B: os ícones, desenhados aqui (sem rede, ADR-038); traço de 2 px -->
+<svg width="0" height="0" class="absolute" aria-hidden="true">
+  <symbol id="i-hoje" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m9 15 2 2 4-4"/></symbol>
+  <symbol id="i-assuntos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6"/></symbol>
+  <symbol id="i-progresso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></symbol>
+  <symbol id="i-concursos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-ajustes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <symbol id="i-rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-ler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2zM22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/></symbol>
+  <symbol id="i-alvo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="6"/></symbol>
+</svg>
+
+<!-- §8B: a navegação — menu lateral no computador, barra inferior no celular; some no modo foco das telas de estudo -->
+<nav id="menu-lateral" x-data x-show="!$store.nav.foco" class="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col gap-1 border-r border-gray-200 bg-white px-3 py-4 lg:flex" aria-label="Principal">
+  <a href="#/hoje" class="px-3 pb-4 text-lg font-bold">eAgora</a>
+  <template x-for="(i, n) in $store.nav.itens" :key="i.id">
+    <div>
+      <div x-show="n === 3" class="mx-1 my-2 h-px bg-gray-200"></div>
+      <a :href="i.href" class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold"
+         :class="$store.nav.rota === i.id ? 'bg-primary-50 text-primary-800' : 'text-gray-600 hover:bg-gray-50'"
+         :aria-current="$store.nav.rota === i.id ? 'page' : null">
+        <svg class="h-5 w-5 flex-none" aria-hidden="true"><use :href="'#' + i.icone"/></svg><span x-text="i.nome"></span>
+      </a>
+    </div>
+  </template>
+</nav>
+
+<nav id="barra-inferior" x-data x-show="!$store.nav.foco" class="fixed inset-x-0 bottom-0 z-30 flex border-t border-gray-200 bg-white lg:hidden"
+     style="padding-bottom: env(safe-area-inset-bottom)" aria-label="Principal">
+  <template x-for="i in $store.nav.naBarra" :key="i.id">
+    <a :href="i.href" class="flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold"
+       :class="$store.nav.rota === i.id ? 'text-primary-800' : 'text-gray-500'" :aria-current="$store.nav.rota === i.id ? 'page' : null">
+      <span class="flex h-7 w-12 items-center justify-center rounded-full" :class="$store.nav.rota === i.id ? 'bg-primary-50' : ''">
+        <svg class="h-6 w-6" aria-hidden="true"><use :href="'#' + i.icone"/></svg>
+      </span>
+      <span x-text="i.nome"></span>
+    </a>
+  </template>
+  <button type="button" class="flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold"
+          :class="$store.nav.maisAtivo || $store.nav.maisAberto ? 'text-primary-800' : 'text-gray-500'" :aria-expanded="$store.nav.maisAberto"
+          @click="$store.nav.maisAberto = !$store.nav.maisAberto">
+    <span class="flex h-7 w-12 items-center justify-center rounded-full" :class="$store.nav.maisAtivo || $store.nav.maisAberto ? 'bg-primary-50' : ''">
+      <svg class="h-6 w-6" aria-hidden="true"><use href="#i-mais"/></svg>
+    </span>
+    <span>Mais</span>
+  </button>
+</nav>
+
+<div id="painel-mais" x-data>
+  <template x-if="$store.nav.maisAberto">
+    <div class="fixed inset-0 z-40 flex items-end bg-black/30 lg:hidden" @click.self="$store.nav.maisAberto = false" @keydown.escape.window="$store.nav.maisAberto = false">
+      <div class="w-full rounded-t-2xl bg-white px-4 pt-2 shadow-2xl" style="padding-bottom: calc(4.5rem + env(safe-area-inset-bottom))">
+        <div class="mx-auto mb-2 h-1 w-10 rounded-full bg-gray-200"></div>
+        <template x-for="i in $store.nav.noMais" :key="i.id">
+          <a :href="i.href" class="flex min-h-14 items-center gap-3 border-t border-gray-100 text-base font-semibold first:border-t-0"
+             :class="$store.nav.rota === i.id ? 'text-primary-800' : 'text-gray-800'">
+            <svg class="h-6 w-6 text-primary-700" aria-hidden="true"><use :href="'#' + i.icone"/></svg><span x-text="i.nome"></span>
+          </a>
+        </template>
+      </div>
+    </div>
+  </template>
+</div>
+
+<!-- No celular, cada tela tem o título no topo (Hoje tem o próprio cabeçalho) -->
+<header id="titulo-celular" x-data x-show="!$store.nav.foco && $store.nav.rota !== 'hoje'" class="sticky top-0 z-20 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
+  <h1 class="text-lg font-bold" x-text="$store.nav.titulo"></h1>
 </header>
+
+<div id="conteudo" x-data :class="$store.nav.foco ? '' : 'lg:pl-56'">
 
 <!-- Pomodoro (01_DOMINIO §3.15, J-8): a barra mora na casca, visível em qualquer tela enquanto há fase em curso. Não é tela nova. -->
 <div id="barra-foco" x-data>
   <template x-if="$store.foco.emCurso">
-    <div class="flex items-center gap-3 px-4 py-2 text-sm text-white" :class="$store.foco.ehPausa ? 'bg-amber-700' : 'bg-primary-700'" role="timer" aria-label="Pomodoro">
+    <div class="flex items-center gap-3 px-4 py-2 text-sm text-sobre" :class="$store.foco.ehPausa ? 'bg-amber-700' : 'bg-primary-700'" role="timer" aria-label="Pomodoro">
       <span class="font-mono text-lg font-semibold tabular-nums" x-text="$store.foco.rotulo"></span>
       <span class="min-w-0 flex-1 truncate" x-text="$store.foco.descricao"></span>
       <button type="button" x-show="!$store.foco.ehPausa && !$store.foco.pausada" :disabled="$store.foco.trabalhando"
@@ -86,7 +165,7 @@
       <p class="text-sm text-gray-700" x-text="$store.foco.proposta.especie === 'FOCO' ? 'A pausa terminou.' : 'O foco terminou.'"></p>
       <div class="flex flex-wrap gap-2">
         <button type="button" :disabled="$store.foco.trabalhando"
-                class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white hover:bg-primary-800" @click="$store.foco.iniciarProposta()" x-text="$store.foco.textoProposta"></button>
+                class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-sobre hover:bg-primary-800" @click="$store.foco.iniciarProposta()" x-text="$store.foco.textoProposta"></button>
         <button type="button" x-show="$store.foco.proposta.especie !== 'FOCO'" :disabled="$store.foco.trabalhando"
                 class="min-h-11 rounded border border-gray-300 px-3 text-sm hover:bg-gray-50" @click="$store.foco.maisUmFoco()">Mais um foco</button>
         <button type="button" class="min-h-11 rounded border border-gray-200 px-3 text-sm text-gray-600 hover:bg-gray-50" @click="$store.foco.descartarProposta()">Encerrar por hoje</button>
@@ -96,7 +175,7 @@
   <p x-show="$store.foco.erro" class="bg-red-50 px-4 py-2 text-sm text-red-700" role="alert" x-text="$store.foco.erro"></p>
 </div>
 
-<main class="mx-auto max-w-md px-4 py-6">
+<main class="mx-auto max-w-md px-4 py-6" :class="$store.nav.foco ? '' : 'pb-24 lg:pb-6'" x-data>
 
   <!-- Tela Hoje — porta de entrada, J-2/J-4 (04_FRONTEND.md §6) -->
   <!-- Leitor (J-10; 01_DOMINIO §3.17, D-114 a D-121; ADR-052). A nona tela. Nunca aberto a partir de Recuperar (D-114). -->
@@ -185,7 +264,7 @@
                 @click="abrirIrPara()" aria-label="Ir para a página" x-text="pagina + ' / ' + totalPaginas"></button>
         <span class="flex-1"></span>
         <a x-show="pagina >= totalPaginas && blocoSeguinte" :href="'#/ler/' + blocoSeguinte?.id + (previa ? '?previa=1' : '')" class="text-sm text-primary-700 underline">Próximo bloco</a>
-        <button type="button" x-show="!previa" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white disabled:opacity-40" :disabled="!online" @click="terminei()"
+        <button type="button" x-show="!previa" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre disabled:opacity-40" :disabled="!online" @click="terminei()"
           :title="online ? '' : 'Registrar a sessão precisa de rede'">Terminei</button>
       </div>
     </div>
@@ -200,7 +279,7 @@
             <input type="number" min="1" :max="totalPaginas" inputmode="numeric" x-model="irParaNumero" class="flex-1 rounded border border-gray-900 p-2 text-lg tabular-nums" aria-label="Página" x-init="$nextTick(() => $el.select())">
             <span class="text-sm text-gray-500" x-text="'de ' + totalPaginas"></span>
           </div>
-          <button type="submit" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white">Ir</button>
+          <button type="submit" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre">Ir</button>
         </form>
       </div>
     </template>
@@ -227,7 +306,7 @@
           <button type="button" x-show="!painel.novo" class="min-h-11 rounded border border-red-300 px-3 text-sm text-red-700" @click="remover()">Remover</button>
           <span class="flex-1"></span>
           <button type="button" class="min-h-11 px-3 text-sm text-gray-600 underline" @click="fecharPainel()">Fechar</button>
-          <button type="button" class="min-h-11 rounded bg-primary-600 px-4 text-sm font-semibold text-white" @click="salvarNota()">Salvar</button>
+          <button type="button" class="min-h-11 rounded bg-primary-600 px-4 text-sm font-semibold text-sobre" @click="salvarNota()">Salvar</button>
         </div>
       </div>
     </template>
@@ -323,7 +402,7 @@
         <label class="block space-y-1 text-sm"><span class="font-medium">Tipo da prova (opcional)</span>
           <input x-model="tipo" class="w-full rounded border border-gray-300 p-2 text-sm" placeholder="ex.: Tipo 1 — o sistema tenta descobrir pela capa"></label>
         <p class="text-xs text-gray-500">Sem gabarito, a prova é lida, mas fica aguardando o gabarito para ser julgada ou resolvida.</p>
-        <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="trabalhando" @click="enviar()"
+        <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="trabalhando" @click="enviar()"
           x-text="trabalhando ? 'Enviando…' : 'Enviar'"></button>
       </div>
     </template>
@@ -335,7 +414,7 @@
           <h2 class="text-lg font-semibold" x-text="prova.resumo.nome || 'Prova'"></h2>
           <p class="text-sm text-gray-500" x-text="[prova.resumo.banca, prova.resumo.ano, prova.resumo.tipo].filter(Boolean).join(' · ')"></p>
           <p class="mt-1 text-sm font-medium" x-text="textoStatus()"></p>
-          <p x-show="prova.resumo.gabaritoSituacao === 'PRELIMINAR'" class="text-xs text-alerta-600">gabarito preliminar</p>
+          <p x-show="prova.resumo.gabaritoSituacao === 'PRELIMINAR'" class="text-xs text-alerta-700">gabarito preliminar</p>
         </div>
 
         <template x-if="status === 'LENDO' || status === 'JULGANDO'">
@@ -354,7 +433,7 @@
             <p>A prova foi lida (<span x-text="prova.resumo.questoes"></span> questões). Falta o gabarito para julgar e resolver.</p>
             <input type="file" accept="application/pdf" class="block w-full text-sm" @change="escolherArquivo('arquivoGabarito', $event)">
             <textarea x-model="gabaritoTexto" rows="3" class="w-full rounded border border-gray-300 p-2" placeholder="ou cole o texto do gabarito"></textarea>
-            <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white" :disabled="trabalhando" @click="anexarGabarito()">Anexar gabarito</button>
+            <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre" :disabled="trabalhando" @click="anexarGabarito()">Anexar gabarito</button>
           </div>
         </template>
 
@@ -411,7 +490,7 @@
               </template>
             </div>
 
-            <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="trabalhando" @click="confirmar()">Confirmar e julgar</button>
+            <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="trabalhando" @click="confirmar()">Confirmar e julgar</button>
             <p class="text-xs text-gray-500">A partir daqui o sistema usa a IA para ver se o material sustenta cada resposta.</p>
           </div>
         </template>
@@ -419,7 +498,7 @@
         <template x-if="status === 'JULGANDO' || status === 'PRONTA'">
           <div class="flex flex-wrap gap-2">
             <a :href="'#/provas/' + id + '/relatorio'" class="flex min-h-11 items-center rounded border border-gray-300 bg-white px-4 text-sm text-primary-700">Ver o relatório</a>
-            <a x-show="prova.resumo.temGabarito" :href="'#/provas/' + id + '/resolver'" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white">Resolver</a>
+            <a x-show="prova.resumo.temGabarito" :href="'#/provas/' + id + '/resolver'" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-sobre">Resolver</a>
           </div>
         </template>
       </div>
@@ -431,7 +510,7 @@
         <div>
           <h2 class="text-lg font-semibold" x-text="'Relatório · ' + (relatorio.nome || 'Prova')"></h2>
           <p class="text-sm text-gray-500" x-text="[relatorio.banca, relatorio.ano, relatorio.recorte].filter(Boolean).join(' · ')"></p>
-          <p x-show="relatorio.gabaritoPreliminar" class="text-xs text-alerta-600">gabarito preliminar</p>
+          <p x-show="relatorio.gabaritoPreliminar" class="text-xs text-alerta-700">gabarito preliminar</p>
         </div>
         <div class="rounded border border-gray-200 bg-white p-3 text-sm">
           <p class="font-medium">Cobertura do material</p>
@@ -493,7 +572,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" class="min-h-11 rounded border border-gray-300 bg-white px-4 text-sm text-primary-700" :disabled="trabalhando" @click="analisarDeNovo()">Analisar de novo</button>
-          <a :href="'#/provas/' + id + '/resolver'" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white">Resolver</a>
+          <a :href="'#/provas/' + id + '/resolver'" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-sobre">Resolver</a>
         </div>
       </div>
     </template>
@@ -512,7 +591,7 @@
         <label class="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" x-model="cronometrar" class="h-5 w-5"> Cronometrar</label>
         <label x-show="cronometrar" class="block text-sm">Tempo da prova (minutos)
           <input x-model="limiteMinutos" type="number" min="10" class="mt-1 w-full rounded border border-gray-300 p-2"></label>
-        <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="carregando" @click="comecar()">Começar</button>
+        <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="carregando" @click="comecar()">Começar</button>
       </div>
     </template>
 
@@ -529,7 +608,7 @@
             <template x-for="d in nota.porDisciplina" :key="d.disciplina"><p class="text-gray-700" x-text="d.disciplina + ': ' + placarTexto(d.placar)"></p></template>
             <p x-show="nota.semResposta" class="text-xs text-gray-500" x-text="nota.semResposta + ' sem resposta'"></p>
             <p class="text-xs text-gray-500" x-text="nota.contaParaM1 ? 'Entra nas métricas, por disciplina.' : 'Não entra nas métricas: só a primeira tentativa conta.'"></p>
-            <p x-show="nota.gabaritoPreliminar" class="text-xs text-alerta-600">Gabarito preliminar: a nota muda se o definitivo mudar.</p>
+            <p x-show="nota.gabaritoPreliminar" class="text-xs text-alerta-700">Gabarito preliminar: a nota muda se o definitivo mudar.</p>
             <div class="flex gap-2 pt-1">
               <a :href="'#/provas/' + id + '/relatorio'" class="text-primary-700 underline">Relatório</a>
               <button type="button" class="text-primary-700 underline" @click="resolverDeNovo()">Resolver de novo</button>
@@ -578,7 +657,7 @@
           </div>
         </template>
 
-        <button type="button" x-show="!entregue" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="carregando" @click="entregar()">Entregar</button>
+        <button type="button" x-show="!entregue" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="carregando" @click="entregar()">Entregar</button>
       </div>
     </template>
     <p x-show="carregando" class="text-sm text-gray-500">Carregando…</p>
@@ -610,7 +689,7 @@
               </div>
               <p x-show="$store.lote.texto()" class="text-xs text-primary-700" x-text="$store.lote.texto()"></p>
               <p x-show="$store.lote.atual.erro" class="text-sm text-red-700" role="alert" x-text="$store.lote.atual.erro"></p>
-              <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="$store.lote.atual.enviando" @click="$store.lote.registrar()">Registrar</button>
+              <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="$store.lote.atual.enviando" @click="$store.lote.registrar()">Registrar</button>
               <button type="button" x-show="$store.lote.atual.daVolta" class="min-h-11 w-full rounded border border-gray-300 text-sm text-gray-700" @click="$store.lote.naoFiz()">Não fiz</button>
               <button type="button" class="block w-full text-center text-xs text-gray-500 underline" @click="$store.lote.maisCampos()">mais campos (formato, tempo)</button>
             </div>
@@ -638,7 +717,7 @@
                 </template>
               </div>
               <p x-show="$store.lote.atual.erro" class="text-sm text-red-700" role="alert" x-text="$store.lote.atual.erro"></p>
-              <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="$store.lote.atual.enviando" @click="$store.lote.salvarErro()">Salvar erro</button>
+              <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="$store.lote.atual.enviando" @click="$store.lote.salvarErro()">Salvar erro</button>
               <button type="button" class="min-h-11 w-full rounded border border-gray-300 text-sm text-gray-700" @click="$store.lote.fechar()">Pular</button>
             </div>
           </template>
@@ -694,24 +773,24 @@
     <div class="min-w-0 lg:flex-1">
 
 
-    <!-- 02_JORNADAS §4.4: o concurso-alvo no topo — contexto, não alarme -->
-    <template x-if="concursoCarregado">
-      <a href="#/concursos" class="mb-4 block rounded border border-gray-200 bg-white px-3 py-2 hover:bg-gray-50">
-        <template x-if="concurso">
-          <span class="block">
-            <span class="block text-sm font-medium" x-text="concurso.nome + (concurso.cargo ? ' · ' + concurso.cargo : '')"></span>
-            <span class="block text-xs text-gray-500" x-text="textoProva"></span>
-          </span>
-        </template>
-        <template x-if="!concurso">
-          <span class="block text-sm text-primary-700">Nenhum concurso-alvo — adicionar edital</span>
-        </template>
-      </a>
-    </template>
+    <!-- §8B e 02_JORNADAS §4.4: o dia e o concurso-alvo no topo — contexto, não alarme -->
+    <div class="mb-4 flex items-end justify-between gap-3" id="hoje-cabecalho">
+      <div>
+        <p class="text-xs font-semibold text-gray-500" x-text="hojeHumano()"></p>
+        <h1 class="text-[22px] font-bold leading-tight">Hoje</h1>
+      </div>
+      <template x-if="concursoCarregado && concurso">
+        <a href="#/concursos" class="min-w-0 max-w-[60%] truncate rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-800"
+           :title="concurso.nome" x-text="concurso.nome + (textoProva ? ' · ' + textoProva : '')"></a>
+      </template>
+      <template x-if="concursoCarregado && !concurso">
+        <a href="#/concursos" class="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-primary-700">Adicionar edital</a>
+      </template>
+    </div>
 
     <!-- J-14: a reta final — a faixa enquanto ativa (D-141) e, sem ela, a sugestão de entrar (D-140) -->
     <template x-if="retaFinal">
-      <div class="mb-4 flex justify-between rounded bg-primary-600 px-3 py-2 text-sm font-semibold text-white" id="faixa-reta-final">
+      <div class="mb-4 flex justify-between rounded bg-primary-600 px-3 py-2 text-sm font-semibold text-sobre" id="faixa-reta-final">
         <span>Reta final</span>
         <span x-text="retaFinal.dias + (retaFinal.dias === 1 ? ' dia' : ' dias') + ' · prova ' + retaFinal.dataProva.split('-').reverse().join('/').slice(0, 5)"></span>
       </div>
@@ -726,26 +805,8 @@
         </ul>
         <p x-show="erroReta" class="text-red-700" x-text="erroReta"></p>
         <div class="flex gap-2">
-          <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white" @click="entrarReta()">Entrar</button>
+          <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre" @click="entrarReta()">Entrar</button>
           <button type="button" class="min-h-11 rounded border border-gray-300 bg-white px-4" @click="agoraNaoReta()">Agora não</button>
-        </div>
-      </div>
-    </template>
-
-    <!-- docs/REDESENHO-FLUXO §5: o material tem rosto — contagem enquanto prepara, uma linha quando fica pronto -->
-    <template x-if="materialEmPreparo">
-      <a href="#/concursos" class="mb-4 block rounded border border-primary-100 bg-primary-50 px-3 py-2 text-sm text-gray-800">
-        <span class="block font-medium" x-text="'Preparando o material: ' + materialEmPreparo.feitos + ' de ' + materialEmPreparo.total + ' assuntos'"></span>
-        <span class="block text-xs text-gray-600">Costuma levar cerca de uma hora. Pode usar o app normalmente; o material aparece em cada assunto quando fica pronto.</span>
-      </a>
-    </template>
-    <template x-if="materialPronto">
-      <div class="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
-        <p class="font-medium" x-text="'O material de ' + concurso.nome + ' está pronto'"></p>
-        <p class="text-xs" x-text="materialPronto.prontos + (materialPronto.prontos === 1 ? ' assunto com material' : ' assuntos com material') + (materialPronto.semMaterial ? ' · ' + materialPronto.semMaterial + ' sem material no acervo (veja o que fazer em cada um)' : '')"></p>
-        <div class="mt-1 flex gap-3">
-          <a href="#/concursos" class="py-2 underline">Ver por assunto</a>
-          <button type="button" class="py-2 underline" @click="dispensarMaterialPronto()">Entendi</button>
         </div>
       </div>
     </template>
@@ -778,7 +839,7 @@
           <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <button type="button" x-show="$store.ia.podeUsarOpenRouter" :disabled="$store.ia.trocando"
-                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
+                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre hover:bg-primary-700"
                     @click="$store.ia.escolher('OPENROUTER')">Continuar pelo OpenRouter</button>
             <button type="button" :disabled="$store.ia.trocando"
                     class="min-h-11 rounded border border-gray-300 bg-white px-3 text-sm hover:bg-gray-50"
@@ -788,38 +849,86 @@
           <p x-show="$store.ia.erro" class="mt-1 text-xs text-red-600" x-text="$store.ia.erro"></p>
         </div>
 
-        <p x-show="vazio" class="text-gray-500">Nada para hoje. Volte amanhã.</p>
+        <div x-show="vazio" class="rounded-xl border border-gray-200 bg-white p-4"><p class="font-semibold">Nada para hoje</p><p class="mt-1 text-sm text-gray-500">Volte amanhã, ou veja abaixo o que vem nos próximos dias.</p></div>
 
         <!-- D-56 / 01_DOMINIO §5.3: o alerta diz por que não há assunto novo (dentro da mensagem de J-4 quando ela aparece) -->
         <p x-show="alertaRepresamento && !mostrarRetorno" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
           Revisões acumuladas. Drene a fila antes de abrir assunto novo — por isso nenhum é sugerido hoje.
         </p>
 
+        <!-- §8B: o progresso do dia -->
+        <div x-show="totalDoDia > 0" id="progresso-do-dia" class="space-y-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
+          <div class="flex items-baseline justify-between gap-3">
+            <b class="whitespace-nowrap text-sm font-semibold" x-text="feitasHoje + ' de ' + totalDoDia + (feitasHoje === 1 ? ' feito' : ' feitos')"></b>
+            <span class="text-right text-xs text-gray-500" x-text="textoFaltaHoje()"></span>
+          </div>
+          <div class="h-1.5 overflow-hidden rounded-full bg-gray-200"><div class="h-full rounded-full bg-primary-600" :style="'width:' + Math.round(100 * feitasHoje / totalDoDia) + '%'"></div></div>
+        </div>
+
+        <!-- §8B: a próxima ação, com o único botão principal da tela, pela ordem do plano (reestudo, recuperação, bloco, simulado) -->
+        <template x-if="proximaAcao">
+          <div id="proxima-acao" class="space-y-3 rounded-2xl border-2 border-primary-600 bg-white p-4 shadow-lg shadow-black/5">
+            <p class="text-xs font-bold uppercase tracking-wider text-primary-800">Agora</p>
+            <div>
+              <p class="text-lg font-bold leading-snug" x-text="tituloProximaAcao()"></p>
+              <p class="mt-1 text-sm text-gray-500" x-text="detalheProximaAcao()"></p>
+            </div>
+            <!-- D-128: no reestudo, os pontos que não vieram -->
+            <template x-if="proximaAcao.tipo === 'reestudo' && proximaAcao.item.pontos && proximaAcao.item.pontos.length">
+              <ul class="space-y-1 rounded-lg bg-alerta-50 p-3 text-sm">
+                <template x-for="(pt, i) in proximaAcao.item.pontos" :key="i">
+                  <li class="flex items-start justify-between gap-2"><span x-text="pt.texto"></span>
+                    <a class="whitespace-nowrap font-semibold text-primary-700" :href="'#/ler/' + pt.segmentoId + '?p=' + pt.pagina" x-text="'p. ' + pt.pagina + ' →'"></a></li>
+                </template>
+              </ul>
+            </template>
+            <button type="button" class="min-h-12 w-full rounded-lg bg-primary-600 text-base font-semibold text-sobre hover:bg-primary-700"
+                    @click="fazerProximaAcao()" x-text="botaoProximaAcao()"></button>
+            <div class="flex flex-wrap gap-x-5 gap-y-1">
+              <template x-if="proximaAcao.tipo === 'recuperacao'">
+                <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" @click="$store.lote.abrir(proximaAcao.item)">Fiz questões</button>
+              </template>
+              <template x-if="proximaAcao.tipo === 'recuperacao' && $store.qc.de(proximaAcao.item?.assuntoId)">
+                <a class="qc-atalho flex min-h-11 items-center whitespace-nowrap text-sm font-semibold text-primary-700 underline" target="_blank" rel="noopener"
+                   :href="$store.qc.de(proximaAcao.item?.assuntoId).url" @click="$store.qc.sair($store.qc.de(proximaAcao.item?.assuntoId), proximaAcao.item.nome)">Resolver no QConcursos ↗</a>
+              </template>
+              <template x-if="proximaAcao.tipo === 'conteudo' && !$store.foco.emCurso">
+                <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" :disabled="$store.foco.trabalhando"
+                        @click="$store.foco.iniciar('FOCO', blocoConteudo.id, segmentoSugerido?.id ?? null, blocoConteudo.nome)">Foco neste bloco</button>
+              </template>
+              <template x-if="proximaAcao.tipo === 'conteudo'">
+                <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" @click="abrirBlocoConteudo()">Registrar a leitura</button>
+              </template>
+            </div>
+            <p x-show="proximaAcao.tipo === 'recuperacao' && $store.qc.de(proximaAcao.item?.assuntoId)" class="-mt-2 text-xs"
+               :class="$store.qc.largo($store.qc.de(proximaAcao.item?.assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
+               x-text="proximaAcao.tipo === 'recuperacao' ? $store.qc.detalhe($store.qc.de(proximaAcao.item?.assuntoId)) : ''"></p>
+          </div>
+        </template>
+
         <!-- J-14 passo 2: o que a entrada antecipou (D-143) -->
         <p x-show="retaEntrada" class="border-l-4 border-primary-600 pl-2 text-sm text-primary-700" x-text="textoRetaEntrada()"></p>
 
-        <div x-show="fila.length > 0">
-          <h2 class="mb-2 text-sm font-medium text-gray-500">Recuperar</h2>
-          <ul class="space-y-2">
-            <template x-for="item in fila" :key="item.assuntoId">
-              <li>
-                <button
-                  type="button"
-                  class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50"
-                  @click="abrirRecuperacao(item)">
-                  <span class="block font-medium" x-text="item.nome"></span>
-                  <span class="text-sm text-gray-500" x-text="'Nível ' + item.nivel"></span>
+        <div x-show="filaDepois.length > 0" id="fila-depois">
+          <h2 class="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500" x-text="proximaAcao ? 'Depois · recuperar' : 'Recuperar'"></h2>
+          <ul class="divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <template x-for="item in filaDepois" :key="item.assuntoId">
+              <li class="px-3 py-2">
+                <button type="button" class="flex min-h-12 w-full items-center gap-3 text-left" @click="abrirRecuperacao(item)">
+                  <span class="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-primary-50 text-primary-800"><svg class="h-[18px] w-[18px]" aria-hidden="true"><use href="#i-rec"/></svg></span>
+                  <span class="min-w-0 flex-1"><span class="block truncate font-semibold" x-text="item.nome"></span>
+                    <span class="block text-xs text-gray-500" x-text="'Recuperar · nível ' + item.nivel + atrasoHumano(item.dataPrevista)"></span></span>
+                  <span class="text-lg text-gray-400" aria-hidden="true">›</span>
                 </button>
-                <!-- D-133: a revisão também se cumpre com um lote de questões, em dois números -->
-                <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-1">
-                  <button type="button" class="min-h-9 text-sm font-medium text-primary-700 underline" @click="$store.lote.abrir(item)">Fiz questões</button>
-                  <!-- D-150 a D-154: o atalho filtrado para o QConcursos; a volta abre o lote -->
+                <!-- D-133 e D-150 a D-154: as ações do item, dentro dele -->
+                <div class="flex flex-wrap items-baseline gap-x-4 pl-11">
+                  <button type="button" class="min-h-9 text-sm font-semibold text-primary-700 underline" @click="$store.lote.abrir(item)">Fiz questões</button>
                   <template x-if="$store.qc.de(item.assuntoId)">
-                    <a class="qc-atalho min-h-9 text-sm font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                    <a class="qc-atalho min-h-9 text-sm font-semibold text-primary-700 underline" target="_blank" rel="noopener"
                        :href="$store.qc.de(item.assuntoId).url" @click="$store.qc.sair($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
                   </template>
                 </div>
-                <p x-show="$store.qc.de(item.assuntoId)" class="px-1 text-xs" :class="$store.qc.largo($store.qc.de(item.assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
+                <p x-show="$store.qc.de(item.assuntoId)" class="pb-1 pl-11 text-xs" :class="$store.qc.largo($store.qc.de(item.assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
                    x-text="$store.qc.detalhe($store.qc.de(item.assuntoId))"></p>
               </li>
             </template>
@@ -829,17 +938,17 @@
         <p x-show="manutencoesEsperando > 0" class="-mt-4 text-xs text-gray-500" x-text="manutencoesEsperando + (manutencoesEsperando === 1 ? ' manutenção de peso médio ou baixo espera a prova.' : ' manutenções de peso médio e baixo esperam a prova.')"></p>
 
         <!-- Reestudo (D-07/D-11): corrigir vem antes de abrir — 01_DOMINIO §7.4 -->
-        <div x-show="reestudos.length > 0">
-          <h2 class="mb-2 text-sm font-medium text-gray-500">Reestudar</h2>
+        <div x-show="reestudosDepois.length > 0">
+          <h2 class="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Reestudar</h2>
           <ul class="space-y-2">
-            <template x-for="item in reestudos" :key="item.assuntoId">
+            <template x-for="item in reestudosDepois" :key="item.assuntoId">
               <li>
                 <button
                   type="button"
-                  class="min-h-11 w-full rounded border border-alerta-600 bg-alerta-50 p-3 text-left hover:bg-white"
+                  class="min-h-12 w-full rounded-xl border border-alerta-600 bg-alerta-50 p-3 text-left hover:bg-white"
                   @click="abrirReestudo(item)">
-                  <span class="block font-medium" x-text="item.nome"></span>
-                  <span class="text-sm text-gray-600" x-text="'Falhou em ' + item.dataFalha.split('-').reverse().join('/') + ' · nível ' + item.nivel"></span>
+                  <span class="block font-semibold" x-text="item.nome"></span>
+                  <span class="text-sm text-gray-600" x-text="'Não veio ' + dataHumana(item.dataFalha) + ' · nível ' + item.nivel"></span>
                 </button>
                 <!-- D-128: os pontos que não vieram, cada um abrindo o leitor na página -->
                 <template x-if="item.pontos && item.pontos.length">
@@ -861,9 +970,9 @@
           </ul>
         </div>
 
-        <div x-show="blocoConteudo">
-          <h2 class="mb-2 text-sm font-medium text-gray-500" x-text="blocoContinuacao ? 'Continuar leitura' : 'Conteúdo novo'"></h2>
-          <div class="rounded border border-gray-200 bg-white">
+        <div x-show="blocoConteudo && proximaAcao?.tipo !== 'conteudo'">
+          <h2 class="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500" x-text="blocoContinuacao ? 'Depois · continuar leitura' : 'Depois · conteúdo novo'"></h2>
+          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <button
               type="button"
               class="min-h-11 w-full p-3 text-left hover:bg-gray-50"
@@ -883,23 +992,41 @@
               class="flex min-h-11 items-center border-t border-gray-200 px-3 text-sm font-medium text-primary-700 underline">Abrir material</a>
             <!-- Sprint 25 §9: aviso discreto da conferência; leva a ela e não bloqueia nada -->
             <a x-show="seloEdital" :href="seloEdital ? '#/concursos/analise/' + seloEdital.analiseId + '/conferencia' : '#'"
-              class="block border-t border-gray-100 px-3 py-2 text-xs text-alerta-600 underline" x-text="seloEdital?.texto"></a>
+              class="block border-t border-gray-100 px-3 py-2 text-xs text-alerta-700 underline" x-text="seloEdital?.texto"></a>
           </div>
         </div>
 
         <!-- D-144: na reta final, o simulado da semana no lugar do segundo bloco -->
-        <div x-show="simuladoDaSemana" id="simulado-da-semana">
+        <div x-show="simuladoDaSemana && proximaAcao?.tipo !== 'simulado'" id="simulado-da-semana">
           <h2 class="mb-2 text-sm font-medium text-gray-500">Segundo bloco</h2>
           <div class="flex items-center gap-3 rounded border-2 border-dashed border-primary-600 bg-white p-3">
             <div class="flex-1"><p class="font-medium">Simulado da semana</p><p class="text-xs text-gray-500">nenhum simulado desde segunda</p></div>
-            <a href="#/registrar/simulado" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-white">Registrar</a>
+            <a href="#/registrar/simulado" class="flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-semibold text-sobre">Registrar</a>
           </div>
         </div>
+
+    <!-- docs/REDESENHO-FLUXO §5: o material tem rosto — contagem enquanto prepara, uma linha quando fica pronto -->
+        <template x-if="materialEmPreparo">
+          <a href="#/concursos" class="block rounded-xl border border-dashed border-gray-300 bg-white px-4 py-3 text-sm text-gray-700">
+            <span class="block font-medium" x-text="'Preparando o material: ' + materialEmPreparo.feitos + ' de ' + materialEmPreparo.total + ' assuntos'"></span>
+            <span class="block text-xs text-gray-600">Costuma levar cerca de uma hora. Pode usar o app normalmente; o material aparece em cada assunto quando fica pronto.</span>
+          </a>
+        </template>
+        <template x-if="materialPronto">
+          <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+            <p class="font-medium" x-text="'O material de ' + concurso.nome + ' está pronto'"></p>
+            <p class="text-xs" x-text="materialPronto.prontos + (materialPronto.prontos === 1 ? ' assunto com material' : ' assuntos com material') + (materialPronto.semMaterial ? ' · ' + materialPronto.semMaterial + ' sem material no acervo (veja o que fazer em cada um)' : '')"></p>
+            <div class="mt-1 flex gap-3">
+              <a href="#/concursos" class="py-2 underline">Ver por assunto</a>
+              <button type="button" class="py-2 underline" @click="dispensarMaterialPronto()">Entendi</button>
+            </div>
+          </div>
+        </template>
 
         <!-- J-8: foco sem assunto — o vínculo pode vir depois, antes de registrar -->
         <div x-show="!$store.foco.emCurso">
           <button type="button" :disabled="$store.foco.trabalhando"
-            class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm hover:bg-gray-50"
+            class="min-h-12 w-full rounded-xl border border-gray-200 bg-white p-3 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
             @click="$store.foco.iniciar('FOCO')">Foco sem assunto</button>
         </div>
 
@@ -985,86 +1112,99 @@
   </section>
 
   <!-- Tela Recuperar — única com sequência vinculante (04_FRONTEND.md §7, 02_JORNADAS §4.1) -->
-  <section id="pagina-recuperar" x-data="paginaRecuperar()" hidden>
-
-    <!-- D-159: em ensaio, nada é gravado -->
-    <p x-show="ensaio" class="ensaio-faixa -mx-4 -mt-6 mb-4 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">Ensaio · nada é gravado</p>
+  <section id="pagina-recuperar" x-data="paginaRecuperar()" hidden class="pb-32">
+    <!-- §8B: modo foco — só "sair" e o assunto; as etapas à vista; a ação da etapa fixa embaixo -->
+    <div class="-mx-4 -mt-6 mb-4 border-b border-gray-200 bg-white">
+      <p x-show="ensaio" class="ensaio-faixa bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">Ensaio · nada é gravado</p>
+      <div class="flex min-h-14 items-center gap-2 px-2">
+        <button type="button" class="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-primary-700" @click="sair()">← Sair</button>
+        <p class="min-w-0 flex-1 truncate text-center text-sm font-semibold" x-text="nome ? nome + (nivel ? ' · nível ' + nivel : '') : 'Recuperar'"></p>
+        <span class="w-16"></span>
+      </div>
+      <ol class="flex gap-2 px-4 pb-3" aria-label="Etapas">
+        <template x-for="(rotulo, i) in ['Prever', 'Reconstruir', 'Conferir']" :key="rotulo">
+          <li class="flex-1 border-t-4 pt-1 text-xs font-semibold"
+              :class="etapaVisivel > i + 1 ? 'border-primary-600 text-gray-500' : etapaVisivel === i + 1 ? 'border-primary-600 text-primary-700' : 'border-gray-200 text-gray-400'"
+              :aria-current="etapaVisivel === i + 1 ? 'step' : null" x-text="(i + 1) + ' ' + rotulo"></li>
+        </template>
+      </ol>
+    </div>
 
     <template x-if="semDados">
-      <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
+      <div class="rounded-xl border border-red-300 bg-red-50 p-4 text-red-700">
         <p>Não foi possível abrir esta recuperação.</p>
         <a href="#/hoje" class="mt-2 inline-block underline">Voltar para Hoje</a>
       </div>
     </template>
 
     <template x-if="!semDados && erro">
-      <div class="mb-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
+      <div class="mb-4 rounded-xl border border-red-300 bg-red-50 p-4 text-red-700" role="alert">
         <p x-text="erro"></p>
-        <button type="button" class="mt-2 underline" :disabled="enviando" @click="reenviar()">Reenviar</button>
+        <button type="button" class="mt-2 min-h-11 underline" :disabled="enviando" @click="reenviar()">Reenviar</button>
       </div>
     </template>
 
-    <!-- Etapa 1: sem campo de resultado no DOM — nunca escondido, ausente (regra vinculante) -->
+    <!-- Etapa 1 · Prever: sem campo de resultado no DOM — nunca escondido, ausente (regra vinculante) -->
     <template x-if="!semDados && etapa === 1">
       <div class="space-y-4">
         <div>
-          <h2 class="text-lg font-semibold" x-text="nome"></h2>
-          <p class="text-sm text-gray-500"
-             x-text="'Nível ' + nivel + (dataPrevista ? ' · previsto para ' + dataPrevista : '')"></p>
+          <h2 class="text-[22px] font-bold leading-tight" x-text="nome"></h2>
+          <p class="mt-1 text-sm text-gray-500" x-text="textoPrevista()"></p>
         </div>
+        <p class="font-semibold">Antes de começar: o que você espera?</p>
+        <div class="space-y-3">
+          <button type="button" class="block min-h-14 w-full rounded-xl border border-gray-200 bg-white p-4 text-left font-semibold hover:bg-gray-50" @click="prever('SUCESSO')">Vou reconstruir</button>
+          <button type="button" class="block min-h-14 w-full rounded-xl border border-gray-200 bg-white p-4 text-left font-semibold hover:bg-gray-50" @click="prever('PARCIAL')">Vai faltar um pedaço</button>
+          <button type="button" class="block min-h-14 w-full rounded-xl border border-gray-200 bg-white p-4 text-left font-semibold hover:bg-gray-50" @click="prever('FALHA')">Não vai vir</button>
+        </div>
+        <p class="text-sm text-gray-500">Feche o material antes de seguir.</p>
+      </div>
+    </template>
 
-        <!-- D-123/D-124: as perguntas, sem gabarito (ele nem veio do servidor, D-125). A resposta é opcional e fica só na tela. -->
+    <!-- Etapa 2 · Reconstruir: as perguntas, sem gabarito (ele nem veio do servidor, D-125). A resposta é opcional e fica só na tela. -->
+    <template x-if="!semDados && etapa === 2">
+      <div class="space-y-4">
+        <p class="text-sm text-gray-500">Você previu: <b class="text-gray-900" x-text="rotuloPrevisao()"></b>.</p>
         <template x-if="perguntas.length">
           <div class="space-y-3">
-            <p class="text-sm text-gray-600">Feche o material e responda de memória: em voz alta, no papel ou aqui.</p>
+            <p class="text-sm text-gray-600">Responda de memória: em voz alta, no papel ou aqui.</p>
             <template x-for="(p, i) in perguntas" :key="p.id">
-              <div class="space-y-2 rounded border border-gray-200 bg-white p-3">
-                <p class="text-[11px] uppercase tracking-wide text-gray-500" x-text="tipoDaPergunta(p.tipo)"></p>
+              <div class="space-y-2 rounded-xl border border-gray-200 bg-white p-4">
+                <p class="text-xs font-bold uppercase tracking-wide text-gray-500" x-text="tipoDaPergunta(p.tipo)"></p>
                 <p class="font-medium" x-text="(i + 1) + '. ' + p.enunciado"></p>
-                <textarea rows="2" class="w-full rounded border border-dashed border-gray-300 p-2 text-sm" placeholder="responder (opcional)"
+                <textarea rows="2" class="w-full rounded-lg border border-dashed border-gray-300 bg-white p-2 text-sm" placeholder="responder (opcional)"
                   :value="respostas[p.id] || ''" @input="respostas = { ...respostas, [p.id]: $event.target.value }"></textarea>
               </div>
             </template>
           </div>
         </template>
-
-        <p class="font-medium">O que você espera?</p>
-        <div class="space-y-2">
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('SUCESSO')">Vou reconstruir</button>
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('PARCIAL')">Vai faltar um pedaço</button>
-          <button type="button" class="w-full rounded border border-gray-200 bg-white p-3 text-left hover:bg-gray-50" @click="prever('FALHA')">Não vai vir</button>
+        <div x-show="!perguntas.length" class="rounded-xl border border-gray-200 bg-white p-4">
+          <p class="font-medium">Reconstrua de memória</p>
+          <p class="mt-1 text-sm text-gray-500">Escreva ou fale os pontos principais do assunto, sem olhar o material. Quando terminar, confira.</p>
         </div>
-
-        <p x-show="!perguntas.length" class="text-sm text-gray-500">Feche o material e reconstrua de memória.</p>
       </div>
     </template>
 
-    <!-- Etapa 2: previsão mostrada, não editável (regra vinculante) -->
-    <template x-if="!semDados && etapa === 2">
+    <!-- Etapa 3 · Conferir: o gabarito em pontos; a pessoa marca o que veio, a sugestão acompanha e ela escolhe (D-125 a D-127) -->
+    <template x-if="!semDados && etapa === 3">
       <div class="space-y-4">
-        <h2 class="text-lg font-semibold" x-text="nome"></h2>
-        <p class="text-sm text-gray-500">
-          Você previu:
-          <span x-text="{SUCESSO: 'vou reconstruir', PARCIAL: 'vai faltar um pedaço', FALHA: 'não vai vir'}[previsao]"></span>
-        </p>
-
-        <!-- D-125/D-126/D-127: o gabarito em pontos; a pessoa marca o que veio e a sugestão acompanha -->
+        <p class="text-sm text-gray-500">Você previu: <b class="text-gray-900" x-text="rotuloPrevisao()"></b>.</p>
         <template x-if="perguntas.length">
           <div class="space-y-3">
             <p class="text-sm text-gray-600">Marque o que veio. <span class="inline-block h-2 w-2 rounded-full bg-gray-900 align-middle"></span> = ponto principal.</p>
             <template x-for="(p, i) in perguntas" :key="p.id">
-              <div class="space-y-2 rounded border border-gray-200 bg-white p-3" :class="ruins[p.id] ? 'opacity-50' : ''">
+              <div class="space-y-2 rounded-xl border border-gray-200 bg-white p-4" :class="ruins[p.id] ? 'opacity-50' : ''">
                 <p class="font-medium" x-text="(i + 1) + '. ' + p.enunciado"></p>
                 <p x-show="respostas[p.id]" class="border-l-2 border-gray-200 pl-2 text-xs text-gray-500" x-text="'Você escreveu: ' + (respostas[p.id] || '')"></p>
                 <p x-show="!gabarito[p.id]" class="text-xs text-gray-500">Carregando o gabarito…</p>
                 <template x-for="pt in (gabarito[p.id] || [])" :key="pt.id">
-                  <label class="flex min-h-9 items-start gap-2 text-sm">
+                  <label class="flex min-h-11 items-start gap-2 text-sm">
                     <input type="checkbox" class="mt-0.5 h-5 w-5 flex-none" :checked="!!vieram[pt.id]" :disabled="!!ruins[p.id]" @change="alternarPonto(pt.id)">
                     <span class="flex-1"><span x-text="pt.texto"></span><span x-show="pt.principal" class="ml-1 inline-block h-2 w-2 rounded-full bg-gray-900 align-middle" title="ponto principal"></span></span>
                     <span class="whitespace-nowrap text-xs text-gray-400" x-text="'p. ' + pt.pagina"></span>
                   </label>
                 </template>
-                <button type="button" x-show="!ensaio" class="block min-h-9 text-xs text-gray-500 underline" @click="alternarRuim(p)"
+                <button type="button" x-show="!ensaio" class="block min-h-11 text-xs text-gray-500 underline" @click="alternarRuim(p)"
                   x-text="ruins[p.id] ? 'Desfazer (pergunta tirada do banco)' : 'pergunta ruim'"></button>
               </div>
             </template>
@@ -1072,45 +1212,54 @@
           </div>
         </template>
 
-        <p class="font-medium">Conseguiu reconstruir?</p>
-        <p x-show="ensaio" class="text-xs text-gray-500">No ensaio, escolher o resultado mostra o que aconteceria.</p>
-        <div class="space-y-2">
-          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'SUCESSO' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('SUCESSO')">
-            <span class="block">Reconstruí</span>
-            <span class="text-sm text-gray-500">os pontos principais vieram; faltou detalhe, não estrutura</span>
-          </button>
-          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'PARCIAL' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('PARCIAL')">
-            <span class="block">Faltou um pedaço</span>
-            <span class="text-sm text-gray-500">a estrutura veio, mas um bloco inteiro não</span>
-          </button>
-          <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'FALHA' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('FALHA')">
-            <span class="block">Não veio</span>
-            <span class="text-sm text-gray-500">preciso reler antes de tentar de novo</span>
-          </button>
+        <p class="font-semibold">Conseguiu reconstruir?</p>
+        <p x-show="ensaio" class="text-xs text-gray-500">No ensaio, confirmar mostra o que aconteceria.</p>
+        <div class="space-y-3" role="radiogroup" aria-label="Resultado">
+          <template x-for="r in resultados" :key="r.valor">
+            <button type="button" role="radio" :aria-checked="escolhaEfetiva === r.valor" class="block w-full rounded-xl border bg-white p-4 text-left"
+                    :class="escolhaEfetiva === r.valor ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'"
+                    :disabled="enviando" @click="escolha = r.valor">
+              <span class="block font-semibold" x-text="r.rotulo"></span>
+              <span class="text-sm text-gray-500" x-text="r.ancora"></span>
+            </button>
+          </template>
         </div>
 
-        <p x-show="ensaioTexto" id="ensaio-resultado" class="rounded bg-primary-50 p-3 text-sm text-primary-800" x-text="ensaioTexto"></p>
-        <a x-show="ensaio" href="#/hoje" class="block text-sm text-gray-500 underline">Fechar o ensaio</a>
-        <button type="button" x-show="!ensaio" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
+        <p x-show="ensaioTexto" id="ensaio-resultado" class="rounded-xl bg-primary-50 p-4 text-sm text-primary-800" x-text="ensaioTexto"></p>
+        <a x-show="ensaio" href="#/hoje" class="block min-h-11 text-sm text-gray-500 underline">Fechar o ensaio</a>
       </div>
     </template>
 
     <!-- D-128: depois de "Faltou um pedaço", o que faltou, já gravado — só agora o leitor pode abrir. Não cria reestudo (D-07). -->
-    <template x-if="!semDados && etapa === 3">
+    <template x-if="!semDados && etapa === 4">
       <div class="space-y-4">
-        <div class="rounded border border-primary-600 bg-white p-3">
+        <div class="rounded-xl border border-primary-600 bg-white p-4">
           <p class="font-semibold">Faltou um pedaço</p>
           <p class="text-sm text-gray-500">A escada repete o nível.</p>
         </div>
-        <div class="space-y-2 rounded bg-alerta-50 p-3 text-sm">
+        <div class="space-y-2 rounded-xl bg-alerta-50 p-4 text-sm">
           <p class="font-semibold">O que faltou</p>
           <template x-for="pt in faltaram" :key="pt.id">
             <p><span x-text="pt.texto"></span> — <a class="font-semibold text-primary-700" :href="'#/ler/' + pt.segmentoId + '?p=' + pt.pagina" x-text="'ler p. ' + pt.pagina + ' →'"></a></p>
           </template>
           <p class="text-xs text-gray-500">Opcional: não cria reestudo.</p>
         </div>
-        <button type="button" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
-        <a href="#/hoje" class="block min-h-11 rounded bg-primary-600 px-4 py-3 text-center font-semibold text-white">Próxima recuperação</a>
+        <button type="button" class="min-h-11 text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
+      </div>
+    </template>
+
+    <!-- §8B: a ação da etapa, sempre no mesmo lugar -->
+    <template x-if="!semDados && etapa >= 2">
+      <div class="fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white px-4 pt-3 shadow-[0_-6px_16px_rgba(0,0,0,0.08)]" style="padding-bottom: max(1rem, env(safe-area-inset-bottom))">
+        <div class="mx-auto max-w-md space-y-2">
+          <button type="button" x-show="etapa === 2" class="min-h-12 w-full rounded-lg bg-primary-600 text-base font-semibold text-sobre hover:bg-primary-700"
+                  @click="conferir()" x-text="perguntas.length ? 'Ver o gabarito' : 'Conferir'"></button>
+          <button type="button" x-show="etapa === 3" class="min-h-12 w-full rounded-lg bg-primary-600 text-base font-semibold text-sobre hover:bg-primary-700 disabled:opacity-50"
+                  :disabled="!escolhaEfetiva || enviando" @click="confirmar(escolhaEfetiva)"
+                  x-text="escolhaEfetiva ? (ensaio ? 'Ver o que aconteceria: ' : 'Confirmar: ') + rotuloResultado(escolhaEfetiva) : 'Escolha o resultado'"></button>
+          <button type="button" x-show="etapa === 3 && !ensaio" class="block min-h-11 w-full text-center text-sm font-semibold text-primary-700 underline" @click="abrirErro()">+ registrar um erro</button>
+          <a x-show="etapa === 4" href="#/hoje" class="flex min-h-12 w-full items-center justify-center rounded-lg bg-primary-600 text-base font-semibold text-sobre">Próxima recuperação</a>
+        </div>
       </div>
     </template>
   </section>
@@ -1125,7 +1274,7 @@
         <template x-for="t in ['Conteúdo', 'Questões', 'Flashcards', 'Discursiva']" :key="t">
           <span class="rounded-full border border-gray-200 bg-white px-3 py-1 text-sm text-gray-300" :title="'Escolha um assunto em Hoje ou Assuntos'" x-text="t"></span>
         </template>
-        <span class="rounded-full bg-primary-600 px-3 py-1 text-sm text-white">Simulado</span>
+        <span class="rounded-full bg-primary-600 px-3 py-1 text-sm text-sobre">Simulado</span>
       </div>
 
       <template x-if="resultado">
@@ -1186,16 +1335,30 @@
           </div>
           <p class="text-xs text-gray-500">Disciplina sem total não entra. "Em branco" é opcional.</p>
           <p x-show="erro || avisoDasLinhas" class="text-sm text-red-700" role="alert" x-text="erro || avisoDasLinhas"></p>
-          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="enviando" @click="registrar()">Registrar simulado</button>
+          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="enviando" @click="registrar()">Registrar simulado</button>
         </div>
       </template>
     </div>
   </section>
 
-  <section id="pagina-registrar" x-data="paginaRegistrar()" hidden>
-
-    <!-- D-159: em ensaio, nada é gravado -->
-    <p x-show="ensaio" class="ensaio-faixa -mx-4 -mt-6 mb-4 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">Ensaio · nada é gravado</p>
+  <section id="pagina-registrar" x-data="paginaRegistrar()" hidden class="pb-32">
+    <!-- §8B: modo foco — só "sair" e o assunto; as etapas à vista; o botão fixo embaixo -->
+    <div class="-mx-4 -mt-6 mb-4 border-b border-gray-200 bg-white">
+      <!-- D-159: em ensaio, nada é gravado -->
+      <p x-show="ensaio" class="ensaio-faixa bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">Ensaio · nada é gravado</p>
+      <div class="flex min-h-14 items-center gap-2 px-2">
+        <button type="button" class="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-primary-700" @click="sair()">← Sair</button>
+        <p class="min-w-0 flex-1 truncate text-center text-sm font-semibold" x-text="nome ? rotuloTipo() + ' · ' + nome : 'Registrar'"></p>
+        <span class="w-16"></span>
+      </div>
+      <ol x-show="tipo === 'questoes' || tipo === 'flashcards'" class="flex gap-2 px-4 pb-3" aria-label="Etapas">
+        <template x-for="(rotulo, i) in ['Dados', 'Previsão', 'Registrar']" :key="rotulo">
+          <li class="flex-1 border-t-4 pt-1 text-xs font-semibold"
+              :class="etapaDoLote > i + 1 ? 'border-primary-600 text-gray-500' : etapaDoLote === i + 1 ? 'border-primary-600 text-primary-700' : 'border-gray-200 text-gray-400'"
+              x-text="(i + 1) + ' ' + rotulo"></li>
+        </template>
+      </ol>
+    </div>
 
     <template x-if="semDados">
       <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
@@ -1213,29 +1376,27 @@
           </div>
         </template>
 
-        <h2 class="text-lg font-semibold" x-text="nome"></h2>
-
         <!-- Seletor de tipo — troca de forma, nunca de rota (§7A) -->
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <button type="button"
-            class="rounded-full px-3 py-1 text-sm"
-            :class="tipo === 'conteudo' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            class="min-h-11 rounded-full px-4 text-sm font-semibold"
+            :class="tipo === 'conteudo' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('conteudo')">Conteúdo</button>
           <button type="button"
-            class="rounded-full px-3 py-1 text-sm"
-            :class="tipo === 'questoes' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            class="min-h-11 rounded-full px-4 text-sm font-semibold"
+            :class="tipo === 'questoes' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('questoes')">Questões</button>
           <button type="button"
-            class="rounded-full px-3 py-1 text-sm"
-            :class="tipo === 'flashcards' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            class="min-h-11 rounded-full px-4 text-sm font-semibold"
+            :class="tipo === 'flashcards' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('flashcards')">Flashcards</button>
           <!-- D-134: recuperação escrita, com nota -->
           <button type="button"
-            class="rounded-full px-3 py-1 text-sm"
-            :class="tipo === 'discursiva' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+            class="min-h-11 rounded-full px-4 text-sm font-semibold"
+            :class="tipo === 'discursiva' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'"
             @click="selecionarTipo('discursiva')">Discursiva</button>
           <!-- D-148: o simulado não tem assunto; tem a própria tela (J-16) -->
-          <a href="#/registrar/simulado" class="rounded-full border border-gray-200 bg-white px-3 py-1 text-sm text-gray-700">Simulado</a>
+          <a href="#/registrar/simulado" class="flex min-h-11 items-center rounded-full border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700">Simulado</a>
         </div>
 
         <!-- D-134: a discursiva — previsão em três níveis, a nota de 0 a 100 e o resultado que ela dá -->
@@ -1253,7 +1414,7 @@
             </div>
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-500">Nota (0–100), a sua ou a do corretor</label>
-              <input type="number" min="0" max="100" inputmode="numeric" x-model="nota" class="w-full rounded border border-gray-200 bg-white p-2">
+              <input type="number" min="0" max="100" inputmode="numeric" x-model="nota" class="min-h-12 w-full rounded-lg border border-gray-200 bg-white px-3 text-base">
               <p x-show="resultadoDaNota" class="mt-1 text-xs text-primary-700" x-text="resultadoDaNota"></p>
             </div>
           </div>
@@ -1262,7 +1423,7 @@
         <!-- Segmento: ausente do DOM quando o assunto não tem nenhum, não desabilitado -->
         <div x-show="tipo === 'conteudo' && temSegmentos">
           <label class="mb-1 block text-sm font-medium text-gray-500">Bloco lido</label>
-          <select x-model="segmentoId" @change="sugerirTempo()" class="w-full rounded border border-gray-200 bg-white p-2">
+          <select x-model="segmentoId" @change="sugerirTempo()" class="min-h-12 w-full rounded-lg border border-gray-200 bg-white px-3 text-base">
             <option value="">O assunto inteiro (começa as revisões)</option>
             <template x-for="s in segmentos" :key="s.id">
               <option :value="s.id" x-text="rotuloSegmento(s)"></option>
@@ -1276,12 +1437,12 @@
           <label class="mb-1 block text-sm font-medium text-gray-500">Formato da banca</label>
           <div class="flex gap-2">
             <button type="button"
-              class="rounded-full px-3 py-1 text-sm"
-              :class="formato === 'MULTIPLA_ESCOLHA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+              class="min-h-11 flex-1 rounded-lg px-3 text-sm font-semibold"
+              :class="formato === 'MULTIPLA_ESCOLHA' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'"
               @click="formato = 'MULTIPLA_ESCOLHA'">Múltipla escolha</button>
             <button type="button"
-              class="rounded-full px-3 py-1 text-sm"
-              :class="formato === 'CERTO_ERRADO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'"
+              class="min-h-11 flex-1 rounded-lg px-3 text-sm font-semibold"
+              :class="formato === 'CERTO_ERRADO' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'"
               @click="formato = 'CERTO_ERRADO'">Certo/errado</button>
           </div>
         </div>
@@ -1289,23 +1450,30 @@
         <div x-show="tipo === 'questoes' || tipo === 'flashcards'" class="flex gap-3">
           <div class="flex-1">
             <label class="mb-1 block text-sm font-medium text-gray-500" x-text="tipo === 'questoes' ? 'Questões feitas' : 'Cartões feitos'"></label>
-            <input type="number" min="1" x-model="feitas" class="w-full rounded border border-gray-200 bg-white p-2">
+            <input type="number" min="1" x-model="feitas" class="min-h-12 w-full rounded-lg border border-gray-200 bg-white px-3 text-base">
           </div>
           <div class="flex-1">
             <label class="mb-1 block text-sm font-medium text-gray-500">Acertos</label>
-            <input type="number" min="0" x-model="certas" class="w-full rounded border border-gray-200 bg-white p-2">
+            <input type="number" min="0" x-model="certas" class="min-h-12 w-full rounded-lg border border-gray-200 bg-white px-3 text-base">
           </div>
         </div>
 
+        <!-- §8B: a previsão em faixas tocáveis, como no lote rápido (D-133) -->
         <div x-show="tipo === 'questoes' || tipo === 'flashcards'">
-          <label class="mb-1 block text-sm font-medium text-gray-500">Previsão de acerto antes de ver o resultado (%)</label>
-          <input type="number" min="0" max="100" x-model="previsao" class="w-full rounded border border-gray-200 bg-white p-2">
+          <label class="mb-1 block text-sm font-medium text-gray-500">Antes de conferir: quanto esperava acertar?</label>
+          <div class="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Previsão">
+            <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
+              <button type="button" role="radio" :aria-checked="Number(previsao) === f" class="min-h-11 rounded-lg border text-sm font-semibold"
+                      :class="Number(previsao) === f ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-gray-200 bg-white'"
+                      @click="previsao = f" x-text="f + '%'"></button>
+            </template>
+          </div>
         </div>
 
         <!-- D-29 / 01_DOMINIO §7.7: tempo declarado, não tempo de tela -->
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-500" x-text="tipo === 'conteudo' ? 'Tempo de estudo (min)' : 'Tempo gasto (min)'"></label>
-          <input type="number" min="1" inputmode="numeric" x-model="tempo" @input="tempoEditado = true" class="w-full rounded border border-gray-200 bg-white p-2">
+          <input type="number" min="1" inputmode="numeric" x-model="tempo" @input="tempoEditado = true" class="min-h-12 w-full rounded-lg border border-gray-200 bg-white px-3 text-base">
           <!-- D-100: o tempo vem do Pomodoro; a pessoa confirma ou corrige -->
           <template x-if="livres && livres.minutos > 0 && !tempoEditado">
             <p class="mt-1 text-xs text-primary-700"
@@ -1313,10 +1481,18 @@
           </template>
         </div>
 
-        <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-white hover:bg-primary-700" :disabled="enviando" @click="registrar()"
-                x-text="ensaio ? 'Ver o que aconteceria' : 'Registrar'"></button>
-        <p x-show="ensaioTexto" id="ensaio-resultado" class="rounded bg-primary-50 p-3 text-sm text-primary-800" x-text="ensaioTexto"></p>
-        <a x-show="ensaio" href="#/hoje" class="block text-center text-sm text-gray-500 underline">Fechar o ensaio</a>
+        <p x-show="ensaioTexto" id="ensaio-resultado" class="rounded-xl bg-primary-50 p-4 text-sm text-primary-800" x-text="ensaioTexto"></p>
+        <a x-show="ensaio" href="#/hoje" class="block min-h-11 text-center text-sm text-gray-500 underline">Fechar o ensaio</a>
+      </div>
+    </template>
+
+    <!-- §8B: a ação, sempre no mesmo lugar; já diz o que vai acontecer -->
+    <template x-if="!semDados">
+      <div class="fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white px-4 pt-3 shadow-[0_-6px_16px_rgba(0,0,0,0.08)]" style="padding-bottom: max(1rem, env(safe-area-inset-bottom))">
+        <div class="mx-auto max-w-md">
+          <button type="button" class="min-h-12 w-full rounded-lg bg-primary-600 text-base font-semibold text-sobre hover:bg-primary-700 disabled:opacity-50" :disabled="enviando" @click="registrar()"
+                  x-text="rotuloRegistrar()"></button>
+        </div>
       </div>
     </template>
   </section>
@@ -1351,7 +1527,7 @@
                 <span class="mt-1 block text-xs text-gray-500" x-text="contagem(grupo)"></span>
               </span>
               <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-                    :class="{ALTO: 'bg-alerta-50 text-alerta-600', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[grupo.disciplina.peso]"
+                    :class="{ALTO: 'bg-alerta-50 text-alerta-700', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[grupo.disciplina.peso]"
                     x-text="'Peso ' + {ALTO: 'alto', MEDIO: 'médio', BAIXO: 'baixo'}[grupo.disciplina.peso]"></span>
             </button>
             <ul x-show="abertas[grupo.disciplina.id]" class="space-y-2 border-t border-gray-100 p-3">
@@ -1363,7 +1539,7 @@
                     <span class="block font-medium" x-text="assunto.ordem + '. ' + assunto.nome"></span>
                     <span class="mt-1 flex gap-2">
                       <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                            :class="{ALTO: 'bg-alerta-50 text-alerta-600', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[assunto.peso]"
+                            :class="{ALTO: 'bg-alerta-50 text-alerta-700', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[assunto.peso]"
                             x-text="{ALTO: 'Alto', MEDIO: 'Médio', BAIXO: 'Baixo'}[assunto.peso]"></span>
                       <span class="rounded-full px-2 py-0.5 text-xs font-medium"
                             :class="{BACKLOG: 'bg-gray-100 text-gray-500', FRENTE: 'bg-primary-100 text-primary-800', CONSOLIDADO: 'bg-green-100 text-green-800'}[assunto.fase]"
@@ -1400,7 +1576,7 @@
           <h2 class="text-lg font-semibold" x-text="nome"></h2>
           <span class="mt-1 flex gap-2">
             <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                  :class="{ALTO: 'bg-alerta-50 text-alerta-600', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[peso]"
+                  :class="{ALTO: 'bg-alerta-50 text-alerta-700', MEDIO: 'bg-amber-100 text-amber-800', BAIXO: 'bg-gray-200 text-gray-700'}[peso]"
                   x-text="{ALTO: 'Alto', MEDIO: 'Médio', BAIXO: 'Baixo'}[peso]"></span>
             <span class="rounded-full px-2 py-0.5 text-xs font-medium"
                   :class="{BACKLOG: 'bg-gray-100 text-gray-500', FRENTE: 'bg-primary-100 text-primary-800', CONSOLIDADO: 'bg-green-100 text-green-800'}[fase]"
@@ -1418,7 +1594,7 @@
         <!-- D-150 a D-154: resolver no QConcursos, com o filtro à vista para conferir -->
         <template x-if="$store.qc.de(assuntoId)">
           <div class="space-y-1">
-            <a class="qc-atalho inline-flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-medium text-white hover:bg-primary-700" target="_blank" rel="noopener"
+            <a class="qc-atalho inline-flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-medium text-sobre hover:bg-primary-700" target="_blank" rel="noopener"
                :href="$store.qc.de(assuntoId).url" @click="$store.qc.sair($store.qc.de(assuntoId), nome)">Resolver no QConcursos ↗</a>
             <p class="text-xs" :class="$store.qc.largo($store.qc.de(assuntoId)) ? 'text-alerta-700' : 'text-gray-500'" x-text="$store.qc.detalhe($store.qc.de(assuntoId))"></p>
             <p class="text-xs text-gray-500" x-text="'Filtro: ' + $store.qc.de(assuntoId).filtro.join(', ')"></p>
@@ -1437,7 +1613,7 @@
               <li class="rounded border border-gray-200 bg-white p-2 text-sm">
                 <span x-text="[p.herdado, p.texto].filter(Boolean).join(' ')"></span>
                 <span class="block text-xs text-gray-500" x-text="p.nos.length ? p.nos.map(n => n.caminho.join(' › ')).join(' · ') : 'sem nó na árvore do QConcursos'"></span>
-                <span x-show="p.aviso" class="mt-1 inline-block rounded-full bg-alerta-50 px-2 py-0.5 text-xs text-alerta-600"
+                <span x-show="p.aviso" class="mt-1 inline-block rounded-full bg-alerta-50 px-2 py-0.5 text-xs text-alerta-700"
                       x-text="{SEM_NO: 'sem filtro de questões', MAIS_AMPLO: 'vínculo mais amplo', PARCIAL: 'vínculo parcial', NO_MUDOU: 'o nó mudou na árvore'}[p.aviso]"></span>
               </li>
             </template>
@@ -1490,7 +1666,7 @@
               <label class="flex min-h-11 items-center gap-2"><input type="radio" value="LEI_SECA" x-model="tipoPdf" class="h-5 w-5"> Lei seca <span class="text-xs text-gray-500">~3 min por página</span></label>
               <p class="text-xs text-gray-500">Até 50 MB. Os blocos entram depois dos que o assunto já tem.</p>
               <div class="flex gap-2">
-                <button type="button" class="min-h-11 flex-1 rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="enviandoPdf || !arquivoPdf" @click="adicionarPdf()"
+                <button type="button" class="min-h-11 flex-1 rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="enviandoPdf || !arquivoPdf" @click="adicionarPdf()"
                   x-text="enviandoPdf ? 'Cortando…' : 'Adicionar'"></button>
                 <button type="button" class="min-h-11 px-3 text-gray-600 underline" @click="adicionandoPdf = false">Cancelar</button>
               </div>
@@ -1582,32 +1758,32 @@
 
           <div>
             <label class="mb-1 block text-sm font-medium text-gray-500">O que aconteceu?</label>
-            <textarea x-model="descricao" rows="3" class="w-full rounded border border-gray-200 bg-white p-2"></textarea>
+            <textarea x-model="descricao" rows="3" class="min-h-12 w-full rounded-lg border border-gray-200 bg-white px-3 text-base"></textarea>
           </div>
 
           <div>
             <label class="mb-1 block text-sm font-medium text-gray-500">Causa</label>
             <div class="flex flex-wrap gap-2">
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'FALTA_CONHECIMENTO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'FALTA_CONHECIMENTO'">Falta de conhecimento</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'ESQUECIMENTO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'ESQUECIMENTO'">Esquecimento</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'INTERPRETACAO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'INTERPRETACAO'">Interpretação</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'DESATENCAO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'DESATENCAO'">Desatenção</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'PEGADINHA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'PEGADINHA'">Pegadinha</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'CHUTE' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'CHUTE'">Chute</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'GESTAO_TEMPO' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'GESTAO_TEMPO'">Gestão de tempo</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'FALTA_CONHECIMENTO' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'FALTA_CONHECIMENTO'">Falta de conhecimento</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'ESQUECIMENTO' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'ESQUECIMENTO'">Esquecimento</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'INTERPRETACAO' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'INTERPRETACAO'">Interpretação</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'DESATENCAO' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'DESATENCAO'">Desatenção</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'PEGADINHA' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'PEGADINHA'">Pegadinha</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'CHUTE' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'CHUTE'">Chute</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="causa === 'GESTAO_TEMPO' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="causa = 'GESTAO_TEMPO'">Gestão de tempo</button>
             </div>
           </div>
 
           <div>
             <label class="mb-1 block text-sm font-medium text-gray-500">Você tinha certeza quando errou?</label>
             <div class="flex gap-2">
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'BAIXA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'BAIXA'">Baixa</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'MEDIA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'MEDIA'">Média</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'ALTA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'ALTA'">Alta</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'BAIXA' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'BAIXA'">Baixa</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'MEDIA' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'MEDIA'">Média</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="confianca === 'ALTA' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="confianca = 'ALTA'">Alta</button>
             </div>
           </div>
 
-          <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-white hover:bg-primary-700" :disabled="enviando" @click="registrar()">Registrar</button>
+          <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-sobre hover:bg-primary-700" :disabled="enviando" @click="registrar()">Registrar</button>
         </div>
 
         <div class="space-y-2 border-t border-gray-200 pt-4">
@@ -1725,8 +1901,8 @@
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-medium text-gray-500">Estou melhorando? <span class="font-normal">· acerto em questões (M-1)</span></h2>
             <div class="flex gap-2">
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'GLOBAL' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('GLOBAL')">Global</button>
-              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'POR_DISCIPLINA' ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('POR_DISCIPLINA')">Por disciplina</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'GLOBAL' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('GLOBAL')">Global</button>
+              <button type="button" class="rounded-full px-3 py-1 text-sm" :class="janela === 'POR_DISCIPLINA' ? 'bg-primary-600 text-sobre' : 'border border-gray-200 bg-white text-gray-700'" @click="trocarJanela('POR_DISCIPLINA')">Por disciplina</button>
             </div>
           </div>
           <p class="text-xs text-gray-500">Número lento: com pouca amostra o percentual fica em "—". Compare trimestre a trimestre, não semana a semana.</p>
@@ -1803,7 +1979,17 @@
   <!-- Tela Ajustes — os 18 parâmetros, editáveis (04_FRONTEND.md §7E) -->
   <section id="pagina-ajustes" x-data="paginaAjustes()" hidden>
 
-    <a href="#/concursos" class="mb-6 block rounded border border-gray-200 bg-white px-3 py-3 text-sm font-medium hover:bg-gray-50">Concursos e editais →</a>
+    <!-- §8B e ADR-060: a aparência é do aparelho, não do domínio -->
+    <div x-data="aparenciaAjustes()" class="mb-6 space-y-2" id="ajustes-aparencia">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500">Aparência</h2>
+      <div class="flex gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1" role="radiogroup" aria-label="Aparência">
+        <template x-for="o in opcoes" :key="o[0]">
+          <button type="button" role="radio" :aria-checked="escolha === o[0]" class="min-h-11 flex-1 rounded-lg text-sm font-semibold"
+                  :class="escolha === o[0] ? 'bg-white text-gray-900 shadow' : 'text-gray-500'" @click="escolher(o[0])" x-text="o[1]"></button>
+        </template>
+      </div>
+      <p class="text-xs text-gray-500">Vale só neste aparelho.</p>
+    </div>
 
     <template x-if="carregando">
       <p class="text-gray-500">Carregando...</p>
@@ -1827,7 +2013,7 @@
       <p x-show="erro" class="text-sm text-red-700" role="alert" x-text="erro"></p>
       <div x-show="suporte" class="flex flex-wrap gap-2">
         <button type="button" x-show="!ligado" :disabled="trabalhando || permissao === 'denied'"
-                class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white hover:bg-primary-800 disabled:opacity-50" @click="ligar()">Ligar avisos</button>
+                class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-sobre hover:bg-primary-800 disabled:opacity-50" @click="ligar()">Ligar avisos</button>
         <button type="button" x-show="ligado" :disabled="trabalhando"
                 class="min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50" @click="testar()">Enviar aviso de teste</button>
         <button type="button" x-show="ligado" :disabled="trabalhando"
@@ -1862,7 +2048,7 @@
             <button type="button" x-show="!confirmarCodigos" class="mt-2 min-h-11 rounded border border-gray-300 bg-white px-3 text-sm text-primary-700" @click="confirmarCodigos = true">Gerar novos códigos</button>
             <div x-show="confirmarCodigos" class="mt-2 space-y-2">
               <p>Os códigos atuais deixam de valer. Os novos aparecem uma vez só.</p>
-              <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-semibold text-white" :disabled="trabalhando" @click="gerarCodigos()">Gerar e mostrar</button>
+              <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-semibold text-sobre" :disabled="trabalhando" @click="gerarCodigos()">Gerar e mostrar</button>
               <button type="button" class="min-h-11 px-3 text-sm text-gray-600 underline" @click="confirmarCodigos = false">Cancelar</button>
             </div>
           </div>
@@ -1924,7 +2110,7 @@
                 <p x-text="impacto.partesRenomeadas + ' partes só mudam de nome e seguem. ' + impacto.decisoesAfetadas + ' decisões pedem reconfirmação.'"></p>
                 <p class="mt-1">Nenhum nó é trocado sozinho.</p>
                 <button type="button" :disabled="trabalhando"
-                        class="mt-2 min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white hover:bg-primary-800"
+                        class="mt-2 min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-sobre hover:bg-primary-800"
                         @click="adotar(v)">Adotar esta versão</button>
               </div>
             </template>
@@ -1944,7 +2130,7 @@
           <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <button type="button" x-show="$store.ia.podeUsarOpenRouter" :disabled="$store.ia.trocando"
-                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
+                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre hover:bg-primary-700"
                     @click="$store.ia.escolher('OPENROUTER')">Continuar pelo OpenRouter</button>
             <button type="button" :disabled="$store.ia.trocando"
                     class="min-h-11 rounded border border-gray-300 bg-white px-3 text-sm hover:bg-gray-50"
@@ -2050,7 +2236,7 @@
           <p class="mt-1 text-xs text-gray-600">O material espera e o sistema tenta o Claude de novo sozinho. Nada é cobrado no OpenRouter sem você escolher.</p>
           <div class="mt-2 flex flex-wrap gap-2">
             <button type="button" x-show="$store.ia.podeUsarOpenRouter" :disabled="$store.ia.trocando"
-                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
+                    class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre hover:bg-primary-700"
                     @click="$store.ia.escolher('OPENROUTER')">Continuar pelo OpenRouter</button>
             <button type="button" :disabled="$store.ia.trocando"
                     class="min-h-11 rounded border border-gray-300 bg-white px-3 text-sm hover:bg-gray-50"
@@ -2075,7 +2261,7 @@
               <!-- 01_DOMINIO §3.10: o material chega sozinho; aqui é só acompanhamento -->
               <p x-show="ativo.material" class="mt-1 text-xs text-gray-600" x-text="textoMaterial(ativo.material)"></p>
               <!-- 01_DOMINIO §3.12: o que a conferência deixou por resolver; não bloqueia nada -->
-              <p x-show="textoAvisos" class="mt-1 text-xs text-alerta-600">
+              <p x-show="textoAvisos" class="mt-1 text-xs text-alerta-700">
                 <span x-text="textoAvisos"></span>
                 <a :href="'#/concursos/analise/' + avisos.analiseId + '/conferencia'" class="ml-1 underline">Conferir</a>
               </p>
@@ -2092,14 +2278,14 @@
                          class="w-full rounded border border-gray-200 p-2 text-sm text-gray-900">
                   <p x-show="bancaQcErro" class="text-red-700" role="alert" x-text="bancaQcErro"></p>
                   <div class="flex gap-2">
-                    <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white" @click="aprenderBancaQc()">Salvar</button>
+                    <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre" @click="aprenderBancaQc()">Salvar</button>
                     <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="bancaQcAberta = false">Cancelar</button>
                   </div>
                 </div>
               </div>
               <!-- D-137: o diagnóstico do edital -->
               <div class="mt-3 flex flex-wrap items-center gap-2">
-                <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700"
+                <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre hover:bg-primary-700"
                         @click="abrirDiagnostico(ativo)">Diagnóstico</button>
                 <!-- D-140, D-141: a reta final só entra por gesto; sair a qualquer hora -->
                 <!-- J-15: o peso pela banca (D-145 a D-147) -->
@@ -2128,7 +2314,7 @@
                       <input type="checkbox" x-model="regua.erradaAnulaCerta" class="h-5 w-5"></label>
                     <label class="flex items-center justify-between gap-2"><span>Nota de corte (pontos)</span>
                       <input type="number" min="0" step="0.5" x-model="regua.notaCorte" class="w-24 rounded border border-gray-300 p-1 text-right"></label>
-                    <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white" @click="salvarRegua()">Salvar</button>
+                    <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre" @click="salvarRegua()">Salvar</button>
                     <p x-show="reguaSalva" class="text-xs text-green-800">Salvo. As notas em pontos usam a régua nova.</p>
                     <p x-show="erroRegua" class="text-xs text-red-700" x-text="erroRegua"></p>
                   </div>
@@ -2211,7 +2397,7 @@
 
         <div class="space-y-2">
           <a href="#/concursos/novo" x-show="ia && ia.disponivel"
-             class="block rounded bg-primary-700 px-4 py-3 text-center font-medium text-white hover:bg-primary-800">Novo edital</a>
+             class="block rounded bg-primary-700 px-4 py-3 text-center font-medium text-sobre hover:bg-primary-800">Novo edital</a>
           <p x-show="ia && !ia.disponivel" class="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600"
              x-text="'Novo edital indisponível: ' + (ia?.motivo ?? '')"></p>
           <template x-for="a in analises" :key="a.id">
@@ -2263,7 +2449,7 @@
                 + ' · ' + banca.questoes + ' questões com assunto'"></p>
               <p x-show="bancaErro" class="rounded border border-red-300 bg-red-50 p-2 text-red-700" x-text="bancaErro"></p>
               <div class="flex justify-end" x-show="banca.totalPropostas > 0">
-                <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white"
+                <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre"
                         @click="aceitarBanca(todasPropostas())" x-text="'Aceitar todos (' + banca.totalPropostas + ')'"></button>
               </div>
               <template x-for="d in banca.disciplinas" :key="d.disciplinaId">
@@ -2439,7 +2625,7 @@
                  class="block w-full text-sm">
         </div>
         <button type="button" :disabled="enviando" @click="enviar()"
-                class="w-full rounded bg-primary-700 px-4 py-3 font-medium text-white hover:bg-primary-800 disabled:opacity-50"
+                class="w-full rounded bg-primary-700 px-4 py-3 font-medium text-sobre hover:bg-primary-800 disabled:opacity-50"
                 x-text="enviando ? 'Enviando…' : 'Enviar edital'"></button>
       </div>
     </template>
@@ -2489,7 +2675,7 @@
               </template>
             </fieldset>
             <button type="button" :disabled="!cargo || enviando" @click="escolherCargo()"
-                    class="w-full rounded bg-primary-700 px-4 py-3 font-medium text-white hover:bg-primary-800 disabled:opacity-50">Ler o conteúdo deste cargo</button>
+                    class="w-full rounded bg-primary-700 px-4 py-3 font-medium text-sobre hover:bg-primary-800 disabled:opacity-50">Ler o conteúdo deste cargo</button>
           </div>
         </template>
 
@@ -2498,7 +2684,7 @@
             <p class="font-medium">O edital foi lido. Falta conferir.</p>
             <p>A IA propôs; você resolve o que ficou em dúvida e conclui. Só aí os assuntos passam a existir.</p>
             <a :href="'#/concursos/analise/' + analise.id + '/conferencia'"
-               class="block rounded bg-primary-700 px-4 py-3 text-center font-medium text-white hover:bg-primary-800">Conferir o edital</a>
+               class="block rounded bg-primary-700 px-4 py-3 text-center font-medium text-sobre hover:bg-primary-800">Conferir o edital</a>
           </div>
         </template>
 
@@ -2694,7 +2880,7 @@
               <p x-show="d.contexto" class="text-xs text-gray-500" x-text="'sob: ' + d.contexto"></p>
               <p class="text-xs text-gray-600" x-text="d.nos.length ? d.nos.map(n => n.caminho ? n.caminho.join(' › ') : 'nó ' + n.id).join(' · ') : 'a árvore não tem'"></p>
               <p class="text-xs text-gray-500" x-text="rotuloNatureza(d.natureza) + ' · só este edital · ' + d.arvore"></p>
-              <p x-show="d.precisaReconfirmar" class="mt-1 text-xs text-alerta-600">Um nó saiu ou mudou na árvore: reconfirme.</p>
+              <p x-show="d.precisaReconfirmar" class="mt-1 text-xs text-alerta-700">Um nó saiu ou mudou na árvore: reconfirme.</p>
               <div class="mt-2 flex gap-2">
                 <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="abrirDecisao(d)">Editar</button>
                 <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-red-700" @click="revogar(d)">Revogar</button>
@@ -2706,7 +2892,7 @@
         <div class="border-t border-gray-200 pt-4">
           <p x-show="resumo.status === 'CONFIRMADA'" class="text-sm text-gray-600">Esta conferência já foi concluída. Tudo continua possível: trocar nós, vincular o que ficou sem nó.</p>
           <button type="button" x-show="resumo.status === 'EM_CONFERENCIA'" :disabled="trabalhando || !resumo.podeConcluir"
-                  class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white hover:bg-primary-800 disabled:opacity-50"
+                  class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-sobre hover:bg-primary-800 disabled:opacity-50"
                   @click="concluir()" x-text="resumo.podeConcluir ? 'Concluir e ativar o concurso' : 'Resolva o que bloqueia para concluir'"></button>
         </div>
       </div>
@@ -2733,10 +2919,10 @@
               <p class="text-xs text-gray-500" x-text="rotuloNatureza(painel.parte.natureza) + ' · ' + rotuloOrigem(painel.parte.origem) + ' · ' + rotuloEstado(painel.parte)"></p>
               <p x-show="painel.parte.propostos.length" class="mt-1 text-xs text-gray-500"
                  x-text="'O sistema tinha proposto: ' + painel.parte.propostos.map(n => n.caminho ? n.caminho.join(' › ') : 'nó ' + n.id).join(' · ')"></p>
-              <p x-show="painel.parte.noMudou" class="mt-1 text-xs text-alerta-600">O nó saiu ou mudou na árvore: aceite de novo se ainda serve, ou escolha outro.</p>
+              <p x-show="painel.parte.noMudou" class="mt-1 text-xs text-alerta-700">O nó saiu ou mudou na árvore: aceite de novo se ainda serve, ou escolha outro.</p>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" x-show="painel.parte.nos.length && (painel.parte.estado === 'PROPOSTA' || painel.parte.noMudou)" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white disabled:opacity-50" :disabled="trabalhando" @click="aceitar()">Aceitar</button>
+              <button type="button" x-show="painel.parte.nos.length && (painel.parte.estado === 'PROPOSTA' || painel.parte.noMudou)" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-sobre disabled:opacity-50" :disabled="trabalhando" @click="aceitar()">Aceitar</button>
               <p x-show="painel.parte.nos.length && painel.parte.estado !== 'PROPOSTA' && !painel.parte.noMudou" class="col-span-2 rounded bg-green-50 p-2 text-sm text-green-900">Esta parte já está aceita. Para mudar, escolha outro assunto do QConcursos.</p>
               <p x-show="!painel.parte.nos.length" class="col-span-2 rounded bg-gray-50 p-2 text-sm text-gray-700">O QConcursos não tem um assunto igual a este. Escolha o mais próximo (<strong>Escolher outro assunto</strong>) ou, se não houver nenhum, toque em <strong>O QConcursos não tem</strong>.</p>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="iniciarTrocaDeNo()">Escolher outro assunto</button>
@@ -2801,7 +2987,7 @@
               <input type="checkbox" class="mt-1" x-model="formulario.paraTodos">
               <span>Valer para <strong>todos os editais</strong></span>
             </label>
-            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="trabalhando || !picker.selecionados.length" @click="gravarNos()">Gravar o nó</button>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-sobre disabled:opacity-50" :disabled="trabalhando || !picker.selecionados.length" @click="gravarNos()">Gravar o nó</button>
           </div></template>
 
           <!-- editar / dividir / juntar / descartar a parte -->
@@ -2810,7 +2996,7 @@
             <div><label for="ed-herdado" class="mb-1 block text-sm text-gray-600">Prefixo herdado</label><input id="ed-herdado" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.herdado"></div>
             <div><label for="ed-contexto" class="mb-1 block text-sm text-gray-600">Contexto (a cabeça sob a qual aparece)</label><input id="ed-contexto" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.contexto"></div>
             <p class="text-xs text-gray-500">A conferência por regra roda de novo com o texto que você escrever.</p>
-            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando" @click="salvarEdicao()">Salvar</button>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-sobre" :disabled="trabalhando" @click="salvarEdicao()">Salvar</button>
           </div></template>
           <template x-if="painel.modo === 'dividir'"><div class="space-y-3">
             <p class="text-sm text-gray-600">Escreva cada pedaço. Cada um herda o nó, para você só conferir.</p>
@@ -2818,7 +3004,7 @@
               <input class="w-full rounded border border-gray-300 px-3 py-2" :aria-label="'Pedaço ' + (i + 1)" x-model="formulario.partes[i]">
             </template>
             <button type="button" class="min-h-11 text-sm text-primary-700 underline" @click="formulario.partes.push('')">+ mais um pedaço</button>
-            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando" @click="dividir()">Dividir</button>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-sobre" :disabled="trabalhando" @click="dividir()">Dividir</button>
           </div></template>
           <template x-if="painel.modo === 'juntar'"><div class="space-y-3">
             <div>
@@ -2831,11 +3017,11 @@
               </select>
             </div>
             <div><label for="jt-texto" class="mb-1 block text-sm text-gray-600">Texto da parte juntada</label><input id="jt-texto" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.texto"></div>
-            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando || !formulario.outra" @click="juntar()">Juntar</button>
+            <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-sobre" :disabled="trabalhando || !formulario.outra" @click="juntar()">Juntar</button>
           </div></template>
           <template x-if="painel.modo === 'descartar'"><div class="space-y-3">
             <div><label for="ds-motivo" class="mb-1 block text-sm text-gray-600">Motivo (fora do cargo, observação, repetição…)</label><input id="ds-motivo" class="w-full rounded border border-gray-300 px-3 py-2" x-model="formulario.motivo"></div>
-            <button type="button" class="w-full min-h-12 rounded bg-red-700 px-4 py-3 font-medium text-white" :disabled="trabalhando || !formulario.motivo" @click="descartar()">Descartar a parte</button>
+            <button type="button" class="w-full min-h-12 rounded bg-red-700 px-4 py-3 font-medium text-sobre" :disabled="trabalhando || !formulario.motivo" @click="descartar()">Descartar a parte</button>
           </div></template>
 
           <!-- assunto recusado ou com alerta -->
@@ -2848,13 +3034,13 @@
               <template x-for="e in painel.assunto.alertas" :key="e"><li x-text="e"></li></template>
             </ul>
             <div x-show="painel.modo !== 'texto'" class="grid grid-cols-2 gap-2">
-              <button type="button" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white" :disabled="trabalhando" @click="aceitarAssunto()">Aceitar assim mesmo</button>
+              <button type="button" class="min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-sobre" :disabled="trabalhando" @click="aceitarAssunto()">Aceitar assim mesmo</button>
               <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="painel.modo = 'texto'; formulario = {texto: painel.assunto.texto}">Corrigir o texto</button>
             </div>
             <div x-show="painel.modo === 'texto'" class="space-y-2">
               <label for="as-texto" class="block text-sm text-gray-600">Texto do assunto, como está no edital</label>
               <textarea id="as-texto" rows="3" class="w-full rounded border border-gray-300 p-2 text-sm" x-model="formulario.texto"></textarea>
-              <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-white" :disabled="trabalhando" @click="corrigirAssunto()">Salvar</button>
+              <button type="button" class="w-full min-h-12 rounded bg-primary-700 px-4 py-3 font-medium text-sobre" :disabled="trabalhando" @click="corrigirAssunto()">Salvar</button>
             </div>
             <button type="button" class="min-h-11 text-sm text-primary-700 underline" @click="abrirPartesDoAssunto()">Ver as partes deste assunto</button>
           </div></template>
@@ -2878,7 +3064,7 @@
                 </select>
                 <input x-show="!formulario.disciplinaId" class="mt-2 w-full rounded border border-gray-300 px-3 py-2" placeholder="Nome da disciplina nova" aria-label="Nome da disciplina nova" x-model="formulario.novaDisciplina">
               </div>
-              <button type="button" class="mt-2 min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-white" :disabled="trabalhando || !formulario.texto" @click="resolverTrecho('INCLUIR')">Incluir como assunto</button>
+              <button type="button" class="mt-2 min-h-11 rounded bg-primary-700 px-3 text-sm font-medium text-sobre" :disabled="trabalhando || !formulario.texto" @click="resolverTrecho('INCLUIR')">Incluir como assunto</button>
             </div>
           </div></template>
         </div>
@@ -2886,5 +3072,6 @@
     </template>
   </section>
 </main>
+</div>
 </body>
 </html>

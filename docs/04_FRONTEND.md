@@ -15,8 +15,8 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.19.0 |
-| Data | 2026-10-14 |
+| Versão | 1.20.0 |
+| Data | 2026-11-04 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
 
@@ -812,13 +812,77 @@ reconhecível, nunca a cor de destaque do produto).
 
 ---
 
+## 8B. O sistema visual, a navegação e as telas de estudo (Sprints 39 e 40)
+
+Pedido do usuário (2026-11-04), decidido em duas rodadas: deixar a interface num padrão de boas práticas. A **Sprint 39** faz a base,
+a navegação, Hoje e as telas de estudo; a **Sprint 40**, as demais telas no mesmo padrão. A identidade (o verde-azulado de §8A, a Open
+Sans) fica; o que muda é a disciplina com que ela é aplicada.
+
+### A base
+
+| Peça | Regra |
+|---|---|
+| Escala de texto | 12 (legenda), 14 (corpo pequeno), 16 (corpo), 18 (título de cartão), 22 (título da tela); nada abaixo de 12 |
+| Espaço | Passos de 4 px (4, 8, 12, 16, 24, 32); entre cartões 12, entre seções 24, margem da tela 16 |
+| Toque | Todo controle com 44 × 44 px no mínimo; ação principal com 48 px de altura |
+| Cartão | Um só estilo: fundo de superfície, borda de 1 px, raio 12; sombra só no que flutua (barras e painéis) |
+| Botões | Três papéis: **principal** (cheio, um por tela), **secundário** (contorno), **texto** (link). Nunca dois principais à vista |
+| Ícones | SVG desenhados localmente (sem rede, ADR-038), traço de 2 px, 20 ou 24 px, sempre com rótulo ao lado na navegação |
+| Estados | O selecionado e o "aqui estou" sempre marcados pela cor principal e por forma (barra, preenchimento), nunca só pela cor |
+| Datas | "terça, 02/11"; "amanhã"; "há 3 dias". Nunca AAAA-MM-DD na tela |
+| Termos | Palavras simples na tela; o código da especificação, quando ajuda, pequeno ao lado (só em Progresso). Tabela abaixo |
+
+| Na especificação | Na tela |
+|---|---|
+| Backlog | Na fila |
+| Frente (em estudo ∪ em escada) | Estudando |
+| Consolidado | Consolidado |
+| Represado | Revisões acumuladas |
+| M-1 | Acerto em questões |
+| M-2 | Retenção |
+| M-3 | Calibração ("eu me conheço?") |
+| M-4 | Em dia com as revisões |
+
+### O tema claro e o escuro
+
+O escuro segue o aparelho (`prefers-color-scheme`); em Ajustes, **Aparência** fixa claro ou escuro, guardado só no aparelho.
+Medido na Sprint 39, o principal de §8A não chegava a 4,5:1 com texto branco; no claro, `primary-600` passou a `#057f8c`,
+`primary-700` a `#046f7b` e `alerta-700` a `#b8430a` (`docs/SPRINT-39-INTERFACE.md` §2). Os
+tokens de §8A e os neutros passam a ser variáveis (ADR-060): cada cor tem o par claro e escuro, com o contraste de texto de pelo menos
+4,5:1 nos dois. O texto sobre a cor principal é sempre branco.
+
+### A navegação
+
+- **Celular:** barra fixa embaixo, com ícone e nome: **Hoje**, **Assuntos**, **Progresso**, **Mais**. "Mais" abre um painel com
+  Concursos, Erros, Provas e Ajustes. A barra respeita a área segura do aparelho.
+- **Computador (a partir de 1024 px):** menu lateral fixo com os mesmos itens, abertos (sem "Mais").
+- A tela atual fica marcada nos dois. O nome do app vira só o topo do menu lateral; no celular, cada tela tem o próprio título.
+
+### Hoje
+
+1. **Cabeçalho:** o dia ("quarta, 04/11"), o alvo e os dias até a prova.
+2. **Progresso do dia:** "1 de 4 feitos" com barra, e o que falta ("3 recuperações · 1 bloco de 18 min").
+3. **A próxima ação**, um cartão em destaque com o único botão principal da tela, pela ordem do plano: reestudo, recuperação (a mais
+   atrasada), o bloco de conteúdo, o simulado da semana. Sem nada a fazer: "Nada para hoje" e os próximos dias.
+4. **O resto do turno** em lista compacta; cada item com as ações dentro dele ("Fiz questões", "Resolver no QConcursos").
+5. Avisos de processo (material preparando, IA parada) num cartão discreto abaixo; o alerta de revisões acumuladas, acima da próxima ação.
+6. Os próximos 7 dias como já são (§3.25), no fim (celular) ou à direita (computador).
+
+### As telas de estudo (Recuperar, Registrar, leitor, ensaio)
+
+- **Modo foco:** sem a barra e o menu; no topo, só "← sair", o nome do assunto e o Pomodoro, se houver.
+- **Etapas à vista:** Recuperar "1 Prever · 2 Reconstruir · 3 Conferir"; Registrar "1 Dados · 2 Previsão · 3 Registrar".
+- **A ação da etapa fixa embaixo**, ao alcance do polegar, acima da área segura; o resto rola.
+- Datas e textos humanos (tabela acima). Erros de envio na mesma tela, sem perder o que foi digitado (§5).
+
+---
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
   `02_JORNADAS §5.1`).
-- Biblioteca de componente própria e espaçamento sistemático — cor e
-  tipografia já estão definidas (§8A); o que falta é refinamento maior,
-  ainda sem tela suficiente pra justificar o investimento.
+- ~~Biblioteca de componente própria e espaçamento sistemático~~ — entra
+  nas Sprints 39 e 40 (§8B).
 - Seta de tendência de M-1 (`00_PRODUTO §7`, "seta... exigem n ≥ 100") —
   `M1Response` não carrega um período anterior pra comparar; precisa de
   decisão de backend (novo parâmetro ou endpoint), não é lacuna de
@@ -846,6 +910,7 @@ reconhecível, nunca a cor de destaque do produto).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.20.0 | 2026-11-04 | §8B: o sistema visual (escala, espaço, toque, cartão, botões, ícones, datas, termos), o tema claro e escuro (ADR-060), a navegação por barra inferior e menu lateral, a tela Hoje com a próxima ação e as telas de estudo em modo foco. Sprints 39 e 40 |
 | 1.19.0 | 2026-11-01 | §7M: as telas da prova e do gabarito (Sprint 24, item 24.7) |
 | 1.18.0 | 2026-11-01 | §7L: a armadilha do `:disabled` com `undefined` (Sprint 32) |
 | 1.17.0 | 2026-11-01 | §7L: a porta do login (Sprint 30) e o leitor com o modo sem rede (Sprint 31), com as duas armadilhas do Alpine com o PDF.js e o IndexedDB |

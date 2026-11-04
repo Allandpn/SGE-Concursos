@@ -37,6 +37,15 @@ function renderizarRotaAtual() {
   const matchLeitor = hash.match(/^#\/ler\/(\d+)(?:\?(.*))?$/); // ?p=N (D-121) e ?previa=1 (D-158)
   const paramsLeitor = matchLeitor ? new URLSearchParams(matchLeitor[2] || '') : null;
 
+  // §8B: onde se está (a marca da navegação) e o modo foco das telas de estudo, sem navegação.
+  const foco = !!(matchRecuperar || matchRegistrar || matchLeitor);
+  const rotaNav = matchAssuntos || matchAssuntoDetalhe || matchErros ? 'assuntos'
+    : matchProgresso || matchSimulado ? 'progresso'
+    : matchConcursos || matchEditalNovo || matchAnalise || matchConferencia || matchProvaNova || matchProva || matchRelatorioProva || matchResolver ? 'concursos'
+    : matchAjustes ? 'ajustes'
+    : foco ? 'estudo' : 'hoje';
+  Alpine.store('nav').ir(rotaNav, foco);
+
   elHoje.hidden = true;
   elRecuperar.hidden = true;
   elRegistrar.hidden = true;

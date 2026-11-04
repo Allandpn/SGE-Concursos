@@ -145,7 +145,8 @@ public class TurnoService {
         var simuladoDaSemana = ativa != null && simuladoPendente(hoje);
         return new TurnoPlanoResponse(fila, reestudos, blocoConteudo, continuacao, segmento, represamento.alerta(),
             diasSemEstudar, represamento.represado(), represamento.estimativaDiasParaNormalizar(),
-            vencidasAlemDoTeto, simuladoDaSemana ? null : proximoBloco, antecipaveis, ativa, manutencoesEsperando, simuladoDaSemana);
+            vencidasAlemDoTeto, simuladoDaSemana ? null : proximoBloco, antecipaveis, ativa, manutencoesEsperando, simuladoDaSemana,
+            jdbc.queryForObject("SELECT count(*) FROM sessao WHERE ativo AND data = ?", Long.class, hoje));
     }
 
     /** D-144: o simulado da semana só entra no sábado e no domingo. */
