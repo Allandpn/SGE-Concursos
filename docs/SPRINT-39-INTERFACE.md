@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Versão | 1.2.0 |
+| Versão | 1.3.0 |
 | Data | 2026-11-05 |
 | Subordinado a | `docs/04_FRONTEND.md` v1.20.0 §8B; `02_JORNADAS` v1.32.0 J-2; ADR-060 |
 | Origem | Pedido do usuário (2026-11-04), decidido em duas rodadas; wireframe aprovado na conversa |
@@ -64,6 +64,7 @@ atenção 3,55:1, abaixo de 4,5:1. No claro, `primary-600` passa a `#057f8c` (4,
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.3.0 | 2026-11-05 | Achado pelo usuário nos testes da escada: registrar o mesmo assunto de novo, sem recarregar o app, reaproveitava o `tentativaId` da gravação anterior, e o servidor tratava como reenvio (D-45) — dizia "registrado" sem gravar nada. Defeito antigo de Registrar e Recuperar. Agora o `tentativaId` é zerado depois de cada gravação que deu certo, e a próxima abertura começa uma tentativa nova, com o formulário limpo. Conferido no Chromium: duas gravações seguidas do mesmo assunto, duas sessões |
 | 1.2.0 | 2026-11-05 | Depois do deploy da `release/10`, a versão nova não apareceu no celular. Causa: a casca chegava sem `Cache-Control`, e o service worker buscava (e, ao instalar, guardava) pelo cache HTTP do navegador, que pode reaproveitar a cópia antiga por um tempo calculado por ele. Agora o servidor manda `no-cache` na casca (`spring.web.resources.cache.cachecontrol.no-cache`), o service worker instala com `cache: 'reload'` e busca com `cache: 'no-cache'`, e Ajustes mostra a versão do aparelho e a do servidor, com "Atualizar agora" |
 | 1.1.0 | 2026-11-05 | Itens 39.1 a 39.3 feitos. O Chromium achou: o contraste do principal e do laranja de texto (paleta ajustada, acima); o cartão "Agora" lendo o item de uma recuperação quando a próxima ação era um bloco (corrigido); Hoje carregando antes de a gravação otimista terminar (recarrega no fim) |
 | 1.0.0 | 2026-11-04 | Criado, com o wireframe aprovado pelo usuário |
