@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.29.0 |
-| Data | 2026-11-01 |
+| Versão | 1.30.0 |
+| Data | 2026-11-04 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -291,6 +291,7 @@ apaga** (`01_DOMINIO` D-18).
 | Bloco de conteúdo | Assunto já preenchido pelo plano; tempo (já preenchido com a estimativa) e tipo | **≤ 20 s** |
 | Lote de questões | Assunto, formato, feitas, certas, previsão, tempo | **≤ 25 s** |
 | Lote rápido ("Fiz questões" na fila, D-133) | Feitas, certas, previsão; o resto preenchido | **≤ 12 s** |
+| Volta do QConcursos (J-17, D-153) | O lote rápido já aberto, com o tempo desde a saída | **≤ 12 s** |
 | Discursiva | Nota, previsão, tempo | **≤ 20 s** |
 
 O orçamento total de registro num turno de 1 h 30: **5 × 15 s + 20 s ≈ 1 min
@@ -571,6 +572,18 @@ Serve a quem usa o eAgora fora da rede de casa (`01_DOMINIO` §3.16). A porta é
 Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qualquer falha), e o bloqueio por excesso de tentativas diz quando volta.
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
+
+### J-17 · Resolver no QConcursos
+
+Frequente: em boa parte dos turnos. Ida em **1 toque**; a volta no orçamento do lote rápido (**≤ 12 s**).
+
+1. Numa recuperação de Hoje (também no detalhe do assunto, no Diagnóstico e no Peso pela banca), **Resolver no QConcursos** mostra
+   "Faça 8 questões" e, quando faltar, "filtro pela disciplina" ou "sem filtro de banca" (D-150 a D-152).
+2. O QConcursos abre filtrado: no celular, na aba do Chrome por cima do app instalado; no computador, numa nova aba. A pessoa resolve
+   lá, logada no QConcursos.
+3. **Na volta** (fechar a aba no celular ou voltar à aba do SGE no computador), o lote rápido do assunto já está aberto, com o tempo
+   desde a saída: feitas, certas, a previsão e **Registrar** (D-153).
+4. **Não fiz** fecha sem nada gravado; fechar no ✕ deixa para a próxima volta; depois de 6 h a saída é esquecida.
 
 ### J-16 · Registrar um simulado
 
@@ -900,6 +913,7 @@ O documento de interface é quem amarra isso.
 | J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
 | J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
+| J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-154, D-133 |
 
 ---
 
@@ -926,6 +940,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.30.0 | 2026-11-04 | Nova **J-17** (resolver no QConcursos: o atalho filtrado e a volta com o lote rápido aberto), com `01_DOMINIO` v1.40.0 (D-150 a D-154) e ADR-058; a volta entra no orçamento do lote rápido |
 | 1.29.0 | 2026-11-03 | Pedido do usuário. **J-10** ganha "passar as páginas": rolagem contínua por padrão, "uma página por vez (deslizar)" no menu, pinça para o zoom, o contador que leva a "ir para a página"; na rolagem contínua, a página de D-121 é a mais visível. Sem regra nova |
 | 1.28.0 | 2026-11-02 | Nova **J-16** (registrar um simulado) e o orçamento dele, com `01_DOMINIO` v1.39.0 (D-148, D-149). As disciplinas vêm em ordem alfabética (ajustado ao escrever o código: o edital não ordena as disciplinas entre si) |
 | 1.27.0 | 2026-11-02 | Nova **J-15** (peso pela banca), com `01_DOMINIO` v1.38.0 (D-145 a D-147) e ADR-057 |

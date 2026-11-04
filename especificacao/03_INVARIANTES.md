@@ -5,8 +5,8 @@ Quem garante cada regra, em que camada, e como se sabe que quebrou.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.27.0 |
-| Data | 2026-11-01 |
+| Versão | 1.28.0 |
+| Data | 2026-11-04 |
 | Status | Vigente |
 | Documento anterior | `02_JORNADAS.md` |
 
@@ -261,8 +261,13 @@ conceitual — envelhecer por motivo errado.
 | D-147 | **Invariante** | **P** + S | Dois ajustes vigentes do mesmo assunto no mesmo concurso → a escrita falha (índice único parcial); teste: aceitar aplica ao assunto, reimportar mantém, desfazer volta ao edital, prova nova não muda o peso |
 | D-148 | **Invariante** | **P** + S | Brancos negativos ou certas + brancos acima do total → a escrita falha; teste: a M-1 ignora os brancos; a nota em pontos com errada anula certa desconta só total − certas − brancos |
 | D-149 | Comportamento | S | Teste: arquivado some da M-1, da lista principal, dos pontos e do simulado da semana; a linha continua no banco |
+| D-150 | Derivação | S | Teste (unitário): endereço com nó de assunto (assunto e disciplina) e de disciplina; sem nó, a disciplina da análise e a da árvore pelo nome, com aviso; sem nenhuma, sem atalho; os filtros fixos e os anos de ano atual − N até o atual |
+| D-151 | Derivação | S | Teste: o número informado vence a tabela; CESPE = Cebraspe pela tabela; sem alvo ou banca desconhecida, sem banca e com aviso |
+| D-152 | Derivação | S + I | Teste: foco 25 e 3 min por questão → 8; abaixo do mínimo do lote, o mínimo; o lote rápido sem foco usa o parâmetro |
+| D-153 | Comportamento | I | Chromium: sair pelo atalho, voltar e achar o lote aberto com o tempo; "Não fiz" descarta, ✕ adia, mais de 6 h descarta sem abrir; nada gravado no servidor antes de registrar |
+| D-154 | Comportamento | I | Chromium: o atalho na recuperação de Hoje, no detalhe do assunto, no Diagnóstico e no Peso pela banca |
 
-**Contagem:** 35 invariantes · 17 derivações · 88 comportamentos · 10 políticas — 150 linhas para 149 regras.
+**Contagem:** 35 invariantes · 20 derivações · 90 comportamentos · 10 políticas — 155 linhas para 154 regras.
 D-04 virou duas regras de naturezas diferentes. D-46 acrescentada na Sprint 7
 (01_DOMINIO v1.12.0). D-47 acrescentada ao revisar `DisciplinaService.criar`
 (01_DOMINIO v1.13.0). D-48 acrescentada ao revisar `FrenteService.proximaVaga`
@@ -582,6 +587,7 @@ nenhuma** — é metadado, não garantia.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.28.0 | 2026-11-04 | **D-150 a D-154** com `01_DOMINIO.md` v1.40.0 (questões no QConcursos). Três derivações, dois comportamentos. Contagem: 155 linhas para 154 regras |
 | 1.27.0 | 2026-11-02 | **D-148 e D-149** com `01_DOMINIO.md` v1.39.0 (registro de simulado com brancos, arquivamento). Uma invariante (D-148), um comportamento. Contagem: 150 linhas para 149 regras |
 | 1.26.0 | 2026-11-02 | **D-145 a D-147** com `01_DOMINIO.md` v1.38.0 (peso pela banca). Uma invariante (D-147), duas derivações. Contagem: 148 linhas para 147 regras |
 | 1.25.0 | 2026-11-01 | **D-140 a D-144** com `01_DOMINIO.md` v1.37.0 (reta final). Uma invariante (D-141), quatro comportamentos. Contagem: 145 linhas para 144 regras |

@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.24.0** |
+| Versão do documento | **2.25.0** |
 | Status | **Congelado** |
-| Data | 2026-11-01 |
-| Total | 57 ADRs — 42 vigentes, 14 substituídas, 1 revogada |
+| Data | 2026-11-04 |
+| Total | 58 ADRs — 43 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -85,6 +85,7 @@ que custa e o que foi descartado.
 | [ADR-055](#adr-055--discursiva-como-tipo-de-sessão-e-régua-do-edital-derivada) | Discursiva como tipo de sessão e régua do edital derivada | 2026-11-01 |
 | [ADR-056](#adr-056--reta-final-regime-derivado-só-a-antecipação-grava) | Reta final: regime derivado, só a antecipação grava | 2026-11-01 |
 | [ADR-057](#adr-057--peso-pela-banca-proposta-derivada-ajuste-aceito-em-tabela-própria) | Peso pela banca: proposta derivada, ajuste aceito em tabela própria | 2026-11-02 |
+| [ADR-058](#adr-058--qconcursos-por-atalho-e-volta-sem-api-sem-moldura-sem-raspagem) | QConcursos por atalho e volta: sem API, sem moldura, sem raspagem | 2026-11-04 |
 
 ### 1.2 Históricas
 
@@ -985,6 +986,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.25.0 | 2026-11-04 | **ADR-058**, pedido do usuário: o QConcursos entra por um endereço filtrado montado pelo SGE, aberto fora dele, e pela volta guardada no aparelho; sem API, sem moldura, sem automação; a banca pelo número do usuário ou por tabela embutida. Com `01_DOMINIO` v1.40.0 (D-150 a D-154). Total 58, 43 vigentes |
 | 2.24.0 | 2026-11-02 | **ADR-057**, pedido do usuário: a proposta de peso pela banca é consulta; o ajuste aceito mora em `peso_banca` e substitui o peso do edital em toda aplicação da cobertura até ser desfeito |
 | 2.23.0 | 2026-11-01 | **ADR-056**, pedido do usuário: reta final com só entrada e saída guardadas; a manutenção de médio e baixo escondida por filtro; a de peso alto antecipada uma vez ao entrar, com a data anterior guardada |
 | 2.22.0 | 2026-11-01 | **ADR-055**, pedido do usuário: `DISCURSIVA` como tipo de sessão, com a nota e os limiares; a régua da prova no concurso, e a nota em pontos derivada. Com `01_DOMINIO` v1.35.0 (D-133 a D-136). Total 55, 40 vigentes |
@@ -2261,6 +2263,45 @@ O ajuste aceito precisa sobreviver a isso.
 | Coluna `peso_banca` em `concurso_assunto` | A cobertura é apagada e regravada na reimportação; o ajuste se perderia |
 | Gravar a proposta | Derivável (D-16); prova nova exigiria recalcular o que está guardado |
 | Aplicar sozinho ao chegar prova nova | O usuário escolheu aprovar; duas provas são amostra pequena |
+
+---
+
+## ADR-058 — QConcursos por atalho e volta: sem API, sem moldura, sem raspagem
+
+**Status:** Aceita · 2026-11-04 · pedido do usuário
+
+### Contexto
+
+O usuário resolve as questões de banca no QConcursos, no celular Android (o SGE instalado como app) e no computador, e quer fazer isso
+sem perder o fio do plano (`01_DOMINIO` §3.24, D-150 a D-154). O QConcursos não tem API pública de questões nem exporta desempenho ou
+cadernos. A página de questões passa por um desafio do Cloudflare e responde com `X-Frame-Options: SAMEORIGIN`; o serviço dos filtros
+(`brokk.qconcursos.com`), que já serviu a árvore de assuntos, passou a responder 403 do Cloudflare a acessos automáticos.
+
+### Decisão
+
+- **O SGE só monta o endereço** de `www.qconcursos.com/questoes-de-concursos/questoes` com os parâmetros que o próprio site usa
+  (`discipline_ids[]`, `subject_ids[]`, `examining_board_ids[]`, `publication_year[]`, `my_questions=not_resolved`, `exclude_nullified`,
+  `exclude_outdated`, `per_page`), conferidos com endereços copiados pelo usuário do navegador. O endereço é derivado na leitura (D-16).
+- **Abre fora do SGE**: `target="_blank"`. No Android, o app instalado abre o link numa aba do Chrome por cima, com o X de volta; no
+  computador, numa nova aba. O login do QConcursos é o do navegador da pessoa.
+- **A volta é do aparelho**: a saída (assunto, hora) fica em `localStorage`; ao voltar a página fica visível (`visibilitychange`) e o
+  lote rápido abre. Nada vai ao servidor antes de registrar.
+- **A banca vem de dado do usuário ou de tabela embutida**: o número do QConcursos guardado no concurso (coluna nova, opcional), senão
+  uma tabela pequena das bancas comuns no código. Nenhuma chamada ao QConcursos em tempo de uso.
+
+### Consequências
+
+- Se o QConcursos mudar os nomes dos parâmetros, só o atalho quebra; o registro continua (o mesmo lote rápido de D-133).
+- O que se fez lá entra pelo que a pessoa digita, como já era. "Não resolvidas" depende de ela estar logada no QConcursos.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Abrir o QConcursos numa moldura (iframe) do SGE | `X-Frame-Options: SAMEORIGIN` recusa; o cookie de login viraria de terceiro e seria bloqueado; o SGE não leria a moldura de outra origem |
+| Ler as questões ou o resultado por automação de navegador | Exigiria contornar o desafio do Cloudflare; fora de questão |
+| Buscar a lista de bancas no `brokk` em tempo de uso | Responde 403 do Cloudflare; o atalho dependeria de um serviço que recusa acesso automático |
+| Guardar a saída no servidor | Ela só importa ao aparelho que saiu; no servidor viraria estado a limpar e abriria o lote em outro aparelho |
 
 ---
 
