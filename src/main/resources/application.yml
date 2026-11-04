@@ -22,6 +22,14 @@ server:
   address: ${BIND_ADDRESS:127.0.0.1}
 
 spring:
+  # A casca estática (HTML, JS, CSS) sempre revalida com o servidor: sem isto o navegador reaproveita a cópia antiga por um
+  # tempo que ele mesmo calcula, e um deploy novo não aparece no app instalado (docs/SPRINT-39-INTERFACE.md, changelog 1.2.0).
+  # A revalidação custa um 304 por arquivo. Os PDFs (/material/**) têm handler próprio e não entram aqui.
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-cache: true
   servlet:
     multipart:
       # ADR-043: o PDF do edital passa por aqui (o padrão de 1 MB recusaria

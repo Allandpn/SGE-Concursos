@@ -71,3 +71,50 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 });
+
+// Ajustes → Versão do app: a casca que o service worker deste aparelho usa e a que o servidor tem agora.
+document.addEventListener('alpine:init', () => {
+  Alpine.data('versaoApp', () => ({
+    instalada: null,
+    servidor: null,
+    atualizando: false,
+
+    init() {
+      this.ler();
+    },
+
+    async ler() {
+      try {
+        const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+        if (sw) {
+          const canal = new MessageChannel();
+          this.instalada = await new Promise((resolver) => {
+            canal.port1.onmessage = (e) => resolver(e.data);
+            sw.postMessage('versao', [canal.port2]);
+            setTimeout(() => resolver(null), 2000);
+          });
+        }
+      } catch (e) {
+        this.instalada = null;
+      }
+      try {
+        const texto = await (await fetch('/sw.js', { cache: 'no-store' })).text();
+        const m = texto.match(/CASCA_VERSAO = '([^']+)'/);
+        this.servidor = m ? m[1] : null;
+      } catch (e) {
+        this.servidor = null;
+      }
+    },
+
+    async atualizar() {
+      this.atualizando = true;
+      try {
+        const registro = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+        if (registro) await registro.update();
+      } catch (e) {
+        // sem service worker: o recarregar abaixo já busca do servidor
+      }
+      window.location.reload();
+    },
+  }));
+});

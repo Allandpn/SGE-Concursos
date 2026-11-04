@@ -9,7 +9,7 @@
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-11-05-1';
+const CASCA_VERSAO = 'casca-2026-11-05-2';
 // ADR-052: os PDFs guardados para ler sem rede ficam num cache próprio, que a troca de casca não apaga.
 const CACHE_MATERIAL = 'material-v1';
 
@@ -49,7 +49,8 @@ const CASCA = [
 self.addEventListener('install', (evento) => {
   // Sem sessão, as telas redirecionam para a porta (D-106): com redirect 'error' a instalação falha em vez de guardar a
   // porta no lugar do index.html, e o navegador tenta de novo na próxima abertura, já com sessão.
-  evento.waitUntil(caches.open(CASCA_VERSAO).then((cache) => cache.addAll(CASCA.map((u) => new Request(u, { redirect: 'error' })))));
+  // cache: 'reload' — a casca nova vem do servidor, nunca do cache HTTP do navegador (senão a versão nova guardaria arquivos velhos).
+  evento.waitUntil(caches.open(CASCA_VERSAO).then((cache) => cache.addAll(CASCA.map((u) => new Request(u, { redirect: 'error', cache: 'reload' })))));
   self.skipWaiting();
 });
 
@@ -74,8 +75,9 @@ self.addEventListener('fetch', (evento) => {
 
   // Rede primeiro: com servidor no ar, a casca vem sempre atualizada; sem
   // rede, cai no cache (navegação cai no index.html).
+  // cache: 'no-cache' — sempre pergunta ao servidor (um 304 quando nada mudou), em vez de confiar no cache HTTP do navegador.
   evento.respondWith(
-    fetch(evento.request)
+    fetch(evento.request, { cache: 'no-cache' })
       .then((resposta) => {
         if (resposta.ok) {
           const copia = resposta.clone();
@@ -86,6 +88,11 @@ self.addEventListener('fetch', (evento) => {
       .catch(() => caches.match(evento.request)
         .then((emCache) => emCache || (evento.request.mode === 'navigate' ? caches.match('index.html') : undefined))),
   );
+});
+
+// Ajustes mostra a versão em uso: a página pergunta, o service worker responde com a casca dele.
+self.addEventListener('message', (evento) => {
+  if (evento.data === 'versao' && evento.ports && evento.ports[0]) evento.ports[0].postMessage(CASCA_VERSAO);
 });
 
 // Avisos de processo concluído (D-96, ADR-048): a carga vem cifrada do servidor como {titulo, corpo, url}.
