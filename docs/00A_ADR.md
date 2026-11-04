@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.26.0** |
+| Versão do documento | **2.27.0** |
 | Status | **Congelado** |
 | Data | 2026-11-04 |
-| Total | 59 ADRs — 44 vigentes, 14 substituídas, 1 revogada |
+| Total | 60 ADRs — 45 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -87,6 +87,7 @@ que custa e o que foi descartado.
 | [ADR-057](#adr-057--peso-pela-banca-proposta-derivada-ajuste-aceito-em-tabela-própria) | Peso pela banca: proposta derivada, ajuste aceito em tabela própria | 2026-11-02 |
 | [ADR-058](#adr-058--qconcursos-por-atalho-e-volta-sem-api-sem-moldura-sem-raspagem) | QConcursos por atalho e volta: sem API, sem moldura, sem raspagem | 2026-11-04 |
 | [ADR-059](#adr-059--o-ensaio-calcula-pelo-registro-real-numa-transação-desfeita) | O ensaio calcula pelo registro real, numa transação desfeita | 2026-11-04 |
+| [ADR-060](#adr-060--tema-claro-e-escuro-por-variáveis-sob-as-classes-do-tailwind) | Tema claro e escuro por variáveis sob as classes do Tailwind | 2026-11-04 |
 
 ### 1.2 Históricas
 
@@ -987,6 +988,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.27.0 | 2026-11-04 | **ADR-060**, pedido do usuário: o tema claro e escuro troca o valor das cores do Tailwind por variáveis, sem variantes `dark:`; texto sobre a cor principal num token próprio. Com `04_FRONTEND` v1.20.0 (§8B). Total 60, 45 vigentes |
 | 2.26.0 | 2026-11-04 | **ADR-059**, pedido do usuário: "ver o que aconteceria" do ensaio chama o registro real numa transação desfeita; nada sai dela. Com `01_DOMINIO` v1.41.0 (D-157 a D-159). Total 59, 44 vigentes |
 | 2.25.0 | 2026-11-04 | **ADR-058**, pedido do usuário: o QConcursos entra por um endereço filtrado montado pelo SGE, aberto fora dele, e pela volta guardada no aparelho; sem API, sem moldura, sem automação; a banca pelo número do usuário ou por tabela embutida. Com `01_DOMINIO` v1.40.0 (D-150 a D-154). Total 58, 43 vigentes |
 | 2.24.0 | 2026-11-02 | **ADR-057**, pedido do usuário: a proposta de peso pela banca é consulta; o ajuste aceito mora em `peso_banca` e substitui o peso do edital em toda aplicação da cobertura até ser desfeito |
@@ -2341,6 +2343,39 @@ tolerância, roteamento, lote mínimo, consolidação, D-155).
 | Um simulador próprio da escada | Duplicaria limiares, janela, roteamento e consolidação; divergiria do registro na primeira mudança de regra |
 | Calcular no navegador | O navegador não tem a revisão pendente, a janela nem o histórico de resultados no alvo |
 | Gravar e apagar depois | Apagar fere D-18 e deixaria rastro em sequências e métricas |
+
+---
+
+## ADR-060 — Tema claro e escuro por variáveis sob as classes do Tailwind
+
+**Status:** Aceita · 2026-11-04 · pedido do usuário
+
+### Contexto
+
+A interface (`04_FRONTEND` §8B) ganha modo escuro. As telas usam classes do Tailwind com cor fixa (`bg-white`, `text-gray-900`,
+`bg-primary-50`, `bg-red-50`…), centenas de vezes, num app sem build (ADR-038).
+
+### Decisão
+
+- **As cores do `tailwind.config` passam a ser variáveis CSS** (`rgb(var(--…) / <alpha-value>)`): os neutros (`white`, `gray-*`), a
+  principal (`primary-*`), a de atenção (`alerta-*`) e as de estado (`red`, `green`, `amber`). O claro define as variáveis em `:root`;
+  o escuro as redefine em `:root.escuro` e, quando o aparelho pede, por `prefers-color-scheme` (sem a classe `claro`).
+- **No escuro, a escala dos neutros se inverte** (superfície escura, texto claro) e os fundos suaves de estado (`-50`, `-100`) viram
+  tons escuros da mesma cor. O texto sobre a cor principal usa um token próprio, sempre claro (`text-sobre`), no lugar de `text-white`.
+- A escolha de Ajustes é uma classe em `<html>`, guardada só no aparelho, aplicada antes do primeiro desenho (sem piscar).
+
+### Consequências
+
+- Nenhuma tela precisa de variante `dark:`; as classes continuam as mesmas, e tela nova já nasce com os dois temas.
+- O contraste é conferido por par de token, não por tela.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Variantes `dark:` em cada classe | Centenas de trocas, e toda tela nova teria de lembrar delas |
+| Uma folha de estilo que sobrescreve classes no escuro | Briga de especificidade com o Tailwind e quebra a cada classe nova |
+| Só claro | O usuário pediu o escuro |
 
 ---
 

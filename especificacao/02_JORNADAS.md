@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.31.0 |
+| Versão | 1.32.0 |
 | Data | 2026-11-04 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -958,6 +958,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.32.0 | 2026-11-04 | **J-2** ganha a forma da tela (`04_FRONTEND` §8B): Hoje abre na próxima ação, em destaque, com o progresso do dia; as telas de estudo ficam em modo foco, com as etapas à vista e a ação fixa embaixo. A sequência e os orçamentos de J-2 não mudam |
 | 1.31.0 | 2026-11-04 | Nova **J-18** (os próximos 7 dias, a prévia do material e o ensaio), com `01_DOMINIO` v1.41.0 (D-157 a D-159) e ADR-059 |
 | 1.30.0 | 2026-11-04 | Nova **J-17** (resolver no QConcursos: o atalho filtrado e a volta com o lote rápido aberto), com `01_DOMINIO` v1.40.0 (D-150 a D-156) e ADR-058; a volta entra no orçamento do lote rápido; anotar erros fica fora dele |
 | 1.29.0 | 2026-11-03 | Pedido do usuário. **J-10** ganha "passar as páginas": rolagem contínua por padrão, "uma página por vez (deslizar)" no menu, pinça para o zoom, o contador que leva a "ir para a página"; na rolagem contínua, a página de D-121 é a mais visível. Sem regra nova |
