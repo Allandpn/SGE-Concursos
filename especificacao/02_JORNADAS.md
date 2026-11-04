@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.32.0 |
-| Data | 2026-11-04 |
+| Versão | 1.33.0 |
+| Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -573,6 +573,16 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-19 · Testar sem mexer nos dados reais
+
+Ocasional: conferir a escada, as perguntas ou a reta final antes da data. Entrar em **2 toques**; avançar um dia em **1 toque**.
+
+1. Em Ajustes, **Entrar no modo de teste**. Na primeira vez, o banco de teste recebe a cópia dos dados reais (alguns segundos).
+2. A faixa **MODO DE TESTE · quinta, 05/11** aparece no topo de todas as telas, com **+1 dia**, **+7 dias**, **Ir para a data…** e
+   **Hoje de verdade**.
+3. Estudar, recuperar e registrar como sempre; avançar os dias e ver a escada andar.
+4. **Recomeçar** refaz a cópia dos dados reais. **Sair do modo de teste** volta ao real; o teste fica guardado para a próxima vez.
+
 ### J-18 · Ver os próximos dias e ensaiar
 
 Ocasional: planejar a semana ou testar uma tela. Orçamento de atenção; abrir uma prévia ou um ensaio em **2 toques**.
@@ -930,6 +940,7 @@ O documento de interface é quem amarra isso.
 | J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
 | J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
+| J-19 Modo de teste | Ajustes e a faixa em todas as telas | `04_FRONTEND` §8C, ADR-061 |
 | J-18 Próximos dias e ensaio | Hoje, Leitor, Recuperar, Registrar, Assuntos (detalhe) | D-157 a D-159, D-121, D-143, D-144 |
 | J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-133 |
 
@@ -958,6 +969,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.33.0 | 2026-11-05 | Nova **J-19** (modo de teste), com `04_FRONTEND` v1.21.0 §8C e ADR-061. Sem regra de domínio nova: o teste usa as mesmas regras sobre outra cópia dos dados |
 | 1.32.0 | 2026-11-04 | **J-2** ganha a forma da tela (`04_FRONTEND` §8B): Hoje abre na próxima ação, em destaque, com o progresso do dia; as telas de estudo ficam em modo foco, com as etapas à vista e a ação fixa embaixo. A sequência e os orçamentos de J-2 não mudam |
 | 1.31.0 | 2026-11-04 | Nova **J-18** (os próximos 7 dias, a prévia do material e o ensaio), com `01_DOMINIO` v1.41.0 (D-157 a D-159) e ADR-059 |
 | 1.30.0 | 2026-11-04 | Nova **J-17** (resolver no QConcursos: o atalho filtrado e a volta com o lote rápido aberto), com `01_DOMINIO` v1.40.0 (D-150 a D-156) e ADR-058; a volta entra no orçamento do lote rápido; anotar erros fica fora dele |

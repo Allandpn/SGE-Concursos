@@ -15,8 +15,8 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.20.0 |
-| Data | 2026-11-04 |
+| Versão | 1.21.0 |
+| Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
 
@@ -877,6 +877,25 @@ tokens de §8A e os neutros passam a ser variáveis (ADR-060): cada cor tem o pa
 
 ---
 
+## 8C. O modo de teste (Sprint 41)
+
+Pedido do usuário (2026-11-05), decidido em duas rodadas: testar o que depende de datas (a escada, as perguntas, a reta final)
+sem mexer nos dados reais.
+
+- **Entrar e sair:** em Ajustes, "Entrar no modo de teste". Vale **só para o aparelho que entrou**: o computador em teste e o celular
+  nos dados reais, ao mesmo tempo. Sair volta aos dados reais; o banco de teste fica como estava até "Recomeçar".
+- **Os dados:** ao entrar pela primeira vez (e a cada "Recomeçar"), o banco de teste recebe uma **cópia dos dados reais** (assuntos,
+  editais, conferência, material, sessões, revisões, perguntas, simulados, ajustes). O login e as passkeys não são copiados: são sempre
+  os reais.
+- **O tempo:** a faixa **MODO DE TESTE**, fixa no topo de todas as telas, mostra a data do teste e tem **+1 dia**, **+7 dias**,
+  **Ir para a data…** e **Hoje de verdade**. Tudo o que o app calcula pela data (a escada, Hoje, os próximos dias, a reta final, o
+  simulado da semana, o registro) passa a usar a data do teste.
+- **O que não roda no teste:** a IA (perguntas novas, leitura de edital), os avisos no celular e o envio de PDF ou edital novo. As
+  perguntas já preparadas vêm na cópia e aparecem nas recuperações.
+- **Nada volta para o real:** nenhum gesto no modo de teste escreve nos dados reais.
+
+---
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -910,6 +929,7 @@ tokens de §8A e os neutros passam a ser variáveis (ADR-060): cada cor tem o pa
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.21.0 | 2026-11-05 | §8C: o modo de teste — por aparelho, com a cópia dos dados reais, a data do teste que se avança e a faixa fixa; sem IA, sem avisos, sem envio de arquivo (ADR-061). Sprint 41 |
 | 1.20.0 | 2026-11-04 | §8B: o sistema visual (escala, espaço, toque, cartão, botões, ícones, datas, termos), o tema claro e escuro (ADR-060), a navegação por barra inferior e menu lateral, a tela Hoje com a próxima ação e as telas de estudo em modo foco. Sprints 39 e 40 |
 | 1.19.0 | 2026-11-01 | §7M: as telas da prova e do gabarito (Sprint 24, item 24.7) |
 | 1.18.0 | 2026-11-01 | §7L: a armadilha do `:disabled` com `undefined` (Sprint 32) |
