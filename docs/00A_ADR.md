@@ -2286,8 +2286,10 @@ cadernos. A página de questões passa por um desafio do Cloudflare e responde c
   computador, numa nova aba. O login do QConcursos é o do navegador da pessoa.
 - **A volta é do aparelho**: a saída (assunto, hora) fica em `localStorage`; ao voltar a página fica visível (`visibilitychange`) e o
   lote rápido abre. Nada vai ao servidor antes de registrar.
-- **A banca vem de dado do usuário ou de tabela embutida**: o número do QConcursos guardado no concurso (coluna nova, opcional), senão
-  uma tabela pequena das bancas comuns no código. Nenhuma chamada ao QConcursos em tempo de uso.
+- **Um catálogo próprio dos filtros**: os nomes dos parâmetros e os ids conhecidos (bancas, modalidades) num arquivo versionado,
+  marcando o que foi conferido por endereço real; as bancas vão para uma tabela (nome normalizado → número) semeada por ele e que
+  **aprende** quando a pessoa cola um endereço do QConcursos filtrado pela banca. O script de manutenção, no planejamento, só lê
+  endereços copiados do navegador. Nenhuma chamada ao QConcursos em tempo de uso.
 
 ### Consequências
 
@@ -2301,6 +2303,7 @@ cadernos. A página de questões passa por um desafio do Cloudflare e responde c
 | Abrir o QConcursos numa moldura (iframe) do SGE | `X-Frame-Options: SAMEORIGIN` recusa; o cookie de login viraria de terceiro e seria bloqueado; o SGE não leria a moldura de outra origem |
 | Ler as questões ou o resultado por automação de navegador | Exigiria contornar o desafio do Cloudflare; fora de questão |
 | Buscar a lista de bancas no `brokk` em tempo de uso | Responde 403 do Cloudflare; o atalho dependeria de um serviço que recusa acesso automático |
+| Atualizar o catálogo raspando a página com navegador automatizado | A página passa por verificação anti-robô; o catálogo cresce pelos endereços que a pessoa copia |
 | Guardar a saída no servidor | Ela só importa ao aparelho que saiu; no servidor viraria estado a limpar e abriria o lote em outro aparelho |
 
 ---

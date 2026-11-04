@@ -58,7 +58,7 @@ E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
 | Documento | Responde |
 |---|---|
 | `especificacao/00_PRODUTO.md` | Para que serve, e como saberemos que funcionou |
-| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 154 regras D-xx** |
+| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 156 regras D-xx** |
 | `especificacao/02_JORNADAS.md` | Como é usado, e quanto pode custar em segundos |
 | `especificacao/03_INVARIANTES.md` | Quem garante cada regra e como se testa |
 
@@ -102,7 +102,7 @@ desenhada para impedir.
 
 ## As regras D-xx
 
-`01_DOMINIO.md` §10 tem as 154. `03_INVARIANTES.md` §3 diz de cada uma: que
+`01_DOMINIO.md` §10 tem as 156. `03_INVARIANTES.md` §3 diz de cada uma: que
 natureza tem, em que camada mora, como se sabe que quebrou.
 
 **Todo código que implementa uma regra a cita pelo identificador**, e o

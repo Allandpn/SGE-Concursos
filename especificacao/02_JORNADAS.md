@@ -584,6 +584,9 @@ Frequente: em boa parte dos turnos. Ida em **1 toque**; a volta no orçamento do
 3. **Na volta** (fechar a aba no celular ou voltar à aba do SGE no computador), o lote rápido do assunto já está aberto, com o tempo
    desde a saída: feitas, certas, a previsão e **Registrar** (D-153).
 4. **Não fiz** fecha sem nada gravado; fechar no ✕ deixa para a próxima volta; depois de 6 h a saída é esquecida.
+5. Depois de Registrar, **Anotar erros** (opcional): para cada errada, o número Q, uma frase de por que errou, a causa e a confiança
+   (D-156). Fora do orçamento do lote; pular não perde nada.
+6. Banca do alvo fora do catálogo: em Concursos, colar uma vez um endereço do QConcursos filtrado por ela (D-151).
 
 ### J-16 · Registrar um simulado
 
@@ -913,7 +916,7 @@ O documento de interface é quem amarra isso.
 | J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
 | J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
-| J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-154, D-133 |
+| J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-133 |
 
 ---
 
@@ -940,7 +943,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
-| 1.30.0 | 2026-11-04 | Nova **J-17** (resolver no QConcursos: o atalho filtrado e a volta com o lote rápido aberto), com `01_DOMINIO` v1.40.0 (D-150 a D-154) e ADR-058; a volta entra no orçamento do lote rápido |
+| 1.30.0 | 2026-11-04 | Nova **J-17** (resolver no QConcursos: o atalho filtrado e a volta com o lote rápido aberto), com `01_DOMINIO` v1.40.0 (D-150 a D-156) e ADR-058; a volta entra no orçamento do lote rápido; anotar erros fica fora dele |
 | 1.29.0 | 2026-11-03 | Pedido do usuário. **J-10** ganha "passar as páginas": rolagem contínua por padrão, "uma página por vez (deslizar)" no menu, pinça para o zoom, o contador que leva a "ir para a página"; na rolagem contínua, a página de D-121 é a mais visível. Sem regra nova |
 | 1.28.0 | 2026-11-02 | Nova **J-16** (registrar um simulado) e o orçamento dele, com `01_DOMINIO` v1.39.0 (D-148, D-149). As disciplinas vêm em ordem alfabética (ajustado ao escrever o código: o edital não ordena as disciplinas entre si) |
 | 1.27.0 | 2026-11-02 | Nova **J-15** (peso pela banca), com `01_DOMINIO` v1.38.0 (D-145 a D-147) e ADR-057 |

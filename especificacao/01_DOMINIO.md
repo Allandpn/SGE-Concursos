@@ -1003,12 +1003,16 @@ certo com um toque e, **na volta**, abre o registro já preenchido. O que se fez
 conferência do edital ligou ao assunto (§3.12): os vigentes das partes aceitas ou decididas, na análise mais recente que tem o assunto.
 Nó de disciplina filtra a disciplina; nó de assunto filtra o assunto e a disciplina dele. Sem nó, o atalho filtra **a disciplina** — a
 da análise, senão a disciplina da árvore com o mesmo nome (sem acento e sem caixa) — e avisa "filtro pela disciplina". Sem nenhuma das
-duas, não há atalho. O filtro sempre tira as anuladas e as desatualizadas, fica nas **não resolvidas** pela pessoa e nos anos de
-*ano atual − N* até o atual (N é o parâmetro da banca, D-145).
+duas, não há atalho. O filtro sempre tira as anuladas e as desatualizadas, fica nas **não resolvidas** pela pessoa, nos anos de
+*ano atual − N* até o atual (N é o parâmetro da banca, D-145) e na **modalidade do alvo**: o formato que o lote rápido usaria
+(D-133) — múltipla escolha ou certo/errado —, para que o percentual digitado na volta seja medido contra os limiares certos (D-36).
+A página abre com o menor tamanho que o QConcursos aceita (5, 10, 15 ou 20) que caiba a sugestão de D-152.
 
-**A banca (D-151).** O filtro leva a banca do **concurso-alvo**: o número do QConcursos que a pessoa informou no concurso (colando um
-endereço do QConcursos filtrado pela banca, ou digitando o número); sem ele, o de uma tabela das bancas mais comuns, pelo nome sem
-acento e sem caixa (CESPE = Cebraspe). Sem alvo ou sem número, o atalho vai sem banca e avisa "sem filtro de banca".
+**A banca (D-151).** O filtro leva a banca do **concurso-alvo**, procurada pelo nome (sem acento e sem caixa; CESPE = Cebraspe) no
+**catálogo de bancas do QConcursos**. O catálogo nasce com as bancas conhecidas (FGV, CESPE/Cebraspe, FCC, VUNESP, Cesgranrio, IADES,
+AOCP e outras) e **aprende pelos endereços**: quando a banca não está nele, a pessoa cola no concurso um endereço do QConcursos filtrado
+por ela, e o número fica guardado para aquele nome, valendo para todo concurso da mesma banca. Sem alvo ou sem número, o atalho vai
+sem banca e avisa "sem filtro de banca".
 
 **Quantas (D-152).** O atalho sugere *máx(mínimo do lote, ⌊minutos do foco ÷ minutos por questão⌋)* questões: um foco de 25 min a
 3 min por questão dá 8. "Minutos por questão" é parâmetro (padrão 3) e passa a ser também o tempo do lote rápido sem foco (D-133).
@@ -1022,8 +1026,18 @@ de registrar.
 **Onde (D-154).** Em Hoje, em cada recuperação (a fila e as antecipáveis); no detalhe do assunto; no Diagnóstico, nos que ficam de
 fora; no Peso pela banca, nas propostas e nos ajustados.
 
+**Questões antes de ler (D-155).** Fazer questões de um assunto **nunca lido** — sem sessão que não seja de questões e sem revisão —
+conta nas métricas (M-1, M-2, M-3) e no tempo, mas **não abre a escada** nem tira o assunto do backlog: a fase, a frente, o ritmo e o
+diagnóstico só passam a vê-lo quando a leitura começa. Antes, a sessão de questões sem revisão pendente abria a escada no nível 1
+(recuperação espontânea, §3.3); isso continua valendo para o assunto já lido.
+
+**Anotar os erros (D-156).** Depois de registrar o lote, "Anotar erros" abre, opcional, até *feitas − certas* linhas: o número da
+questão no QConcursos (Q2318890), a descrição curta (a interrogação elaborativa, §3.5), a causa e a confiança. Cada linha vira um
+**Erro** (§3.5) ligado ao assunto e à sessão, e o número vira link para a questão. Pular não perde nada do lote.
+
 **O que o sistema não garante.** Que o QConcursos mantenha os nomes do endereço; que a pessoa esteja logada lá (sem login, "não
-resolvidas" não filtra nada); nem que o número digitado seja o que ela fez. Se o endereço mudar, só o atalho quebra; o registro continua.
+resolvidas" não filtra nada); nem que o número digitado seja o que ela fez. Os nomes dos parâmetros vêm de endereços copiados do
+navegador; o catálogo guarda quais foram conferidos assim. Se o endereço mudar, só o atalho quebra; o registro continua.
 
 ---
 
@@ -1736,7 +1750,7 @@ O assunto **não guarda** em que ponto do processo está. A fase é calculada:
 
 | Fase | Como se reconhece |
 |---|---|
-| **Backlog** | Cadastrado, sem sessão, fora da frente (§6.2) |
+| **Backlog** | Cadastrado, sem sessão, fora da frente (§6.2). Sessões só de questões, sem revisão, não contam (D-155) |
 | **Em estudo** | Tem sessão e ainda nenhuma revisão: a leitura começou e não terminou (D-54) |
 | **Em escada** | Tem revisão pendente com nível abaixo do máximo |
 | **Consolidado** | Escada concluída **e** os dois últimos resultados `SUCESSO` |
@@ -1936,11 +1950,13 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-147 | O peso pela banca só entra por aceite da pessoa; o ajuste aceito vale em toda aplicação da cobertura (ativar, reativar, reimportar) até ser desfeito, que volta ao peso do edital; prova nova muda a proposta, nunca o peso; no máximo um ajuste vigente por assunto e concurso | §3.23 |
 | D-148 | Simulado registrado à mão leva, por disciplina, certas, total e, opcional, em branco, com certas + brancos ≤ total; os brancos não entram na M-1 e, na nota em pontos com errada anula certa, erradas = total − certas − brancos | §3.6, §3.20 |
 | D-149 | Simulado errado é arquivado, nunca editado nem apagado; arquivado sai da M-1, da nota em pontos e do simulado da semana | §3.6 |
-| D-150 | O atalho "Resolver no QConcursos" filtra pelos nós vigentes das partes aceitas ou decididas da análise mais recente que tem o assunto (nó de assunto leva também a disciplina dele); sem nó, a disciplina da análise, senão a da árvore de mesmo nome, com aviso; sem nenhuma, não há atalho; sempre sem anuladas e desatualizadas, só não resolvidas e dos últimos N anos (D-145) | §3.24 |
-| D-151 | A banca do atalho é a do concurso-alvo: o número do QConcursos informado pela pessoa, senão o da tabela das bancas comuns pelo nome normalizado (CESPE = Cebraspe); sem alvo ou sem número, vai sem banca, com aviso | §3.24 |
+| D-150 | O atalho "Resolver no QConcursos" filtra pelos nós vigentes das partes aceitas ou decididas da análise mais recente que tem o assunto (nó de assunto leva também a disciplina dele); sem nó, a disciplina da análise, senão a da árvore de mesmo nome, com aviso; sem nenhuma, não há atalho; sempre sem anuladas e desatualizadas, só não resolvidas, dos últimos N anos (D-145) e na modalidade do formato do lote (D-133); a página no menor tamanho aceito (5, 10, 15, 20) que caiba a sugestão | §3.24 |
+| D-151 | A banca do atalho é a do concurso-alvo, achada pelo nome normalizado (CESPE = Cebraspe) no catálogo de bancas do QConcursos, que nasce com as conhecidas e aprende o número de um endereço filtrado pela banca colado pela pessoa, valendo para toda banca de mesmo nome; sem alvo ou sem número, vai sem banca, com aviso | §3.24 |
 | D-152 | O atalho sugere máx(mínimo do lote, ⌊minutos do foco ÷ minutos por questão⌋) questões; minutos por questão é parâmetro (padrão 3) e é também o tempo do lote rápido sem foco | §3.24, §3.3 |
 | D-153 | A saída para o QConcursos fica só no aparelho; ao voltar até 6 h depois, o lote rápido do assunto abre com o tempo desde a saída (os focos livres mandam); registrar ou "Não fiz" encerram, fechar adia; depois de 6 h é descartada sem abrir; uma por aparelho | §3.24 |
 | D-154 | O atalho aparece em cada recuperação de Hoje, no detalhe do assunto, nos que ficam de fora do Diagnóstico e nas propostas e ajustados do Peso pela banca | §3.24 |
+| D-155 | Sessão de questões em assunto nunca lido (sem sessão que não seja de questões e sem revisão) conta nas métricas, mas não cria revisão nem tira o assunto do backlog; fase, frente, ritmo e diagnóstico ignoram essas sessões até a leitura começar | §3.24, §3.3, §8 |
+| D-156 | Depois do lote, "Anotar erros" (opcional) cria até feitas − certas erros do assunto ligados à sessão, cada um com o número da questão no QConcursos, a descrição, a causa e a confiança | §3.24, §3.5 |
 
 ---
 
@@ -2032,7 +2048,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
-| 1.40.0 | 2026-11-04 | Pedido do usuário (Sprint 36), decidido em duas rodadas, com `02_JORNADAS` v1.30.0 e ADR-058. **§3.24** (questões no QConcursos) e **D-150 a D-154**: o atalho filtrado pelos nós do assunto (ou pela disciplina, com aviso), pela banca do alvo, sem anuladas e desatualizadas, só não resolvidas e dos últimos N anos; a sugestão de quantas pelo foco; a volta com o lote rápido aberto, guardada só no aparelho; onde o atalho aparece. **D-133**: o tempo sem foco passa a ser o parâmetro "minutos por questão" (padrão 3, antes 2 fixo). 154 regras |
+| 1.40.0 | 2026-11-04 | Pedido do usuário (Sprint 36), decidido em duas rodadas, com `02_JORNADAS` v1.30.0 e ADR-058. **§3.24** (questões no QConcursos) e **D-150 a D-154**: o atalho filtrado pelos nós do assunto (ou pela disciplina, com aviso), pela banca do alvo, sem anuladas e desatualizadas, só não resolvidas e dos últimos N anos; a sugestão de quantas pelo foco; a volta com o lote rápido aberto, guardada só no aparelho; onde o atalho aparece. **D-133**: o tempo sem foco passa a ser o parâmetro "minutos por questão" (padrão 3, antes 2 fixo). Numa segunda rodada: a modalidade do alvo no filtro, o catálogo de bancas que aprende pelos endereços colados, **D-155** (questões antes de ler só contam nas métricas; §8 ajustada) e **D-156** (anotar os erros do lote). 156 regras |
 | 1.39.0 | 2026-11-02 | Pedido do usuário (tela de simulado), decidido numa rodada, com `02_JORNADAS` v1.28.0. **§3.6**: o registro à mão com brancos (D-148) e o arquivamento (D-149); sai "implementação adiada". **§3.20**: a limitação dos brancos passa a valer só para quem não os informa |
 | 1.38.0 | 2026-11-02 | Pedido do usuário (Sprint 22), decidido em duas rodadas, com `02_JORNADAS` v1.27.0 e ADR-057. **§3.23** (peso pela banca) e **D-145 a D-147**: a incidência medida nas provas hospedadas da mesma banca (5 anos, mínimo de 2 provas e 30 questões por disciplina), a proposta de um degrau pelos terços dentro da disciplina, o aceite que sobrevive à reimportação até ser desfeito |
 | 1.37.0 | 2026-11-01 | Pedido do usuário (Sprint 21), decidido em duas rodadas, com `02_JORNADAS` v1.26.0 e ADR-056. **§3.22** (reta final) e **D-140 a D-144**: entra só por gesto da pessoa, sugerida a 8 semanas (parâmetro); ativa derivada, termina sozinha depois da prova; assunto novo só de peso alto; manutenção de médio e baixo fora da fila sem reescrever, a de peso alto antecipada até prova − 7 dias; simulado no fim de semana. §7.4 aponta para lá |
