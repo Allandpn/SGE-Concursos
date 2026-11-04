@@ -27,9 +27,24 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
     boolean existsByAssuntoId(Long assuntoId);
 
     // D-24 em lote (docs/SPRINT-16-CORRECOES-MULTIEDITAL.md §3): quais
-    // assuntos do conjunto têm alguma sessão, numa consulta só.
-    @Query("select distinct s.assunto.id from Sessao s where s.assunto.id in :assuntoIds")
+    // assuntos do conjunto já foram lidos, numa consulta só. D-155: sessão só
+    // de QUESTOES, sem nenhuma revisão do assunto, não tira do backlog.
+    @Query("""
+        select distinct s.assunto.id from Sessao s
+        where s.assunto.id in :assuntoIds
+          and (s.tipo <> br.com.estudos.shared.enums.TipoSessao.QUESTOES
+               or exists (select 1 from Revisao r where r.assunto.id = s.assunto.id))
+        """)
     Set<Long> assuntosComSessao(@Param("assuntoIds") Collection<Long> assuntoIds);
+
+    // D-155: o assunto já foi lido — alguma sessão que não é de questões, ou alguma revisão.
+    @Query("""
+        select count(s) > 0 from Sessao s
+        where s.assunto.id = :assuntoId
+          and (s.tipo <> br.com.estudos.shared.enums.TipoSessao.QUESTOES
+               or exists (select 1 from Revisao r where r.assunto.id = s.assunto.id))
+        """)
+    boolean assuntoJaLido(@Param("assuntoId") Long assuntoId);
 
     // D-54 (docs/SPRINT-17-USO-REAL.md §1.1): segmentos do assunto que já
     // tiveram alguma sessão ESTUDO — o que falta ler é derivado, não guardado.
@@ -68,11 +83,14 @@ public interface SessaoRepository extends JpaRepository<Sessao, Long> {
     List<ResultadoSessaoLinha> listarResultadosDosAtivos();
 
     // Balanço semanal (02_JORNADAS J-3): primeira sessão de cada assunto ativo.
+    // D-155: questões antes de ler não contam como entrada.
     @Query("""
         select s.assunto.id as assuntoId, min(s.data) as primeira
         from Sessao s
         where s.assunto.ativo = true
           and s.assunto.disciplina.ativo = true
+          and (s.tipo <> br.com.estudos.shared.enums.TipoSessao.QUESTOES
+               or exists (select 1 from Revisao r where r.assunto.id = s.assunto.id))
         group by s.assunto.id
         """)
     List<PrimeiraSessaoLinha> primeiraSessaoDosAtivos();

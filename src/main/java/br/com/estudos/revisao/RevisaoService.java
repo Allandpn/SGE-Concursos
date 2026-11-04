@@ -166,6 +166,11 @@ public class RevisaoService {
         var pendenteOpt = revisaoRepository.findByAssuntoIdAndSituacao(assunto.getId(), SituacaoRevisao.PENDENTE);
 
         if (pendenteOpt.isEmpty()) {
+            // D-155: questões num assunto nunca lido contam nas métricas, mas não abrem a escada.
+            if (sessao.getTipo() == TipoSessao.QUESTOES && !revisaoRepository.existsByAssuntoId(assunto.getId())
+                    && !sessaoRepository.assuntoJaLido(assunto.getId())) {
+                return;
+            }
             // Recuperação espontânea (01_DOMINIO §3.3): roteia a partir do nível 1
             // implícito, sem nada para marcar CUMPRIDA.
             criarProxima(sessao, 1, nivelAlvo(assunto.getPeso()), false);

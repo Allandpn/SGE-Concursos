@@ -75,7 +75,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 21 (ADR-056): a entrada e a saída da reta final.
                 "reta_final",
                 // Sprint 22 (ADR-057): o ajuste de peso aceito pela banca.
-                "peso_banca");
+                "peso_banca",
+                // Sprint 36 (ADR-058): o catálogo de bancas do QConcursos.
+                "qconcursos_banca");
         assertEquals(esperado, tabelasDoSchema());
     }
 

@@ -124,7 +124,16 @@ class RevisaoEscadaTest extends IntegracaoTestBase {
     void recuperacaoEspontanea_semPendente_criaRoteada() throws Exception {
         var assunto = novoAssunto("Espontanea");
 
-        registrar(questoes(assunto.getId(), LocalDate.of(2026, 1, 1), 9, 10)); // SUCESSO, sem ESTUDO antes
+        // D-155: questões sozinhas, num assunto nunca lido, não abrem a escada.
+        registrar(questoes(assunto.getId(), LocalDate.of(2026, 1, 1), 9, 10));
+        assertEquals(java.util.Optional.empty(),
+            revisaoRepository.findByAssuntoIdAndSituacao(assunto.getId(), br.com.estudos.shared.enums.SituacaoRevisao.PENDENTE));
+
+        // A recuperação livre, sem ESTUDO antes, é leitura de memória: roteia a partir do nível 1 implícito.
+        registrar("""
+            {"assuntoId": %d, "tipo": "RECUPERACAO", "data": "2026-01-02", "tempoMinutos": 8,
+             "previsaoReconstrucao": "SUCESSO", "resultado": "SUCESSO", "tentativaId": "%s"}
+            """.formatted(assunto.getId(), java.util.UUID.randomUUID()));
 
         var proxima = pendente(assunto.getId());
         assertEquals(2, proxima.getNivel(), "roteia a partir do nível 1 implícito");

@@ -8,6 +8,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface ErroRepository extends JpaRepository<Erro, Long> {
 
+    // D-156: quantos erros já estão ligados a um lote.
+    long countBySessaoId(Long sessaoId);
+
     // ADR-034 (open-in-view: false): ErroMapper lê assunto.id e sessao.id —
     // sem join fetch seria N+1 (09_CODE_STYLE checklist). sessao é opcional
     // (D-46), por isso left join.

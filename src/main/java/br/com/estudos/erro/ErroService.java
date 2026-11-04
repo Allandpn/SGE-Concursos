@@ -60,11 +60,17 @@ public class ErroService {
             throw new ValidationException("Confiança é obrigatória.", "CONFIANCA_OBRIGATORIA", "confianca");
         }
 
+        var questao = questaoExterna(request.questaoExterna());
+        if (request.sessaoId() != null) {
+            limiteDoLote(request.sessaoId());
+        }
+
         var erro = new Erro();
         erro.setAssunto(assuntoRepository.getReferenceById(request.assuntoId()));
         if (request.sessaoId() != null) {
             erro.setSessao(sessaoRepository.getReferenceById(request.sessaoId()));
         }
+        erro.setQuestaoExterna(questao);
         erro.setDescricao(request.descricao());
         erro.setCausa(request.causa());
         erro.setConfianca(request.confianca());
@@ -75,6 +81,32 @@ public class ErroService {
         } catch (DataIntegrityViolationException e) {
             throw traduzirViolacaoDeIntegridade(e);
         }
+    }
+
+    private static final java.util.regex.Pattern QUESTAO = java.util.regex.Pattern.compile("Q?(\\d{4,10})");
+
+    /** D-156: "q2318890", " Q2318890 " ou "2318890" viram "Q2318890"; outro formato é recusado. */
+    static String questaoExterna(String bruto) {
+        if (bruto == null || bruto.isBlank()) return null;
+        var m = QUESTAO.matcher(bruto.trim().toUpperCase(java.util.Locale.ROOT));
+        if (!m.matches()) {
+            throw new ValidationException("O número da questão é um Q seguido de 4 a 10 dígitos (ex.: Q2318890).", "QUESTAO_INVALIDA",
+                "questaoExterna");
+        }
+        return "Q" + m.group(1);
+    }
+
+    /** D-156: numa sessão de questões, no máximo total − corretas erros ligados a ela. */
+    private void limiteDoLote(Long sessaoId) {
+        sessaoRepository.findById(sessaoId).ifPresent(s -> {
+            if (s.getTipo() != br.com.estudos.shared.enums.TipoSessao.QUESTOES || s.getQuestoesTotal() == null) return;
+            var erradas = s.getQuestoesTotal() - (s.getQuestoesCorretas() == null ? 0 : s.getQuestoesCorretas());
+            if (erroRepository.countBySessaoId(sessaoId) >= erradas) {
+                throw new br.com.estudos.shared.exception.BusinessRuleException(
+                    "Este lote teve " + erradas + (erradas == 1 ? " errada" : " erradas") + "; não cabem mais erros nele.",
+                    "ERROS_ACIMA_DO_LOTE");
+            }
+        });
     }
 
     /** Lista os erros de um assunto. */

@@ -1,7 +1,9 @@
 // js/leitor.js — o Leitor (J-10; 01_DOMINIO §3.17, D-114 a D-121; ADR-052; docs/SPRINT-31-LEITOR.md §4).
 //
-// Uma página por vez: canvas do PDF.js, a camada de texto dele por cima (para selecionar) e, entre as duas, a camada
-// das marcações. Toda posição é guardada em fração da página, então serve em qualquer largura e zoom.
+// Cada página é um elemento próprio: canvas do PDF.js, a camada de texto dele por cima (para selecionar) e, entre as duas,
+// a camada das marcações. Toda posição é guardada em fração da página, então serve em qualquer largura e zoom.
+// Passar as páginas (J-10, Sprint 35): rolagem contínua (padrão; cada página desenhada ao chegar perto da tela) ou uma
+// página por vez, deslizando para o lado. Pinça amplia; o contador abre "ir para a página".
 // Cada gesto vira uma mudança com identificador do aparelho (D-118), aplicada aqui na hora e mandada pela fila.
 
 const PDFJS = '/vendor/pdfjs-4.10.38/';
@@ -44,7 +46,13 @@ function juntarRetangulos(rets) {
 document.addEventListener('alpine:init', () => {
   // O documento e a renderização do PDF.js ficam fora do estado reativo: o Alpine os embrulharia num Proxy, e os campos
   // privados das classes do PDF.js (#campo) quebram atrás de um Proxy.
-  const pdf = { doc: null, render: null, geracao: 0 };
+  // `paginas`: uma entrada por página — o elemento, as camadas, o tamanho em escala 1 e se está desenhada.
+  const pdf = { doc: null, geracao: 0, paginas: [], observador: null };
+  const MODO_PADRAO = 'continua';
+
+  function lerModo() {
+    try { return window.localStorage.getItem('leitor.modo') === 'pagina' ? 'pagina' : MODO_PADRAO; } catch (e) { return MODO_PADRAO; }
+  }
 
   Alpine.data('paginaLeitor', () => ({
     segmentoId: null,
@@ -71,12 +79,17 @@ document.addEventListener('alpine:init', () => {
     _timerPagina: null,
     _timerFila: null,
     _toque: null,
+    modo: MODO_PADRAO, // 'continua' | 'pagina' — guardado no aparelho (J-10)
+    irParaAberto: false,
+    irParaNumero: '',
+    _gesto: null, // deslizar ou pinça em andamento
 
     init() {
+      this.modo = lerModo();
       window.addEventListener('online', () => { this.online = true; this.enviarFila(); });
       window.addEventListener('offline', () => { this.online = false; });
       document.addEventListener('selectionchange', () => this.lerSelecao());
-      window.addEventListener('resize', () => { if (pdf.doc) this.desenhar(); });
+      window.addEventListener('resize', () => { if (pdf.doc) this.redimensionar(); });
     },
 
     // Chamado pelo router em #/ler/{id}.
@@ -95,6 +108,7 @@ document.addEventListener('alpine:init', () => {
       this.carregando = true;
       this.online = navigator.onLine;
       pdf.doc = null;
+      this.desmontarPaginas();
       const guardadoLocal = await offline.bloco(segmentoId);
       this.guardado = !!guardadoLocal;
       try {
@@ -135,7 +149,8 @@ document.addEventListener('alpine:init', () => {
       this.pagina = Math.min(Math.max(paginaPedida || this.leitura.ultimaPagina || 1, 1), this.totalPaginas);
       this.carregando = false;
       await this.$nextTick();
-      await this.desenhar();
+      await this.montarPaginas();
+      this.posicionarEm(this.pagina);
       this.enviarFila();
       this._timerFila = setInterval(() => this.enviarFila(), 30000);
     },
@@ -143,6 +158,7 @@ document.addEventListener('alpine:init', () => {
     parar() {
       clearInterval(this._timerFila);
       this._timerFila = null;
+      this.irParaAberto = false;
     },
 
     // As marcações do servidor (ou as guardadas), com as mudanças ainda na fila por cima.
@@ -188,64 +204,252 @@ document.addEventListener('alpine:init', () => {
       this.pendentes = await offline.enviar();
     },
 
-    // --- Página ------------------------------------------------------------------------------------------------
+    // --- Páginas -----------------------------------------------------------------------------------------------
 
-    async desenhar() {
-      if (!pdf.doc) return;
-      // Dois desenhos seguidos (abrir, zoom, girar a tela): o mais antigo desiste em vez de montar uma camada de texto velha.
-      const geracao = ++pdf.geracao;
-      const n = this.pagina;
-      const pagina = await pdf.doc.getPage(n);
-      const caixa = this.$refs.pagina;
-      const largura = Math.max(caixa.parentElement.clientWidth - 2, 200);
-      const base = pagina.getViewport({ scale: 1 });
-      const escala = (largura / base.width) * this.zoom;
-      const vista = pagina.getViewport({ scale: escala });
-      const dpr = window.devicePixelRatio || 1;
-      const canvas = this.$refs.canvas;
-      canvas.width = Math.floor(vista.width * dpr);
-      canvas.height = Math.floor(vista.height * dpr);
-      canvas.style.width = `${Math.floor(vista.width)}px`;
-      canvas.style.height = `${Math.floor(vista.height)}px`;
-      caixa.style.width = `${Math.floor(vista.width)}px`;
-      caixa.style.height = `${Math.floor(vista.height)}px`;
-      caixa.style.setProperty('--scale-factor', String(escala));
-      if (pdf.render) pdf.render.cancel();
-      pdf.render = pagina.render({ canvasContext: canvas.getContext('2d'), viewport: vista, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null });
-      try {
-        await pdf.render.promise;
-      } catch (e) {
-        return; // outra página pediu desenho no meio
+    desmontarPaginas() {
+      if (pdf.observador) pdf.observador.disconnect();
+      pdf.observador = null;
+      pdf.paginas = [];
+      pdf.geracao++;
+      if (this.$refs.paginas) this.$refs.paginas.innerHTML = '';
+    },
+
+    // Um elemento por página, com o tamanho certo desde já (a rolagem precisa da altura de todas); o desenho vem depois.
+    async montarPaginas() {
+      this.desmontarPaginas();
+      const conteudo = this.$refs.paginas;
+      for (let n = 1; n <= this.totalPaginas; n++) {
+        const pagina = await pdf.doc.getPage(n);
+        const base = pagina.getViewport({ scale: 1 });
+        const el = document.createElement('div');
+        el.className = 'leitor-pagina';
+        el.dataset.pagina = String(n);
+        el.innerHTML = '<canvas></canvas><div class="leitor-marcas"></div><div class="textLayer"></div><div class="leitor-pinos"></div>';
+        const p = { n, el, canvas: el.children[0], marcas: el.children[1], texto: el.children[2], pinos: el.children[3],
+          largura: base.width, altura: base.height, escala: 1, desenhada: false, desenhando: false, tarefa: null };
+        el.addEventListener('click', (e) => this.tocarPagina(e, p));
+        el.addEventListener('dblclick', (e) => { e.preventDefault(); this.criarNotaDePagina(this.pontoNaPagina(e, p), p.n); });
+        el.addEventListener('touchstart', (e) => { if (e.touches.length === 1) this.comecarToque(e, p); else this.cancelarToque(); }, { passive: true });
+        el.addEventListener('touchend', () => this.cancelarToque());
+        el.addEventListener('touchmove', () => this.cancelarToque(), { passive: true });
+        conteudo.appendChild(el);
+        pdf.paginas.push(p);
       }
-      if (geracao !== pdf.geracao) return;
-      const camada = this.$refs.texto;
-      camada.innerHTML = '';
-      const lib = await carregarPdfjs();
-      const texto = new lib.TextLayer({ textContentSource: pagina.streamTextContent(), container: camada, viewport: vista });
-      await texto.render();
-      if (geracao !== pdf.geracao) return;
-      this.desenharMarcacoes();
+      this.diagramar();
+      // Rolagem contínua: desenha o que está a até uma tela e meia; solta o canvas do que se afastou (memória do celular).
+      pdf.observador = new IntersectionObserver((entradas) => {
+        for (const e of entradas) {
+          const p = pdf.paginas[Number(e.target.dataset.pagina) - 1];
+          if (!p) continue;
+          if (e.isIntersecting) this.desenharPagina(p);
+          else this.soltarPagina(p);
+        }
+      }, { root: this.$refs.rolagem, rootMargin: '150% 0px' });
+      pdf.paginas.forEach((p) => pdf.observador.observe(p.el));
+      this.mostrarModo();
+    },
+
+    // Largura da tela × zoom; muda o tamanho de todas e marca para redesenhar.
+    diagramar() {
+      const largura = Math.max(this.$refs.rolagem.clientWidth - 18, 200);
+      pdf.geracao++;
+      for (const p of pdf.paginas) {
+        p.escala = (largura / p.largura) * this.zoom;
+        const w = Math.floor(p.largura * p.escala);
+        const h = Math.floor(p.altura * p.escala);
+        p.el.style.width = `${w}px`;
+        p.el.style.height = `${h}px`;
+        p.el.style.setProperty('--scale-factor', String(p.escala));
+        this.soltarPagina(p);
+      }
+    },
+
+    // Uma página por vez: só a atual aparece. Rolagem contínua: todas, uma embaixo da outra.
+    mostrarModo() {
+      for (const p of pdf.paginas) p.el.style.display = this.modo === 'pagina' && p.n !== this.pagina ? 'none' : '';
+      if (this.modo === 'pagina') {
+        const atual = pdf.paginas[this.pagina - 1];
+        if (atual) this.desenharPagina(atual);
+      }
+    },
+
+    async desenharPagina(p) {
+      if (p.desenhada || p.desenhando || p.el.style.display === 'none') return;
+      p.desenhando = true;
+      const geracao = pdf.geracao;
+      try {
+        const pagina = await pdf.doc.getPage(p.n);
+        const vista = pagina.getViewport({ scale: p.escala });
+        const dpr = window.devicePixelRatio || 1;
+        p.canvas.width = Math.floor(vista.width * dpr);
+        p.canvas.height = Math.floor(vista.height * dpr);
+        p.canvas.style.width = `${Math.floor(vista.width)}px`;
+        p.canvas.style.height = `${Math.floor(vista.height)}px`;
+        p.tarefa = pagina.render({ canvasContext: p.canvas.getContext('2d'), viewport: vista, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null });
+        await p.tarefa.promise;
+        if (geracao !== pdf.geracao) return;
+        p.texto.innerHTML = '';
+        const lib = await carregarPdfjs();
+        const texto = new lib.TextLayer({ textContentSource: pagina.streamTextContent(), container: p.texto, viewport: vista });
+        await texto.render();
+        if (geracao !== pdf.geracao) return;
+        p.desenhada = true;
+        this.desenharMarcacoesDa(p);
+      } catch (e) {
+        // desenho cancelado (zoom, outra tela): a próxima chamada desenha de novo
+      } finally {
+        p.desenhando = false;
+        p.tarefa = null;
+        // O zoom mudou no meio: se a página ainda está à vista, desenha na escala nova.
+        if (!p.desenhada && geracao !== pdf.geracao && this.paginaVisivel(p)) this.desenharPagina(p);
+      }
+    },
+
+    soltarPagina(p) {
+      if (p.tarefa) { try { p.tarefa.cancel(); } catch (e) { /* já terminou */ } }
+      p.desenhada = false;
+      p.canvas.width = 0;
+      p.canvas.height = 0;
+      p.texto.innerHTML = '';
+      p.marcas.innerHTML = '';
+      p.pinos.innerHTML = '';
+    },
+
+    paginaVisivel(p) {
+      if (p.el.style.display === 'none') return false;
+      const r = this.$refs.rolagem.getBoundingClientRect();
+      const q = p.el.getBoundingClientRect();
+      return q.bottom > r.top - r.height * 1.5 && q.top < r.bottom + r.height * 1.5;
+    },
+
+    // Rolagem contínua: a página mais visível é a do contador e a que o leitor guarda (D-121).
+    aoRolar() {
+      if (this.modo !== 'continua' || !pdf.paginas.length || this._gesto) return;
+      const r = this.$refs.rolagem.getBoundingClientRect();
+      let melhor = this.pagina;
+      let area = 0;
+      for (const p of pdf.paginas) {
+        const q = p.el.getBoundingClientRect();
+        const visivel = Math.min(q.bottom, r.bottom) - Math.max(q.top, r.top);
+        if (visivel > area) { area = visivel; melhor = p.n; }
+      }
+      if (melhor !== this.pagina) {
+        this.pagina = melhor;
+        this.guardarPaginaDepois();
+      }
+    },
+
+    posicionarEm(n) {
+      const p = pdf.paginas[n - 1];
+      if (!p) return;
+      if (this.modo === 'pagina') {
+        this.mostrarModo();
+        this.$refs.rolagem.scrollTop = 0;
+      } else {
+        this.$refs.rolagem.scrollTop = p.el.offsetTop - 8;
+      }
     },
 
     irPara(n) {
-      const alvo = Math.min(Math.max(1, n), this.totalPaginas);
-      if (alvo === this.pagina) return;
-      this.pagina = alvo;
+      const alvo = Math.min(Math.max(1, Number(n) || 1), this.totalPaginas);
       this.selecao = null;
       this.painel = null;
       this.listaAberta = false;
-      this.desenhar();
-      this.$refs.rolagem.scrollTop = 0;
-      // D-121: guarda a página (com rede); sem rede, só o que está aberto.
+      this.irParaAberto = false;
+      const mudou = alvo !== this.pagina;
+      this.pagina = alvo;
+      this.posicionarEm(alvo);
+      if (mudou) this.guardarPaginaDepois();
+    },
+
+    // D-121: guarda a página (com rede); sem rede, só o que está aberto.
+    guardarPaginaDepois() {
       clearTimeout(this._timerPagina);
       this._timerPagina = setTimeout(() => {
         if (navigator.onLine) api(`/segmentos/${this.segmentoId}/leitura`, { method: 'PUT', body: JSON.stringify({ pagina: this.pagina }) }).catch(() => {});
       }, 800);
     },
 
+    abrirIrPara() {
+      this.irParaNumero = String(this.pagina);
+      this.irParaAberto = true;
+      this.menuAberto = false;
+    },
+
+    escolherModo(modo) {
+      this.menuAberto = false;
+      if (modo === this.modo) return;
+      this.modo = modo;
+      try { window.localStorage.setItem('leitor.modo', modo); } catch (e) { /* sem armazenamento: vale só agora */ }
+      this.mostrarModo();
+      this.$nextTick(() => this.posicionarEm(this.pagina));
+    },
+
+    // Zoom pelos botões ou pela pinça: mantém a mesma página à vista.
     mudarZoom(fator) {
-      this.zoom = Math.min(Math.max(this.zoom * fator, 0.6), 3);
-      this.desenhar();
+      const novo = Math.min(Math.max(this.zoom * fator, 0.6), 4);
+      if (Math.abs(novo - this.zoom) < 0.01) return;
+      const rolagem = this.$refs.rolagem;
+      const p = pdf.paginas[this.pagina - 1];
+      const dentro = p && this.modo === 'continua' ? (rolagem.scrollTop - p.el.offsetTop) / Math.max(p.el.offsetHeight, 1) : 0;
+      this.zoom = novo;
+      this.diagramar();
+      if (p && this.modo === 'continua') rolagem.scrollTop = p.el.offsetTop + dentro * p.el.offsetHeight;
+      for (const q of pdf.paginas) if (this.paginaVisivel(q)) this.desenharPagina(q);
+    },
+
+    redimensionar() {
+      const p = pdf.paginas[this.pagina - 1];
+      this.diagramar();
+      if (p) this.posicionarEm(this.pagina);
+      for (const q of pdf.paginas) if (this.paginaVisivel(q)) this.desenharPagina(q);
+    },
+
+    // --- Gestos: pinça (os dois modos) e deslizar (uma página por vez) -----------------------------------------
+
+    gestoInicio(e) {
+      if (e.touches.length === 2) {
+        const [a, b] = e.touches;
+        const caixa = this.$refs.paginas.getBoundingClientRect();
+        this._gesto = { tipo: 'pinca', d0: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), fator: 1,
+          ox: (a.clientX + b.clientX) / 2 - caixa.left, oy: (a.clientY + b.clientY) / 2 - caixa.top };
+        this.cancelarToque();
+      } else if (e.touches.length === 1 && this.modo === 'pagina') {
+        const t = e.touches[0];
+        this._gesto = { tipo: 'deslizar', x: t.clientX, y: t.clientY, t: Date.now() };
+      }
+    },
+
+    gestoMovimento(e) {
+      const g = this._gesto;
+      if (!g || g.tipo !== 'pinca' || e.touches.length !== 2) return;
+      const [a, b] = e.touches;
+      g.fator = Math.min(Math.max(Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / Math.max(g.d0, 1), 0.5), 3);
+      // Durante o gesto, só uma escala visual; o desenho de verdade vem ao soltar.
+      Object.assign(this.$refs.paginas.style, { transformOrigin: `${g.ox}px ${g.oy}px`, transform: `scale(${g.fator})` });
+    },
+
+    gestoFim(e) {
+      const g = this._gesto;
+      if (!g) return;
+      if (g.tipo === 'pinca') {
+        if (e.touches.length > 0) return; // ainda há dedo na tela
+        this._gesto = null;
+        this.$refs.paginas.style.transform = '';
+        if (Math.abs(g.fator - 1) > 0.05) this.mudarZoom(g.fator);
+        return;
+      }
+      this._gesto = null;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - g.x;
+      const dy = t.clientY - g.y;
+      const rolagem = this.$refs.rolagem;
+      const ampliada = rolagem.scrollWidth > rolagem.clientWidth + 4;
+      const selecionando = window.getSelection() && !window.getSelection().isCollapsed;
+      // Deslizar de verdade: rápido, mais para o lado que para cima; ignorado ao selecionar texto ou com a página ampliada.
+      if (selecionando || ampliada || this.selecao || this.painel) return;
+      if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6 || Date.now() - g.t > 700) return;
+      this.irPara(this.pagina + (dx < 0 ? 1 : -1));
     },
 
     get blocoAnterior() {
@@ -270,12 +474,15 @@ document.addEventListener('alpine:init', () => {
     },
 
     desenharMarcacoes() {
-      const camada = this.$refs.marcas;
-      const pinos = this.$refs.pinos;
-      if (!camada || !pinos) return;
+      for (const p of pdf.paginas) if (p.desenhada) this.desenharMarcacoesDa(p);
+    },
+
+    desenharMarcacoesDa(p) {
+      const camada = p.marcas;
+      const pinos = p.pinos;
       camada.innerHTML = '';
       pinos.innerHTML = '';
-      for (const m of this.vigentes.filter((x) => x.pagina === this.pagina)) {
+      for (const m of this.vigentes.filter((x) => x.pagina === p.n)) {
         if (m.tipo === 'DESTAQUE') {
           const cor = CORES[m.cor] || CORES.IMPORTANTE;
           m.retangulos.forEach((r, i) => {
@@ -311,28 +518,30 @@ document.addEventListener('alpine:init', () => {
     lerSelecao() {
       if (!pdf.doc || this.painel) return;
       const sel = window.getSelection();
-      const camada = this.$refs.texto;
-      if (!sel || sel.isCollapsed || !sel.rangeCount || !camada || !camada.contains(sel.anchorNode)) {
+      const p = sel && sel.anchorNode ? pdf.paginas.find((x) => x.texto.contains(sel.anchorNode)) : null;
+      if (!sel || sel.isCollapsed || !sel.rangeCount || !p) {
         if (this.selecao && (!sel || sel.isCollapsed)) setTimeout(() => { if (window.getSelection().isCollapsed) this.selecao = null; }, 250);
         return;
       }
       const citacao = sel.toString().replace(/\s+/g, ' ').trim();
       if (!citacao) return;
-      const caixa = this.$refs.pagina.getBoundingClientRect();
+      const caixa = p.el.getBoundingClientRect();
       const rets = [...sel.getRangeAt(0).getClientRects()]
         .map((r) => [(r.left - caixa.left) / caixa.width, (r.top - caixa.top) / caixa.height, r.width / caixa.width, r.height / caixa.height])
         .filter((r) => r[0] > -0.01 && r[1] > -0.01 && r[0] < 1 && r[1] < 1);
       const retangulos = juntarRetangulos(rets);
       if (!retangulos.length) return;
       const ultimo = retangulos[retangulos.length - 1];
-      this.selecao = { retangulos, citacao: citacao.slice(0, 2000), x: Math.min(ultimo[0], 0.55), y: ultimo[1] + ultimo[3] };
+      // A barra de cores fica logo abaixo do trecho, em pixels dentro da área das páginas (vale nos dois modos).
+      this.selecao = { pagina: p.n, retangulos, citacao: citacao.slice(0, 2000),
+        left: p.el.offsetLeft + Math.min(ultimo[0], 0.55) * p.el.offsetWidth, top: p.el.offsetTop + (ultimo[1] + ultimo[3]) * p.el.offsetHeight + 6 };
     },
 
     async marcar(cor, comNota = false) {
       if (!this.selecao) return;
       const chave = crypto.randomUUID();
       await this.mudar({
-        marcacaoChave: chave, segmentoId: this.segmentoId, pagina: this.pagina, tipo: 'DESTAQUE',
+        marcacaoChave: chave, segmentoId: this.segmentoId, pagina: this.selecao.pagina, tipo: 'DESTAQUE',
         retangulos: this.selecao.retangulos, citacao: this.selecao.citacao, cor,
       });
       window.getSelection().removeAllRanges();
@@ -341,21 +550,21 @@ document.addEventListener('alpine:init', () => {
     },
 
     // Toque fora de texto: em cima de um destaque abre o painel; tocar e segurar (ou clique duplo) cria nota de página.
-    tocarPagina(evento) {
+    tocarPagina(evento, p) {
       if (this.selecao || (window.getSelection() && !window.getSelection().isCollapsed)) return;
-      const ponto = this.pontoNaPagina(evento);
-      const alvo = this.vigentes.find((m) => m.tipo === 'DESTAQUE' && m.pagina === this.pagina
+      const ponto = this.pontoNaPagina(evento, p);
+      const alvo = this.vigentes.find((m) => m.tipo === 'DESTAQUE' && m.pagina === p.n
         && m.retangulos.some((r) => ponto.x >= r[0] && ponto.x <= r[0] + r[2] && ponto.y >= r[1] - 0.004 && ponto.y <= r[1] + r[3] + 0.004));
       if (alvo) this.abrirPainel(alvo);
       else if (this.painel) this.fecharPainel();
     },
 
-    comecarToque(evento) {
-      const ponto = this.pontoNaPagina(evento);
+    comecarToque(evento, p) {
+      const ponto = this.pontoNaPagina(evento, p);
       clearTimeout(this._toque);
       this._toque = setTimeout(() => {
         if (window.getSelection() && !window.getSelection().isCollapsed) return;
-        this.criarNotaDePagina(ponto);
+        this.criarNotaDePagina(ponto, p.n);
       }, 650);
     },
 
@@ -363,15 +572,15 @@ document.addEventListener('alpine:init', () => {
       clearTimeout(this._toque);
     },
 
-    pontoNaPagina(evento) {
-      const caixa = this.$refs.pagina.getBoundingClientRect();
+    pontoNaPagina(evento, p) {
+      const caixa = p.el.getBoundingClientRect();
       const t = evento.touches ? evento.touches[0] : evento;
       return { x: Math.min(Math.max((t.clientX - caixa.left) / caixa.width, 0), 1), y: Math.min(Math.max((t.clientY - caixa.top) / caixa.height, 0), 1) };
     },
 
-    criarNotaDePagina(ponto) {
+    criarNotaDePagina(ponto, n) {
       this.selecao = null;
-      this.painel = { novo: true, tipo: 'NOTA_PAGINA', posicaoX: Math.round(ponto.x * 10000) / 10000, posicaoY: Math.round(ponto.y * 10000) / 10000 };
+      this.painel = { novo: true, tipo: 'NOTA_PAGINA', pagina: n, posicaoX: Math.round(ponto.x * 10000) / 10000, posicaoY: Math.round(ponto.y * 10000) / 10000 };
       this.notaTexto = '';
     },
 
@@ -402,14 +611,14 @@ document.addEventListener('alpine:init', () => {
       const texto = this.notaTexto.trim();
       if (m.novo) {
         if (texto) {
-          await this.mudar({ marcacaoChave: crypto.randomUUID(), segmentoId: this.segmentoId, pagina: this.pagina, tipo: 'NOTA_PAGINA',
+          await this.mudar({ marcacaoChave: crypto.randomUUID(), segmentoId: this.segmentoId, pagina: m.pagina, tipo: 'NOTA_PAGINA',
             posicaoX: m.posicaoX, posicaoY: m.posicaoY, texto });
         }
       } else if (m.tipo === 'DESTAQUE') {
         const nota = this.notaDe(m);
         if (nota && nota.texto !== texto) await this.mudar({ marcacaoChave: nota.chave, texto: texto || null, removida: !texto });
         else if (!nota && texto) {
-          await this.mudar({ marcacaoChave: crypto.randomUUID(), segmentoId: this.segmentoId, pagina: this.pagina, tipo: 'NOTA_TRECHO',
+          await this.mudar({ marcacaoChave: crypto.randomUUID(), segmentoId: this.segmentoId, pagina: m.pagina, tipo: 'NOTA_TRECHO',
             destaqueChave: m.chave, texto });
         }
       } else if (m.texto !== texto) {
@@ -461,7 +670,7 @@ document.addEventListener('alpine:init', () => {
 
     irParaMarcacao(m) {
       this.listaAberta = false;
-      if (m.pagina !== this.pagina) this.irPara(m.pagina);
+      this.irPara(m.pagina);
       setTimeout(() => this.abrirPainel(m), 300);
     },
 
