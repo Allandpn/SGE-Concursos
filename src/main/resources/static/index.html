@@ -41,6 +41,7 @@
   <script src="js/leitor.js"></script>
   <script src="js/prova.js"></script>
   <script src="js/qconcursos.js"></script>
+  <script src="js/ensaio.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/router.js"></script>
   <script>
@@ -105,6 +106,8 @@
         <span>● Sem rede</span><span x-show="pendentes > 0" x-text="'· marcações por enviar: ' + pendentes"></span>
       </div>
     </template>
+    <!-- D-158: a prévia é só leitura -->
+    <p x-show="previa" id="leitor-previa" class="border-b border-primary-100 bg-primary-50 px-4 py-2 text-sm font-medium text-primary-800">Prévia · só leitura. Reler antes da recuperação deixa o resultado melhor que a memória.</p>
     <div class="sticky top-0 z-20 flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
       <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 text-gray-600" aria-label="Voltar" @click="voltar()">←</button>
       <div class="min-w-0 flex-1">
@@ -181,8 +184,8 @@
         <button type="button" class="min-h-11 rounded border border-gray-200 px-3 tabular-nums text-gray-700 underline decoration-dotted" id="leitor-contador"
                 @click="abrirIrPara()" aria-label="Ir para a página" x-text="pagina + ' / ' + totalPaginas"></button>
         <span class="flex-1"></span>
-        <a x-show="pagina >= totalPaginas && blocoSeguinte" :href="'#/ler/' + blocoSeguinte?.id" class="text-sm text-primary-700 underline">Próximo bloco</a>
-        <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white disabled:opacity-40" :disabled="!online" @click="terminei()"
+        <a x-show="pagina >= totalPaginas && blocoSeguinte" :href="'#/ler/' + blocoSeguinte?.id + (previa ? '?previa=1' : '')" class="text-sm text-primary-700 underline">Próximo bloco</a>
+        <button type="button" x-show="!previa" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-white disabled:opacity-40" :disabled="!online" @click="terminei()"
           :title="online ? '' : 'Registrar a sessão precisa de rede'">Terminei</button>
       </div>
     </div>
@@ -644,7 +647,51 @@
     </template>
   </div>
 
+  <!-- D-158, D-159: um assunto dos próximos dias (ou do detalhe) — ver o material ou ensaiar; nada aqui grava -->
+  <div x-data>
+    <template x-if="$store.previa.visivel">
+      <div id="painel-previa" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30" @click.self="$store.previa.fechar()">
+        <div class="w-full max-w-md space-y-3 rounded-t-2xl bg-white p-4 shadow-2xl">
+          <div class="flex items-center justify-between">
+            <p class="font-semibold" x-text="$store.previa.item.nome"></p>
+            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="$store.previa.fechar()" aria-label="Fechar">✕</button>
+          </div>
+          <p x-show="$store.previa.item.dataPrevista" class="text-xs text-gray-500"
+             x-text="$store.previa.item.dataPrevista && ('Revisão prevista para ' + diaDaSemanaBr($store.previa.item.dataPrevista) + ' ' + dataCurtaBr($store.previa.item.dataPrevista) + ($store.previa.item.nivel ? ' · nível ' + $store.previa.item.nivel : ''))"></p>
+          <template x-if="$store.previa.etapa === 'opcoes'">
+            <div class="space-y-2">
+              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Ver o material</p>
+              <p x-show="$store.previa.segmentos === null" class="text-sm text-gray-500">Carregando os blocos…</p>
+              <p x-show="$store.previa.segmentos && $store.previa.segmentos.length === 0" class="text-sm text-gray-500">Este assunto ainda não tem material.</p>
+              <div class="flex flex-wrap gap-2">
+                <template x-for="s in ($store.previa.segmentos || [])" :key="s.id">
+                  <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="$store.previa.verBloco(s)" x-text="'Bloco ' + s.ordem"></button>
+                </template>
+              </div>
+              <button type="button" class="min-h-11 w-full rounded border border-gray-300 text-sm font-medium" @click="$store.previa.etapa = 'ensaiar'">Ensaiar…</button>
+              <p class="text-xs text-gray-500">Nada aqui grava sessão nem mexe na escada.</p>
+            </div>
+          </template>
+          <template x-if="$store.previa.etapa === 'ensaiar'">
+            <div class="space-y-2">
+              <p class="rounded border border-alerta-600 bg-alerta-50 p-2 text-sm text-gray-800">Ver as perguntas antes contamina a recuperação real: no dia, você vai lembrar delas, não do assunto. Use para testar a tela.</p>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" class="min-h-11 rounded border border-gray-300 text-sm" @click="$store.previa.ensaiar('recuperacao')">Recuperação</button>
+                <button type="button" class="min-h-11 rounded border border-gray-300 text-sm" @click="$store.previa.ensaiar('questoes')">Questões</button>
+                <button type="button" class="min-h-11 rounded border border-gray-300 text-sm" @click="$store.previa.ensaiar('discursiva')">Discursiva</button>
+                <button type="button" class="min-h-11 rounded border border-gray-300 text-sm" @click="$store.previa.ensaiar('flashcards')">Flashcards</button>
+              </div>
+              <button type="button" class="min-h-11 w-full rounded border border-gray-200 text-sm text-gray-600" @click="$store.previa.etapa = 'opcoes'">Voltar</button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+
   <section id="pagina-hoje" x-data="paginaHoje()" @sge:sessao-registrada.window="carregar()">
+    <div class="lg:flex lg:items-start lg:gap-6">
+    <div class="min-w-0 lg:flex-1">
 
 
     <!-- 02_JORNADAS §4.4: o concurso-alvo no topo — contexto, não alarme -->
@@ -897,10 +944,51 @@
         </div>
       </div>
     </template>
+    </div>
+      <!-- D-157: os próximos 7 dias — coluna no computador, bloco recolhido no fim no celular -->
+      <aside id="proximos-dias" x-show="proximos" class="mt-6 rounded border border-gray-200 bg-gray-50 p-3 lg:sticky lg:top-4 lg:mt-0 lg:w-72 lg:shrink-0">
+        <button type="button" class="flex min-h-11 w-full items-center justify-between gap-2 text-left lg:pointer-events-none" @click="alternarProximos()">
+          <span class="text-sm font-semibold"><span class="lg:hidden" x-text="proximosAberto ? '▾ ' : '▸ '"></span>Próximos 7 dias</span>
+          <span class="text-xs text-gray-500" x-text="resumoProximos()"></span>
+        </button>
+        <div :class="proximosAberto ? '' : 'hidden lg:block'" class="space-y-2">
+          <p x-show="proximos && proximos.ritmoSemanal > 0" class="rounded border border-dashed border-gray-300 p-2 text-xs text-gray-500"
+             x-text="proximos && ('~' + String(proximos.ritmoSemanal).replace('.', ',') + ' assuntos novos na semana · estimativa pelo seu ritmo')"></p>
+          <template x-for="d in (proximos ? proximos.dias : [])" :key="d.data">
+            <div class="border-t border-gray-200 pt-2 text-sm">
+              <div class="flex items-baseline justify-between gap-2">
+                <span class="text-xs font-semibold" x-text="diaDaSemanaBr(d.data) + ' ' + dataCurtaBr(d.data)"></span>
+                <span class="flex flex-wrap justify-end gap-1">
+                  <span x-show="d.prova" class="rounded-full bg-alerta-50 px-2 text-xs text-alerta-700">prova</span>
+                  <span x-show="d.simulado" class="rounded-full bg-primary-100 px-2 text-xs text-primary-800">simulado da semana</span>
+                  <span class="font-mono text-xs" :class="d.acimaDoTeto ? 'text-alerta-700' : 'text-gray-500'"
+                        x-text="d.acimaDoTeto ? d.total + ' · passa do teto de ' + proximos.teto : d.total + ' de ' + proximos.teto"></span>
+                </span>
+              </div>
+              <p x-show="d.total === 0" class="text-xs text-gray-400">nada previsto</p>
+              <ul class="mt-1 space-y-0.5">
+                <template x-for="r in d.revisoes" :key="r.assuntoId">
+                  <li class="flex items-baseline justify-between gap-2">
+                    <button type="button" class="min-w-0 truncate text-left text-primary-700 underline decoration-dashed"
+                            @click="$store.previa.abrir({ assuntoId: r.assuntoId, nome: r.nome, nivel: r.nivel, dataPrevista: d.data })" x-text="r.nome"></button>
+                    <span class="whitespace-nowrap font-mono text-xs text-gray-500" x-text="r.manutencao ? 'manutenção' : 'nível ' + r.nivel"></span>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </template>
+          <p x-show="proximos && proximos.esperandoProva > 0" class="text-xs text-gray-500"
+             x-text="proximos && (proximos.esperandoProva + (proximos.esperandoProva === 1 ? ' manutenção de peso médio ou baixo espera a prova.' : ' manutenções de peso médio e baixo esperam a prova.'))"></p>
+        </div>
+      </aside>
+    </div>
   </section>
 
   <!-- Tela Recuperar — única com sequência vinculante (04_FRONTEND.md §7, 02_JORNADAS §4.1) -->
   <section id="pagina-recuperar" x-data="paginaRecuperar()" hidden>
+
+    <!-- D-159: em ensaio, nada é gravado -->
+    <p x-show="ensaio" class="ensaio-faixa -mx-4 -mt-6 mb-4 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">Ensaio · nada é gravado</p>
 
     <template x-if="semDados">
       <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
@@ -976,7 +1064,7 @@
                     <span class="whitespace-nowrap text-xs text-gray-400" x-text="'p. ' + pt.pagina"></span>
                   </label>
                 </template>
-                <button type="button" class="block min-h-9 text-xs text-gray-500 underline" @click="alternarRuim(p)"
+                <button type="button" x-show="!ensaio" class="block min-h-9 text-xs text-gray-500 underline" @click="alternarRuim(p)"
                   x-text="ruins[p.id] ? 'Desfazer (pergunta tirada do banco)' : 'pergunta ruim'"></button>
               </div>
             </template>
@@ -985,6 +1073,7 @@
         </template>
 
         <p class="font-medium">Conseguiu reconstruir?</p>
+        <p x-show="ensaio" class="text-xs text-gray-500">No ensaio, escolher o resultado mostra o que aconteceria.</p>
         <div class="space-y-2">
           <button type="button" class="w-full rounded border bg-white p-3 text-left hover:bg-gray-50" :class="sugestao === 'SUCESSO' ? 'border-2 border-primary-600 bg-primary-50' : 'border-gray-200'" :disabled="enviando" @click="confirmar('SUCESSO')">
             <span class="block">Reconstruí</span>
@@ -1000,7 +1089,9 @@
           </button>
         </div>
 
-        <button type="button" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
+        <p x-show="ensaioTexto" id="ensaio-resultado" class="rounded bg-primary-50 p-3 text-sm text-primary-800" x-text="ensaioTexto"></p>
+        <a x-show="ensaio" href="#/hoje" class="block text-sm text-gray-500 underline">Fechar o ensaio</a>
+        <button type="button" x-show="!ensaio" class="text-sm text-gray-500 underline" @click="abrirErro()">+ registrar um erro</button>
       </div>
     </template>
 
@@ -1102,6 +1193,9 @@
   </section>
 
   <section id="pagina-registrar" x-data="paginaRegistrar()" hidden>
+
+    <!-- D-159: em ensaio, nada é gravado -->
+    <p x-show="ensaio" class="ensaio-faixa -mx-4 -mt-6 mb-4 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">Ensaio · nada é gravado</p>
 
     <template x-if="semDados">
       <div class="rounded border border-red-300 bg-red-50 p-4 text-red-700">
@@ -1219,7 +1313,10 @@
           </template>
         </div>
 
-        <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-white hover:bg-primary-700" :disabled="enviando" @click="registrar()">Registrar</button>
+        <button type="button" class="w-full rounded bg-primary-600 p-3 text-center font-medium text-white hover:bg-primary-700" :disabled="enviando" @click="registrar()"
+                x-text="ensaio ? 'Ver o que aconteceria' : 'Registrar'"></button>
+        <p x-show="ensaioTexto" id="ensaio-resultado" class="rounded bg-primary-50 p-3 text-sm text-primary-800" x-text="ensaioTexto"></p>
+        <a x-show="ensaio" href="#/hoje" class="block text-center text-sm text-gray-500 underline">Fechar o ensaio</a>
       </div>
     </template>
   </section>
@@ -1327,6 +1424,10 @@
             <p class="text-xs text-gray-500" x-text="'Filtro: ' + $store.qc.de(assuntoId).filtro.join(', ')"></p>
           </div>
         </template>
+
+        <!-- D-159: ensaiar qualquer assunto, sem gravar -->
+        <button type="button" id="detalhe-ensaiar" class="min-h-11 w-full rounded border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50"
+                @click="$store.previa.ensaiarAssunto({ assuntoId, nome })">Ensaiar…</button>
 
         <!-- 01_DOMINIO §3.12: as partes do edital e o nó de cada uma; aviso quando ainda falta filtro de questões -->
         <div x-show="partesEdital.length > 0" class="space-y-2">

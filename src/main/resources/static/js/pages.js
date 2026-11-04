@@ -361,6 +361,9 @@ document.addEventListener('alpine:init', () => {
     vencidasAlemDoTeto: 0,
     proximoBloco: null,
     antecipaveis: [],
+    // D-157: os próximos 7 dias (consulta) e se o bloco fica aberto no celular (preferência do aparelho).
+    proximos: null,
+    proximosAberto: proximosAbertoNoAparelho(),
     mostrarAntecipaveis: false,
     // "Drenar mais" (02_JORNADAS §4.3): cada pedido soma um teto diário à fila,
     // só nesta tela; voltar para Hoje recomeça do teto normal (D-40).
@@ -413,6 +416,18 @@ document.addEventListener('alpine:init', () => {
       return dias === 1 ? 'prova amanhã' : `prova em ${dias} dias`;
     },
 
+    alternarProximos() {
+      this.proximosAberto = !this.proximosAberto;
+      guardarProximosAberto(this.proximosAberto);
+    },
+
+    resumoProximos() {
+      if (!this.proximos) return '';
+      const total = this.proximos.dias.reduce((s, d) => s + d.total, 0);
+      const acima = this.proximos.dias.filter((d) => d.acimaDoTeto).length;
+      return `${total} ${total === 1 ? 'revisão' : 'revisões'}` + (acima ? ` · ${acima} ${acima === 1 ? 'dia' : 'dias'} acima do teto` : '');
+    },
+
     async drenarMais() {
       this.extraRecuperacoes += this.passoDrenar;
       await this.carregar();
@@ -440,6 +455,7 @@ document.addEventListener('alpine:init', () => {
         this.antecipaveis = plano.antecipaveis;
         // D-150 a D-154: os atalhos do QConcursos da fila e das antecipáveis, em lote (auxiliar)
         Alpine.store('qc').esquecer();
+        api('/turno/proximos-dias').then((p) => { this.proximos = p; }).catch(() => { this.proximos = null; });
         Alpine.store('qc').carregar([...this.fila, ...this.antecipaveis].map((i) => i.assuntoId));
         // D-140 a D-144: a reta final ativa, o que ela escondeu e o simulado da semana; sem ela, a sugestão de entrar.
         this.retaFinal = plano.retaFinal;
@@ -610,13 +626,19 @@ document.addEventListener('alpine:init', () => {
     vieram: {}, // pontoId → true
     ruins: {}, // perguntaId → true (D-127)
     faltaram: [], // depois de gravar PARCIAL: os pontos que faltaram (D-128)
+    // D-159: em ensaio, "o que aconteceria" no lugar de gravar.
+    ensaio: false,
+    ensaioTexto: '',
 
     // Chamado pelo router a cada navegação para #/recuperar/{id} — inclusive
     // quando confirmar() volta pra cá depois de uma falha de envio (§5.1).
     // Reabrir o MESMO assunto não pode resetar o que já foi respondido, ou
     // "reenviar sem perder o que foi digitado" quebra.
     abrir(assuntoId) {
-      if (this.assuntoId === assuntoId && this.tentativaId) return;
+      const emEnsaio = Alpine.store('ensaio').para(assuntoId);
+      if (this.assuntoId === assuntoId && this.tentativaId && this.ensaio === emEnsaio) return;
+      this.ensaio = emEnsaio;
+      this.ensaioTexto = '';
 
       const item = Alpine.store('recuperacao').item;
       this.semDados = !item || item.assuntoId !== assuntoId;
@@ -633,7 +655,7 @@ document.addEventListener('alpine:init', () => {
       this.inicioEm = Date.now();
       // D-101: o foco que correu ao lado é consumido por esta recuperação, sem tocar o tempo de tela.
       this.fasesIds = [];
-      api(`/foco/livres?assuntoId=${assuntoId}`).then((l) => { this.fasesIds = l.fasesIds; }).catch(() => {});
+      if (!this.ensaio) api(`/foco/livres?assuntoId=${assuntoId}`).then((l) => { this.fasesIds = l.fasesIds; }).catch(() => {});
       this.perguntas = [];
       this.respostas = {};
       this.gabarito = {};
@@ -664,6 +686,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     async alternarRuim(p) {
+      if (this.ensaio) return; // D-159
       const ruim = !this.ruins[p.id];
       this.ruins = { ...this.ruins, [p.id]: ruim };
       try {
@@ -707,6 +730,20 @@ document.addEventListener('alpine:init', () => {
         perguntasIds: this.perguntas.filter((p) => !this.ruins[p.id]).map((p) => p.id),
         pontosQueVieram: this.pontosQueContam.filter((pt) => this.vieram[pt.id]).map((pt) => pt.id),
       } : undefined;
+      // D-159: o ensaio pergunta ao registro real, que desfaz tudo (ADR-059); fica nesta tela.
+      if (this.ensaio) {
+        try {
+          const e = await api('/sessoes/ensaio', { method: 'POST', body: JSON.stringify({
+            assuntoId: this.assuntoId, tipo: 'RECUPERACAO', data: Alpine.store('ensaio').data || hojeISO(), tempoMinutos, previsaoReconstrucao: this.previsao,
+            resultado: this.resultado, tentativaId: crypto.randomUUID(), conferencia }) });
+          this.ensaioTexto = textoDoEnsaio(e, Alpine.store('ensaio').data);
+        } catch (err) {
+          this.erro = err.message;
+        } finally {
+          this.enviando = false;
+        }
+        return;
+      }
       // D-128: depois de PARCIAL, o que faltou aparece aqui, já gravado; FALHA leva os pontos ao reestudo de Hoje.
       this.faltaram = valor === 'PARCIAL' ? this.pontosQueContam.filter((pt) => !this.vieram[pt.id]) : [];
 
@@ -844,6 +881,9 @@ document.addEventListener('alpine:init', () => {
   }));
 
   Alpine.data('paginaRegistrar', () => ({
+    // D-159: em ensaio, "Ver o que aconteceria" no lugar de gravar.
+    ensaio: false,
+    ensaioTexto: '',
     tipo: 'conteudo', // conteudo | questoes | flashcards | discursiva
     previsaoNivel: null, // D-134: a previsão da discursiva, em três níveis
     nota: null, // D-134: a nota da discursiva, 0–100
@@ -871,7 +911,10 @@ document.addEventListener('alpine:init', () => {
     // pode resetar o que já foi preenchido.
     async abrir(tipo, assuntoId) {
       this.tipo = tipo;
-      if (this.assuntoId === assuntoId && this.tentativaId) return;
+      const emEnsaio = Alpine.store('ensaio').para(assuntoId);
+      if (this.assuntoId === assuntoId && this.tentativaId && this.ensaio === emEnsaio) return;
+      this.ensaio = emEnsaio;
+      this.ensaioTexto = '';
       this.previsaoNivel = null;
       this.nota = null;
 
@@ -893,7 +936,7 @@ document.addEventListener('alpine:init', () => {
 
       if (!this.semDados) {
         // D-100: o tempo medido pelo Pomodoro vence a estimativa; auxiliar, falhar só deixa a estimativa.
-        api(`/foco/livres?assuntoId=${assuntoId}`).then((l) => { this.livres = l; this.sugerirTempo(); }).catch(() => { this.livres = null; });
+        if (!this.ensaio) api(`/foco/livres?assuntoId=${assuntoId}`).then((l) => { this.livres = l; this.sugerirTempo(); }).catch(() => { this.livres = null; });
         // D-29: a duração de bloco é parâmetro — lida a cada abertura, então
         // mudar em Ajustes vale na próxima vez, sem recarregar o app.
         api('/parametros')
@@ -1009,6 +1052,20 @@ document.addEventListener('alpine:init', () => {
             questoesCorretas: this.certas === null ? null : Number(this.certas),
             previsaoPercentual: this.previsao === null ? null : Number(this.previsao),
           };
+
+      // D-159: o ensaio pergunta ao registro real, que desfaz tudo (ADR-059); fica nesta tela e não consome focos.
+      if (this.ensaio) {
+        try {
+          const dia = Alpine.store('ensaio').data;
+          const e = await api('/sessoes/ensaio', { method: 'POST', body: JSON.stringify({ ...corpo, data: dia || corpo.data, fasesIds: undefined, tentativaId: crypto.randomUUID() }) });
+          this.ensaioTexto = textoDoEnsaio(e, dia);
+        } catch (err) {
+          this.erro = err.message;
+        } finally {
+          this.enviando = false;
+        }
+        return;
+      }
 
       // Otimista (02_JORNADAS §5.1): volta pra Hoje antes da resposta confirmar.
       window.location.hash = '#/hoje';
