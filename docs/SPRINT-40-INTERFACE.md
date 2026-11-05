@@ -53,7 +53,7 @@ conferência.
 | 40.1 | Servidor: o painel de Assuntos, os erros gerais e o resolvido | feito |
 | 40.2 | As telas | feito |
 | 40.3 | Testes e Chromium | feito |
-| 40.4 | Deploy pelo Guardian | — |
+| 40.4 | Deploy pelo Guardian | `release/16` (`547ecca`) |
 
 ## Changelog
 

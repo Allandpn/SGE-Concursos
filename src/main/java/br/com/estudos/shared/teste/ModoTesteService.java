@@ -37,7 +37,7 @@ public class ModoTesteService implements ApplicationRunner {
 
     /** O que nunca vai para o teste: o acesso, os avisos, a IA e o histórico das migrações. */
     static final Set<String> FORA_DA_COPIA = Set.of("flyway_schema_history", "passkey", "sessao_acesso", "codigo_recuperacao",
-        "push_config", "push_inscricao", "configuracao_ia");
+        "push_config", "push_inscricao", "configuracao_ia", "captura_chave", "questao_capturada", "captura_diagnostico");
 
     private static final String S = ModoTesteConfig.SCHEMA;
 

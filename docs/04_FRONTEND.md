@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.24.0 |
+| Versão | 1.25.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -944,6 +944,21 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 
 ---
 
+## 8F. A captura do QConcursos (Sprint 37)
+
+`01_DOMINIO` §3.28; ADR-063.
+
+- **Ajustes › IA e integrações › Captura do QConcursos:** as chaves (nome do aparelho, criada em, último envio, Revogar), **Gerar
+  chave para este navegador** (mostra a chave uma vez, com Copiar), o link **Instalar o userscript** e os diagnósticos recebidos.
+- **O userscript** (`/captura/eagora-qconcursos.user.js`, já com o endereço do SGE): um selo discreto no canto do QConcursos com
+  "eAgora · 3 enviadas", o campo da chave na primeira vez e, quando não entende uma questão, **Enviar diagnóstico**.
+- **O lote do atalho:** a previsão passa para antes de sair ("Quanto você acha que vai acertar?"); na volta, "Feitas" e "Certas" vêm
+  preenchidas com o aviso "8 capturadas desde 14:05".
+- **Hoje:** o cartão **Questões do QConcursos** abaixo da próxima ação, uma linha por assunto ("Crase · 8 questões") com
+  Registrar e Descartar, e "Sem assunto · 2" com o seletor de assunto. Registrar abre a previsão em faixas e só depois mostra o acerto.
+
+---
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -977,6 +992,7 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.25.0 | 2026-11-05 | §8F: a captura do QConcursos — a chave em Ajustes, o userscript, a previsão na saída do atalho, o lote preenchido e a caixa em Hoje (`01_DOMINIO` §3.28, ADR-063). Sprint 37 |
 | 1.24.0 | 2026-11-05 | §8B, "As demais telas (Sprint 40)": Assuntos com busca, filtro de fase e uma consulta só; Progresso com os quatro cartões; a lista geral de Erros; Ajustes em grupos; a porta no tema. Decidido numa rodada |
 | 1.23.0 | 2026-11-05 | §8E: reiniciar o progresso de um concurso ou de tudo, a confirmação digitada e a lista de reinícios com desfazer (`01_DOMINIO` §3.27). Sprint 43 |
 | 1.22.0 | 2026-11-05 | §8D: Sessões registradas — tirar sessões da escada e pôr de volta (`01_DOMINIO` §3.26, ADR-062). Sprint 42 |

@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.35.0 |
+| Versão | 1.36.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -573,6 +573,18 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-22 · Resolver no QConcursos e o SGE saber
+
+Frequente: questões no QConcursos pelo atalho ou soltas. Instalar **uma vez**; depois, **zero toques** para capturar.
+
+1. Uma vez por navegador: Ajustes › IA e integrações › **Captura do QConcursos** › **Gerar chave para este navegador**; instalar o
+   userscript pelo link da mesma tela e colar a chave no painel dele, no QConcursos.
+2. Pelo atalho (J-15/§3.24): a previsão antes de sair; resolver; na volta, o lote já vem com "8 feitas, 6 certas". Conferir e
+   registrar.
+3. Soltas: em Hoje, o cartão **Questões do QConcursos** ("Crase · 8 questões"); **Registrar** pede a previsão e só então mostra o
+   acerto. As sem assunto pedem o assunto uma vez.
+4. Se o userscript não entender a página, o painel dele mostra **Enviar diagnóstico**.
+
 ### J-21 · Reiniciar o progresso
 
 Raro e sério: recomeçar um concurso ou tudo. Achar em **2 toques**; confirmar **digitando REINICIAR**; desfazer em **2 toques**.
@@ -958,6 +970,7 @@ O documento de interface é quem amarra isso.
 | J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
 | J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
+| J-22 Captura do QConcursos | Ajustes (a chave), o lote, a caixa em Hoje, o userscript | `04_FRONTEND` §8F, `01_DOMINIO` §3.28, ADR-063 |
 | J-21 Reiniciar o progresso | O concurso; Ajustes (zona de cuidado e Reinícios) | `04_FRONTEND` §8E, `01_DOMINIO` §3.27, D-163 a D-165 |
 | J-20 Tirar sessões da escada | Ajustes › Sessões registradas | `04_FRONTEND` §8D, `01_DOMINIO` §3.26, D-160 a D-162 |
 | J-19 Modo de teste | Ajustes e a faixa em todas as telas | `04_FRONTEND` §8C, ADR-061 |
@@ -989,6 +1002,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.36.0 | 2026-11-05 | Nova **J-22** (a captura do QConcursos), com `01_DOMINIO` v1.44.0 §3.28, `04_FRONTEND` v1.25.0 §8F e ADR-063 |
 | 1.35.0 | 2026-11-05 | Nova **J-21** (reiniciar o progresso), com `01_DOMINIO` v1.43.0 §3.27 e `04_FRONTEND` v1.23.0 §8E |
 | 1.34.0 | 2026-11-05 | Nova **J-20** (tirar sessões da escada), com `01_DOMINIO` v1.42.0 §3.26 e `04_FRONTEND` v1.22.0 §8D |
 | 1.33.0 | 2026-11-05 | Nova **J-19** (modo de teste), com `04_FRONTEND` v1.21.0 §8C e ADR-061. Sem regra de domínio nova: o teste usa as mesmas regras sobre outra cópia dos dados |

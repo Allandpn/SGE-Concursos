@@ -81,8 +81,21 @@ document.addEventListener('alpine:init', () => {
     },
 
     // D-153: tocar no atalho guarda a saída; o próprio <a target="_blank"> abre o QConcursos.
-    sair(a, nome) {
-      gravarSaidaQc({ assuntoId: a.assuntoId, nome, saiuEm: Date.now() });
+    sair(a, nome, previsao) {
+      gravarSaidaQc({ assuntoId: a.assuntoId, nome, saiuEm: Date.now(), previsao: previsao ?? null });
+    },
+
+    // D-168: antes de ir, a previsão (M-3); o link da folha é o que abre o QConcursos (um gesto do usuário, sem bloqueio de janela).
+    antes: null,
+    antesDeIr(a, nome) {
+      if (!a) return;
+      this.antes = { a, nome, previsao: null };
+    },
+    ir() {
+      const x = this.antes;
+      if (!x) return;
+      this.sair(x.a, x.nome, x.previsao);
+      this.antes = null;
     },
 
     encerrar() {
@@ -98,7 +111,7 @@ document.addEventListener('alpine:init', () => {
         return;
       }
       if (passou < QC_MINIMO_MS || Alpine.store('lote').visivel) return;
-      Alpine.store('lote').abrir({ assuntoId: saida.assuntoId, nome: saida.nome }, { minutos: Math.max(1, Math.round(passou / 60000)) });
+      Alpine.store('lote').abrir({ assuntoId: saida.assuntoId, nome: saida.nome }, { minutos: Math.max(1, Math.round(passou / 60000)), saida });
     },
   });
 
@@ -116,16 +129,29 @@ document.addEventListener('alpine:init', () => {
         doFoco: false, daVolta, fasesIds: [], previsao: null, feitas: null, certas: null, erro: null, enviando: false,
         tentativaId: crypto.randomUUID(), limiares: null, porQuestao: 3,
         etapa: 'lote', sessaoId: null, erradas: 0, anotados: 0, novoErro: null, resumo: '',
+        previsaoNaSaida: false, capturadas: [], avisoCaptura: null,
       };
+      // D-168: a previsão feita na saída vale; a captura preenche feitas e certas.
+      const saida = opcoes.saida;
+      if (saida && saida.previsao != null) { this.atual.previsao = saida.previsao; this.atual.previsaoNaSaida = true; }
       this.visivel = true;
-      const [sugerido, livres, parametros] = await Promise.all([
+      const [sugerido, livres, parametros, capturadas] = await Promise.all([
         api(`/assuntos/${item.assuntoId}/lote-sugerido`).catch(() => null),
         api(`/foco/livres?assuntoId=${item.assuntoId}`).catch(() => null),
         api('/parametros').catch(() => []),
+        saida ? api(`/captura/desde?assuntoId=${item.assuntoId}&desde=${encodeURIComponent(new Date(saida.saiuEm).toISOString())}`).catch(() => null) : null,
       ]);
       const l = this.atual;
       if (!this.visivel || l.assuntoId !== item.assuntoId) return;
       if (sugerido) l.formato = sugerido.formato;
+      if (capturadas && capturadas.feitas > 0) {
+        l.feitas = capturadas.feitas;
+        l.certas = capturadas.certas;
+        l.capturadas = capturadas.ids;
+        if (capturadas.formato) l.formato = capturadas.formato;
+        const hora = new Date(saida.saiuEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        l.avisoCaptura = `${capturadas.feitas} ${capturadas.feitas === 1 ? 'capturada' : 'capturadas'} desde ${hora} · confira`;
+      }
       if (livres && livres.minutos > 0) { l.tempo = livres.minutos; l.doFoco = true; l.fasesIds = livres.fasesIds; }
       const sufixo = l.formato === 'CERTO_ERRADO' ? 'certo_errado' : 'multipla_escolha';
       const valor = (chave) => Number((parametros.find((x) => x.chave === chave) || {}).valor);
@@ -177,6 +203,10 @@ document.addEventListener('alpine:init', () => {
           formato: l.formato, questoesTotal: feitas, questoesCorretas: certas, previsaoPercentual: l.previsao, tentativaId: l.tentativaId,
           fasesIds: l.fasesIds.length ? l.fasesIds : undefined }) });
         if (l.daVolta) Alpine.store('qc').encerrar();
+        // D-168: as capturadas que preencheram o lote saem da caixa, ligadas a esta sessão.
+        if (l.capturadas.length && sessao && sessao.id) {
+          api('/captura/marcar', { method: 'POST', body: JSON.stringify({ ids: l.capturadas, sessaoId: sessao.id }) }).catch(() => {});
+        }
         window.dispatchEvent(new CustomEvent('sge:sessao-registrada', { detail: { assuntoId: l.assuntoId } }));
         // D-156: com erradas, "Anotar erros" no mesmo painel (opcional)
         if (feitas - certas > 0 && sessao && sessao.id) {
