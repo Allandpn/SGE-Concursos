@@ -60,6 +60,7 @@
   <script src="js/ensaio.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/sessoes.js"></script>
+  <script src="js/reinicio.js"></script>
   <script src="js/modo-teste.js"></script>
   <script src="js/navegacao.js"></script>
   <script src="js/router.js"></script>
@@ -2008,6 +2009,49 @@
   </section>
 
   <!-- Tela Ajustes — os 18 parâmetros, editáveis (04_FRONTEND.md §7E) -->
+  <!-- §8E (Sprint 43): a confirmação do reinício (D-165) e o aviso com desfazer (D-164) -->
+  <div x-data x-show="$store.reinicio.aberto" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" @click.self="$store.reinicio.fechar()"
+       @keydown.escape.window="$store.reinicio.fechar()" role="dialog" aria-modal="true" aria-labelledby="reinicio-titulo" id="reinicio-confirmar" style="display: none">
+    <div class="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl">
+      <template x-if="!$store.reinicio.previa && !$store.reinicio.erro"><p class="text-sm text-gray-500">Contando o progresso…</p></template>
+      <template x-if="$store.reinicio.previa">
+        <div class="space-y-3">
+          <h2 id="reinicio-titulo" class="text-lg font-bold" x-text="$store.reinicio.previa.concursoId ? 'Reiniciar o progresso do ' + $store.reinicio.previa.escopo + '?' : 'Reiniciar todo o progresso?'"></h2>
+          <template x-if="$store.reinicio.previa.sessoes === 0"><p class="text-sm text-gray-600">Não há progresso para reiniciar aqui.</p></template>
+          <template x-if="$store.reinicio.previa.sessoes > 0">
+            <div class="space-y-3">
+              <p class="text-sm text-gray-600"><b class="text-gray-900">Zera:</b>
+                <span x-text="$store.reinicio.previa.sessoes + ($store.reinicio.previa.sessoes === 1 ? ' sessão' : ' sessões') + ' em ' + $store.reinicio.previa.assuntos + ($store.reinicio.previa.assuntos === 1 ? ' assunto' : ' assuntos') + '.'"></span>
+                Eles voltam a “nunca visto”; erros, perguntas e foco dessas sessões saem junto.</p>
+              <template x-if="$store.reinicio.previa.divididos.length">
+                <div class="space-y-1">
+                  <p class="text-sm font-semibold" x-text="$store.reinicio.previa.divididos.length + ($store.reinicio.previa.divididos.length === 1 ? ' assunto também está' : ' assuntos também estão') + ' em outro concurso e ' + ($store.reinicio.previa.divididos.length === 1 ? 'zera' : 'zeram') + ' lá também:'"></p>
+                  <ul class="max-h-32 list-disc overflow-y-auto pl-5 text-sm">
+                    <template x-for="d in $store.reinicio.previa.divididos" :key="d.assunto"><li x-text="d.assunto + ' (' + d.outros.join(', ') + ')'"></li></template>
+                  </ul>
+                </div>
+              </template>
+              <p class="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">Fica: concursos, editais, assuntos, material, perguntas, simulados, marcações e erros anotados sem sessão. Dá para desfazer em Ajustes › Reinícios.</p>
+              <label class="block space-y-1 text-sm font-semibold text-gray-600">Digite REINICIAR
+                <input type="text" id="reinicio-palavra" x-model="$store.reinicio.palavra" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                       class="block min-h-12 w-full rounded-lg border border-gray-300 bg-white px-3 font-mono text-base text-gray-900" @keydown.enter="$store.reinicio.confirmar()">
+              </label>
+              <button type="button" class="min-h-12 w-full rounded-lg bg-red-700 font-semibold text-gray-50 disabled:opacity-40" :disabled="!$store.reinicio.liberado"
+                      @click="$store.reinicio.confirmar()" x-text="$store.reinicio.trabalhando ? 'Reiniciando…' : 'Reiniciar o progresso'"></button>
+            </div>
+          </template>
+        </div>
+      </template>
+      <p x-show="$store.reinicio.erro" class="text-sm text-red-700" role="alert" x-text="$store.reinicio.erro"></p>
+      <button type="button" class="min-h-11 w-full rounded-lg border border-gray-300 text-sm font-semibold" :disabled="$store.reinicio.trabalhando" @click="$store.reinicio.fechar()">Cancelar</button>
+    </div>
+  </div>
+  <div x-data x-show="$store.reinicio.aviso" role="status" id="reinicio-aviso" style="display: none"
+       class="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-md items-center gap-3 rounded-xl bg-gray-900 px-4 py-3 text-sm text-gray-50 shadow-lg lg:bottom-6 lg:left-56">
+    <span class="flex-1" x-text="$store.reinicio.aviso?.texto"></span>
+    <button type="button" x-show="$store.reinicio.aviso?.id" class="min-h-9 font-bold underline underline-offset-2" @click="$store.reinicio.desfazer($store.reinicio.aviso.id)">Desfazer</button>
+  </div>
+
   <!-- §8D (Sprint 42): sessões registradas — tirar da escada e pôr de volta (D-160 a D-162) -->
   <section id="pagina-sessoes" x-data="paginaSessoes()" hidden>
     <a href="#/ajustes" class="mb-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary-700">‹ Ajustes</a>
@@ -2346,6 +2390,31 @@
         </template>
       </div>
     </template>
+
+    <!-- §8E: os reinícios (D-164) e a zona de cuidado (D-163) -->
+    <div x-data x-init="$store.reinicio.carregarLista()" @sge:sessao-registrada.window="$store.reinicio.carregarLista()" class="mt-8 space-y-3" id="ajustes-reinicios">
+      <template x-if="$store.reinicio.lista.length">
+        <div class="space-y-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500">Reinícios</h2>
+          <ul class="divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <template x-for="r in $store.reinicio.lista" :key="r.id">
+              <li class="flex min-h-14 items-center gap-3 px-3 py-2" :data-reinicio="r.id">
+                <div class="min-w-0 flex-1">
+                  <b class="block truncate text-[15px] font-semibold" x-text="r.escopo"></b>
+                  <span class="block text-xs text-gray-500" x-text="$store.reinicio.quando(r.feitoEm) + ' · ' + r.sessoes + (r.sessoes === 1 ? ' sessão' : ' sessões') + ' em ' + r.assuntos + (r.assuntos === 1 ? ' assunto' : ' assuntos') + (r.desfeitoEm ? ' · desfeito em ' + $store.reinicio.quando(r.desfeitoEm) : '')"></span>
+                </div>
+                <button type="button" x-show="!r.desfeitoEm" class="min-h-11 text-sm font-semibold text-primary-700 underline underline-offset-2" :disabled="$store.reinicio.trabalhando" @click="$store.reinicio.desfazer(r.id)">Desfazer</button>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+      <div class="space-y-2 rounded-xl border border-red-200 bg-white p-4" id="ajustes-cuidado">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-red-700">Cuidado</h2>
+        <p class="text-sm text-gray-600">Zera o progresso de todos os assuntos. O cadastro fica, e dá para desfazer.</p>
+        <button type="button" class="min-h-11 w-full rounded-lg border border-red-200 text-sm font-semibold text-red-700" @click="$store.reinicio.abrir(null)">Reiniciar todo o progresso</button>
+      </div>
+    </div>
   </section>
 
 
@@ -2524,6 +2593,11 @@
                   </template>
                 </div>
               </template>
+              <!-- §8E: reiniciar o progresso deste concurso (D-163) -->
+              <div class="mt-4 space-y-2 rounded-xl border border-red-200 p-3" id="concurso-cuidado">
+                <p class="text-xs font-bold uppercase tracking-wider text-red-700">Cuidado</p>
+                <button type="button" class="min-h-11 w-full rounded-lg border border-red-200 text-sm font-semibold text-red-700" @click="$store.reinicio.abrir(ativo.id)">Reiniciar o progresso deste concurso</button>
+              </div>
             </div>
           </template>
           <template x-if="!ativo">
@@ -2558,6 +2632,8 @@
                           @click="abrirDiagnostico(c)">Diagnóstico</button>
                   <button type="button" class="rounded border border-gray-300 px-3 py-1.5 text-sm text-primary-700 hover:bg-gray-50"
                           :disabled="reativando !== null" @click="reativar(c)">Reativar</button>
+                  <button type="button" class="rounded border border-gray-300 px-3 py-1.5 text-sm text-red-700 hover:bg-gray-50"
+                          @click="$store.reinicio.abrir(c.id)">Reiniciar o progresso</button>
                 </div>
               </li>
             </template>

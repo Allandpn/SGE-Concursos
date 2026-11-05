@@ -78,7 +78,9 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 22 (ADR-057): o ajuste de peso aceito pela banca.
                 "peso_banca",
                 // Sprint 36 (ADR-058): o catálogo de bancas do QConcursos.
-                "qconcursos_banca");
+                "qconcursos_banca",
+                // Sprint 43 (01_DOMINIO §3.27): o reinício registrado e as sessões que ele tirou (D-164).
+                "reinicio", "reinicio_sessao");
         assertEquals(esperado, tabelasDoSchema());
     }
 
