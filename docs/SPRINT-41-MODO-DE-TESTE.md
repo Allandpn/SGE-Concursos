@@ -55,7 +55,7 @@ em que ele já exista; a tabela `teste.modo_teste_estado` (deslocamento em dias,
 | 41.1 | Roteamento, relógio, filtro, cópia e rotas | feito |
 | 41.2 | Faixa, Ajustes e a data do servidor na tela; `CASCA_VERSAO` | feito |
 | 41.3 | Testes e Chromium | feito |
-| 41.4 | Deploy pelo Guardian | — |
+| 41.4 | Deploy pelo Guardian | `release/13` (`399d32e`), aguardando a aprovação do mestre |
 
 ## Changelog
 
