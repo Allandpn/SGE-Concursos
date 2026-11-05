@@ -56,6 +56,7 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 37 | Captura automática do QConcursos | Pedido do usuário (2026-11-04), decidido em duas rodadas (2026-11-05). Userscript que envia cada questão respondida por uma chave de envio por navegador (ADR-063); o assunto pelo par aprendido ou pela árvore; a previsão na saída do atalho e o lote preenchido; a caixa em Hoje; o diagnóstico no lugar do HTML de exemplo (`01_DOMINIO` §3.28, D-166 a D-171, J-22, `04_FRONTEND` §8F) | **em andamento** — na `main` (PR #17), `release/17` (`a68a360`); falta o 37.5 (acertar os seletores com os primeiros diagnósticos reais) |
 | 44 | Ícones do bloco, pontos altos e o atalho do teste | Retorno do usuário nos testes (2026-11-05), decidido numa rodada. Ler, Foco e Registrar com ícone; o sinal de "baixado" no lugar de "sem rede ✓"; as marcações do assunto na Recuperar depois de conferir (D-172); Modo de teste no Mais (`04_FRONTEND` §8G) — `docs/SPRINT-44-ICONES-E-PONTOS-ALTOS.md` | **feita** — na `main` (PR #18), `release/18` (`2e73bfd`) |
 | 45 | O assunto ligado ao QConcursos e as questões por vez | Retorno do usuário no modo de teste (2026-11-05), decidido numa rodada. Ligar o assunto a até 3 nós da árvore do QConcursos pela busca, antes do edital (atalho e captura); "Ligar ao QConcursos" onde não há atalho ou é pela disciplina inteira; "Questões por vez" em Ajustes (`01_DOMINIO` D-173, D-174, J-17, `04_FRONTEND` §8H) — `docs/SPRINT-45-VINCULO-QCONCURSOS.md` | **feita** — na `main` (PR #19), `release/19` (`e998239`) |
+| 46 | Hoje reorganizado | Pedido do usuário (2026-11-05), depois da árvore de telas (`docs/ESTRUTURA-TELAS.json`), decidido numa rodada. Progresso no cabeçalho, Agora logo depois, avisos numa faixa recolhida, Depois numa lista na ordem do plano, Também hoje no fim (`04_FRONTEND` §8B, §8I) — `docs/SPRINT-46-HOJE.md` | **feita** — na branch, falta o PR |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -1117,6 +1118,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.125.0 | 2026-11-05 | **Sprint 46 (Hoje reorganizado) feita**, wireframe aprovado; e a árvore de telas em `docs/ESTRUTURA-TELAS.json`. Só tela: Chromium 17 passos e a regressão |
 | 1.124.0 | 2026-11-05 | **Sprint 45 na `main`** (PR #19) e `release/19` |
 | 1.123.0 | 2026-11-05 | **Sprint 45 feita**, wireframe aprovado: `V35` (`assunto_qconcursos_no`, `questoes_por_vez`), o vínculo pela árvore antes do edital no atalho e na captura, a folha de busca, questões por vez. 4 testes novos; suíte 499 de 501 (2 pedem Docker); Chromium 19 passos e a regressão |
 | 1.122.0 | 2026-11-05 | **Sprint 44 na `main`** (PR #18) e `release/18` |
