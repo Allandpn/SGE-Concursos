@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.33.0 |
+| Versão | 1.34.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -573,6 +573,14 @@ Mensagens: a porta não diz se algo existe ("não foi possível entrar" para qua
 
 Orçamento: com sessão válida, nenhum toque extra; sem sessão, **1 toque + biometria** para entrar.
 
+### J-20 · Tirar da escada as sessões de teste
+
+Ocasional: limpar sessões feitas só para ver a escada. Achar o dia em **2 toques**; tirar várias de uma vez em **1 confirmação**.
+
+1. Em Ajustes, **Sessões registradas**: as sessões por dia, da mais nova para a mais antiga (assunto, tipo, minutos, resultado).
+2. Marcar as que não valem; o botão fixo diz **Tirar 3 da escada**. A confirmação diz quais assuntos terão a escada refeita.
+3. As tiradas ficam riscadas no mesmo lugar, com **Pôr de volta**. Um aviso diz quais escadas foram refeitas.
+
 ### J-19 · Testar sem mexer nos dados reais
 
 Ocasional: conferir a escada, as perguntas ou a reta final antes da data. Entrar em **2 toques**; avançar um dia em **1 toque**.
@@ -940,6 +948,7 @@ O documento de interface é quem amarra isso.
 | J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
 | J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
+| J-20 Tirar sessões da escada | Ajustes › Sessões registradas | `04_FRONTEND` §8D, `01_DOMINIO` §3.26, D-160 a D-162 |
 | J-19 Modo de teste | Ajustes e a faixa em todas as telas | `04_FRONTEND` §8C, ADR-061 |
 | J-18 Próximos dias e ensaio | Hoje, Leitor, Recuperar, Registrar, Assuntos (detalhe) | D-157 a D-159, D-121, D-143, D-144 |
 | J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-133 |
@@ -969,6 +978,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.34.0 | 2026-11-05 | Nova **J-20** (tirar sessões da escada), com `01_DOMINIO` v1.42.0 §3.26 e `04_FRONTEND` v1.22.0 §8D |
 | 1.33.0 | 2026-11-05 | Nova **J-19** (modo de teste), com `04_FRONTEND` v1.21.0 §8C e ADR-061. Sem regra de domínio nova: o teste usa as mesmas regras sobre outra cópia dos dados |
 | 1.32.0 | 2026-11-04 | **J-2** ganha a forma da tela (`04_FRONTEND` §8B): Hoje abre na próxima ação, em destaque, com o progresso do dia; as telas de estudo ficam em modo foco, com as etapas à vista e a ação fixa embaixo. A sequência e os orçamentos de J-2 não mudam |
 | 1.31.0 | 2026-11-04 | Nova **J-18** (os próximos 7 dias, a prévia do material e o ensaio), com `01_DOMINIO` v1.41.0 (D-157 a D-159) e ADR-059 |
