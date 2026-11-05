@@ -1246,25 +1246,23 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 
+  // Sprint 40 (04_FRONTEND §8B, "As demais telas"): busca, filtro de fase e uma consulta só.
   Alpine.data('paginaAssuntos', () => ({
     carregando: true,
     erro: null,
-    grupos: [], // [{ disciplina, resumo, assuntos: [{...AssuntoResponse, fase}] }]
+    grupos: [], // [{ disciplina, assuntos: [{...AssuntoResponse, fase, proximaRevisao}] }]
     abertas: {}, // disciplinaId → expandida (02_JORNADAS §4.5)
+    busca: '',
+    filtro: 'TODOS',
 
     async init() {
       this.carregando = true;
       this.erro = null;
       try {
-        const [disciplinas, resumos] = await Promise.all([api('/disciplinas'), api('/disciplinas/resumo')]);
-        const resumoPorId = Object.fromEntries(resumos.map((r) => [r.id, r]));
-        this.grupos = await Promise.all(disciplinas.map(async (disciplina) => {
-          const assuntos = await api(`/assuntos?disciplinaId=${disciplina.id}`);
-          const comFase = await Promise.all(assuntos.map(async (assunto) => {
-            const { fase } = await api(`/assuntos/${assunto.id}/fase`);
-            return { ...assunto, fase };
-          }));
-          return { disciplina, resumo: resumoPorId[disciplina.id] ?? null, assuntos: comFase };
+        const painel = await api('/assuntos/painel');
+        this.grupos = painel.map((g) => ({
+          disciplina: g.disciplina,
+          assuntos: g.assuntos.map((i) => ({ ...i.assunto, fase: i.fase, proximaRevisao: i.proximaRevisao })),
         }));
       } catch (e) {
         this.erro = e.message;
@@ -1277,14 +1275,49 @@ document.addEventListener('alpine:init', () => {
       return this.grupos.length === 0;
     },
 
+    get filtros() {
+      const todos = this.grupos.flatMap((g) => g.assuntos);
+      const n = (f) => todos.filter((a) => a.fase === f).length;
+      return [['TODOS', 'Todos', todos.length], ['BACKLOG', 'Na fila', n('BACKLOG')], ['FRENTE', 'Estudando', n('FRENTE')], ['CONSOLIDADO', 'Consolidado', n('CONSOLIDADO')]];
+    },
+
+    passa(a) {
+      if (this.filtro !== 'TODOS' && a.fase !== this.filtro) return false;
+      const b = this.busca.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{M}/gu, '');
+      return !b || a.nome.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{M}/gu, '').includes(b);
+    },
+
+    get visiveis() {
+      const filtrando = this.filtro !== 'TODOS' || this.busca.trim();
+      return this.grupos
+        .map((g) => ({ ...g, mostrados: g.assuntos.filter((a) => this.passa(a)) }))
+        .filter((g) => !filtrando || g.mostrados.length);
+    },
+
+    aberta(g) {
+      return !!this.abertas[g.disciplina.id] || this.filtro !== 'TODOS' || !!this.busca.trim();
+    },
+
     alternar(disciplinaId) {
       this.abertas = { ...this.abertas, [disciplinaId]: !this.abertas[disciplinaId] };
     },
 
     contagem(grupo) {
-      const r = grupo.resumo;
-      if (!r) return `${grupo.assuntos.length} assuntos`;
-      return `${r.backlog} no backlog · ${r.frente} na frente · ${r.consolidados} ${r.consolidados === 1 ? 'consolidado' : 'consolidados'}`;
+      const n = (f) => grupo.assuntos.filter((a) => a.fase === f).length;
+      const c = n('CONSOLIDADO');
+      return `${n('BACKLOG')} na fila · ${n('FRENTE')} estudando · ${c} ${c === 1 ? 'consolidado' : 'consolidados'}`;
+    },
+
+    rotuloFase(f) {
+      return { BACKLOG: 'Na fila', FRENTE: 'Estudando', CONSOLIDADO: 'Consolidado' }[f] || '';
+    },
+
+    revisao(a) {
+      if (a.fase === 'BACKLOG') return 'ainda não estudado';
+      if (!a.proximaRevisao) return 'sem revisão marcada';
+      const n = diasAte(a.proximaRevisao);
+      if (n < 0) return `revisão atrasada há ${-n} ${n === -1 ? 'dia' : 'dias'}`;
+      return 'revisão ' + dataHumana(a.proximaRevisao);
     },
 
     abrirDetalhe(disciplina, assuntoComFase) {
@@ -1624,6 +1657,7 @@ document.addEventListener('alpine:init', () => {
     janela: 'GLOBAL',
     disciplinasPorId: {},
     m1: null,
+    m1Global: null,
     m3: null,
     m4: null,
     frente: null,
@@ -1669,6 +1703,7 @@ document.addEventListener('alpine:init', () => {
         const disciplinas = await api('/disciplinas');
         this.disciplinasPorId = Object.fromEntries(disciplinas.map((d) => [d.id, d.nome]));
         await this.carregarM1();
+        this.m1Global = this.janela === 'GLOBAL' ? this.m1 : await api('/metricas/m1?janela=GLOBAL');
         this.m3 = await api('/metricas/m3');
         this.m4 = await api('/metricas/m4');
         // 02_JORNADAS J-3: a frente da semana e as sugestões de divisão (D-35).
@@ -1683,6 +1718,23 @@ document.addEventListener('alpine:init', () => {
 
     async carregarM1() {
       this.m1 = await api(`/metricas/m1?janela=${this.janela}`);
+    },
+
+    // Sprint 40: o cartão de M-1 usa sempre a janela global, o formato com mais questões.
+    get cartaoM1() {
+      const linhas = (this.m1Global?.linhas ?? []).slice().sort((a, b) => b.total - a.total);
+      const l = linhas[0];
+      if (!l || !l.total) return { valor: '—', frase: 'sem questões ainda' };
+      const formato = { MULTIPLA_ESCOLHA: 'múltipla escolha', CERTO_ERRADO: 'certo/errado' }[l.formato] || '';
+      return { valor: l.percentual === null ? '—' : Math.round(l.percentual) + '%', frase: `${l.acertos} de ${l.total} · ${formato}` };
+    },
+
+    get cartaoM3() {
+      const o = this.m3?.objetiva;
+      if (!o || !o.n) return { valor: '—', frase: 'sem previsões ainda' };
+      const d = Math.round(o.mediaDesvio);
+      if (Math.abs(d) <= 5) return { valor: (d > 0 ? '+' : '') + d, frase: 'você se conhece bem' };
+      return { valor: (d > 0 ? '+' : '') + d, frase: d > 0 ? 'você se superestima' : 'você se subestima' };
     },
 
     get focoTemDados() {

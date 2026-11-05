@@ -19,9 +19,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class FrenteController {
 
     private final FrenteService frenteService;
+    private final PainelAssuntosService painelAssuntos;
 
-    public FrenteController(FrenteService frenteService) {
+    public FrenteController(FrenteService frenteService, PainelAssuntosService painelAssuntos) {
         this.frenteService = frenteService;
+        this.painelAssuntos = painelAssuntos;
     }
 
     @GetMapping("/api/assuntos/{id}/fase")
@@ -55,5 +57,11 @@ public class FrenteController {
         return frenteService.proximaVaga(disciplinaId)
             .map(assunto -> ResponseEntity.ok(AssuntoMapper.toResponse(assunto)))
             .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/api/assuntos/painel")
+    @Operation(summary = "A tela Assuntos numa consulta só: disciplinas ativas, assuntos ativos, a fase e a próxima revisão (Sprint 40)")
+    public List<PainelAssuntosService.Grupo> painel() {
+        return painelAssuntos.painel();
     }
 }

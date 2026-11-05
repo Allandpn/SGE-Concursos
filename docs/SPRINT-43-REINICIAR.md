@@ -53,7 +53,7 @@ campo "Digite REINICIAR" e o botão vermelho que só libera com a palavra), o av
 | 43.1 | Migração, serviço e rotas | feito |
 | 43.2 | A confirmação, os botões e os reinícios na tela; `CASCA_VERSAO` | feito |
 | 43.3 | Testes e Chromium | feito |
-| 43.4 | Deploy pelo Guardian | — |
+| 43.4 | Deploy pelo Guardian | `release/15` (`82b6106`) |
 
 ## Changelog
 
