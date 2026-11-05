@@ -237,7 +237,8 @@ public class FocoService {
     @Transactional(readOnly = true)
     public Resumo resumo(LocalDate de, LocalDate ate) {
         var zona = clock.getZone();
-        var fases = jdbc.query("SELECT " + COLUNAS + " FROM fase_foco WHERE especie = 'FOCO' AND fim IS NOT NULL AND inicio >= ? AND inicio < ? ORDER BY inicio",
+        var fases = jdbc.query("SELECT " + COLUNAS + " FROM fase_foco WHERE especie = 'FOCO' AND fim IS NOT NULL AND inicio >= ? AND inicio < ? "
+            + "AND (sessao_id IS NULL OR sessao_id IN (SELECT id FROM sessao)) ORDER BY inicio" /* D-160 */,
             this::mapear, ts(de.atStartOfDay(zona).toInstant()), ts(ate.plusDays(1).atStartOfDay(zona).toInstant()));
         var porDia = new LinkedHashMap<LocalDate, Long>();
         int completos = 0, antes = 0;

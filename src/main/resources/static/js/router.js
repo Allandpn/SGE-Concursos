@@ -11,6 +11,7 @@ function renderizarRotaAtual() {
   const elErros = document.getElementById('pagina-erros');
   const elProgresso = document.getElementById('pagina-progresso');
   const elAjustes = document.getElementById('pagina-ajustes');
+  const elSessoes = document.getElementById('pagina-sessoes');
   const elConcursos = document.getElementById('pagina-concursos');
   const elEdital = document.getElementById('pagina-edital');
   const elConferencia = document.getElementById('pagina-conferencia');
@@ -26,6 +27,7 @@ function renderizarRotaAtual() {
   const matchErros = hash.match(/^#\/erros\/(\d+)$/);
   const matchProgresso = hash === '#/progresso';
   const matchAjustes = hash === '#/ajustes';
+  const matchSessoes = hash === '#/sessoes'; // §8D
   const matchConcursos = hash === '#/concursos';
   const matchEditalNovo = hash === '#/concursos/novo';
   const matchAnalise = hash.match(/^#\/concursos\/analise\/(\d+)$/);
@@ -42,7 +44,7 @@ function renderizarRotaAtual() {
   const rotaNav = matchAssuntos || matchAssuntoDetalhe || matchErros ? 'assuntos'
     : matchProgresso || matchSimulado ? 'progresso'
     : matchConcursos || matchEditalNovo || matchAnalise || matchConferencia || matchProvaNova || matchProva || matchRelatorioProva || matchResolver ? 'concursos'
-    : matchAjustes ? 'ajustes'
+    : matchAjustes || matchSessoes ? 'ajustes'
     : foco ? 'estudo' : 'hoje';
   Alpine.store('nav').ir(rotaNav, foco);
 
@@ -54,6 +56,7 @@ function renderizarRotaAtual() {
   elErros.hidden = true;
   elProgresso.hidden = true;
   elAjustes.hidden = true;
+  elSessoes.hidden = true;
   elConcursos.hidden = true;
   elEdital.hidden = true;
   elConferencia.hidden = true;
@@ -74,7 +77,10 @@ function renderizarRotaAtual() {
   // D-159: o ensaio só vive nas telas de Recuperar e Registrar; sair delas o encerra.
   if (!matchRecuperar && !matchRegistrar) Alpine.store('ensaio').sair();
 
-  if (matchSimulado) {
+  if (matchSessoes) {
+    elSessoes.hidden = false;
+    Alpine.$data(elSessoes).abrir();
+  } else if (matchSimulado) {
     elSimulado.hidden = false;
     Alpine.$data(elSimulado).abrir();
   } else if (matchProvaNova) {
