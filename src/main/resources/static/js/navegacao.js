@@ -6,6 +6,7 @@ const ITENS_NAVEGACAO = [
   { id: 'assuntos', nome: 'Assuntos', href: '#/assuntos', icone: 'i-assuntos', barra: true },
   { id: 'progresso', nome: 'Progresso', href: '#/progresso', icone: 'i-progresso', barra: true },
   { id: 'concursos', nome: 'Concursos', href: '#/concursos', icone: 'i-concursos', barra: false },
+  { id: 'erros', nome: 'Erros', href: '#/erros', icone: 'i-erros', barra: false },
   { id: 'ajustes', nome: 'Ajustes', href: '#/ajustes', icone: 'i-ajustes', barra: false },
 ];
 

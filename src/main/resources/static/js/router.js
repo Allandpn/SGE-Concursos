@@ -12,6 +12,7 @@ function renderizarRotaAtual() {
   const elProgresso = document.getElementById('pagina-progresso');
   const elAjustes = document.getElementById('pagina-ajustes');
   const elSessoes = document.getElementById('pagina-sessoes');
+  const elErrosGerais = document.getElementById('pagina-erros-gerais');
   const elConcursos = document.getElementById('pagina-concursos');
   const elEdital = document.getElementById('pagina-edital');
   const elConferencia = document.getElementById('pagina-conferencia');
@@ -28,6 +29,7 @@ function renderizarRotaAtual() {
   const matchProgresso = hash === '#/progresso';
   const matchAjustes = hash === '#/ajustes';
   const matchSessoes = hash === '#/sessoes'; // §8D
+  const matchErrosGerais = hash === '#/erros'; // Sprint 40
   const matchConcursos = hash === '#/concursos';
   const matchEditalNovo = hash === '#/concursos/novo';
   const matchAnalise = hash.match(/^#\/concursos\/analise\/(\d+)$/);
@@ -41,7 +43,8 @@ function renderizarRotaAtual() {
 
   // §8B: onde se está (a marca da navegação) e o modo foco das telas de estudo, sem navegação.
   const foco = !!(matchRecuperar || matchRegistrar || matchLeitor);
-  const rotaNav = matchAssuntos || matchAssuntoDetalhe || matchErros ? 'assuntos'
+  const rotaNav = matchErrosGerais ? 'erros'
+    : matchAssuntos || matchAssuntoDetalhe || matchErros ? 'assuntos'
     : matchProgresso || matchSimulado ? 'progresso'
     : matchConcursos || matchEditalNovo || matchAnalise || matchConferencia || matchProvaNova || matchProva || matchRelatorioProva || matchResolver ? 'concursos'
     : matchAjustes || matchSessoes ? 'ajustes'
@@ -57,6 +60,7 @@ function renderizarRotaAtual() {
   elProgresso.hidden = true;
   elAjustes.hidden = true;
   elSessoes.hidden = true;
+  elErrosGerais.hidden = true;
   elConcursos.hidden = true;
   elEdital.hidden = true;
   elConferencia.hidden = true;
@@ -77,7 +81,10 @@ function renderizarRotaAtual() {
   // D-159: o ensaio só vive nas telas de Recuperar e Registrar; sair delas o encerra.
   if (!matchRecuperar && !matchRegistrar) Alpine.store('ensaio').sair();
 
-  if (matchSessoes) {
+  if (matchErrosGerais) {
+    elErrosGerais.hidden = false;
+    Alpine.$data(elErrosGerais).abrir();
+  } else if (matchSessoes) {
     elSessoes.hidden = false;
     Alpine.$data(elSessoes).abrir();
   } else if (matchSimulado) {

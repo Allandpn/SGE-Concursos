@@ -9,14 +9,39 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <!-- A porta (J-9, D-106): fora das oito telas, na lista aberta, sem dado nenhum. -->
+  <!-- Sprint 40: a porta no mesmo tema do app (ADR-060), claro e escuro. -->
   <link rel="stylesheet" href="vendor/fonts/open-sans.css">
+  <link rel="stylesheet" href="css/tema.css">
+  <script>
+    // ADR-060: a escolha de Aparência (Ajustes) vale antes do primeiro desenho, para não piscar.
+    try {
+      const aparencia = localStorage.getItem('aparencia');
+      if (aparencia === 'claro' || aparencia === 'escuro') document.documentElement.classList.add(aparencia);
+    } catch (e) { /* sem armazenamento: segue o aparelho */ }
+  </script>
   <script src="vendor/tailwindcss-play-3.4.16.js"></script>
   <script>
+    // Paleta (docs/04_FRONTEND.md §8A) — extraída do qconcursos.com, cor
+    // por papel funcional, não um único "brand color". Trocar a paleta
+    // depois é editar só este bloco: todo o resto do HTML usa os nomes
+    // (primary/alerta), nunca hex direto.
     tailwind.config = {
       theme: {
         extend: {
-          colors: { primary: { 50: '#e6f7f8', 100: '#c7edf0', 600: '#0694a2', 700: '#057885', 800: '#045e68' } },
-          fontFamily: { sans: ['"Open Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'] },
+          // ADR-060: cada cor é uma variável de css/tema.css, com o par claro e escuro.
+          colors: {
+            white: 'rgb(var(--c-white) / <alpha-value>)',
+            sobre: 'rgb(var(--c-sobre) / <alpha-value>)',
+            gray: { 50: 'rgb(var(--c-gray-50) / <alpha-value>)', 100: 'rgb(var(--c-gray-100) / <alpha-value>)', 200: 'rgb(var(--c-gray-200) / <alpha-value>)', 300: 'rgb(var(--c-gray-300) / <alpha-value>)', 400: 'rgb(var(--c-gray-400) / <alpha-value>)', 500: 'rgb(var(--c-gray-500) / <alpha-value>)', 600: 'rgb(var(--c-gray-600) / <alpha-value>)', 700: 'rgb(var(--c-gray-700) / <alpha-value>)', 800: 'rgb(var(--c-gray-800) / <alpha-value>)', 900: 'rgb(var(--c-gray-900) / <alpha-value>)' },
+            primary: { 50: 'rgb(var(--c-primary-50) / <alpha-value>)', 100: 'rgb(var(--c-primary-100) / <alpha-value>)', 300: 'rgb(var(--c-primary-300) / <alpha-value>)', 600: 'rgb(var(--c-primary-600) / <alpha-value>)', 700: 'rgb(var(--c-primary-700) / <alpha-value>)', 800: 'rgb(var(--c-primary-800) / <alpha-value>)' },
+            alerta: { 50: 'rgb(var(--c-alerta-50) / <alpha-value>)', 600: 'rgb(var(--c-alerta-600) / <alpha-value>)', 700: 'rgb(var(--c-alerta-700) / <alpha-value>)' },
+            red: { 50: 'rgb(var(--c-red-50) / <alpha-value>)', 200: 'rgb(var(--c-red-200) / <alpha-value>)', 300: 'rgb(var(--c-red-300) / <alpha-value>)', 400: 'rgb(var(--c-red-400) / <alpha-value>)', 500: 'rgb(var(--c-red-500) / <alpha-value>)', 600: 'rgb(var(--c-red-600) / <alpha-value>)', 700: 'rgb(var(--c-red-700) / <alpha-value>)', 800: 'rgb(var(--c-red-800) / <alpha-value>)' },
+            green: { 50: 'rgb(var(--c-green-50) / <alpha-value>)', 100: 'rgb(var(--c-green-100) / <alpha-value>)', 200: 'rgb(var(--c-green-200) / <alpha-value>)', 600: 'rgb(var(--c-green-600) / <alpha-value>)', 700: 'rgb(var(--c-green-700) / <alpha-value>)', 800: 'rgb(var(--c-green-800) / <alpha-value>)', 900: 'rgb(var(--c-green-900) / <alpha-value>)' },
+            amber: { 100: 'rgb(var(--c-amber-100) / <alpha-value>)', 700: 'rgb(var(--c-amber-700) / <alpha-value>)', 800: 'rgb(var(--c-amber-800) / <alpha-value>)', 900: 'rgb(var(--c-amber-900) / <alpha-value>)' },
+          },
+          fontFamily: {
+            sans: ['"Open Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+          },
         },
       },
     };
@@ -33,7 +58,7 @@
     <h1 class="mt-2 text-2xl font-semibold">eAgora</h1>
   </div>
 
-  <p x-show="!suportado" class="rounded bg-amber-50 p-3 text-sm text-amber-900">Este navegador não aceita passkey. Use um navegador atual (Chrome, Safari, Edge ou Firefox).</p>
+  <p x-show="!suportado" class="rounded bg-amber-100 p-3 text-sm text-amber-900">Este navegador não aceita passkey. Use um navegador atual (Chrome, Safari, Edge ou Firefox).</p>
 
   <!-- Os 8 códigos, uma vez só (D-110) -->
   <template x-if="codigos.length">
@@ -46,7 +71,7 @@
       <button type="button" class="min-h-11 w-full rounded border border-gray-300 text-sm" @click="copiar()" x-text="copiado ? 'Copiados' : 'Copiar os códigos'"></button>
       <p class="text-sm text-gray-700">Guarde fora deste aparelho (num gerenciador de senhas ou no papel).</p>
       <label class="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" x-model="guardei" class="h-5 w-5"> Guardei os códigos fora deste aparelho</label>
-      <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="!guardei" @click="abrirApp()">Abrir o app</button>
+      <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="!guardei" @click="abrirApp()">Abrir o app</button>
     </section>
   </template>
 
@@ -56,13 +81,13 @@
         <div class="space-y-3 rounded border border-gray-200 bg-white p-4">
           <h2 class="font-semibold">Primeiro acesso</h2>
           <p class="text-sm text-gray-700">Cadastre este aparelho com a biometria ou o PIN dele. Depois disso, este caminho fecha.</p>
-          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="trabalhando || !suportado" @click="cadastrarPrimeiro()">Cadastrar este aparelho</button>
+          <button type="button" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="trabalhando || !suportado" @click="cadastrarPrimeiro()">Cadastrar este aparelho</button>
         </div>
       </template>
 
       <template x-if="!primeiroAcesso && !usandoCodigo">
         <div class="space-y-3">
-          <button type="button" class="min-h-12 w-full rounded bg-primary-600 text-lg font-semibold text-white disabled:opacity-50" :disabled="trabalhando || !suportado" @click="entrar()">Entrar</button>
+          <button type="button" class="min-h-12 w-full rounded bg-primary-600 text-lg font-semibold text-sobre disabled:opacity-50" :disabled="trabalhando || !suportado" @click="entrar()">Entrar</button>
           <button type="button" class="min-h-11 w-full text-sm text-primary-700 underline" @click="usandoCodigo = true; erro = ''">Usar código de recuperação</button>
         </div>
       </template>
@@ -73,7 +98,7 @@
           <input id="codigo" x-model="codigo" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"
                  class="min-h-11 w-full rounded border border-gray-300 px-3 font-mono uppercase">
           <p class="text-xs text-gray-600">O código é consumido. Em seguida o app pede para cadastrar este aparelho.</p>
-          <button type="submit" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-white disabled:opacity-50" :disabled="trabalhando || codigo.length < 12">Entrar com o código</button>
+          <button type="submit" class="min-h-11 w-full rounded bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="trabalhando || codigo.length < 12">Entrar com o código</button>
           <button type="button" class="min-h-11 w-full text-sm text-gray-600 underline" @click="usandoCodigo = false; erro = ''">Voltar</button>
         </form>
       </template>
