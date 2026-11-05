@@ -136,7 +136,8 @@ window.addEventListener('hashchange', renderizarRotaAtual);
 
 // alpine:initialized, não DOMContentLoaded: Alpine.$data só existe depois que
 // o Alpine termina de montar os x-data da página (carregado com `defer`).
-document.addEventListener('alpine:initialized', () => {
+document.addEventListener('alpine:initialized', async () => {
+  await estadoModoTeste; // ADR-061: a data do teste vale desde a primeira tela
   if (!window.location.hash) {
     window.location.hash = '#/hoje'; // dispara hashchange, que já chama renderizarRotaAtual
   } else {

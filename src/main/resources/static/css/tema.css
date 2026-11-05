@@ -132,3 +132,7 @@
     color-scheme: dark;
   }
 }
+
+/* ADR-061: a altura da faixa do modo de teste, para as barras fixas e grudadas no topo ficarem abaixo dela. */
+:root { --faixa-teste: 0px; }
+:root.modo-teste { --faixa-teste: 2.75rem; }

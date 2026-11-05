@@ -52,7 +52,15 @@ async function api(caminho, opcoes = {}) {
 
 // Data local (não UTC) no formato que LocalDate espera — new Date().toISOString()
 // erraria o dia perto da meia-noite em fuso negativo (America/Sao_Paulo).
+// ADR-061: no modo de teste, o "hoje" é o do servidor (a data do teste), não o do aparelho.
+let HOJE_DO_TESTE = null;
+
+function hojeData() {
+  return HOJE_DO_TESTE ? dataLocal(HOJE_DO_TESTE) : new Date();
+}
+
 function hojeISO() {
+  if (HOJE_DO_TESTE) return HOJE_DO_TESTE;
   const d = new Date();
   const mes = String(d.getMonth() + 1).padStart(2, '0');
   const dia = String(d.getDate()).padStart(2, '0');
@@ -95,7 +103,7 @@ function dataLocal(iso) {
 }
 
 function diasAte(iso) {
-  const hoje = new Date();
+  const hoje = hojeData();
   hoje.setHours(0, 0, 0, 0);
   return Math.round((dataLocal(iso) - hoje) / 86400000);
 }
@@ -120,6 +128,6 @@ function atrasoHumano(iso) {
 }
 
 function hojeHumano() {
-  const d = new Date();
+  const d = hojeData();
   return `${DIAS_DA_SEMANA[d.getDay()]}, ${diaEMes(d)}`;
 }
