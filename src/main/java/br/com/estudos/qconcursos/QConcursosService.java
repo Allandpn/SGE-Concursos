@@ -31,9 +31,12 @@ public class QConcursosService {
     /** Por que o atalho é mais largo do que o assunto: só a disciplina, ou sem banca. */
     public static final String AVISO_DISCIPLINA = "DISCIPLINA";
     public static final String AVISO_SEM_BANCA = "SEM_BANCA";
+    /** D-173: um nó ligado pela pessoa saiu da árvore vigente; o atalho usa os que ficaram, senão volta ao edital. */
+    public static final String AVISO_NO_FORA_DA_ARVORE = "NO_FORA_DA_ARVORE";
 
+    /** {@code vinculado}: o filtro veio do vínculo escolhido pela pessoa (D-173), não do edital. */
     public record Atalho(long assuntoId, String url, int sugeridas, String banca, String formato, List<String> filtro,
-        List<String> avisos) {}
+        List<String> avisos, boolean vinculado) {}
 
     /** A banca como está no concurso; o número e o nome curto no catálogo, se houver. */
     public record BancaDoConcurso(String banca, Integer numero, String origem, String nomeNoCatalogo) {}
@@ -90,12 +93,28 @@ public class QConcursosService {
                 (Object) edital.values().stream().map(EditalDoAssunto::editalAssuntoId).toArray(Long[]::new));
         }
 
+        // D-173: o vínculo escolhido pela pessoa, com nome e raiz na árvore vigente (nó que saiu dela vem sem nome).
+        var vinculos = new HashMap<Long, List<No>>();
+        jdbc.query("""
+            SELECT v.assunto_id, v.no_id, na.raiz_id, na.nome, r.nome, na.no_id IS NOT NULL
+            FROM assunto_qconcursos_no v
+            LEFT JOIN arvore_versao av ON av.vigente
+            LEFT JOIN no_arvore na ON na.versao_id = av.id AND na.no_id = v.no_id
+            LEFT JOIN no_arvore r ON r.versao_id = av.id AND r.no_id = na.raiz_id
+            WHERE v.assunto_id = ANY (?) ORDER BY v.assunto_id, v.ordem""",
+            rs -> {
+                vinculos.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>())
+                    .add(rs.getBoolean(6) ? new No(rs.getLong(2), (Long) rs.getObject(3, Long.class), rs.getString(4), rs.getString(5)) : null);
+            }, (Object) arrayIds);
+
         var raizes = raizesDaArvoreVigente();
         var banca = bancaDoAlvo();
         var foco = parametro("pomodoro_foco_min");
         var porQuestao = parametro("minutos_por_questao");
         var minimo = (int) parametro("lote_minimo_questoes");
-        var sugeridas = LinkQConcursos.sugeridas(foco, porQuestao, minimo);
+        var porVez = (int) parametro("questoes_por_vez");
+        // D-174: com "questões por vez", a página abre com esse número; 0 é o automático de D-152.
+        var sugeridas = porVez > 0 ? porVez : LinkQConcursos.sugeridas(foco, porQuestao, minimo);
         var ano = LocalDate.now(clock).getYear();
         var anos = (int) parametro("banca_anos");
 
@@ -106,7 +125,12 @@ public class QConcursosService {
             var filtro = new ArrayList<String>();
             var avisos = new ArrayList<String>();
             var doEdital = edital.get(assuntoId);
-            for (var no : doEdital == null ? List.<No>of() : nosDoEdital.getOrDefault(doEdital.editalAssuntoId(), List.of())) {
+            var ligados = vinculos.getOrDefault(assuntoId, new ArrayList<>());
+            if (ligados.stream().anyMatch(java.util.Objects::isNull)) avisos.add(AVISO_NO_FORA_DA_ARVORE);
+            var vigentes = ligados.stream().filter(java.util.Objects::nonNull).toList();
+            var vinculado = !vigentes.isEmpty();
+            var nos = vinculado ? vigentes : doEdital == null ? List.<No>of() : nosDoEdital.getOrDefault(doEdital.editalAssuntoId(), List.of());
+            for (var no : nos) {
                 if (no.noId() < 0) {
                     disciplinas.add(-no.noId());
                     filtro.add(nomeOu(no.nome(), "disciplina " + -no.noId()));
@@ -132,7 +156,8 @@ public class QConcursosService {
             var formato = regua.formatoSugerido(assuntoId);
             var url = LinkQConcursos.montar(new LinkQConcursos.Filtro(disciplinas, assuntos, banca.numero(), formato, ano - anos, ano,
                 LinkQConcursos.porPagina(sugeridas)));
-            saida.add(new Atalho(assuntoId, url, sugeridas, banca.numero() == null ? null : banca.nomeNoCatalogo(), formato, filtro, avisos));
+            saida.add(new Atalho(assuntoId, url, sugeridas, banca.numero() == null ? null : banca.nomeNoCatalogo(), formato, filtro, avisos,
+                vinculado));
         }
         return saida;
     }

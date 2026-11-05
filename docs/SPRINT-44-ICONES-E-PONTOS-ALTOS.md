@@ -55,7 +55,7 @@ Sem migração. O modo de teste copia `marcacao` e `marcacao_versao` como qualqu
 | 44.1 | `PontosAltosService` e a rota | feito |
 | 44.2 | Ícones, o sinal de baixado, os pontos altos na Recuperar, o atalho do teste; `CASCA_VERSAO` | feito |
 | 44.3 | Testes e Chromium | feito |
-| 44.4 | Deploy pelo Guardian | — |
+| 44.4 | Deploy pelo Guardian | `release/18` (`2e73bfd`) |
 
 ## Changelog
 

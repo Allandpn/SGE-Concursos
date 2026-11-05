@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.45.0 |
+| Versão | 1.46.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -1014,6 +1014,12 @@ duas, não há atalho. O filtro sempre tira as anuladas e as desatualizadas, fic
 (D-133) — múltipla escolha ou certo/errado —, para que o percentual digitado na volta seja medido contra os limiares certos (D-36).
 A página abre com o menor tamanho que o QConcursos aceita (5, 10, 15 ou 20) que caiba a sugestão de D-152.
 
+**O assunto ligado pela pessoa (D-173).** A pessoa pode ligar o assunto a **até 3 nós da árvore vigente** do QConcursos (assunto ou
+disciplina), escolhidos pela busca da árvore. O vínculo vale **antes** dos nós do edital: com ele, o atalho filtra por esses nós (nó de
+assunto leva a disciplina dele) e não cai na disciplina inteira. Tirar o vínculo volta ao edital. Nó ligado que saiu da árvore numa
+versão nova não entra no filtro e avisa "ligue de novo"; sem outro ligado, o atalho volta ao edital. A captura (D-167) também usa o
+vínculo para achar o assunto da questão, antes da conferência. Assunto sem atalho nenhum oferece "Ligar ao QConcursos".
+
 **A banca (D-151).** O filtro leva a banca do **concurso-alvo**, procurada pelo nome (sem acento e sem caixa; CESPE = Cebraspe) no
 **catálogo de bancas do QConcursos**. O catálogo nasce com as bancas conhecidas (FGV, CESPE/Cebraspe, FCC, VUNESP, Cesgranrio, IADES,
 AOCP e outras) e **aprende pelos endereços**: quando a banca não está nele, a pessoa cola no concurso um endereço do QConcursos filtrado
@@ -1022,6 +1028,10 @@ sem banca e avisa "sem filtro de banca".
 
 **Quantas (D-152).** O atalho sugere *máx(mínimo do lote, ⌊minutos do foco ÷ minutos por questão⌋)* questões: um foco de 25 min a
 3 min por questão dá 8. "Minutos por questão" é parâmetro (padrão 3) e passa a ser também o tempo do lote rápido sem foco (D-133).
+
+**Questões por vez (D-174).** O parâmetro "questões por vez" fixa o número: 5, 10, 15 ou 20 (os tamanhos de página do QConcursos), ou
+automático (D-152). Fixo, a página do atalho abre com esse número e, na volta, o lote já vem com ele em "feitas" (a captura, quando
+houver, manda). O QConcursos não aceita limite no total do filtro: o total que ele mostra é o do filtro; o teto é por vez.
 
 **A volta (D-153).** Tocar no atalho guarda **no aparelho** o assunto e a hora. Quando o SGE volta a ficar à vista, até 6 h depois,
 o lote rápido do assunto (D-133) abre na tela em que a pessoa está, com o tempo igual aos minutos desde a saída (os focos livres
@@ -2077,6 +2087,8 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-170 | A chave de envio é uma por navegador, mostrada uma vez, guardada só como hash, revogável; só envia questões e diagnósticos, não lê nada | §3.28 |
 | D-171 | Questão que o userscript não entende vira um recorte de diagnóstico, enviado por gesto do usuário, visto e apagável em Ajustes | §3.28 |
 | D-172 | Depois de conferir, a recuperação mostra as marcações vigentes do assunto (destaques com nota e notas de página), com atalho para o leitor; antes, nada do material | §3.18 |
+| D-173 | O assunto pode ser ligado pela pessoa a até 3 nós da árvore vigente do QConcursos; o vínculo vale antes dos nós do edital no atalho e na captura; nó que saiu da árvore avisa e não entra; sem atalho, o app oferece ligar | §3.24 |
+| D-174 | "Questões por vez" (5, 10, 15, 20 ou automático) fixa o tamanho da página do atalho e o número de feitas na volta; o total do filtro não tem teto | §3.24 |
 
 ---
 
@@ -2168,6 +2180,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.46.0 | 2026-11-05 | Retorno do usuário no modo de teste (Sprint 45), decidido numa rodada, com `02_JORNADAS` v1.38.0. **D-173** (o assunto ligado à árvore do QConcursos pela pessoa, antes do edital) e **D-174** (questões por vez), em §3.24. 174 regras |
 | 1.45.0 | 2026-11-05 | Pedido do usuário (Sprint 44), decidido numa rodada, com `02_JORNADAS` v1.37.0 e a nota em ADR-053. **D-172** (§3.18): os pontos altos (as marcações do assunto) aparecem na recuperação depois de conferir, nunca antes. 172 regras |
 | 1.44.0 | 2026-11-05 | Pedido do usuário (Sprint 37), decidido em duas rodadas, com `02_JORNADAS` v1.36.0 e ADR-063. **§3.28** (a captura do QConcursos) e **D-166 a D-171**: a questão capturada, o assunto pelo par aprendido ou pela árvore, o lote preenchido com a previsão na saída, a caixa em Hoje, a chave de envio e o diagnóstico. 171 regras |
 | 1.43.0 | 2026-11-05 | Pedido do usuário (Sprint 43), decidido em duas rodadas, com `02_JORNADAS` v1.35.0. **§3.27** (reiniciar o progresso) e **D-163 a D-165**: reiniciar um concurso ou tudo pela mesma desativação de sessões (D-160, D-161), registrado e com desfazer, e a confirmação digitada. 165 regras |

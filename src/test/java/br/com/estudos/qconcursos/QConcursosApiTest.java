@@ -1,7 +1,9 @@
 package br.com.estudos.qconcursos;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -195,5 +197,88 @@ class QConcursosApiTest extends IntegracaoTestBase {
         jdbc.update("UPDATE concurso SET ativo = false WHERE id = ?", concurso);
         mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
             .andExpect(jsonPath("$[0].avisos[0]").value("SEM_BANCA"));
+    }
+
+    // ---------- Sprint 45: o vínculo escolhido (D-173) e as questões por vez (D-174) ----------
+
+    String vinculo(String noIds) {
+        return "{\"noIds\": [" + noIds + "]}";
+    }
+
+    @Test
+    void d173_oVinculoDaAoAssuntoSemNadaUmAtalho_eVemAntesDoEdital_eTirarVoltaAoEdital() throws Exception {
+        mockMvc.perform(get("/api/assuntos/{id}/qconcursos-vinculo", semNada)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mockMvc.perform(put("/api/assuntos/{id}/qconcursos-vinculo", semNada).contentType(MediaType.APPLICATION_JSON).content(vinculo("28150")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].noId").value(28150))
+            .andExpect(jsonPath("$[0].nome").value("Regência"))
+            .andExpect(jsonPath("$[0].caminho[0]").value(portugues))
+            .andExpect(jsonPath("$[0].naArvore").value(true));
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(semNada)))
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].vinculado").value(true))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("discipline_ids%5B%5D=26&")))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("subject_ids%5B%5D=28150")))
+            .andExpect(jsonPath("$[0].avisos", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem("DISCIPLINA"))));
+
+        // o do edital (nó 28150) perde para o escolhido (disciplina −2)
+        mockMvc.perform(put("/api/assuntos/{id}/qconcursos-vinculo", porNoDeAssunto).contentType(MediaType.APPLICATION_JSON).content(vinculo("-2")))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].vinculado").value(true))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("discipline_ids%5B%5D=2&")))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("subject_ids"))))
+            .andExpect(jsonPath("$[0].filtro[0]").value(administrativo));
+        mockMvc.perform(delete("/api/assuntos/{id}/qconcursos-vinculo", porNoDeAssunto)).andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].vinculado").value(false))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("subject_ids%5B%5D=28150")));
+    }
+
+    @Test
+    void d173_ateTres_soNosDaArvoreVigente_eONoQueSaiuDaArvoreAvisa() throws Exception {
+        mockMvc.perform(put("/api/assuntos/{id}/qconcursos-vinculo", semNada).contentType(MediaType.APPLICATION_JSON).content(vinculo("")))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("VINCULO_VAZIO"));
+        mockMvc.perform(put("/api/assuntos/{id}/qconcursos-vinculo", semNada).contentType(MediaType.APPLICATION_JSON).content(vinculo("28150,-26,-2,99")))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("VINCULO_DEMAIS"));
+        mockMvc.perform(put("/api/assuntos/{id}/qconcursos-vinculo", semNada).contentType(MediaType.APPLICATION_JSON).content(vinculo("777")))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("NO_INEXISTENTE"));
+        mockMvc.perform(put("/api/assuntos/{id}/qconcursos-vinculo", 999_999_999L).contentType(MediaType.APPLICATION_JSON).content(vinculo("28150")))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/assuntos/{id}/qconcursos-vinculo", porNoDeDisciplina).contentType(MediaType.APPLICATION_JSON).content(vinculo("28150")))
+            .andExpect(status().isOk());
+
+        // uma árvore nova, sem o 28150: o vínculo avisa e o atalho volta ao do edital (−2)
+        jdbc.update("UPDATE arvore_versao SET vigente = false WHERE vigente");
+        var nova = jdbc.queryForObject("""
+            INSERT INTO arvore_versao (rotulo, fonte, data, quantidade_nos, vigente) VALUES (?, 'qconcursos', '2026-11-01', 2, true)
+            RETURNING id""", Long.class, "qc-nova-" + System.nanoTime());
+        no(nova, -26, portugues, null, -26);
+        no(nova, -2, administrativo, null, -2);
+        mockMvc.perform(get("/api/assuntos/{id}/qconcursos-vinculo", porNoDeDisciplina))
+            .andExpect(jsonPath("$[0].naArvore").value(false));
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeDisciplina)))
+            .andExpect(jsonPath("$[0].vinculado").value(false))
+            .andExpect(jsonPath("$[0].avisos", org.hamcrest.Matchers.hasItem("NO_FORA_DA_ARVORE")))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("discipline_ids%5B%5D=2&")));
+    }
+
+    @Test
+    void d174_questoesPorVez_aPaginaAbreComEsseNumero_eSoAceitaOsTamanhosDoQc() throws Exception {
+        mockMvc.perform(patch("/api/parametros/questoes_por_vez").contentType(MediaType.APPLICATION_JSON).content("{\"valor\": \"7\"}"))
+            .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(patch("/api/parametros/questoes_por_vez").contentType(MediaType.APPLICATION_JSON).content("{\"valor\": \"15\"}"))
+            .andExpect(status().isOk());
+        // o PATCH muda a entidade; dentro da transação do teste, o JdbcTemplate só a vê depois do flush
+        jdbc.update("UPDATE parametro SET valor = '15' WHERE chave = 'questoes_por_vez'");
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].sugeridas").value(15))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("per_page=15")));
+        mockMvc.perform(patch("/api/parametros/questoes_por_vez").contentType(MediaType.APPLICATION_JSON).content("{\"valor\": \"0\"}"))
+            .andExpect(status().isOk());
+        jdbc.update("UPDATE parametro SET valor = '0' WHERE chave = 'questoes_por_vez'");
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].sugeridas").value(8))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("per_page=10")));
     }
 }

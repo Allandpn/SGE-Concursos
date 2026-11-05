@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.37.0 |
+| Versão | 1.38.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -638,6 +638,11 @@ Frequente: em boa parte dos turnos. Ida em **1 toque**; a volta no orçamento do
 3. **Na volta** (fechar a aba no celular ou voltar à aba do SGE no computador), o lote rápido do assunto já está aberto, com o tempo
    desde a saída: feitas, certas, a previsão e **Registrar** (D-153).
 4. **Não fiz** fecha sem nada gravado; fechar no ✕ deixa para a próxima volta; depois de 6 h a saída é esquecida.
+5. **Sem atalho, ou pela disciplina inteira (D-173):** "Ligar ao QConcursos" abre uma folha com a busca na árvore do QConcursos, já
+   com o nome do assunto; a pessoa toca em até 3 resultados (cada um com o caminho) e **Ligar**. O atalho aparece na hora. No detalhe
+   do assunto: "Ligado por você", **trocar** e **tirar o vínculo**.
+6. **Questões por vez (D-174):** em Ajustes › Questões, Auto, 5, 10, 15 ou 20. Fixo, a página abre com esse número e a volta traz o
+   lote com ele em "feitas".
 5. Depois de Registrar, **Anotar erros** (opcional): para cada errada, o número Q, uma frase de por que errou, a causa e a confiança
    (D-156). Fora do orçamento do lote; pular não perde nada.
 6. Banca do alvo fora do catálogo: em Concursos, colar uma vez um endereço do QConcursos filtrado por ela (D-151).
@@ -977,7 +982,7 @@ O documento de interface é quem amarra isso.
 | J-20 Tirar sessões da escada | Ajustes › Sessões registradas | `04_FRONTEND` §8D, `01_DOMINIO` §3.26, D-160 a D-162 |
 | J-19 Modo de teste | Ajustes e a faixa em todas as telas | `04_FRONTEND` §8C, ADR-061 |
 | J-18 Próximos dias e ensaio | Hoje, Leitor, Recuperar, Registrar, Assuntos (detalhe) | D-157 a D-159, D-121, D-143, D-144 |
-| J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-133 |
+| J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-173, D-174, D-133 |
 
 ---
 
@@ -1004,6 +1009,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.38.0 | 2026-11-05 | J-17 ganha os passos 5 (ligar o assunto à árvore do QConcursos, D-173) e 6 (questões por vez, D-174), com `01_DOMINIO` v1.46.0 e `04_FRONTEND` v1.27.0 §8H |
 | 1.37.0 | 2026-11-05 | J-2 com perguntas: os pontos altos depois de conferir (D-172), com `01_DOMINIO` v1.45.0 e `04_FRONTEND` v1.26.0 §8G |
 | 1.36.0 | 2026-11-05 | Nova **J-22** (a captura do QConcursos), com `01_DOMINIO` v1.44.0 §3.28, `04_FRONTEND` v1.25.0 §8F e ADR-063 |
 | 1.35.0 | 2026-11-05 | Nova **J-21** (reiniciar o progresso), com `01_DOMINIO` v1.43.0 §3.27 e `04_FRONTEND` v1.23.0 §8E |

@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.26.0 |
+| Versão | 1.27.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -974,6 +974,21 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 - **Mais › Modo de teste** (e o mesmo item no menu lateral): leva a `#/ajustes/teste`, que abre Ajustes com o grupo "Modo de teste"
   aberto e na tela. O item mostra "ligado" ou "desligado".
 
+## 8H. O assunto ligado ao QConcursos e as questões por vez (Sprint 45)
+
+`01_DOMINIO` D-173 e D-174; decidido numa rodada.
+
+- **"Ligar ao QConcursos"** (`.qc-ligar`): em Hoje (Agora e fila) quando o assunto não tem atalho ou o atalho é pela disciplina
+  inteira; no detalhe do assunto, o quadro `#assunto-qc-sem` (sem atalho) ou "ligar o assunto" / "trocar" / "tirar o vínculo" em
+  `#assunto-qc`, que mostra "Ligado por você: …" quando o filtro vem do vínculo.
+- **A folha** `#vinculo-qc` (`Alpine.store('vinculoQc')`, `js/qconcursos.js`): a busca (`GET /api/arvore/busca`, 300 ms depois de
+  digitar) começa com o nome do assunto; cada resultado mostra o nome e o caminho; tocar marca (até 3, em chips com ✕); **Ligar a "…"**
+  grava (`PUT /api/assuntos/{id}/qconcursos-vinculo`) e recarrega o atalho do assunto. Sem árvore: o aviso e nada a escolher.
+- **Ajustes › Questões › Questões por vez** (`#ajuste-questoes-por-vez`): cinco botões (Auto, 5, 10, 15, 20) no lugar do campo de
+  número, com a explicação do valor escolhido.
+- **A volta** (D-153): com questões por vez fixo e sem captura, o lote abre com "feitas" preenchido.
+- `CASCA_VERSAO` sobe.
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -1007,6 +1022,7 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.27.0 | 2026-11-05 | §8H: ligar o assunto à árvore do QConcursos (a folha de busca, o vínculo no detalhe) e as questões por vez em Ajustes (D-173, D-174). Sprint 45 |
 | 1.26.0 | 2026-11-05 | §8G: ícones do bloco (Ler, Foco, Registrar) e o sinal de baixado no lugar de "sem rede ✓"; os pontos altos na Recuperar depois de conferir (D-172); o atalho do modo de teste no Mais. Sprint 44 |
 | 1.25.0 | 2026-11-05 | §8F: a captura do QConcursos — a chave em Ajustes, o userscript, a previsão na saída do atalho, o lote preenchido e a caixa em Hoje (`01_DOMINIO` §3.28, ADR-063). Sprint 37 |
 | 1.24.0 | 2026-11-05 | §8B, "As demais telas (Sprint 40)": Assuntos com busca, filtro de fase e uma consulta só; Progresso com os quatro cartões; a lista geral de Erros; Ajustes em grupos; a porta no tema. Decidido numa rodada |

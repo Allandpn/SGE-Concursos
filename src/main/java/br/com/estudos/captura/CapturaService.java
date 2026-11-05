@@ -95,7 +95,7 @@ public class CapturaService {
 
     /**
      * D-167: o par aprendido (do assunto mais específico ao mais geral); senão o nó da árvore vigente, por número ou nome, ligado pela
-     * conferência a um único assunto ativo do SGE; senão nenhum.
+     * pessoa (D-173) ou pela conferência a um único assunto ativo do SGE; senão nenhum.
      */
     Long acharAssunto(List<String> assuntosQc, List<Long> nosQc) {
         var nomes = new ArrayList<>(assuntosQc);
@@ -115,6 +115,11 @@ public class CapturaService {
                       'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC')), '\\s+', ' ', 'g')) = ?""", Long.class, normalizar(n)));
         }
         for (var no : candidatos) {
+            // D-173: o vínculo escolhido pela pessoa vem antes da conferência do edital.
+            var ligado = jdbc.queryForList("""
+                SELECT DISTINCT v.assunto_id FROM assunto_qconcursos_no v JOIN assunto a ON a.id = v.assunto_id
+                WHERE v.no_id = ? AND a.ativo""", Long.class, no);
+            if (ligado.size() == 1) return ligado.get(0);
             var doSge = jdbc.queryForList("""
                 SELECT DISTINCT ea.assunto_id FROM edital_parte_no pn
                 JOIN edital_parte ep ON ep.id = pn.parte_id AND NOT pn.proposto

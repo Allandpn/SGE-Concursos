@@ -35,6 +35,7 @@ const ROTULOS_PARAMETRO = {
   banca_provas_minimas: 'Mínimo de provas por disciplina',
   banca_questoes_minimas: 'Mínimo de questões por disciplina',
   minutos_por_questao: 'Minutos por questão',
+  questoes_por_vez: 'Questões por vez (QConcursos)',
 };
 
 // Preferências do Pomodoro que são do aparelho, não do domínio (docs/SPRINT-29-POMODORO.md §6): ficam no navegador.
@@ -2119,7 +2120,7 @@ document.addEventListener('alpine:init', () => {
         if (chave.startsWith('pomodoro_')) return 'Pomodoro';
         if (chave.startsWith('reta_final_')) return 'Reta final';
         if (chave.startsWith('banca_')) return 'Peso pela banca';
-        if (chave === 'minutos_por_questao' || chave === 'lote_minimo_questoes') return 'Questões';
+        if (chave === 'minutos_por_questao' || chave === 'lote_minimo_questoes' || chave === 'questoes_por_vez') return 'Questões';
         return 'Escada';
       };
       const porGrupo = {};

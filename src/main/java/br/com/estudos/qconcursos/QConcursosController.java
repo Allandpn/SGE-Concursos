@@ -2,11 +2,14 @@ package br.com.estudos.qconcursos;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,10 +22,34 @@ public class QConcursosController {
 
     public record Endereco(String endereco) {}
 
-    private final QConcursosService qconcursos;
+    public record Vinculo(List<Long> noIds) {}
 
-    public QConcursosController(QConcursosService qconcursos) {
+    private final QConcursosService qconcursos;
+    private final VinculoQConcursosService vinculos;
+
+    public QConcursosController(QConcursosService qconcursos, VinculoQConcursosService vinculos) {
         this.qconcursos = qconcursos;
+        this.vinculos = vinculos;
+    }
+
+    @GetMapping("/api/assuntos/{id}/qconcursos-vinculo")
+    @Operation(summary = "Os nós da árvore do QConcursos ligados ao assunto pela pessoa (D-173)", description = "naArvore=false: o nó saiu da árvore vigente.")
+    public List<VinculoQConcursosService.NoLigado> vinculo(@PathVariable long id) {
+        return vinculos.listar(id);
+    }
+
+    @PutMapping("/api/assuntos/{id}/qconcursos-vinculo")
+    @Operation(summary = "Liga o assunto a 1 a 3 nós da árvore vigente, trocando o vínculo anterior (D-173)",
+        description = "VINCULO_VAZIO, VINCULO_DEMAIS, NO_INEXISTENTE (422); sem árvore carregada, 404 ARVORE_NAO_CARREGADA.")
+    public List<VinculoQConcursosService.NoLigado> ligar(@PathVariable long id, @RequestBody Vinculo corpo) {
+        return vinculos.ligar(id, corpo.noIds());
+    }
+
+    @DeleteMapping("/api/assuntos/{id}/qconcursos-vinculo")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Tira o vínculo; o atalho volta aos nós do edital (D-173)")
+    public void tirar(@PathVariable long id) {
+        vinculos.tirar(id);
     }
 
     @GetMapping("/api/qconcursos/atalhos")

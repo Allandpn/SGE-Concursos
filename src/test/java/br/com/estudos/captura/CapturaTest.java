@@ -169,4 +169,21 @@ class CapturaTest extends IntegracaoTestBase {
             {"codigo": "Q400002", "acertou": false, "assuntos": ["Outro nome"], "nos": [%d], "gabarito": "B"}""".formatted(no))
             .andExpect(jsonPath("$.assunto").value("Regência Verbal Cap"));
     }
+
+    @Test
+    void d173_oVinculoEscolhidoAchaOAssunto_semConferencia() throws Exception {
+        var k = chave();
+        var a = assunto("Juros Simples Cap");
+        long no = 910_000_000L + (System.nanoTime() % 1_000_000);
+        jdbc.update("UPDATE arvore_versao SET vigente = false WHERE vigente");
+        var versao = jdbc.queryForObject("""
+            INSERT INTO arvore_versao (rotulo, fonte, data, quantidade_nos, vigente) VALUES (?, 'qconcursos', '2026-10-19', 2, true) RETURNING id""",
+            Long.class, "vin-" + no);
+        jdbc.update("INSERT INTO no_arvore (versao_id, no_id, nome, pai_id, ordem, raiz_id) VALUES (?, -40, 'Matemática Financeira', NULL, 1, -40)", versao);
+        jdbc.update("INSERT INTO no_arvore (versao_id, no_id, nome, pai_id, ordem, raiz_id) VALUES (?, ?, 'Juros Simples', -40, 1, -40)", versao, no);
+        jdbc.update("INSERT INTO assunto_qconcursos_no (assunto_id, no_id, ordem) VALUES (?, ?, 1)", a, no);
+        enviar(k, """
+            {"codigo": "Q400101", "acertou": true, "assuntos": ["Nome que não casa"], "nos": [%d], "gabarito": "C"}""".formatted(no))
+            .andExpect(jsonPath("$.assunto").value("Juros Simples Cap"));
+    }
 }
