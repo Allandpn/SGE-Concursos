@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.42.0 |
+| Versão | 1.43.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -1087,6 +1087,26 @@ de novo (D-161).
 
 ---
 
+### 3.27 Reiniciar o progresso
+
+A pedido do usuário (2026-11-05): recomeçar o progresso de **um concurso** ou de **tudo**, sem perder o cadastro e com volta.
+
+**O que zera (D-163).** Reiniciar um concurso tira da escada (D-160) **todas as sessões ativas dos assuntos da cobertura dele** —
+também os que ele divide com outro concurso, que a confirmação aponta. Reiniciar tudo tira todas as sessões ativas. A escada desses
+assuntos é refeita (D-161): sem sessões, eles voltam a **nunca visto**; com as sessões saem os erros, as perguntas respondidas e o
+foco ligados a elas. **Fica** todo o cadastro (concursos, editais, assuntos, material, perguntas preparadas, pesos, ajustes), e
+também simulados, provas resolvidas, marcações, a última página lida, a reta final e os erros anotados sem sessão.
+
+**Desfazer (D-164).** Nada é apagado: o reinício fica registrado (quando, de quê, quais sessões tirou). **Desfazer** põe de volta as
+sessões dele que ainda estiverem tiradas e refaz a escada — as sessões feitas depois do reinício entram na mesma ordem, pela data.
+Um reinício desfeito não se desfaz de novo; reiniciar outra vez cria outro. As sessões tiradas aparecem também em Sessões
+registradas (§3.26), e lá podem voltar uma a uma.
+
+**A confirmação (D-165).** Antes de reiniciar, a tela mostra o que vai zerar — quantas sessões, quantos assuntos e, num concurso, os
+divididos com outros — e só reinicia depois de a pessoa **digitar REINICIAR**.
+
+---
+
 ## 4. O resultado da recuperação
 
 Três níveis, iguais para todo tipo (`00_PRODUTO` §6.3):
@@ -2009,6 +2029,9 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-160 | Uma sessão tirada da escada (desativada) sai de tudo — escada, Hoje, próximos dias, métricas, diagnóstico, ritmo, histórico — e leva junto os erros anotados nela, as perguntas respondidas nela e o foco ligado a ela; nada é apagado nem editado | §3.26 |
 | D-161 | Tirar ou pôr de volta refaz a escada de cada assunto afetado: as revisões dele são remontadas na ordem das sessões (data, registro) só com as ativas, pelas regras do registro; a pendente refeita que é a mesma de antes (mesma origem e nível) guarda a data que tinha; sem sessões, o assunto volta a nunca visto; arquivado, a pendente fica cancelada | §3.26 |
 | D-162 | A sessão tirada continua guardada e pode ser posta de volta, o que refaz a escada de novo (D-161) | §3.26 |
+| D-163 | Reiniciar um concurso tira da escada (D-160) as sessões ativas dos assuntos da cobertura dele, divididos com outros inclusive; reiniciar tudo, todas as sessões ativas; a escada desses assuntos é refeita (D-161); o cadastro, simulados, provas, marcações, a última página, a reta final e os erros sem sessão ficam | §3.27 |
+| D-164 | O reinício fica registrado com as sessões que tirou; desfazê-lo põe de volta as que ainda estiverem tiradas e refaz a escada; um reinício desfeito não se desfaz de novo | §3.27 |
+| D-165 | Reiniciar mostra antes o que vai zerar (sessões, assuntos e, num concurso, os divididos) e só acontece depois de digitar REINICIAR | §3.27 |
 
 ---
 
@@ -2100,6 +2123,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.43.0 | 2026-11-05 | Pedido do usuário (Sprint 43), decidido em duas rodadas, com `02_JORNADAS` v1.35.0. **§3.27** (reiniciar o progresso) e **D-163 a D-165**: reiniciar um concurso ou tudo pela mesma desativação de sessões (D-160, D-161), registrado e com desfazer, e a confirmação digitada. 165 regras |
 | 1.42.0 | 2026-11-05 | Pedido do usuário (Sprint 42), decidido numa rodada, com `02_JORNADAS` v1.34.0 e ADR-062. **§3.26** (tirar sessões da escada) e **D-160 a D-162**: a sessão desativada sai de tudo com o que está ligado a ela, a escada do assunto é refeita só com as ativas, e dá para pôr de volta. 162 regras |
 | 1.41.0 | 2026-11-04 | Pedido do usuário (Sprint 38), decidido em duas rodadas, com `02_JORNADAS` v1.31.0 e ADR-059. **§3.25** (os próximos 7 dias e o ensaio) e **D-157 a D-159**: a visão derivada dos próximos dias, a prévia do material só para ler e o ensaio que mostra o que aconteceria sem gravar nada. 159 regras |
 | 1.40.0 | 2026-11-04 | Pedido do usuário (Sprint 36), decidido em duas rodadas, com `02_JORNADAS` v1.30.0 e ADR-058. **§3.24** (questões no QConcursos) e **D-150 a D-154**: o atalho filtrado pelos nós do assunto (ou pela disciplina, com aviso), pela banca do alvo, sem anuladas e desatualizadas, só não resolvidas e dos últimos N anos; a sugestão de quantas pelo foco; a volta com o lote rápido aberto, guardada só no aparelho; onde o atalho aparece. **D-133**: o tempo sem foco passa a ser o parâmetro "minutos por questão" (padrão 3, antes 2 fixo). Numa segunda rodada: a modalidade do alvo no filtro, o catálogo de bancas que aprende pelos endereços colados, **D-155** (questões antes de ler só contam nas métricas; §8 ajustada) e **D-156** (anotar os erros do lote). 156 regras |
