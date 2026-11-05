@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.23.0 |
+| Versão | 1.24.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -875,6 +875,27 @@ tokens de §8A e os neutros passam a ser variáveis (ADR-060): cada cor tem o pa
 - **A ação da etapa fixa embaixo**, ao alcance do polegar, acima da área segura; o resto rola.
 - Datas e textos humanos (tabela acima). Erros de envio na mesma tela, sem perder o que foi digitado (§5).
 
+### As demais telas (Sprint 40)
+
+Decidido numa rodada (2026-11-05), sobre o padrão acima.
+
+- **Assuntos:** no topo, uma busca e os filtros de fase (**Todos**, **Na fila**, **Estudando**, **Consolidado**, com a contagem).
+  Abaixo, as disciplinas recolhíveis, cada uma com "2 na fila · 2 estudando · 0 consolidados" e o peso; cada assunto numa linha, com
+  a fase em palavras e a próxima revisão em data humana ("revisão amanhã", "revisão atrasada há 3 dias"). Tudo numa consulta só
+  (`GET /api/assuntos/painel`), em vez de uma por assunto.
+- **Progresso:** no topo, quatro cartões — **Acerto em questões**, **Retenção**, **Calibração**, **Em dia com as revisões** —, cada
+  um com o número grande, uma frase do que quer dizer e o código pequeno (M-1 a M-4). Abaixo, seções recolhíveis: Estudando (a
+  frente), Acerto por disciplina, Calibração em detalhe, Simulados (com Registrar simulado).
+- **Erros:** "Erros" entra no painel Mais e no menu lateral e abre a **lista geral** (`#/erros`), do mais novo ao mais antigo, com
+  filtros por disciplina, por causa e "só não resolvidos"; cada erro mostra o assunto, a causa, a data humana e o número Q, se houver;
+  tocar abre o assunto. A lista por assunto (`#/erros/{id}`) continua.
+- **Ajustes:** os blocos ficam em grupos, nesta ordem: **Seus dados** (Sessões registradas, Modo de teste); **Este aparelho**
+  (Aparência, Versão do app, Avisos, Pomodoro neste aparelho, Acesso); **IA e integrações** (IA, Árvore do QConcursos);
+  **Parâmetros** (recolhido: tetos, turno, Pomodoro, questões, limiares, reta final, peso pela banca, escada); **Reinícios** e a zona
+  de cuidado no fim.
+- **Concursos, provas e conferência:** os cartões, os três papéis de botão, toques de 44 px e as datas humanas, sem mudar o fluxo.
+- **A porta (`entrar.html`):** o mesmo tema (claro e escuro, pela variável de cor e pela escolha do aparelho).
+
 ---
 
 ## 8C. O modo de teste (Sprint 41)
@@ -956,6 +977,7 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.24.0 | 2026-11-05 | §8B, "As demais telas (Sprint 40)": Assuntos com busca, filtro de fase e uma consulta só; Progresso com os quatro cartões; a lista geral de Erros; Ajustes em grupos; a porta no tema. Decidido numa rodada |
 | 1.23.0 | 2026-11-05 | §8E: reiniciar o progresso de um concurso ou de tudo, a confirmação digitada e a lista de reinícios com desfazer (`01_DOMINIO` §3.27). Sprint 43 |
 | 1.22.0 | 2026-11-05 | §8D: Sessões registradas — tirar sessões da escada e pôr de volta (`01_DOMINIO` §3.26, ADR-062). Sprint 42 |
 | 1.21.0 | 2026-11-05 | §8C: o modo de teste — por aparelho, com a cópia dos dados reais, a data do teste que se avança e a faixa fixa; sem IA, sem avisos, sem envio de arquivo (ADR-061). Sprint 41 |
