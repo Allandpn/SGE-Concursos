@@ -1,0 +1,428 @@
+{
+  "app": "eAgora (SGE-Concursos)",
+  "versao": "release/19 · casca-2026-11-05-9",
+  "geradoEm": "2026-11-05",
+  "fonte": "src/main/resources/static/index.html, entrar.html, js/router.js, js/navegacao.js",
+  "convencoes": {
+    "rota": "hash da URL; a navegação nunca vai ao servidor (ADR-030)",
+    "tipo": "tela = rota própria · folha = painel que sobe por cima (bottom sheet) · gaveta = painel lateral · grupo = <details> que abre e fecha · secao = bloco fixo da tela · etapa = passo de uma sequência",
+    "modoFoco": "telas de estudo sem barra/menu: só 'Sair' e o assunto no topo, a ação fixa embaixo",
+    "condicao": "quando o bloco só aparece em certas situações"
+  },
+
+  "porta": {
+    "arquivo": "/entrar.html",
+    "nome": "Entrar (a porta)",
+    "regra": "fora das telas do app, sem dado nenhum (J-9, D-106)",
+    "visoes": [
+      { "nome": "Entrar com passkey" },
+      { "nome": "Primeiro acesso", "condicao": "aparelho ainda sem passkey (cadastrar este aparelho)" },
+      { "nome": "Seus códigos de recuperação", "condicao": "uma vez só, depois do primeiro cadastro (D-110)", "acao": "Abrir o app → #/hoje" }
+    ]
+  },
+
+  "casca": {
+    "descricao": "o que fica em volta de todas as telas",
+    "faixaModoTeste": {
+      "id": "faixa-teste",
+      "condicao": "modo de teste ligado neste aparelho",
+      "itens": ["TESTE · data", "+1 dia", "+7", "⋯"],
+      "folha": {
+        "id": "menu-teste",
+        "itens": ["Ir para a data…", "Hoje de verdade", "Recomeçar", "Sair do modo de teste"]
+      }
+    },
+    "navegacao": {
+      "celular": {
+        "barraInferior": [
+          { "nome": "Hoje", "rota": "#/hoje" },
+          { "nome": "Assuntos", "rota": "#/assuntos" },
+          { "nome": "Progresso", "rota": "#/progresso" },
+          { "nome": "Mais", "abre": "folha painel-mais" }
+        ],
+        "painelMais": [
+          { "nome": "Concursos", "rota": "#/concursos" },
+          { "nome": "Erros", "rota": "#/erros" },
+          { "nome": "Modo de teste", "rota": "#/ajustes/teste", "mostra": "ligado · data / desligado" },
+          { "nome": "Ajustes", "rota": "#/ajustes" }
+        ],
+        "tituloNoTopo": "cada tela mostra o nome no topo (Hoje tem o próprio cabeçalho)"
+      },
+      "computador": {
+        "menuLateral": ["eAgora", "Hoje", "Assuntos", "Progresso", "—", "Concursos", "Erros", "Modo de teste", "Ajustes"]
+      },
+      "someEm": ["Recuperar", "Registrar", "Leitor (modo foco)"]
+    },
+    "barraPomodoro": {
+      "id": "barra-foco",
+      "condicao": "há fase do Pomodoro em curso (J-8)",
+      "itens": ["tempo", "assunto", "Pausar/Retomar", "Encerrar/Pular"],
+      "proposta": "terminou uma fase: propõe a seguinte e espera um toque (D-102)"
+    },
+    "folhasGlobais": [
+      {
+        "id": "lote-rapido",
+        "nome": "Lote rápido (Fiz questões)",
+        "abreDe": ["Hoje › Fiz questões", "volta do QConcursos (até 6 h)", "Hoje › caixa da captura › Registrar"],
+        "etapas": [
+          { "nome": "Lote", "campos": ["formato", "feitas", "certas", "previsão em faixas", "tempo"], "acoes": ["Registrar", "Não fiz", "✕"] },
+          { "nome": "Anotar erros", "condicao": "houve erradas", "campos": ["número Q", "descrição", "causa"] }
+        ]
+      },
+      {
+        "id": "painel-previa",
+        "nome": "Prévia de um assunto",
+        "abreDe": ["Hoje › Próximos 7 dias", "Detalhe do assunto › Ensaiar…"],
+        "acoes": ["Ver o material (leitor em prévia, só leitura)", "Ensaiar recuperação/questões (não grava)"]
+      },
+      {
+        "id": "qc-antes",
+        "nome": "Antes de ir ao QConcursos",
+        "abreDe": ["todo atalho 'Resolver no QConcursos ↗'"],
+        "campos": ["previsão 50–90%"],
+        "acoes": ["Abrir o QConcursos ↗", "Cancelar"]
+      },
+      {
+        "id": "vinculo-qc",
+        "nome": "Ligar ao QConcursos",
+        "abreDe": ["Hoje › Ligar ao QConcursos", "Detalhe do assunto › ligar/trocar"],
+        "campos": ["busca na árvore do QConcursos", "resultados com caminho (até 3)"],
+        "acoes": ["Ligar a “…”", "Cancelar"]
+      },
+      {
+        "id": "reinicio-confirmar",
+        "nome": "Reiniciar o progresso",
+        "abreDe": ["Concursos › Cuidado", "Ajustes › Cuidado"],
+        "campos": ["digitar REINICIAR"],
+        "depois": "aviso com Desfazer (reinicio-aviso)"
+      }
+    ]
+  },
+
+  "telas": [
+    {
+      "id": "pagina-hoje",
+      "rota": "#/hoje",
+      "nome": "Hoje",
+      "papel": "porta de entrada do dia (J-2, J-4)",
+      "secoes": [
+        { "nome": "Cabeçalho", "id": "hoje-cabecalho", "itens": ["dia por extenso", "concurso-alvo · data da prova"] },
+        { "nome": "Reta final", "condicao": "ativa (faixa) ou sugerida (D-140, D-141)", "abre": "#/concursos" },
+        { "nome": "Volta depois de dias fora", "condicao": "dias sem estudar (J-4)" },
+        { "nome": "Aviso da IA", "condicao": "assinatura do Claude parou e o material espera" },
+        { "nome": "Alerta de represamento", "condicao": "revisões acumuladas (D-56)" },
+        { "nome": "Progresso do dia", "id": "progresso-do-dia" },
+        {
+          "nome": "Agora",
+          "id": "proxima-acao",
+          "variantes": [
+            { "tipo": "reestudo", "botao": "Ler o material / Reestudar", "extra": "pontos que não vieram (p. N →)" },
+            { "tipo": "recuperacao", "botao": "Começar a recuperação", "abre": "#/recuperar/{id}", "links": ["Fiz questões", "Resolver no QConcursos ↗", "Ligar ao QConcursos"] },
+            { "tipo": "conteudo", "botao": "Ler o bloco (com selo de baixado)", "abre": "#/ler/{bloco}", "links": ["Foco", "Registrar"] },
+            { "tipo": "simulado", "botao": "Registrar o simulado", "abre": "#/registrar/simulado" }
+          ]
+        },
+        { "nome": "O que a reta final antecipou", "condicao": "reta final (D-143)" },
+        {
+          "nome": "Questões do QConcursos (caixa da captura)",
+          "id": "caixa-captura",
+          "condicao": "questões capturadas ainda não registradas (D-169)",
+          "porGrupo": ["Registrar (previsão → grava)", "Escolher assunto (par)", "Descartar"]
+        },
+        {
+          "nome": "Depois · Recuperar",
+          "id": "fila-depois",
+          "porItem": ["abrir → #/recuperar/{id}", "Fiz questões", "Resolver no QConcursos ↗", "Ligar ao QConcursos"]
+        },
+        { "nome": "Manutenção espera a prova", "condicao": "reta final (D-143)" },
+        { "nome": "Reestudar", "porItem": ["abrir reestudo", "pontos que não vieram → leitor", "Ler"] },
+        { "nome": "Depois · conteúdo novo / continuar leitura", "itens": ["bloco → Registrar", "Foco", "Ler (baixado)", "Abrir material (link antigo)", "aviso da conferência → #/concursos/analise/{id}/conferencia"] },
+        { "nome": "Segundo bloco: simulado da semana", "id": "simulado-da-semana", "condicao": "reta final (D-144)" },
+        { "nome": "Material preparando / pronto", "abre": "#/assuntos" },
+        { "nome": "Foco sem assunto", "abre": "barra do Pomodoro" },
+        { "nome": "Quer adiantar?", "condicao": "há o que puxar", "itens": ["Drenar revisões atrasadas", "Antecipar"] },
+        { "nome": "Próximos 7 dias", "id": "proximos-dias", "layout": "coluna no computador, bloco recolhido no celular", "porItem": "abre a Prévia" }
+      ]
+    },
+
+    {
+      "id": "pagina-recuperar",
+      "rota": "#/recuperar/{assuntoId}",
+      "nome": "Recuperar",
+      "modoFoco": true,
+      "abreDe": ["Hoje › Agora", "Hoje › fila", "Prévia › Ensaiar (sem gravar)"],
+      "regra": "única tela com sequência vinculante; nada do material antes de conferir (D-125, D-172)",
+      "etapas": [
+        { "n": 1, "nome": "Prever", "acao": "Vou reconstruir / Faltou um pedaço / Não vai vir" },
+        { "n": 2, "nome": "Reconstruir", "conteudo": "perguntas sem gabarito, resposta opcional (ou recuperação livre)", "acao": "Conferir / Ver o gabarito" },
+        {
+          "n": 3,
+          "nome": "Conferir",
+          "conteudo": ["gabarito em pontos (marcar o que veio)", "pergunta ruim", "sugestão do resultado", "Seus pontos altos (destaques e notas, p. N → leitor)"],
+          "acao": "Confirmar: Reconstruí / Faltou um pedaço / Não veio",
+          "extra": "+ registrar um erro → #/erros/{id}"
+        },
+        { "n": 4, "nome": "O que faltou", "condicao": "resultado Faltou um pedaço (D-128)", "conteudo": "pontos com 'ler p. N →'" }
+      ],
+      "saida": "Sair (pergunta se no meio) → #/hoje"
+    },
+
+    {
+      "id": "pagina-registrar",
+      "rota": "#/registrar/{conteudo|questoes|flashcards|discursiva}/{assuntoId}",
+      "nome": "Registrar",
+      "modoFoco": true,
+      "abreDe": ["Hoje › Registrar / bloco", "Detalhe do assunto › Conteúdo/Questões/Flashcards", "Leitor › Terminei"],
+      "secoes": [
+        { "nome": "Seletor de tipo", "itens": ["Conteúdo", "Questões", "Flashcards", "Discursiva", "Simulado → #/registrar/simulado"] },
+        { "nome": "Segmento (bloco)", "condicao": "assunto tem blocos" },
+        { "nome": "Questões/Flashcards", "campos": ["feitas", "certas", "formato", "previsão em faixas"] },
+        { "nome": "Discursiva", "campos": ["previsão em três níveis", "nota 0–100"] },
+        { "nome": "Tempo", "nota": "declarado; vem do Pomodoro quando houve foco (D-100)" },
+        { "nome": "Ação fixa", "nota": "o botão diz o que vai acontecer; no ensaio, nada grava" }
+      ]
+    },
+
+    {
+      "id": "pagina-simulado",
+      "rota": "#/registrar/simulado",
+      "nome": "Registrar simulado",
+      "abreDe": ["Hoje › simulado da semana", "Registrar › Simulado", "Progresso › Simulados"],
+      "conteudo": "linhas por disciplina do edital do alvo: feitas, certas (J-16, D-148)"
+    },
+
+    {
+      "id": "pagina-leitor",
+      "rota": "#/ler/{blocoId}?p=N&previa=1",
+      "nome": "Leitor",
+      "modoFoco": true,
+      "abreDe": ["Hoje › Ler", "reestudo › p. N", "Recuperar › pontos altos / o que faltou", "Detalhe do assunto › Material › Ler", "Prévia (só leitura)"],
+      "secoes": [
+        { "nome": "Barra", "itens": ["voltar", "bloco N de M", "contador de página (toque → Ir para a página)", "Terminei → Registrar", "⋮"] },
+        { "nome": "Páginas", "modos": ["rolagem contínua", "uma por vez (deslizar)"], "gestos": ["pinça", "selecionar texto"] },
+        { "nome": "Seleção de texto", "acoes": ["Importante", "Dúvida", "Decorar", "Nota"] },
+        { "nome": "Painel da marcação", "acoes": ["trocar cor", "nota", "remover"], "nota": "também cria nota de página" }
+      ],
+      "folhas": [
+        { "nome": "Ir para a página" },
+        { "nome": "Menu ⋮", "itens": ["como passar as páginas", "Baixar para abrir sem internet", "Abrir fora do app", "Marcações removidas e versões", "Zoom"] }
+      ],
+      "gavetas": [
+        { "nome": "Marcações deste bloco", "filtro": "por cor" },
+        { "nome": "Histórico de marcações", "nota": "só consulta (D-117)" }
+      ],
+      "estados": ["Abrindo o bloco…", "Este bloco não está baixado no aparelho (sem internet)", "prévia: só leitura (D-158)"]
+    },
+
+    {
+      "id": "pagina-assuntos",
+      "rota": "#/assuntos",
+      "nome": "Assuntos",
+      "secoes": [
+        { "nome": "Busca + filtro de fase", "id": "assuntos-filtro" },
+        { "nome": "Disciplinas (recolhíveis)", "porItem": "assunto → #/assuntos/{id}" }
+      ]
+    },
+
+    {
+      "id": "pagina-assunto-detalhe",
+      "rota": "#/assuntos/{id}",
+      "nome": "Detalhe do assunto",
+      "abreDe": ["Assuntos"],
+      "secoes": [
+        { "nome": "Cabeçalho", "itens": ["disciplina", "nome", "peso", "fase"] },
+        { "nome": "Registrar", "itens": ["Conteúdo", "Questões", "Flashcards", "Erros → #/erros/{id}"] },
+        { "nome": "QConcursos", "id": "assunto-qc", "itens": ["Resolver no QConcursos ↗", "linha do filtro", "Ligado por você / trocar / tirar o vínculo"], "semAtalho": "assunto-qc-sem › Ligar ao QConcursos" },
+        { "nome": "Ensaiar…", "abre": "Prévia" },
+        { "nome": "Foco neste assunto" },
+        { "nome": "O que o edital pede", "nota": "partes e nó de cada uma" },
+        { "nome": "Material", "itens": ["Do acervo", "um grupo por PDF próprio", "por bloco: Ler / abrir material, estimado × real"], "acoes": ["+ Adicionar meu PDF", "Tirar este PDF", "O acervo não ensina isto", "Preparar de novo"] },
+        { "nome": "Questões das aulas", "nota": "consulta (D-94)" },
+        { "nome": "Retenção (M-2)" }
+      ]
+    },
+
+    {
+      "id": "pagina-erros",
+      "rota": "#/erros/{assuntoId}",
+      "nome": "Erros deste assunto",
+      "abreDe": ["Detalhe do assunto", "Recuperar › + registrar um erro"],
+      "secoes": [
+        { "nome": "Novo erro", "campos": ["descrição", "causa", "confiança", "número Q"] },
+        { "nome": "Lista", "nota": "número Q vira link para o QConcursos" }
+      ]
+    },
+
+    {
+      "id": "pagina-erros-gerais",
+      "rota": "#/erros",
+      "nome": "Erros (todos)",
+      "abreDe": ["Mais › Erros"],
+      "secoes": [
+        { "nome": "Filtros", "campos": ["disciplina", "causa", "só não resolvidos"] },
+        { "nome": "Lista", "porItem": ["marcar/desmarcar resolvido", "assunto → #/erros/{id}"] }
+      ]
+    },
+
+    {
+      "id": "pagina-progresso",
+      "rota": "#/progresso",
+      "nome": "Progresso",
+      "secoes": [
+        { "nome": "Quatro cartões", "id": "progresso-cartoes", "itens": ["M-1 estudando", "M-2 retenção (por assunto)", "M-3 calibração", "M-4 em dia"] },
+        { "nome": "Detalhes recolhíveis", "grupos": ["progresso-estudando", "progresso-acerto", "progresso-calibracao", "progresso-em-dia"] },
+        { "nome": "Assuntos que podem estar grandes demais", "nota": "só sugere (D-35)" },
+        { "nome": "Simulados", "id": "progresso-simulados", "acoes": ["arquivar", "registrar → #/registrar/simulado"] },
+        { "nome": "O que o Pomodoro mediu", "id": "progresso-foco" }
+      ]
+    },
+
+    {
+      "id": "pagina-concursos",
+      "rota": "#/concursos",
+      "nome": "Concursos",
+      "abreDe": ["Mais › Concursos"],
+      "secoes": [
+        {
+          "nome": "Concurso-alvo",
+          "itens": [
+            "material chegando (acompanhamento)",
+            "o que a conferência deixou por resolver → #/concursos/analise/{id}/conferencia",
+            "Banca no QConcursos (trocar: colar endereço)",
+            "Diagnóstico do edital → gaveta",
+            "Reta final (entrar / sair)",
+            "Peso pela banca → gaveta",
+            "Régua da prova e nota de corte",
+            "Provas: verificar com uma prova → #/provas/nova, #/provas/{id}",
+            "Preparar de novo o material do concurso",
+            "Material de cada assunto e motivo de quem ficou sem",
+            "Cuidado: reiniciar o progresso deste concurso → folha"
+          ]
+        },
+        { "nome": "Editais de antes", "acoes": ["tornar alvo", "Novo edital → #/concursos/novo"] }
+      ],
+      "gavetas": [
+        { "id": "peso-banca", "nome": "Peso pela banca", "itens": ["propostas", "ajustados", "QConcursos ↗ por assunto", "aceitar"] },
+        { "nome": "Diagnóstico do edital", "itens": ["cabe / fica de fora", "data e ritmo simulados", "QConcursos ↗ por assunto"] }
+      ]
+    },
+
+    {
+      "id": "pagina-edital",
+      "rota": "#/concursos/novo · #/concursos/analise/{id}",
+      "nome": "Novo edital / Análise",
+      "estados": [
+        { "nome": "Novo", "acao": "enviar PDF" },
+        { "nome": "Escolher cargo", "condicao": "ESCOLHER_CARGO" },
+        { "nome": "Lendo", "nota": "acompanhamento periódico" },
+        { "nome": "Em conferência", "abre": "#/concursos/analise/{id}/conferencia" },
+        { "nome": "Confirmada" },
+        { "nome": "Falhou", "acao": "Ler o edital de novo" }
+      ]
+    },
+
+    {
+      "id": "pagina-conferencia",
+      "rota": "#/concursos/analise/{id}/conferencia",
+      "nome": "Conferência do edital",
+      "layout": "largo no computador",
+      "secoes": [
+        { "nome": "O que falta decidir" },
+        { "nome": "Fila", "porItem": "Ver e decidir → painel", "acoes": ["Aceitar os N (não tem igual)"] },
+        { "nome": "Aceitos sozinhos" },
+        { "nome": "Por disciplina" },
+        { "nome": "Decisões" },
+        { "nome": "Números do edital (recolhidos)" }
+      ],
+      "folhas": [
+        { "nome": "Painel de uma parte / assunto / trecho", "itens": ["visão geral", "trocar o nó (busca na árvore)", "editar decisão"] }
+      ],
+      "estados": ["refazendo a leitura (Reprocessar)"]
+    },
+
+    {
+      "id": "pagina-prova",
+      "rota": "#/provas/nova · #/provas/{id} · #/provas/{id}/relatorio",
+      "nome": "Verificar com uma prova",
+      "abreDe": ["Concursos › Provas"],
+      "estados": [
+        { "nome": "Envio", "campos": ["PDF da prova", "gabarito (PDF ou texto)"] },
+        { "nome": "Acompanhamento e conferência", "nota": "aguardando gabarito, recorte escolhido, 3 questões sorteadas" },
+        { "nome": "Relatório", "nota": "sempre com denominador; em pontos do edital (D-136)", "acao": "Resolver → #/provas/{id}/resolver" }
+      ]
+    },
+
+    {
+      "id": "pagina-resolver",
+      "rota": "#/provas/{id}/resolver",
+      "nome": "Resolver a prova",
+      "conteudo": ["uma questão por tela", "navegador de questões (cores só depois de entregar)", "Entregar → nota"]
+    },
+
+    {
+      "id": "pagina-ajustes",
+      "rota": "#/ajustes · #/ajustes/teste",
+      "nome": "Ajustes",
+      "abreDe": ["Mais › Ajustes", "Mais › Modo de teste (abre o grupo)"],
+      "secoes": [
+        { "nome": "Seus dados", "itens": ["Sessões registradas → #/sessoes"] },
+        { "nome": "Modo de teste", "tipo": "grupo", "id": "ajustes-g-teste", "acoes": ["Entrar no modo de teste", "Recomeçar", "Sair"] },
+        {
+          "nome": "Este aparelho",
+          "grupos": [
+            { "id": "ajustes-g-aparencia", "nome": "Aparência", "itens": ["claro / escuro / do aparelho"] },
+            { "id": "ajustes-g-versao", "nome": "Versão do app", "itens": ["neste aparelho", "no servidor", "Atualizar agora"] },
+            { "id": "ajustes-g-avisos", "nome": "Avisos", "itens": ["edital lido", "material pronto"] },
+            { "id": "ajustes-g-pomodoro", "nome": "Pomodoro neste aparelho", "itens": ["som", "vibração", "aviso de fim de fase"] },
+            { "id": "ajustes-g-acesso", "nome": "Acesso", "itens": ["passkeys", "sair", "códigos de recuperação"] }
+          ]
+        },
+        {
+          "nome": "IA e integrações",
+          "grupos": [
+            { "id": "ajustes-g-ia", "nome": "IA", "itens": ["Assinatura do Claude", "OpenRouter (segunda opção)"] },
+            { "id": "ajustes-g-captura", "nome": "Captura do QConcursos", "itens": ["chaves por navegador", "Gerar chave", "Instalar o userscript", "diagnósticos recebidos"] },
+            { "id": "ajustes-g-arvore", "nome": "Árvore do QConcursos", "itens": ["versões", "o que mudou", "tornar vigente"] }
+          ]
+        },
+        {
+          "nome": "Parâmetros",
+          "grupos": [
+            {
+              "id": "ajustes-g-parametros",
+              "nome": "Escada, tetos, limiares…",
+              "secoes": ["Tetos", "Turno", "Pomodoro", "Questões (lote mínimo, minutos por questão, questões por vez)", "Limiares de resultado", "Reta final", "Peso pela banca", "Escada"]
+            }
+          ]
+        },
+        { "nome": "Reinícios", "id": "ajustes-reinicios", "porItem": "Desfazer" },
+        { "nome": "Cuidado", "id": "ajustes-cuidado", "acao": "Reiniciar todo o progresso → folha" }
+      ]
+    },
+
+    {
+      "id": "pagina-sessoes",
+      "rota": "#/sessoes",
+      "nome": "Sessões registradas",
+      "abreDe": ["Ajustes › Seus dados"],
+      "secoes": [
+        { "nome": "Lista por dia (30 dias)", "porItem": ["marcar", "Pôr de volta (as tiradas)"] },
+        { "nome": "Ação fixa", "acao": "Tirar N da escada → confirmação → aviso 'Escada refeita'" }
+      ],
+      "folhas": [{ "nome": "Confirmar tirar da escada", "nota": "lista os assuntos afetados" }]
+    }
+  ],
+
+  "foraDoApp": [
+    { "nome": "QConcursos", "entrada": "atalho ↗ (nova aba)", "volta": "lote rápido abre sozinho (até 6 h)" },
+    { "nome": "Userscript da captura", "rota": "/captura/eagora-qconcursos.user.js", "nota": "selo no canto do QConcursos" }
+  ],
+
+  "resumo": {
+    "rotas": 21,
+    "telas": 17,
+    "folhasGlobais": 5,
+    "telasModoFoco": ["Recuperar", "Registrar", "Leitor"],
+    "naBarraDoCelular": ["Hoje", "Assuntos", "Progresso", "Mais"]
+  }
+}
