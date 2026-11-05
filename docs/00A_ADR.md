@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.27.0** |
+| Versão do documento | **2.28.0** |
 | Status | **Congelado** |
-| Data | 2026-11-04 |
-| Total | 60 ADRs — 45 vigentes, 14 substituídas, 1 revogada |
+| Data | 2026-11-05 |
+| Total | 61 ADRs — 46 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -88,6 +88,7 @@ que custa e o que foi descartado.
 | [ADR-058](#adr-058--qconcursos-por-atalho-e-volta-sem-api-sem-moldura-sem-raspagem) | QConcursos por atalho e volta: sem API, sem moldura, sem raspagem | 2026-11-04 |
 | [ADR-059](#adr-059--o-ensaio-calcula-pelo-registro-real-numa-transação-desfeita) | O ensaio calcula pelo registro real, numa transação desfeita | 2026-11-04 |
 | [ADR-060](#adr-060--tema-claro-e-escuro-por-variáveis-sob-as-classes-do-tailwind) | Tema claro e escuro por variáveis sob as classes do Tailwind | 2026-11-04 |
+| [ADR-061](#adr-061--o-modo-de-teste-num-schema-próprio-escolhido-a-cada-requisição) | O modo de teste num schema próprio, escolhido a cada requisição | 2026-11-05 |
 
 ### 1.2 Históricas
 
@@ -988,6 +989,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.28.0 | 2026-11-05 | **ADR-061**, pedido do usuário: o modo de teste num schema `teste` do mesmo banco, escolhido por requisição (cookie do aparelho), com a data deslocada só nele; login, tarefas agendadas, avisos e arquivos sempre no real. Com `04_FRONTEND` v1.21.0 (§8C). Total 61, 46 vigentes |
 | 2.27.0 | 2026-11-04 | **ADR-060**, pedido do usuário: o tema claro e escuro troca o valor das cores do Tailwind por variáveis, sem variantes `dark:`; texto sobre a cor principal num token próprio. Com `04_FRONTEND` v1.20.0 (§8B). Total 60, 45 vigentes |
 | 2.26.0 | 2026-11-04 | **ADR-059**, pedido do usuário: "ver o que aconteceria" do ensaio chama o registro real numa transação desfeita; nada sai dela. Com `01_DOMINIO` v1.41.0 (D-157 a D-159). Total 59, 44 vigentes |
 | 2.25.0 | 2026-11-04 | **ADR-058**, pedido do usuário: o QConcursos entra por um endereço filtrado montado pelo SGE, aberto fora dele, e pela volta guardada no aparelho; sem API, sem moldura, sem automação; a banca pelo número do usuário ou por tabela embutida. Com `01_DOMINIO` v1.40.0 (D-150 a D-154). Total 58, 43 vigentes |
@@ -2376,6 +2378,45 @@ A interface (`04_FRONTEND` §8B) ganha modo escuro. As telas usam classes do Tai
 | Variantes `dark:` em cada classe | Centenas de trocas, e toda tela nova teria de lembrar delas |
 | Uma folha de estilo que sobrescreve classes no escuro | Briga de especificidade com o Tailwind e quebra a cada classe nova |
 | Só claro | O usuário pediu o escuro |
+
+---
+
+## ADR-061 — O modo de teste num schema próprio, escolhido a cada requisição
+
+**Status:** Aceita · 2026-11-05 · pedido do usuário
+
+### Contexto
+
+O usuário quer testar o que depende de datas sem mexer na escada real (`04_FRONTEND` §8C). O app é de um usuário só, sem coluna de
+"dono" nas tabelas, e roda num Pi em que mudar o compose ou expor outro endereço pede root (fora do alcance de quem desenvolve).
+
+### Decisão
+
+- **Um schema `teste` no mesmo banco.** O app cria e migra o schema (Flyway, as mesmas migrações) na primeira entrada. O usuário do
+  banco é o dono criado pela imagem do Postgres; nada muda no Pi.
+- **A escolha é por requisição.** Um cookie do aparelho (`modo_teste`) marca a requisição depois do login; um `DataSource` de
+  roteamento entrega a conexão do schema `teste` (com `search_path`) ou a do real. Sem a marca, sempre o real.
+- **Sempre no real:** o login e as passkeys (a porta e `/api/acesso/**`), as tarefas agendadas (a fila da IA, a varredura das
+  perguntas), os avisos (Web Push) e o envio de arquivos. As rotas que gravam arquivo recusam no teste.
+- **A data do teste** é um deslocamento em dias guardado no próprio schema `teste`; o `Clock` do app aplica o deslocamento só nas
+  requisições marcadas. A tela pede ao servidor a data de "hoje" em vez de usar o relógio do aparelho.
+- **A cópia** esvazia o schema `teste` e copia as tabelas de estudo do real na ordem das chaves estrangeiras, preservando os ids, e
+  acerta as sequências de identidade. Não copia as tabelas de acesso.
+
+### Consequências
+
+- Cada tela nova funciona no teste sem esforço: as consultas são as mesmas, só o schema muda.
+- Uma migração nova vale para os dois schemas (o real na subida; o teste na próxima entrada ou "Recomeçar").
+- A cópia é síncrona e cabe no tamanho do banco de um usuário (segundos).
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| Um segundo app no Pi, com banco próprio | Pede mudança no compose e no registro do Guardian (root no Pi) |
+| Coluna de "perfil" em todas as tabelas | Mexeria em todas as consultas e índices; um esquecimento misturaria teste e real |
+| Retrato e restauração do banco real | Um estudo de verdade feito durante o teste se perderia na restauração |
+| Só o ensaio encadeado | Não deixa usar o app inteiro como se fosse outro dia |
 
 ---
 

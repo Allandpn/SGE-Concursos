@@ -72,7 +72,7 @@ Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
-| `docs/00A_ADR.md` | 60 ADRs, 45 vigentes (até ADR-060 — tema claro e escuro por variáveis) |
+| `docs/00A_ADR.md` | 61 ADRs, 46 vigentes (até ADR-061 — o modo de teste num schema próprio) |
 | `docs/03C_LOGGING.md` | Intacto |
 | `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta), §8C (Sprint 19: worker do material, tetos de memória do Pi 4) e §8D (Sprint 24: volume `provas`, OCR) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |

@@ -59,6 +59,7 @@
   <script src="js/qconcursos.js"></script>
   <script src="js/ensaio.js"></script>
   <script src="js/pages.js"></script>
+  <script src="js/modo-teste.js"></script>
   <script src="js/navegacao.js"></script>
   <script src="js/router.js"></script>
   <script>
@@ -85,8 +86,37 @@
   <symbol id="i-alvo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="6"/></symbol>
 </svg>
 
+<!-- §8C e ADR-061: a faixa do modo de teste, fixa no topo de todas as telas, só no aparelho que entrou -->
+<div id="faixa-teste" x-data x-show="$store.teste.ativo" class="sticky top-0 z-[45] flex h-11 items-center gap-2 px-3 text-sm font-bold text-gray-900"
+     style="background: repeating-linear-gradient(135deg, #f6c445 0 14px, #f2b92a 14px 28px); color: #2b2205" role="status">
+  <span class="min-w-0 flex-1 truncate"><span class="hidden lg:inline">MODO DE </span>TESTE · <span x-text="$store.teste.ativo ? hojeHumano() : ''"></span></span>
+  <button type="button" class="min-h-9 rounded-lg bg-white/60 px-3 text-sm" style="color:#2b2205" :disabled="$store.teste.trabalhando" @click="$store.teste.avancar(1)">+1 dia</button>
+  <button type="button" class="min-h-9 rounded-lg bg-white/60 px-3 text-sm" style="color:#2b2205" :disabled="$store.teste.trabalhando" @click="$store.teste.avancar(7)">+7</button>
+  <button type="button" class="min-h-9 min-w-9 rounded-lg bg-white/60 px-2 text-sm" style="color:#2b2205" aria-label="Mais opções do modo de teste" @click="$store.teste.menuAberto = true">⋯</button>
+</div>
+<div id="menu-teste" x-data>
+  <template x-if="$store.teste.menuAberto">
+    <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/30" @click.self="$store.teste.menuAberto = false" @keydown.escape.window="$store.teste.menuAberto = false">
+      <div class="w-full max-w-md rounded-t-2xl bg-white px-4 pt-3 shadow-2xl" style="padding-bottom: max(1rem, env(safe-area-inset-bottom))">
+        <p class="pb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Modo de teste</p>
+        <div class="border-t border-gray-100 py-2">
+          <button type="button" class="flex min-h-12 w-full items-center text-left text-base font-semibold" @click="$store.teste.escolhendoData = !$store.teste.escolhendoData">Ir para a data…</button>
+          <div x-show="$store.teste.escolhendoData" class="flex gap-2 pb-2">
+            <input type="date" id="teste-data" x-model="$store.teste.data" class="min-h-11 flex-1 rounded-lg border border-gray-200 bg-white px-3">
+            <button type="button" class="min-h-11 rounded-lg bg-primary-600 px-4 font-semibold text-sobre" :disabled="$store.teste.trabalhando" @click="$store.teste.irParaData()">Ir</button>
+          </div>
+        </div>
+        <button type="button" class="flex min-h-12 w-full items-center justify-between border-t border-gray-100 text-left text-base font-semibold" :disabled="$store.teste.trabalhando" @click="$store.teste.hojeDeVerdade()">Hoje de verdade<span class="text-xs font-normal text-gray-500">volta a data do teste para hoje</span></button>
+        <button type="button" class="flex min-h-12 w-full items-center justify-between border-t border-gray-100 text-left text-base font-semibold" :disabled="$store.teste.trabalhando" @click="$store.teste.recomecar()">Recomeçar<span class="text-xs font-normal text-gray-500">refaz a cópia dos dados reais</span></button>
+        <button type="button" class="flex min-h-12 w-full items-center border-t border-gray-100 text-left text-base font-semibold text-alerta-700" :disabled="$store.teste.trabalhando" @click="$store.teste.sair()">Sair do modo de teste</button>
+        <p x-show="$store.teste.erro" class="pb-2 text-sm text-red-700" role="alert" x-text="$store.teste.erro"></p>
+      </div>
+    </div>
+  </template>
+</div>
+
 <!-- §8B: a navegação — menu lateral no computador, barra inferior no celular; some no modo foco das telas de estudo -->
-<nav id="menu-lateral" x-data x-show="!$store.nav.foco" class="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col gap-1 border-r border-gray-200 bg-white px-3 py-4 lg:flex" aria-label="Principal">
+<nav id="menu-lateral" x-data x-show="!$store.nav.foco" style="top: var(--faixa-teste)" class="fixed bottom-0 left-0 z-30 hidden w-56 flex-col gap-1 border-r border-gray-200 bg-white px-3 py-4 lg:flex" aria-label="Principal">
   <a href="#/hoje" class="px-3 pb-4 text-lg font-bold">eAgora</a>
   <template x-for="(i, n) in $store.nav.itens" :key="i.id">
     <div>
@@ -138,7 +168,7 @@
 </div>
 
 <!-- No celular, cada tela tem o título no topo (Hoje tem o próprio cabeçalho) -->
-<header id="titulo-celular" x-data x-show="!$store.nav.foco && $store.nav.rota !== 'hoje'" class="sticky top-0 z-20 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
+<header id="titulo-celular" x-data x-show="!$store.nav.foco && $store.nav.rota !== 'hoje'" style="top: var(--faixa-teste)" class="sticky z-20 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
   <h1 class="text-lg font-bold" x-text="$store.nav.titulo"></h1>
 </header>
 
@@ -187,7 +217,7 @@
     </template>
     <!-- D-158: a prévia é só leitura -->
     <p x-show="previa" id="leitor-previa" class="border-b border-primary-100 bg-primary-50 px-4 py-2 text-sm font-medium text-primary-800">Prévia · só leitura. Reler antes da recuperação deixa o resultado melhor que a memória.</p>
-    <div class="sticky top-0 z-20 flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
+    <div class="sticky z-20 flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2" style="top: var(--faixa-teste)">
       <button type="button" class="min-h-11 min-w-11 rounded border border-gray-200 text-gray-600" aria-label="Voltar" @click="voltar()">←</button>
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-medium" x-text="leitura?.assuntoNome || 'Leitor'"></p>
@@ -776,7 +806,7 @@
     <!-- §8B e 02_JORNADAS §4.4: o dia e o concurso-alvo no topo — contexto, não alarme -->
     <div class="mb-4 flex items-end justify-between gap-3" id="hoje-cabecalho">
       <div>
-        <p class="text-xs font-semibold text-gray-500" x-text="hojeHumano()"></p>
+        <p class="text-xs font-semibold text-gray-500" x-text="($store.teste.estado, hojeHumano())"></p>
         <h1 class="text-[22px] font-bold leading-tight">Hoje</h1>
       </div>
       <template x-if="concursoCarregado && concurso">
@@ -1978,6 +2008,31 @@
 
   <!-- Tela Ajustes — os 18 parâmetros, editáveis (04_FRONTEND.md §7E) -->
   <section id="pagina-ajustes" x-data="paginaAjustes()" hidden>
+
+    <!-- §8C e ADR-061: o modo de teste, só neste aparelho -->
+    <div x-data class="mb-6 space-y-3 rounded-xl border border-gray-200 bg-white p-4" id="ajustes-modo-teste">
+      <h2 class="text-base font-bold">Modo de teste</h2>
+      <template x-if="!$store.teste.ativo">
+        <div class="space-y-3">
+          <p class="text-sm text-gray-600">Uma cópia dos seus dados, separada, em que você avança os dias para testar a escada, as perguntas e a reta final. Nada volta para os dados reais.</p>
+          <ul class="list-disc space-y-1 pl-5 text-xs text-gray-500">
+            <li>Vale só neste aparelho.</li>
+            <li>Não roda IA (perguntas novas, edital), avisos nem envio de arquivo.</li>
+            <li>O login é o de sempre.</li>
+          </ul>
+          <button type="button" class="min-h-12 w-full rounded-lg bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="$store.teste.trabalhando" @click="$store.teste.entrar()"
+                  x-text="$store.teste.trabalhando ? 'Copiando os seus dados…' : 'Entrar no modo de teste'"></button>
+        </div>
+      </template>
+      <template x-if="$store.teste.ativo">
+        <div class="space-y-2">
+          <p class="text-sm text-gray-600" x-text="'Você está no teste, em ' + hojeHumano() + ($store.teste.estado.copiadoEm ? '. Cópia feita em ' + new Date($store.teste.estado.copiadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + '.' : '.')"></p>
+          <button type="button" class="min-h-11 w-full rounded-lg border border-gray-300 text-sm font-semibold" :disabled="$store.teste.trabalhando" @click="$store.teste.recomecar()">Recomeçar (refaz a cópia)</button>
+          <button type="button" class="min-h-11 w-full rounded-lg border border-gray-300 text-sm font-semibold text-alerta-700" :disabled="$store.teste.trabalhando" @click="$store.teste.sair()">Sair do modo de teste</button>
+        </div>
+      </template>
+      <p x-show="$store.teste.erro" class="text-sm text-red-700" role="alert" x-text="$store.teste.erro"></p>
+    </div>
 
     <!-- §8B e ADR-060: a aparência é do aparelho, não do domínio -->
     <div x-data="aparenciaAjustes()" class="mb-6 space-y-2" id="ajustes-aparencia">

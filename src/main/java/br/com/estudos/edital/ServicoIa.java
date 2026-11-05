@@ -34,6 +34,9 @@ public class ServicoIa {
     /** Fora de transação de propósito: chamada longa, e a falha precisa ser gravada mesmo com o erro subindo. */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public String completar(String sistema, String usuario) {
+        if (br.com.estudos.shared.teste.ModoTeste.ligado()) {
+            throw new FalhaIaException("A IA não roda no modo de teste. Saia do modo de teste para usar a IA.", false); // ADR-061
+        }
         if (configuracao.provedor() == ProvedorIa.OPENROUTER) {
             return openRouter.completar(sistema, usuario);
         }
