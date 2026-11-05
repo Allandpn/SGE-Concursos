@@ -7,6 +7,8 @@ const ITENS_NAVEGACAO = [
   { id: 'progresso', nome: 'Progresso', href: '#/progresso', icone: 'i-progresso', barra: true },
   { id: 'concursos', nome: 'Concursos', href: '#/concursos', icone: 'i-concursos', barra: false },
   { id: 'erros', nome: 'Erros', href: '#/erros', icone: 'i-erros', barra: false },
+  // §8G: o atalho do modo de teste abre Ajustes já no grupo dele
+  { id: 'teste', nome: 'Modo de teste', href: '#/ajustes/teste', icone: 'i-teste', barra: false },
   { id: 'ajustes', nome: 'Ajustes', href: '#/ajustes', icone: 'i-ajustes', barra: false },
 ];
 
