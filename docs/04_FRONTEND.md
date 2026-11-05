@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.22.0 |
+| Versão | 1.23.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -910,6 +910,19 @@ Pedido do usuário (2026-11-05): tirar da escada real as sessões feitas para te
 
 ---
 
+## 8E. Reiniciar o progresso (Sprint 43)
+
+Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
+
+- **Um concurso:** no fim do cartão do concurso-alvo e em cada edital de antes, **Reiniciar o progresso deste concurso**.
+- **Tudo:** em Ajustes, uma **zona de cuidado** no fim, com **Reiniciar todo o progresso**.
+- **A confirmação** (folha sobre a tela): o que zera (sessões e assuntos; num concurso, os divididos com outros, pelo nome do
+  outro), o que fica, o campo "Digite REINICIAR" e o botão vermelho, que só libera com o texto certo.
+- **Depois:** o aviso "Progresso reiniciado: 38 sessões em 12 assuntos." com **Desfazer**; Ajustes › **Reinícios**, a lista com data,
+  o escopo ("TCE-SC 2026" ou "Tudo"), quantas sessões e **Desfazer** (ou "desfeito em…").
+
+---
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -943,6 +956,7 @@ Pedido do usuário (2026-11-05): tirar da escada real as sessões feitas para te
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.23.0 | 2026-11-05 | §8E: reiniciar o progresso de um concurso ou de tudo, a confirmação digitada e a lista de reinícios com desfazer (`01_DOMINIO` §3.27). Sprint 43 |
 | 1.22.0 | 2026-11-05 | §8D: Sessões registradas — tirar sessões da escada e pôr de volta (`01_DOMINIO` §3.26, ADR-062). Sprint 42 |
 | 1.21.0 | 2026-11-05 | §8C: o modo de teste — por aparelho, com a cópia dos dados reais, a data do teste que se avança e a faixa fixa; sem IA, sem avisos, sem envio de arquivo (ADR-061). Sprint 41 |
 | 1.20.0 | 2026-11-04 | §8B: o sistema visual (escala, espaço, toque, cartão, botões, ícones, datas, termos), o tema claro e escuro (ADR-060), a navegação por barra inferior e menu lateral, a tela Hoje com a próxima ação e as telas de estudo em modo foco. Sprints 39 e 40 |

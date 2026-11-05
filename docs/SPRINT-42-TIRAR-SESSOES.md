@@ -54,7 +54,7 @@ linha com caixa, assunto, tipo e minutos, resultado; as tiradas riscadas com "fo
 | 42.1 | Migração, refazer a escada, rotas e as consultas ligadas | feito |
 | 42.2 | A tela em Ajustes; `CASCA_VERSAO` | feito |
 | 42.3 | Testes e Chromium | feito |
-| 42.4 | Deploy pelo Guardian | — |
+| 42.4 | Deploy pelo Guardian | `release/14` (`7a2fd88`) |
 
 ## Changelog
 
