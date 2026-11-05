@@ -22,6 +22,6 @@ public record SessaoResponse(
     @Schema(description = "Previsão percentual declarada antes do resultado") Short previsaoPercentual,
     @Schema(description = "Previsão declarada de reconstrução — só RECUPERACAO") ResultadoSessao previsaoReconstrucao,
     @Schema(description = "Identificador da tentativa (D-45) — igual entre o envio original e um reenvio") UUID tentativaId,
-    @Schema(description = "Sessão nunca é arquivada — sempre true (é evento, não cadastro)") boolean ativo,
+    @Schema(description = "Sempre true aqui: as sessões tiradas da escada (D-160) só aparecem em /api/sessoes/registradas") boolean ativo,
     @Schema(description = "Segmento de material lido nesta sessão, quando presente (D-51)") Long segmentoId
 ) {}

@@ -52,7 +52,8 @@ public class PerguntaService {
     public List<Pergunta> selecionar(long assuntoId) {
         var candidatas = jdbc.query("""
             WITH uso AS (
-                SELECT sp.pergunta_id, max(sp.sessao_id) AS ultima FROM sessao_pergunta sp GROUP BY sp.pergunta_id
+                SELECT sp.pergunta_id, max(sp.sessao_id) AS ultima FROM sessao_pergunta sp JOIN sessao s ON s.id = sp.sessao_id -- D-160
+                GROUP BY sp.pergunta_id
             )
             SELECT p.id, p.tipo, p.enunciado, p.origem_marcada, u.ultima,
                    EXISTS (SELECT 1 FROM sessao_ponto x JOIN pergunta_ponto pp ON pp.id = x.ponto_id

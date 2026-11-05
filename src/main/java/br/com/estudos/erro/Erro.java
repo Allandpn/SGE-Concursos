@@ -53,6 +53,10 @@ public class Erro {
     @JoinColumn(name = "sessao_id")
     private Sessao sessao;
 
+    /** D-160: o id cru da sessão, para a consulta saber que ela existe mas foi tirada da escada (a visão sessao não a mostra). */
+    @Column(name = "sessao_id", insertable = false, updatable = false)
+    private Long sessaoIdGravado;
+
     @Setter
     @Column(nullable = false)
     private String descricao;

@@ -59,6 +59,7 @@
   <script src="js/qconcursos.js"></script>
   <script src="js/ensaio.js"></script>
   <script src="js/pages.js"></script>
+  <script src="js/sessoes.js"></script>
   <script src="js/modo-teste.js"></script>
   <script src="js/navegacao.js"></script>
   <script src="js/router.js"></script>
@@ -2007,7 +2008,77 @@
   </section>
 
   <!-- Tela Ajustes — os 18 parâmetros, editáveis (04_FRONTEND.md §7E) -->
+  <!-- §8D (Sprint 42): sessões registradas — tirar da escada e pôr de volta (D-160 a D-162) -->
+  <section id="pagina-sessoes" x-data="paginaSessoes()" hidden>
+    <a href="#/ajustes" class="mb-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary-700">‹ Ajustes</a>
+    <h1 class="mb-1 text-2xl font-bold">Sessões registradas</h1>
+    <p class="mb-4 text-sm text-gray-600">Marque as que foram só teste e tire-as da escada. A escada desses assuntos é refeita só com as que valem; nada é apagado.</p>
+    <p x-show="erro" class="mb-3 text-sm text-red-700" role="alert" x-text="erro"></p>
+    <p x-show="carregando && !sessoes.length" class="text-sm text-gray-500">Carregando…</p>
+    <p x-show="!carregando && !sessoes.length && !erro" class="text-sm text-gray-500">Nenhuma sessão nos últimos 30 dias.</p>
+    <div class="space-y-4 pb-28">
+      <template x-for="dia in dias" :key="dia.data">
+        <div>
+          <h2 class="mb-1 text-xs font-bold uppercase tracking-wider text-gray-500" x-text="dataHumana(dia.data)"></h2>
+          <ul class="divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <template x-for="s in dia.sessoes" :key="s.id">
+              <li class="flex min-h-14 items-center gap-3 px-3 py-2" :class="marcada(s) ? 'bg-primary-50' : ''" :data-sessao="s.id">
+                <template x-if="s.ativa">
+                  <input type="checkbox" class="h-5 w-5 flex-none accent-primary-600" :checked="marcada(s)" @change="alternar(s)"
+                         :aria-label="'Marcar ' + s.assunto + ', ' + descricao(s)">
+                </template>
+                <template x-if="!s.ativa"><span class="h-5 w-5 flex-none"></span></template>
+                <label class="min-w-0 flex-1" :class="s.ativa ? 'cursor-pointer' : ''" @click="alternar(s)">
+                  <span class="block truncate text-[15px] font-semibold" :class="s.ativa ? '' : 'text-gray-400 line-through'" x-text="s.assunto"></span>
+                  <span class="block text-xs" :class="s.ativa ? 'text-gray-500' : 'text-gray-400 line-through'" x-text="descricao(s)"></span>
+                </label>
+                <template x-if="s.ativa">
+                  <span class="whitespace-nowrap text-xs font-semibold text-gray-600" x-text="resultado(s)"></span>
+                </template>
+                <template x-if="!s.ativa">
+                  <div class="flex flex-none flex-col items-end gap-1">
+                    <span class="whitespace-nowrap rounded-full bg-alerta-50 px-2 py-0.5 text-[11px] font-bold text-alerta-700">fora da escada</span>
+                    <button type="button" class="min-h-9 text-sm font-semibold text-primary-700 underline underline-offset-2" :disabled="trabalhando" @click="porDeVolta(s)">Pôr de volta</button>
+                  </div>
+                </template>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+      <button type="button" x-show="temAnteriores" class="min-h-11 w-full rounded-lg border border-gray-300 text-sm font-semibold" :disabled="carregando" @click="verAnteriores()">Ver dias anteriores</button>
+    </div>
+
+    <div x-show="marcadas.length" id="sessoes-dock" class="fixed inset-x-0 bottom-16 z-30 border-t border-gray-200 bg-white px-4 pb-3 pt-3 shadow-lg lg:bottom-0 lg:left-56">
+      <div class="mx-auto max-w-md">
+        <button type="button" class="min-h-12 w-full rounded-lg bg-primary-600 font-semibold text-sobre" @click="confirmando = true"
+                x-text="'Tirar ' + marcadas.length + ' da escada'"></button>
+      </div>
+    </div>
+
+    <div x-show="confirmando" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="sessoes-confirmar-titulo">
+      <div class="w-full max-w-sm space-y-3 rounded-2xl bg-white p-5 shadow-xl">
+        <h2 id="sessoes-confirmar-titulo" class="text-lg font-bold" x-text="'Tirar ' + marcadas.length + (marcadas.length === 1 ? ' sessão' : ' sessões') + ' da escada?'"></h2>
+        <p class="text-sm text-gray-600">A escada destes assuntos será refeita só com as sessões que ficam:</p>
+        <ul class="list-disc pl-5 text-sm"><template x-for="a in afetados" :key="a"><li x-text="a"></li></template></ul>
+        <p class="text-sm text-gray-600">Os erros, as perguntas e o foco dessas sessões saem junto. Nada é apagado: dá para pôr de volta.</p>
+        <button type="button" class="min-h-12 w-full rounded-lg bg-primary-600 font-semibold text-sobre disabled:opacity-50" :disabled="trabalhando" @click="tirar()"
+                x-text="trabalhando ? 'Refazendo a escada…' : 'Tirar da escada'"></button>
+        <button type="button" class="min-h-11 w-full rounded-lg border border-gray-300 text-sm font-semibold" :disabled="trabalhando" @click="confirmando = false">Cancelar</button>
+      </div>
+    </div>
+
+    <div x-show="aviso" role="status" id="sessoes-aviso" class="fixed inset-x-4 bottom-36 z-40 mx-auto max-w-md rounded-xl bg-gray-900 px-4 py-3 text-sm text-gray-50 shadow-lg lg:bottom-24 lg:left-56" x-text="aviso"></div>
+  </section>
+
   <section id="pagina-ajustes" x-data="paginaAjustes()" hidden>
+
+    <!-- §8D: as sessões registradas (tirar da escada as de teste) -->
+    <a href="#/sessoes" id="ajustes-sessoes" class="mb-4 flex min-h-14 items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
+      <span class="min-w-0 flex-1"><b class="block text-[15px] font-semibold">Sessões registradas</b>
+        <span class="block text-xs text-gray-500">Ver por dia e tirar da escada as de teste</span></span>
+      <span class="text-lg text-gray-400" aria-hidden="true">›</span>
+    </a>
 
     <!-- §8C e ADR-061: o modo de teste, só neste aparelho -->
     <div x-data class="mb-6 space-y-3 rounded-xl border border-gray-200 bg-white p-4" id="ajustes-modo-teste">

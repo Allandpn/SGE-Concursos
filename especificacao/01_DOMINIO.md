@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.41.0 |
-| Data | 2026-11-04 |
+| Versão | 1.42.0 |
+| Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -1067,6 +1067,26 @@ ruim". O ensaio não deixa marca.
 
 ---
 
+### 3.26 Tirar sessões da escada
+
+A pedido do usuário (2026-11-05): sessões feitas só para ver a escada montar ficaram na escada real. Elas podem ser **tiradas** —
+desativadas, nada apagado — e **postas de volta**.
+
+**O que sai (D-160).** Uma sessão tirada deixa de existir para o resto do sistema: a escada, Hoje, os próximos dias, as métricas,
+o diagnóstico, o ritmo, o histórico do assunto. Vão junto os **erros** anotados nela, as **perguntas** respondidas nela e o **tempo
+de foco** ligado a ela. Nada é editado: a sessão sai inteira ou não sai.
+
+**A escada refeita (D-161).** Tirar ou pôr de volta refaz a escada de cada assunto afetado: as revisões dele são montadas de novo,
+na ordem em que as sessões foram feitas (data, depois registro), **só com as que continuam valendo**, pelas mesmas regras do
+registro (§5) — como se as tiradas nunca tivessem existido. Se a revisão pendente refeita é a mesma de antes (mesma sessão de
+origem, mesmo nível), ela guarda a data que tinha (a antecipação da reta final, D-143; a reativação, D-49). Sem nenhuma sessão,
+o assunto volta a **nunca visto**. Num assunto ou disciplina arquivados, a pendente refeita fica cancelada (D-17).
+
+**Pôr de volta (D-162).** A sessão tirada continua guardada e aparece riscada na lista; "Pôr de volta" a reativa e refaz a escada
+de novo (D-161).
+
+---
+
 ## 4. O resultado da recuperação
 
 Três níveis, iguais para todo tipo (`00_PRODUTO` §6.3):
@@ -1986,6 +2006,9 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-157 | A visão dos próximos 7 dias mostra, de amanhã a +7, as revisões pendentes previstas para cada dia (assunto, nível, subida ou manutenção) e a contagem contra o teto diário com aviso acima dele; na reta final, sem as manutenções de médio e baixo (contadas à parte), com o simulado do fim de semana e os dias até a prova; e uma estimativa de assuntos novos na semana pelo ritmo medido; derivada, nada guardado | §3.25 |
 | D-158 | A prévia do material abre o bloco no leitor só para ler: sem "Terminei", sem marcações, sem guardar a última página e sem sessão, com a faixa de prévia | §3.25 |
 | D-159 | O ensaio abre recuperação (com perguntas e gabarito), questões, discursiva ou flashcards a partir dos próximos 7 dias e do detalhe do assunto, depois do aviso; "Ver o que aconteceria" mostra o resultado e a revisão seguinte pela mesma regra do registro, no dia previsto da revisão (dos próximos dias) ou hoje (do detalhe); nada é gravado e não fica marca | §3.25 |
+| D-160 | Uma sessão tirada da escada (desativada) sai de tudo — escada, Hoje, próximos dias, métricas, diagnóstico, ritmo, histórico — e leva junto os erros anotados nela, as perguntas respondidas nela e o foco ligado a ela; nada é apagado nem editado | §3.26 |
+| D-161 | Tirar ou pôr de volta refaz a escada de cada assunto afetado: as revisões dele são remontadas na ordem das sessões (data, registro) só com as ativas, pelas regras do registro; a pendente refeita que é a mesma de antes (mesma origem e nível) guarda a data que tinha; sem sessões, o assunto volta a nunca visto; arquivado, a pendente fica cancelada | §3.26 |
+| D-162 | A sessão tirada continua guardada e pode ser posta de volta, o que refaz a escada de novo (D-161) | §3.26 |
 
 ---
 
@@ -2077,6 +2100,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.42.0 | 2026-11-05 | Pedido do usuário (Sprint 42), decidido numa rodada, com `02_JORNADAS` v1.34.0 e ADR-062. **§3.26** (tirar sessões da escada) e **D-160 a D-162**: a sessão desativada sai de tudo com o que está ligado a ela, a escada do assunto é refeita só com as ativas, e dá para pôr de volta. 162 regras |
 | 1.41.0 | 2026-11-04 | Pedido do usuário (Sprint 38), decidido em duas rodadas, com `02_JORNADAS` v1.31.0 e ADR-059. **§3.25** (os próximos 7 dias e o ensaio) e **D-157 a D-159**: a visão derivada dos próximos dias, a prévia do material só para ler e o ensaio que mostra o que aconteceria sem gravar nada. 159 regras |
 | 1.40.0 | 2026-11-04 | Pedido do usuário (Sprint 36), decidido em duas rodadas, com `02_JORNADAS` v1.30.0 e ADR-058. **§3.24** (questões no QConcursos) e **D-150 a D-154**: o atalho filtrado pelos nós do assunto (ou pela disciplina, com aviso), pela banca do alvo, sem anuladas e desatualizadas, só não resolvidas e dos últimos N anos; a sugestão de quantas pelo foco; a volta com o lote rápido aberto, guardada só no aparelho; onde o atalho aparece. **D-133**: o tempo sem foco passa a ser o parâmetro "minutos por questão" (padrão 3, antes 2 fixo). Numa segunda rodada: a modalidade do alvo no filtro, o catálogo de bancas que aprende pelos endereços colados, **D-155** (questões antes de ler só contam nas métricas; §8 ajustada) e **D-156** (anotar os erros do lote). 156 regras |
 | 1.39.0 | 2026-11-02 | Pedido do usuário (tela de simulado), decidido numa rodada, com `02_JORNADAS` v1.28.0. **§3.6**: o registro à mão com brancos (D-148) e o arquivamento (D-149); sai "implementação adiada". **§3.20**: a limitação dos brancos passa a valer só para quem não os informa |

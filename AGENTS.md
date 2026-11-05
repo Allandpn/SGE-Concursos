@@ -58,7 +58,7 @@ E ao concluir um item, **atualize a tabela do `PROGRESSO.md` na mesma sessão**.
 | Documento | Responde |
 |---|---|
 | `especificacao/00_PRODUTO.md` | Para que serve, e como saberemos que funcionou |
-| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 159 regras D-xx** |
+| `especificacao/01_DOMINIO.md` | O que existe e como se comporta. **As 162 regras D-xx** |
 | `especificacao/02_JORNADAS.md` | Como é usado, e quanto pode custar em segundos |
 | `especificacao/03_INVARIANTES.md` | Quem garante cada regra e como se testa |
 
@@ -72,7 +72,7 @@ Herdados da v2 e ainda válidos:
 
 | Documento | Situação |
 |---|---|
-| `docs/00A_ADR.md` | 61 ADRs, 46 vigentes (até ADR-061 — o modo de teste num schema próprio) |
+| `docs/00A_ADR.md` | 62 ADRs, 47 vigentes (até ADR-062 — a sessão desativada some por uma visão) |
 | `docs/03C_LOGGING.md` | Intacto |
 | `docs/03E_DEPLOYMENT.md` | Congelado + adendos §8A (Sprint 16), §8B (beta), §8C (Sprint 19: worker do material, tetos de memória do Pi 4) e §8D (Sprint 24: volume `provas`, OCR) |
 | `docs/04_FRONTEND.md` | Arquitetura da SPA; §7F traz `vendor/`, PWA e o checklist de `CASCA_VERSAO` |

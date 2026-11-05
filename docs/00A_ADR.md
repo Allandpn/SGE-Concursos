@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.28.0** |
+| Versão do documento | **2.29.0** |
 | Status | **Congelado** |
 | Data | 2026-11-05 |
-| Total | 61 ADRs — 46 vigentes, 14 substituídas, 1 revogada |
+| Total | 62 ADRs — 47 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -89,6 +89,7 @@ que custa e o que foi descartado.
 | [ADR-059](#adr-059--o-ensaio-calcula-pelo-registro-real-numa-transação-desfeita) | O ensaio calcula pelo registro real, numa transação desfeita | 2026-11-04 |
 | [ADR-060](#adr-060--tema-claro-e-escuro-por-variáveis-sob-as-classes-do-tailwind) | Tema claro e escuro por variáveis sob as classes do Tailwind | 2026-11-04 |
 | [ADR-061](#adr-061--o-modo-de-teste-num-schema-próprio-escolhido-a-cada-requisição) | O modo de teste num schema próprio, escolhido a cada requisição | 2026-11-05 |
+| [ADR-062](#adr-062--a-sessão-desativada-some-por-uma-visão-a-tabela-vira-sessao_registro) | A sessão desativada some por uma visão: a tabela vira `sessao_registro` | 2026-11-05 |
 
 ### 1.2 Históricas
 
@@ -989,6 +990,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.29.0 | 2026-11-05 | **ADR-062**, pedido do usuário: tirar sessões da escada por uma visão `sessao` das ativas sobre a tabela `sessao_registro`; a escada do assunto refeita reativando as sessões em ordem. Com `01_DOMINIO` v1.42.0 (§3.26). Total 62, 47 vigentes |
 | 2.28.0 | 2026-11-05 | **ADR-061**, pedido do usuário: o modo de teste num schema `teste` do mesmo banco, escolhido por requisição (cookie do aparelho), com a data deslocada só nele; login, tarefas agendadas, avisos e arquivos sempre no real. Com `04_FRONTEND` v1.21.0 (§8C). Total 61, 46 vigentes |
 | 2.27.0 | 2026-11-04 | **ADR-060**, pedido do usuário: o tema claro e escuro troca o valor das cores do Tailwind por variáveis, sem variantes `dark:`; texto sobre a cor principal num token próprio. Com `04_FRONTEND` v1.20.0 (§8B). Total 60, 45 vigentes |
 | 2.26.0 | 2026-11-04 | **ADR-059**, pedido do usuário: "ver o que aconteceria" do ensaio chama o registro real numa transação desfeita; nada sai dela. Com `01_DOMINIO` v1.41.0 (D-157 a D-159). Total 59, 44 vigentes |
@@ -2417,6 +2419,45 @@ O usuário quer testar o que depende de datas sem mexer na escada real (`04_FRON
 | Coluna de "perfil" em todas as tabelas | Mexeria em todas as consultas e índices; um esquecimento misturaria teste e real |
 | Retrato e restauração do banco real | Um estudo de verdade feito durante o teste se perderia na restauração |
 | Só o ensaio encadeado | Não deixa usar o app inteiro como se fosse outro dia |
+
+---
+
+## ADR-062 — A sessão desativada some por uma visão: a tabela vira `sessao_registro`
+
+**Status:** Aceita · 2026-11-05 · pedido do usuário
+
+### Contexto
+
+Tirar uma sessão da escada (`01_DOMINIO` §3.26, D-160) tem de valer em todas as leituras: uns vinte serviços leem `sessao` (escada,
+turno, métricas, diagnóstico, frente, ritmo, perguntas, erros, foco, simulado). A coluna `sessao.ativo` existe desde a V1, mas nada a
+lê; filtrar à mão em cada consulta deixaria escapar alguma, hoje ou numa tela nova.
+
+### Decisão
+
+- **A tabela passa a se chamar `sessao_registro`** e **`sessao` vira uma visão das ativas** (`WHERE ativo`). Simples, ela aceita
+  INSERT e UPDATE do Postgres; a entidade `Sessao` e todas as consultas continuam iguais e passam a ver só as ativas. As chaves
+  estrangeiras seguem para a tabela.
+- **O que está ligado à sessão** (erros, perguntas respondidas, foco) é filtrado nas poucas consultas que o leem sem passar por
+  `sessao`: existir a sessão na visão.
+- **Refazer a escada** de um assunto, numa transação: apagar as revisões dele (derivadas das sessões), desativar as sessões ativas
+  dele e reativá-las uma a uma, na ordem (data, id), chamando o mesmo `processarSessao` do registro. Cada passo vê só as sessões
+  "até ali", como no registro original. A pendente final que é a mesma de antes (origem e nível) recupera a data antiga.
+- A tela de Sessões registradas e as rotas de tirar e pôr de volta leem e gravam `sessao_registro`.
+
+### Consequências
+
+- Uma tela nova que lê `sessao` já nasce sem as tiradas.
+- As revisões canceladas e cumpridas antigas do assunto são trocadas pelas refeitas: o histórico da escada passa a ser o das
+  sessões que valem.
+- O modo de teste (ADR-061) copia `sessao_registro` como qualquer tabela; a visão vem das migrações.
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| `AND ativo` em cada consulta | Uns vinte lugares; esquecer um deixaria a sessão tirada contando |
+| Apagar a sessão | O usuário quis poder pôr de volta; nada se apaga |
+| Desfazer só o passo da sessão | Errado quando a tirada está no meio: as seguintes foram calculadas a partir dela |
 
 ---
 
