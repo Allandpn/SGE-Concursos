@@ -35,8 +35,18 @@ public class ParametroService {
         var parametro = parametroRepository.findById(chave)
             .orElseThrow(() -> new NotFoundException("Não existe um parâmetro com esta chave.", "PARAMETRO_INEXISTENTE"));
 
-        parametro.setValor(exigirNumeroPositivo(request.valor()));
+        parametro.setValor(QUESTOES_POR_VEZ.equals(chave) ? exigirQuestoesPorVez(request.valor()) : exigirNumeroPositivo(request.valor()));
         return parametro;
+    }
+
+    /** D-174: o único parâmetro com valores fixos — os tamanhos de página do QConcursos, ou 0 (automático, pelo Pomodoro). */
+    static final String QUESTOES_POR_VEZ = "questoes_por_vez";
+
+    private String exigirQuestoesPorVez(String valor) {
+        if (valor == null || !java.util.Set.of("0", "5", "10", "15", "20").contains(valor.trim())) {
+            throw new ValidationException("Questões por vez: 5, 10, 15, 20 ou 0 (automático).", "VALOR_INVALIDO", "valor");
+        }
+        return valor.trim();
     }
 
     private String exigirNumeroPositivo(String valor) {

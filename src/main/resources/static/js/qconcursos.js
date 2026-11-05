@@ -32,6 +32,100 @@ const CAUSAS_ERRO = [
 ];
 
 document.addEventListener('alpine:init', () => {
+  // D-173 (Sprint 45): ligar o assunto a nós da árvore do QConcursos, pela busca da árvore vigente.
+  Alpine.store('vinculoQc', {
+    aberto: false,
+    assuntoId: null,
+    nome: '',
+    busca: '',
+    resultados: [],
+    escolhidos: [], // [{id, nome, caminho}]
+    buscando: false,
+    salvando: false,
+    erro: null,
+    semArvore: false,
+    _espera: null,
+    _pedido: 0,
+
+    async abrir(assuntoId, nome) {
+      Object.assign(this, { aberto: true, assuntoId, nome: nome || '', busca: nome || '', resultados: [], escolhidos: [], erro: null, semArvore: false });
+      try {
+        const atuais = await api(`/assuntos/${assuntoId}/qconcursos-vinculo`);
+        this.escolhidos = atuais.filter((n) => n.naArvore).map((n) => ({ id: n.noId, nome: n.nome, caminho: n.caminho }));
+      } catch (e) {
+        this.escolhidos = [];
+      }
+      this.buscar();
+    },
+
+    fechar() {
+      this.aberto = false;
+    },
+
+    digitou() {
+      clearTimeout(this._espera);
+      this._espera = setTimeout(() => this.buscar(), 300);
+    },
+
+    async buscar() {
+      const q = this.busca.trim();
+      const pedido = ++this._pedido;
+      if (q.length < 2) { this.resultados = []; return; }
+      this.buscando = true;
+      try {
+        const achados = await api(`/arvore/busca?q=${encodeURIComponent(q)}&limite=20`);
+        if (pedido === this._pedido) { this.resultados = achados; this.semArvore = false; }
+      } catch (e) {
+        if (pedido !== this._pedido) return;
+        this.resultados = [];
+        if (e.codigo === 'ARVORE_NAO_CARREGADA') this.semArvore = true;
+        else this.erro = e.message;
+      } finally {
+        if (pedido === this._pedido) this.buscando = false;
+      }
+    },
+
+    escolhido(no) {
+      return this.escolhidos.some((e) => e.id === no.id);
+    },
+
+    alternar(no) {
+      if (this.escolhido(no)) this.escolhidos = this.escolhidos.filter((e) => e.id !== no.id);
+      else if (this.escolhidos.length < 3) this.escolhidos = [...this.escolhidos, { id: no.id, nome: no.nome, caminho: no.caminho }];
+    },
+
+    get rotuloBotao() {
+      if (!this.escolhidos.length) return 'Escolha um assunto do QConcursos';
+      return this.escolhidos.length === 1 ? `Ligar a “${this.escolhidos[0].nome}”` : `Ligar aos ${this.escolhidos.length} escolhidos`;
+    },
+
+    async salvar() {
+      if (!this.escolhidos.length) return;
+      this.salvando = true;
+      this.erro = null;
+      try {
+        await api(`/assuntos/${this.assuntoId}/qconcursos-vinculo`, { method: 'PUT', body: JSON.stringify({ noIds: this.escolhidos.map((e) => e.id) }) });
+        await Alpine.store('qc').recarregar(this.assuntoId);
+        document.dispatchEvent(new CustomEvent('sge:vinculo-qc', { detail: { assuntoId: this.assuntoId } }));
+        this.aberto = false;
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.salvando = false;
+      }
+    },
+
+    async tirar(assuntoId) {
+      try {
+        await api(`/assuntos/${assuntoId}/qconcursos-vinculo`, { method: 'DELETE' });
+        await Alpine.store('qc').recarregar(assuntoId);
+        document.dispatchEvent(new CustomEvent('sge:vinculo-qc', { detail: { assuntoId } }));
+      } catch (e) {
+        // o vínculo segue; a tela mostra o que está no servidor na próxima carga
+      }
+    },
+  });
+
   // D-150 a D-152: os atalhos vêm do servidor, em lote, e ficam guardados por assunto até a próxima carga da tela.
   Alpine.store('qc', {
     atalhos: {},
@@ -54,6 +148,18 @@ document.addEventListener('alpine:init', () => {
       return this.atalhos[assuntoId] || null;
     },
 
+    // D-173: já perguntou e o assunto não tem para onde ir (nem vínculo, nem edital, nem disciplina que case).
+    semAtalho(assuntoId) {
+      return assuntoId != null && assuntoId in this.atalhos && this.atalhos[assuntoId] === null;
+    },
+
+    async recarregar(assuntoId) {
+      const novo = { ...this.atalhos };
+      delete novo[assuntoId];
+      this.atalhos = novo;
+      await this.carregar([assuntoId]);
+    },
+
     esquecer() {
       this.atalhos = {};
     },
@@ -72,12 +178,18 @@ document.addEventListener('alpine:init', () => {
       const anos = this.anos(a);
       if (anos) partes.push(anos);
       partes.push('não resolvidas');
-      if (a.avisos.includes('DISCIPLINA')) partes.push('filtro pela disciplina (assunto sem nó ligado)');
+      if (a.avisos.includes('DISCIPLINA')) partes.push('filtro pela disciplina inteira');
+      if (a.avisos.includes('NO_FORA_DA_ARVORE')) partes.push('o assunto ligado saiu da árvore do QConcursos: ligue de novo');
       return partes.join(' · ');
     },
 
     largo(a) {
-      return !!a && (a.avisos.includes('DISCIPLINA') || a.avisos.includes('SEM_BANCA'));
+      return !!a && (a.avisos.includes('DISCIPLINA') || a.avisos.includes('SEM_BANCA') || a.avisos.includes('NO_FORA_DA_ARVORE'));
+    },
+
+    // D-173: o filtro pela disciplina inteira (ou um nó que saiu da árvore) pede ligar o assunto.
+    pedeVinculo(a) {
+      return !!a && !a.vinculado && (a.avisos.includes('DISCIPLINA') || a.avisos.includes('NO_FORA_DA_ARVORE'));
     },
 
     // D-153: tocar no atalho guarda a saída; o próprio <a target="_blank"> abre o QConcursos.
@@ -144,6 +256,9 @@ document.addEventListener('alpine:init', () => {
       const l = this.atual;
       if (!this.visivel || l.assuntoId !== item.assuntoId) return;
       if (sugerido) l.formato = sugerido.formato;
+      // D-174: na volta do atalho com "questões por vez", o lote já espera esse número (a captura, quando houver, manda).
+      const porVez = Number((parametros.find((x) => x.chave === 'questoes_por_vez') || {}).valor);
+      if (daVolta && porVez > 0 && !(capturadas && capturadas.feitas > 0)) l.feitas = porVez;
       if (capturadas && capturadas.feitas > 0) {
         l.feitas = capturadas.feitas;
         l.certas = capturadas.certas;

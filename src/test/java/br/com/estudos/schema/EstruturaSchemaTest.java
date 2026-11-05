@@ -82,7 +82,7 @@ class EstruturaSchemaTest extends RestricaoTestBase {
                 // Sprint 43 (01_DOMINIO §3.27): o reinício registrado e as sessões que ele tirou (D-164).
                 "reinicio", "reinicio_sessao",
                 // Sprint 37 (ADR-063): a chave de envio, as questões capturadas (não são sessões, D-166), os pares aprendidos e os diagnósticos.
-                "captura_chave", "questao_capturada", "qconcursos_par", "captura_diagnostico");
+                "captura_chave", "questao_capturada", "qconcursos_par", "captura_diagnostico", "assunto_qconcursos_no");
         assertEquals(esperado, tabelasDoSchema());
     }
 
