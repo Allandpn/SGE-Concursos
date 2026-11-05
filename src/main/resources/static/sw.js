@@ -9,7 +9,7 @@
 //
 // TROQUE CASCA_VERSAO a cada mudança em qualquer arquivo estático, senão os
 // aparelhos continuam com a casca antiga.
-const CASCA_VERSAO = 'casca-2026-11-05-6';
+const CASCA_VERSAO = 'casca-2026-11-05-7';
 // ADR-052: os PDFs guardados para ler sem rede ficam num cache próprio, que a troca de casca não apaga.
 const CACHE_MATERIAL = 'material-v1';
 
@@ -33,6 +33,7 @@ const CASCA = [
   'js/sessoes.js',
   'js/reinicio.js',
   'js/erros.js',
+  'js/captura.js',
   'js/navegacao.js',
   'js/pages.js',
   'js/router.js',

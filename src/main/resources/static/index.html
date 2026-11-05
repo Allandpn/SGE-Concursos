@@ -62,6 +62,7 @@
   <script src="js/sessoes.js"></script>
   <script src="js/reinicio.js"></script>
   <script src="js/erros.js"></script>
+  <script src="js/captura.js"></script>
   <script src="js/modo-teste.js"></script>
   <script src="js/navegacao.js"></script>
   <script src="js/router.js"></script>
@@ -710,8 +711,10 @@
               </div>
               <p x-show="$store.lote.atual.daVolta" class="text-xs font-medium text-primary-700">Voltou do QConcursos</p>
               <p class="text-xs text-gray-500" x-text="$store.lote.rotuloTempo()"></p>
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Antes de conferir: quanto espera acertar?</p>
-              <div class="grid grid-cols-5 gap-1">
+              <p x-show="$store.lote.atual.avisoCaptura" class="rounded-lg bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800" x-text="$store.lote.atual.avisoCaptura"></p>
+              <p x-show="$store.lote.atual.previsaoNaSaida" class="text-xs text-gray-500" x-text="'Previsão feita antes de sair: ' + $store.lote.atual.previsao + '%'"></p>
+              <p x-show="!$store.lote.atual.previsaoNaSaida" class="text-xs font-medium uppercase tracking-wide text-gray-500">Antes de conferir: quanto espera acertar?</p>
+              <div x-show="!$store.lote.atual.previsaoNaSaida" class="grid grid-cols-5 gap-1">
                 <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
                   <button type="button" class="min-h-11 rounded border text-sm" :class="$store.lote.atual.previsao === f ? 'border-primary-600 bg-primary-50 font-semibold' : 'border-gray-200'"
                     @click="$store.lote.atual.previsao = f" x-text="f + '%'"></button>
@@ -924,7 +927,7 @@
               </template>
               <template x-if="proximaAcao.tipo === 'recuperacao' && $store.qc.de(proximaAcao.item?.assuntoId)">
                 <a class="qc-atalho flex min-h-11 items-center whitespace-nowrap text-sm font-semibold text-primary-700 underline" target="_blank" rel="noopener"
-                   :href="$store.qc.de(proximaAcao.item?.assuntoId).url" @click="$store.qc.sair($store.qc.de(proximaAcao.item?.assuntoId), proximaAcao.item.nome)">Resolver no QConcursos ↗</a>
+                   :href="$store.qc.de(proximaAcao.item?.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(proximaAcao.item?.assuntoId), proximaAcao.item.nome)">Resolver no QConcursos ↗</a>
               </template>
               <template x-if="proximaAcao.tipo === 'conteudo' && !$store.foco.emCurso">
                 <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" :disabled="$store.foco.trabalhando"
@@ -943,6 +946,63 @@
         <!-- J-14 passo 2: o que a entrada antecipou (D-143) -->
         <p x-show="retaEntrada" class="border-l-4 border-primary-600 pl-2 text-sm text-primary-700" x-text="textoRetaEntrada()"></p>
 
+        <!-- D-169 (Sprint 37): as questões do QConcursos ainda não registradas -->
+        <div x-data="caixaCaptura()" @sge:sessao-registrada.window="carregar()" x-show="grupos.length || $store.caixaCaptura.ultimo" id="caixa-captura" class="space-y-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-500">Questões do QConcursos</h2>
+          <p x-show="$store.caixaCaptura.ultimo" id="caixa-resultado" role="status" class="rounded-lg bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-800" x-text="$store.caixaCaptura.ultimo"></p>
+          <ul x-show="grupos.length" class="divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <template x-for="g in grupos" :key="chave(g)">
+              <li class="space-y-2 px-4 py-3" :data-caixa="chave(g)">
+                <div class="flex items-center gap-2">
+                  <div class="min-w-0 flex-1">
+                    <b class="block truncate text-[15px] font-semibold" x-text="g.assunto || ('Sem assunto · ' + g.questoes)"></b>
+                    <span class="block text-xs text-gray-500" x-text="g.assunto ? (g.questoes + (g.questoes === 1 ? ' questão · ' : ' questões · ') + dias(g)) : ('“' + g.nomeQc + '” no QConcursos · ' + dias(g))"></span>
+                  </div>
+                  <template x-if="g.assuntoId != null">
+                    <button type="button" class="min-h-11 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-sobre" @click="abrirRegistro(g)">Registrar</button>
+                  </template>
+                  <template x-if="g.assuntoId == null">
+                    <button type="button" class="min-h-11 rounded-lg border border-gray-300 px-3 text-sm font-semibold text-primary-700" @click="abrirPar(g)">Escolher assunto</button>
+                  </template>
+                  <button type="button" class="min-h-11 px-2 text-sm font-semibold text-gray-500" @click="descartar(g)" :aria-label="'Descartar ' + (g.assunto || g.nomeQc)">Descartar</button>
+                </div>
+                <template x-if="registrando && chave(registrando.grupo) === chave(g)">
+                  <div class="space-y-2 rounded-lg bg-gray-50 p-3">
+                    <template x-if="true">
+                      <div class="space-y-2">
+                        <p class="text-sm font-semibold">Antes de ver o acerto: quanto você acha que acertou?</p>
+                        <p class="text-xs text-gray-500">É a previsão possível depois do fato; da próxima vez, saia pelo atalho para prever antes.</p>
+                        <div class="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Previsão">
+                          <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
+                            <button type="button" role="radio" :aria-checked="registrando.previsao === f" class="min-h-11 rounded-lg border text-sm font-semibold"
+                                    :class="registrando.previsao === f ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-gray-300 bg-white'" @click="registrando.previsao = f" x-text="f + '%'"></button>
+                          </template>
+                        </div>
+                        <button type="button" class="min-h-11 w-full rounded-lg bg-primary-600 font-semibold text-sobre disabled:opacity-40" :disabled="registrando.enviando || registrando.previsao === null"
+                                @click="registrar()" x-text="registrando.enviando ? 'Registrando…' : 'Registrar ' + g.questoes + (g.questoes === 1 ? ' questão' : ' questões')"></button>
+                      </div>
+                    </template>
+                    <p x-show="registrando.erro" class="text-sm text-red-700" role="alert" x-text="registrando.erro"></p>
+                  </div>
+                </template>
+                <template x-if="pareando && chave(pareando.grupo) === chave(g)">
+                  <div class="space-y-2 rounded-lg bg-gray-50 p-3">
+                    <label class="block text-sm font-semibold">Qual assunto do SGE é “<span x-text="g.nomeQc"></span>”?
+                      <select x-model="pareando.assuntoId" id="caixa-par-assunto" class="mt-1 block min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2 text-sm text-gray-900">
+                        <option value="">Escolha…</option>
+                        <template x-for="a in assuntos" :key="a.id"><option :value="a.id" x-text="a.nome + ' · ' + a.disciplina"></option></template>
+                      </select>
+                    </label>
+                    <p class="text-xs text-gray-500">O SGE lembra: as próximas questões deste assunto do QConcursos já chegam com ele.</p>
+                    <button type="button" class="min-h-11 w-full rounded-lg bg-primary-600 font-semibold text-sobre" @click="parear()">Guardar</button>
+                    <p x-show="pareando.erro" class="text-sm text-red-700" role="alert" x-text="pareando.erro"></p>
+                  </div>
+                </template>
+              </li>
+            </template>
+          </ul>
+        </div>
+
         <div x-show="filaDepois.length > 0" id="fila-depois">
           <h2 class="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500" x-text="proximaAcao ? 'Depois · recuperar' : 'Recuperar'"></h2>
           <ul class="divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -959,7 +1019,7 @@
                   <button type="button" class="min-h-9 text-sm font-semibold text-primary-700 underline" @click="$store.lote.abrir(item)">Fiz questões</button>
                   <template x-if="$store.qc.de(item.assuntoId)">
                     <a class="qc-atalho min-h-9 text-sm font-semibold text-primary-700 underline" target="_blank" rel="noopener"
-                       :href="$store.qc.de(item.assuntoId).url" @click="$store.qc.sair($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
+                       :href="$store.qc.de(item.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
                   </template>
                 </div>
                 <p x-show="$store.qc.de(item.assuntoId)" class="pb-1 pl-11 text-xs" :class="$store.qc.largo($store.qc.de(item.assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
@@ -1095,7 +1155,7 @@
                     </button>
                     <template x-if="$store.qc.de(item.assuntoId)">
                       <a class="qc-atalho mt-1 inline-block min-h-9 px-1 text-sm font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                         :href="$store.qc.de(item.assuntoId).url" @click="$store.qc.sair($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
+                         :href="$store.qc.de(item.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
                     </template>
                   </li>
                 </template>
@@ -1641,7 +1701,7 @@
         <template x-if="$store.qc.de(assuntoId)">
           <div class="space-y-1">
             <a class="qc-atalho inline-flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-medium text-sobre hover:bg-primary-700" target="_blank" rel="noopener"
-               :href="$store.qc.de(assuntoId).url" @click="$store.qc.sair($store.qc.de(assuntoId), nome)">Resolver no QConcursos ↗</a>
+               :href="$store.qc.de(assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(assuntoId), nome)">Resolver no QConcursos ↗</a>
             <p class="text-xs" :class="$store.qc.largo($store.qc.de(assuntoId)) ? 'text-alerta-700' : 'text-gray-500'" x-text="$store.qc.detalhe($store.qc.de(assuntoId))"></p>
             <p class="text-xs text-gray-500" x-text="'Filtro: ' + $store.qc.de(assuntoId).filtro.join(', ')"></p>
           </div>
@@ -2117,6 +2177,28 @@
     </ul>
   </section>
 
+  <!-- D-168 (Sprint 37): a previsão antes de ir ao QConcursos -->
+  <div x-data x-show="$store.qc.antes" style="display: none" id="qc-antes" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center"
+       @click.self="$store.qc.antes = null" @keydown.escape.window="$store.qc.antes = null" role="dialog" aria-modal="true" aria-labelledby="qc-antes-titulo">
+    <template x-if="$store.qc.antes">
+      <div class="w-full max-w-md space-y-3 rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl">
+        <h2 id="qc-antes-titulo" class="text-lg font-bold">Antes de ir: quanto você acha que vai acertar?</h2>
+        <p class="text-sm text-gray-600" x-text="$store.qc.antes.nome + ' · ' + $store.qc.detalhe($store.qc.antes.a)"></p>
+        <div class="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Previsão">
+          <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
+            <button type="button" role="radio" :aria-checked="$store.qc.antes.previsao === f" class="min-h-12 rounded-lg border text-sm font-semibold"
+                    :class="$store.qc.antes.previsao === f ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-gray-300'" @click="$store.qc.antes.previsao = f" x-text="f + '%'"></button>
+          </template>
+        </div>
+        <a target="_blank" rel="noopener" :href="$store.qc.antes.a.url" @click="if ($store.qc.antes.previsao === null) { $event.preventDefault(); return; } $store.qc.ir()"
+           class="flex min-h-12 w-full items-center justify-center rounded-lg bg-primary-600 font-semibold text-sobre" :class="$store.qc.antes.previsao === null ? 'opacity-40' : ''"
+           :aria-disabled="$store.qc.antes.previsao === null">Abrir o QConcursos ↗</a>
+        <p class="text-xs text-gray-500">Com a captura ligada, as questões que você responder voltam sozinhas para o lote.</p>
+        <button type="button" class="min-h-11 w-full rounded-lg border border-gray-300 text-sm font-semibold" @click="$store.qc.antes = null">Cancelar</button>
+      </div>
+    </template>
+  </div>
+
   <!-- §8E (Sprint 43): a confirmação do reinício (D-165) e o aviso com desfazer (D-164) -->
   <div x-data x-show="$store.reinicio.aberto" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" @click.self="$store.reinicio.fechar()"
        @keydown.escape.window="$store.reinicio.fechar()" role="dialog" aria-modal="true" aria-labelledby="reinicio-titulo" id="reinicio-confirmar" style="display: none">
@@ -2466,6 +2548,52 @@
           <p x-show="salvoIa" class="text-xs text-green-700">Salvo. Vale na próxima chamada.</p>
         </div>
 
+        </div>
+      </details>
+      <details class="group" id="ajustes-g-captura">
+        <summary class="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2"><span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold">Captura do QConcursos</span><span class="block text-xs font-normal text-gray-500">a chave de envio e o userscript</span></span><svg class="h-5 w-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="border-t border-gray-100 p-4">
+          <!-- D-170, D-171 (Sprint 37; ADR-063) -->
+          <div x-data="capturaAjustes()" class="space-y-3" id="captura-ajustes">
+            <p class="text-sm text-gray-600">Um userscript no navegador envia ao eAgora cada questão que você responde no QConcursos. A chave só envia questões; não lê nada daqui.</p>
+            <template x-if="criada">
+              <div class="space-y-2 rounded-lg border border-primary-600 bg-primary-50 p-3">
+                <p class="text-sm font-semibold">Chave de “<span x-text="criada.nome"></span>”. Copie agora; ela não aparece de novo.</p>
+                <p class="break-all rounded bg-white p-2 font-mono text-sm text-gray-900" id="captura-chave-nova" x-text="criada.chave"></p>
+                <button type="button" class="min-h-11 w-full rounded-lg border border-gray-300 bg-white text-sm font-semibold" @click="copiar()" x-text="copiado ? 'Copiada' : 'Copiar'"></button>
+                <p class="text-xs text-gray-600">Depois, no QConcursos, cole a chave no selo do eAgora (canto da tela).</p>
+              </div>
+            </template>
+            <ul x-show="chaves.length" class="divide-y divide-gray-200 rounded-lg border border-gray-200">
+              <template x-for="c in chaves" :key="c.id">
+                <li class="flex min-h-12 items-center gap-2 px-3 py-2">
+                  <span class="min-w-0 flex-1"><b class="block truncate text-sm font-semibold" :class="c.revogadaEm ? 'text-gray-400 line-through' : ''" x-text="c.nome"></b>
+                    <span class="block text-xs text-gray-500" x-text="c.revogadaEm ? 'revogada' : 'último envio: ' + quando(c.ultimoEnvioEm)"></span></span>
+                  <button type="button" x-show="!c.revogadaEm" class="min-h-11 px-2 text-sm font-semibold text-red-700" @click="revogar(c)">Revogar</button>
+                </li>
+              </template>
+            </ul>
+            <label class="block text-xs font-semibold text-gray-500">Nome deste navegador
+              <input type="text" x-model="nome" maxlength="120" id="captura-nome" class="mt-1 block min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900">
+            </label>
+            <button type="button" class="min-h-11 w-full rounded-lg bg-primary-600 font-semibold text-sobre" @click="gerar()">Gerar chave para este navegador</button>
+            <a href="/captura/eagora-qconcursos.user.js" class="flex min-h-11 items-center text-sm font-semibold text-primary-700 underline underline-offset-2">Instalar o userscript</a>
+            <p class="text-xs text-gray-500">Precisa do Tampermonkey (computador) ou do Firefox com Tampermonkey ou Violentmonkey (Android).</p>
+            <div x-show="diagnosticos.length" class="space-y-1">
+              <button type="button" class="min-h-11 text-sm font-semibold text-gray-600" @click="verDiagnosticos = !verDiagnosticos"
+                      x-text="(verDiagnosticos ? '▾ ' : '▸ ') + 'Diagnósticos recebidos (' + diagnosticos.length + ')'"></button>
+              <ul x-show="verDiagnosticos" class="space-y-2">
+                <template x-for="d in diagnosticos" :key="d.id">
+                  <li class="space-y-1 rounded-lg border border-gray-200 p-2 text-xs">
+                    <p><b x-text="d.motivo"></b> · <span x-text="d.chave + ' · ' + quando(d.criadoEm)"></span></p>
+                    <p class="max-h-24 overflow-auto break-all font-mono text-[11px] text-gray-500" x-text="d.recorte.slice(0, 600)"></p>
+                    <button type="button" class="min-h-9 text-xs font-semibold text-red-700" @click="apagarDiagnostico(d)">Apagar</button>
+                  </li>
+                </template>
+              </ul>
+            </div>
+            <p x-show="erro" class="text-sm text-red-700" role="alert" x-text="erro"></p>
+          </div>
         </div>
       </details>
       <details class="group" id="ajustes-g-arvore">
@@ -2838,7 +2966,7 @@
                       <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="aceitarBanca([p.assuntoId])">Aceitar</button>
                       <template x-if="$store.qc.de(p.assuntoId)">
                           <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                             :href="$store.qc.de(p.assuntoId).url" @click="$store.qc.sair($store.qc.de(p.assuntoId), p.nome)">QConcursos ↗</a>
+                             :href="$store.qc.de(p.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(p.assuntoId), p.nome)">QConcursos ↗</a>
                         </template>
                     </div>
                   </template>
@@ -2858,7 +2986,7 @@
                     <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-gray-600" @click="desfazerBanca(a.assuntoId)">Desfazer</button>
                     <template x-if="$store.qc.de(a.assuntoId)">
                           <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                             :href="$store.qc.de(a.assuntoId).url" @click="$store.qc.sair($store.qc.de(a.assuntoId), a.nome)">QConcursos ↗</a>
+                             :href="$store.qc.de(a.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(a.assuntoId), a.nome)">QConcursos ↗</a>
                         </template>
                   </div>
                 </template>
@@ -2947,7 +3075,7 @@
                                 <span class="whitespace-nowrap font-mono text-gray-500" x-text="f.peso.toLowerCase().replace('medio', 'médio') + (f.minutos ? ' · ' + minutosBr(f.minutos) : '')"></span>
                         <template x-if="$store.qc.de(f.assuntoId)">
                           <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                             :href="$store.qc.de(f.assuntoId).url" @click="$store.qc.sair($store.qc.de(f.assuntoId), f.nome)">QConcursos ↗</a>
+                             :href="$store.qc.de(f.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(f.assuntoId), f.nome)">QConcursos ↗</a>
                         </template>
                               </span>
                             </li>

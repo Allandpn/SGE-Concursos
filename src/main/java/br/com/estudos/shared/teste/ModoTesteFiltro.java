@@ -54,7 +54,7 @@ public class ModoTesteFiltro extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest pedido) {
         var caminho = pedido.getRequestURI();
-        return caminho.startsWith("/internal/") || caminho.startsWith("/api/acesso") || !pedeTeste(pedido);
+        return caminho.startsWith("/internal/") || caminho.startsWith("/api/acesso") || caminho.startsWith("/captura/") || !pedeTeste(pedido);
     }
 
     @Override

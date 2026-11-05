@@ -2475,13 +2475,13 @@ não deve ter: com ele, qualquer script naquela página poderia ler e mudar tudo
 
 ### Decisão
 
-- **Uma rota fora da sessão:** `POST /captura/qconcursos/questoes` e `POST /captura/qconcursos/diagnosticos`, fora de `/api/`. O
+- **Uma rota fora da sessão:** `POST /captura/qconcursos/respostas` e `POST /captura/qconcursos/diagnosticos`, fora de `/api/`. O
   filtro de sessão não as trata (como `/internal/`); um filtro próprio exige `Authorization: Bearer <chave>` e só aceita POST,
   JSON e até 64 KB. Nenhuma outra rota aceita a chave.
 - **A chave:** 32 bytes aleatórios em base64url, mostrada uma vez; o banco guarda só o SHA-256. Revogada, responde 401.
 - **Só envio:** as duas rotas gravam e respondem `{ok, assunto}` — nunca dados do SGE. A leitura e a gestão das chaves, das
   capturadas e dos diagnósticos são rotas `/api/` comuns, com a sessão.
-- **O userscript** é servido pelo próprio SGE (`/captura/eagora-qconcursos.user.js`, com sessão), com o endereço do SGE preenchido e
+- **O userscript** é servido pelo próprio SGE (`/captura/eagora-qconcursos.user.js`, na lista aberta: não tem segredo, só o endereço do SGE, e o Tampermonkey o baixa sem o cookie do app), com o endereço preenchido e
   `@connect` para ele; envia por `GM_xmlhttpRequest`, que não depende de CORS. O SGE não libera CORS para o QConcursos.
 - **Sem rede nova:** o navegador que resolve as questões é o mesmo que já chega ao SGE (tailnet). Nada muda no Pi nem no compose.
 

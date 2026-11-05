@@ -36,6 +36,14 @@ class AcessoRotasTest extends AcessoTestBase {
                 }
                 var caminho = padrao.replaceAll("\\{[^}]+}", "1").replace("/**", "/x");
                 for (var metodo : metodos) {
+                    if (caminho.startsWith("/captura/qconcursos/")) {
+                        // ADR-063: a captura não usa a sessão; sem a chave de envio, 401 do CapturaFiltro.
+                        var r = mvc.perform(publico(request(HttpMethod.valueOf(metodo.name()), caminho), "203.0.113.20")
+                            .contentType("application/json").content("{}")).andReturn().getResponse();
+                        assertThat(r.getStatus()).as(metodo + " " + caminho).isEqualTo(401);
+                        assertThat(r.getContentAsString()).as(metodo + " " + caminho).contains("CAPTURA_CHAVE_RECUSADA");
+                        continue;
+                    }
                     if (SessaoAcessoFilter.aberta(metodo.name(), caminho)) {
                         abertasVistas.add(metodo + " " + caminho);
                         continue;
@@ -50,7 +58,8 @@ class AcessoRotasTest extends AcessoTestBase {
         assertThat(fechadas).isGreaterThan(100);
         assertThat(abertasVistas).containsExactlyInAnyOrder(
             "GET /api/acesso/estado", "POST /api/acesso/primeiro/opcoes", "POST /api/acesso/primeiro",
-            "POST /api/acesso/entrar/opcoes", "POST /api/acesso/entrar", "POST /api/acesso/recuperar");
+            "POST /api/acesso/entrar/opcoes", "POST /api/acesso/entrar", "POST /api/acesso/recuperar",
+            "GET /captura/eagora-qconcursos.user.js");
     }
 
     @Test

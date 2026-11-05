@@ -49,7 +49,9 @@ public class SessaoAcessoFilter extends OncePerRequestFilter {
 
     /** A lista aberta (D-106). Tudo o que não está aqui exige sessão. */
     static final Set<String> ABERTAS_GET = Set.of(
-        "/entrar.html", "/js/entrar.js", "/js/api.js", "/manifest.webmanifest", "/sw.js", "/actuator/health", "/api/acesso/estado");
+        "/entrar.html", "/js/entrar.js", "/js/api.js", "/manifest.webmanifest", "/sw.js", "/actuator/health", "/api/acesso/estado",
+        // ADR-063: o userscript não tem segredo (só o endereço do SGE); o Tampermonkey o baixa sem o cookie do app.
+        "/captura/eagora-qconcursos.user.js");
     static final List<String> PREFIXOS_ABERTOS_GET = List.of("/vendor/", "/css/", "/icons/");
     static final Set<String> ABERTAS_POST = Set.of(
         "/api/acesso/primeiro/opcoes", "/api/acesso/primeiro", "/api/acesso/entrar/opcoes", "/api/acesso/entrar", "/api/acesso/recuperar");
@@ -92,7 +94,8 @@ public class SessaoAcessoFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest pedido) {
-        return desligado || pedido.getRequestURI().startsWith("/internal/");
+        // ADR-063: a captura do QConcursos tem a chave de envio, no CapturaFiltro; nunca a sessão.
+        return desligado || pedido.getRequestURI().startsWith("/internal/") || br.com.estudos.captura.CapturaFiltro.ehCaptura(pedido);
     }
 
     @Override
