@@ -71,7 +71,7 @@ A rota de envio chama-se "respostas", não "questões": D-72 proíbe rota de que
 | 37.1 | Migração, a porta e as rotas | feito |
 | 37.2 | O userscript, Ajustes, a caixa, a folha e o lote | feito |
 | 37.3 | Testes e Chromium | feito |
-| 37.4 | Deploy pelo Guardian | — |
+| 37.4 | Deploy pelo Guardian | `release/17` (`a68a360`) |
 | 37.5 | Acertar os seletores com os primeiros diagnósticos reais | — |
 
 ## Changelog
