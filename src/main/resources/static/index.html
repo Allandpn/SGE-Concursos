@@ -88,6 +88,11 @@
   <symbol id="i-ajustes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
   <symbol id="i-rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
   <symbol id="i-ler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2zM22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/></symbol>
+  <symbol id="i-foco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="8"/><path d="M12 10v4l2.5 2M10 2h4M12 2v4"/></symbol>
+  <symbol id="i-registrar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+  <symbol id="i-guardado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-baixado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7 9l5 5 5-5M4 17v3h16v-3"/></symbol>
+  <symbol id="i-teste" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/><path d="M7 15h10"/></symbol>
   <symbol id="i-alvo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="6"/></symbol>
 </svg>
 
@@ -130,6 +135,7 @@
          :class="$store.nav.rota === i.id ? 'bg-primary-50 text-primary-800' : 'text-gray-600 hover:bg-gray-50'"
          :aria-current="$store.nav.rota === i.id ? 'page' : null">
         <svg class="h-5 w-5 flex-none" aria-hidden="true"><use :href="'#' + i.icone"/></svg><span x-text="i.nome"></span>
+        <small x-show="i.id === 'teste'" class="ml-auto text-xs font-normal text-gray-500" x-text="$store.teste.ativo ? 'ligado' : ''"></small>
       </a>
     </div>
   </template>
@@ -165,6 +171,7 @@
           <a :href="i.href" class="flex min-h-14 items-center gap-3 border-t border-gray-100 text-base font-semibold first:border-t-0"
              :class="$store.nav.rota === i.id ? 'text-primary-800' : 'text-gray-800'">
             <svg class="h-6 w-6 text-primary-700" aria-hidden="true"><use :href="'#' + i.icone"/></svg><span x-text="i.nome"></span>
+            <small x-show="i.id === 'teste'" class="ml-auto text-xs font-normal text-gray-500" x-text="$store.teste.ativo ? 'ligado · ' + hojeHumano() : 'desligado'"></small>
           </a>
         </template>
       </div>
@@ -241,7 +248,7 @@
             <span class="block text-xs font-normal text-gray-500">deslize para o lado para trocar</span></button>
           <div class="my-1 border-t border-gray-100"></div>
           <button type="button" class="block min-h-11 w-full px-3 text-left hover:bg-gray-50 disabled:opacity-50" :disabled="guardado || guardando || !online" @click="guardarSemRede()"
-            x-text="guardado ? 'Guardado para ler sem rede ✓' : (guardando ? 'Guardando…' : 'Guardar para ler sem rede')"></button>
+            x-text="guardado ? 'Baixado: abre sem internet ✓' : (guardando ? 'Baixando…' : 'Baixar para abrir sem internet')"></button>
           <a x-show="leitura?.arquivo" :href="leitura?.arquivo" target="_blank" rel="noopener" class="flex min-h-11 items-center px-3 hover:bg-gray-50">Abrir fora do app</a>
           <button type="button" class="block min-h-11 w-full px-3 text-left hover:bg-gray-50" @click="abrirHistorico()">Marcações removidas e versões</button>
           <div class="flex items-center gap-2 border-t border-gray-100 px-3 py-2">
@@ -258,8 +265,8 @@
     <template x-if="naoGuardado">
       <div class="flex flex-col items-center gap-2 p-8 text-center text-sm text-gray-600">
         <span class="text-2xl">⇣</span>
-        <b class="text-gray-900">Este bloco não está no aparelho</b>
-        <span>Ele abre quando a rede voltar. Para ler sem rede da próxima vez, use "Guardar para ler sem rede" no menu ⋮.</span>
+        <b class="text-gray-900">Este bloco não está baixado no aparelho</b>
+        <span>Ele abre quando a internet voltar. Para abrir sem internet da próxima vez, use "Baixar para abrir sem internet" no menu ⋮.</span>
       </div>
     </template>
     <template x-if="semArquivo">
@@ -919,8 +926,14 @@
                 </template>
               </ul>
             </template>
-            <button type="button" class="min-h-12 w-full rounded-lg bg-primary-600 text-base font-semibold text-sobre hover:bg-primary-700"
-                    @click="fazerProximaAcao()" x-text="botaoProximaAcao()"></button>
+            <!-- §8G: o Ler ganha o livro e, se o bloco está no aparelho, a bolinha de baixado (D-119) -->
+            <button type="button" id="agora-principal" class="relative flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary-600 text-base font-semibold text-sobre hover:bg-primary-700"
+                    :aria-label="botaoProximaAcao() + (blocoDaProximaAcao() && guardados.has(blocoDaProximaAcao()) ? ', baixado, abre sem internet' : '')"
+                    @click="fazerProximaAcao()">
+              <svg x-show="blocoDaProximaAcao()" class="h-5 w-5" aria-hidden="true"><use href="#i-ler"/></svg>
+              <span x-text="botaoProximaAcao()"></span>
+              <span x-show="blocoDaProximaAcao() && guardados.has(blocoDaProximaAcao())" class="selo-baixado absolute -right-1.5 -top-1.5" title="Baixado: abre sem internet" aria-hidden="true"><svg><use href="#i-guardado"/></svg></span>
+            </button>
             <div class="flex flex-wrap gap-x-5 gap-y-1">
               <template x-if="proximaAcao.tipo === 'recuperacao'">
                 <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" @click="$store.lote.abrir(proximaAcao.item)">Fiz questões</button>
@@ -930,11 +943,11 @@
                    :href="$store.qc.de(proximaAcao.item?.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(proximaAcao.item?.assuntoId), proximaAcao.item.nome)">Resolver no QConcursos ↗</a>
               </template>
               <template x-if="proximaAcao.tipo === 'conteudo' && !$store.foco.emCurso">
-                <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" :disabled="$store.foco.trabalhando"
-                        @click="$store.foco.iniciar('FOCO', blocoConteudo.id, segmentoSugerido?.id ?? null, blocoConteudo.nome)">Foco neste bloco</button>
+                <button type="button" class="acao-icone" aria-label="Foco neste bloco" :disabled="$store.foco.trabalhando"
+                        @click="$store.foco.iniciar('FOCO', blocoConteudo.id, segmentoSugerido?.id ?? null, blocoConteudo.nome)"><svg aria-hidden="true"><use href="#i-foco"/></svg>Foco</button>
               </template>
               <template x-if="proximaAcao.tipo === 'conteudo'">
-                <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" @click="abrirBlocoConteudo()">Registrar a leitura</button>
+                <button type="button" class="acao-icone" aria-label="Registrar a leitura" @click="abrirBlocoConteudo()"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Registrar</button>
               </template>
             </div>
             <p x-show="proximaAcao.tipo === 'recuperacao' && $store.qc.de(proximaAcao.item?.assuntoId)" class="-mt-2 text-xs"
@@ -1057,8 +1070,9 @@
                 </template>
                 <!-- J-10: o reestudo abre o material no leitor (D-114) -->
                 <button type="button" x-show="reestudoBloco[item.assuntoId]" class="mt-1 flex min-h-11 items-center gap-2 px-1 text-sm font-semibold text-primary-700"
-                  @click="window.location.hash = '#/ler/' + reestudoBloco[item.assuntoId]">Ler
-                  <span x-show="guardados.has(reestudoBloco[item.assuntoId])" class="rounded-full border border-primary-600 px-2 text-xs font-normal">sem rede ✓</span></button>
+                  :aria-label="'Ler' + (guardados.has(reestudoBloco[item.assuntoId]) ? ', baixado, abre sem internet' : '')"
+                  @click="window.location.hash = '#/ler/' + reestudoBloco[item.assuntoId]"><svg class="h-5 w-5" aria-hidden="true"><use href="#i-ler"/></svg>Ler
+                  <span x-show="guardados.has(reestudoBloco[item.assuntoId])" class="sinal-baixado" aria-hidden="true"><svg><use href="#i-baixado"/></svg>baixado</span></button>
               </li>
             </template>
           </ul>
@@ -1076,12 +1090,13 @@
             </button>
             <!-- D-98: "Foco" começa o Pomodoro já apontando o assunto e o segmento do bloco -->
             <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando"
-              class="flex min-h-11 w-full items-center border-t border-gray-200 px-3 text-left text-sm font-medium text-primary-700 hover:bg-gray-50"
-              @click="$store.foco.iniciar('FOCO', blocoConteudo.id, segmentoSugerido?.id ?? null, blocoConteudo.nome)">Foco neste bloco</button>
+              class="flex min-h-11 w-full items-center gap-2 border-t border-gray-200 px-3 text-left text-sm font-semibold text-primary-700 hover:bg-gray-50" aria-label="Foco neste bloco"
+              @click="$store.foco.iniciar('FOCO', blocoConteudo.id, segmentoSugerido?.id ?? null, blocoConteudo.nome)"><svg class="h-5 w-5" aria-hidden="true"><use href="#i-foco"/></svg>Foco</button>
             <!-- J-10: o material abre no leitor do app (D-114); link antigo do Drive continua abrindo fora -->
             <a x-show="segmentoSugerido && materialLocal(segmentoSugerido)" :href="'#/ler/' + segmentoSugerido?.id"
-              class="flex min-h-11 items-center gap-2 border-t border-gray-200 px-3 text-sm font-semibold text-primary-700">Ler
-              <span x-show="guardados.has(segmentoSugerido?.id)" class="rounded-full border border-primary-600 px-2 text-xs font-normal">sem rede ✓</span></a>
+              :aria-label="'Ler' + (guardados.has(segmentoSugerido?.id) ? ', baixado, abre sem internet' : '')"
+              class="flex min-h-11 items-center gap-2 border-t border-gray-200 px-3 text-sm font-semibold text-primary-700"><svg class="h-5 w-5" aria-hidden="true"><use href="#i-ler"/></svg>Ler
+              <span x-show="guardados.has(segmentoSugerido?.id)" class="sinal-baixado" aria-hidden="true"><svg><use href="#i-baixado"/></svg>baixado</span></a>
             <a x-show="linkMaterial && !materialLocal(segmentoSugerido)" :href="linkMaterial" target="_blank" rel="noopener"
               class="flex min-h-11 items-center border-t border-gray-200 px-3 text-sm font-medium text-primary-700 underline">Abrir material</a>
             <!-- Sprint 25 §9: aviso discreto da conferência; leva a ela e não bloqueia nada -->
@@ -1303,6 +1318,23 @@
               </div>
             </template>
             <p x-show="sugestao" class="text-sm text-primary-700" x-text="textoSugestao"></p>
+          </div>
+        </template>
+
+        <!-- D-172: os pontos altos (as marcações do assunto), pedidos só agora, depois de conferir -->
+        <template x-if="pontosAltos.length">
+          <div id="pontos-altos" class="space-y-2">
+            <p class="text-xs font-bold uppercase tracking-wider text-gray-500" x-text="'Seus pontos altos · ' + pontosAltos.length"></p>
+            <p x-show="!perguntas.length" class="text-xs text-gray-500">Compare o que você lembrou com o que marcou na leitura.</p>
+            <template x-for="m in pontosAltos" :key="m.chave">
+              <div class="ponto-alto space-y-1 rounded-xl border border-gray-200 bg-white p-3" :style="'border-left: 4px solid ' + corDoPonto(m)">
+                <p class="text-[11px] font-bold uppercase tracking-wider" :style="'color:' + corDoPonto(m)" x-text="rotuloDoPonto(m)"></p>
+                <p x-show="m.citacao" class="text-sm" x-text="'“' + (m.citacao || '') + '”'"></p>
+                <p x-show="m.nota" class="border-l-2 border-gray-200 pl-2 text-sm text-gray-600" x-text="m.nota"></p>
+                <a class="block min-h-9 text-right text-sm font-semibold text-primary-700" :href="'#/ler/' + m.segmentoId + '?p=' + m.pagina"
+                   x-text="(blocosDosPontos > 1 ? 'Bloco ' + m.bloco + ' · ' : '') + 'p. ' + m.pagina + ' →'"></a>
+              </div>
+            </template>
           </div>
         </template>
 
@@ -1728,8 +1760,8 @@
         </div>
 
         <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando"
-          class="min-h-11 w-full rounded border border-gray-200 bg-white p-3 text-left text-sm font-medium text-primary-700 hover:bg-gray-50"
-          @click="$store.foco.iniciar('FOCO', assuntoId, null, nome)">Foco neste assunto</button>
+          class="flex min-h-11 w-full items-center gap-2 rounded border border-gray-200 bg-white p-3 text-left text-sm font-semibold text-primary-700 hover:bg-gray-50"
+          @click="$store.foco.iniciar('FOCO', assuntoId, null, nome)"><svg class="h-5 w-5" aria-hidden="true"><use href="#i-foco"/></svg>Foco neste assunto</button>
 
         <!-- O material do assunto: "Do acervo" e um grupo por PDF próprio (D-129, D-132; J-11) -->
         <div x-show="temSegmentos" class="space-y-2">
@@ -1747,7 +1779,7 @@
                       <span class="text-sm" x-text="s.ordem + '. p. ' + (s.paginaInicial ?? '?') + '–' + (s.paginaFinal ?? '?')"></span>
                       <span class="text-xs text-gray-400" x-text="s.tempoEstimadoMin ? '~' + s.tempoEstimadoMin + ' min' : ''"></span>
                     </div>
-                    <a x-show="s.arquivo && s.arquivo.startsWith('/material/')" :href="'#/ler/' + s.id" class="text-sm font-semibold text-primary-700 underline">Ler</a>
+                    <a x-show="s.arquivo && s.arquivo.startsWith('/material/')" :href="'#/ler/' + s.id" class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary-700"><svg class="h-5 w-5" aria-hidden="true"><use href="#i-ler"/></svg>Ler</a>
                     <a x-show="!(s.arquivo && s.arquivo.startsWith('/material/'))" :href="s.arquivo" target="_blank" rel="noopener" class="text-sm underline">abrir material</a>
                     <!-- D-105: estimado × real, só informação -->
                     <button type="button" x-show="!$store.foco.emCurso" :disabled="$store.foco.trabalhando" class="ml-3 text-sm text-primary-700 underline"
@@ -2316,7 +2348,7 @@
         <span class="text-lg text-gray-400" aria-hidden="true">›</span>
       </a>
 
-      <details class="group" id="ajustes-g-teste">
+      <details class="group scroll-mt-20" id="ajustes-g-teste">
         <summary class="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2"><span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold">Modo de teste</span><span class="block text-xs font-normal text-gray-500"><span x-text="$store.teste.ativo ? 'ligado neste aparelho' : 'desligado'"></span></span></span><svg class="h-5 w-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="border-t border-gray-100 p-4">
         <!-- §8C e ADR-061: o modo de teste, só neste aparelho -->

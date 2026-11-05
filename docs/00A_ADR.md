@@ -4,7 +4,7 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.30.0** |
+| Versão do documento | **2.31.0** |
 | Status | **Congelado** |
 | Data | 2026-11-05 |
 | Total | 63 ADRs — 48 vigentes, 14 substituídas, 1 revogada |
@@ -991,6 +991,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.31.0 | 2026-11-05 | Nota em **ADR-053** (Sprint 44, D-172): as marcações do assunto entram na recuperação depois de conferir, pedidas só nesse momento. Total 63, 48 vigentes |
 | 2.30.0 | 2026-11-05 | **ADR-063**, pedido do usuário: a captura do QConcursos por `/captura/qconcursos/*`, fora da sessão, com chave de envio por navegador (hash, revogável, só envio). Com `01_DOMINIO` v1.44.0 (§3.28). Total 63, 48 vigentes |
 | 2.29.0 | 2026-11-05 | **ADR-062**, pedido do usuário: tirar sessões da escada por uma visão `sessao` das ativas sobre a tabela `sessao_registro`; a escada do assunto refeita reativando as sessões em ordem. Com `01_DOMINIO` v1.42.0 (§3.26). Total 62, 47 vigentes |
 | 2.28.0 | 2026-11-05 | **ADR-061**, pedido do usuário: o modo de teste num schema `teste` do mesmo banco, escolhido por requisição (cookie do aparelho), com a data deslocada só nele; login, tarefas agendadas, avisos e arquivos sempre no real. Com `04_FRONTEND` v1.21.0 (§8C). Total 61, 46 vigentes |
@@ -2133,6 +2134,8 @@ já serve os PDFs (`MATERIAL_DIR`), extrai texto com PDFBox (`ExtratorTextoPdf`)
 - **A IA responde JSON** com as perguntas (tipo, enunciado) e os pontos (texto, principal ou detalhe, página); o servidor confere a
   forma antes de gravar (D-123) e recusa resposta fora dela, que volta à fila uma vez.
 - **Nenhum texto do material vai para a tela da recuperação**: o servidor só entrega enunciado na etapa 1 e o gabarito na etapa 2.
+  *Nota (Sprint 44, D-172):* depois de conferir, entram também as marcações da pessoa no assunto (`GET /api/assuntos/{id}/pontos-altos`),
+  pedidas só nesse momento, como o gabarito. Antes de conferir, a regra continua inteira.
 
 ### Consequências
 

@@ -27,7 +27,7 @@ function renderizarRotaAtual() {
   const matchAssuntos = hash === '#/assuntos';
   const matchErros = hash.match(/^#\/erros\/(\d+)$/);
   const matchProgresso = hash === '#/progresso';
-  const matchAjustes = hash === '#/ajustes';
+  const matchAjustes = hash === '#/ajustes' || hash === '#/ajustes/teste'; // §8G: /teste abre o grupo do modo de teste
   const matchSessoes = hash === '#/sessoes'; // §8D
   const matchErrosGerais = hash === '#/erros'; // Sprint 40
   const matchConcursos = hash === '#/concursos';
@@ -126,6 +126,11 @@ function renderizarRotaAtual() {
   } else if (matchAjustes) {
     elAjustes.hidden = false;
     Alpine.$data(elAjustes).init();
+    if (hash === '#/ajustes/teste') {
+      const grupo = document.getElementById('ajustes-g-teste');
+      grupo.open = true;
+      requestAnimationFrame(() => grupo.scrollIntoView({ block: 'start' }));
+    }
   } else if (matchConcursos) {
     elConcursos.hidden = false;
     Alpine.$data(elConcursos).init();

@@ -468,6 +468,15 @@ document.addEventListener('alpine:init', () => {
       return 'Nenhum simulado desde segunda';
     },
 
+    // §8G: o bloco que o botão principal abre no leitor (para o ícone e o sinal de baixado), ou null.
+    blocoDaProximaAcao() {
+      const p = this.proximaAcao;
+      if (!p) return null;
+      if (p.tipo === 'reestudo') return this.reestudoBloco[p.item.assuntoId] || null;
+      if (p.tipo === 'conteudo' && this.segmentoSugerido && this.materialLocal(this.segmentoSugerido)) return this.segmentoSugerido.id;
+      return null;
+    },
+
     botaoProximaAcao() {
       const p = this.proximaAcao;
       if (!p) return '';
@@ -704,6 +713,7 @@ document.addEventListener('alpine:init', () => {
     vieram: {}, // pontoId → true
     ruins: {}, // perguntaId → true (D-127)
     faltaram: [], // depois de gravar PARCIAL: os pontos que faltaram (D-128)
+    pontosAltos: [], // D-172: as marcações do assunto, pedidas só ao conferir
     // D-159: em ensaio, "o que aconteceria" no lugar de gravar.
     ensaio: false,
     ensaioTexto: '',
@@ -777,6 +787,7 @@ document.addEventListener('alpine:init', () => {
       this.vieram = {};
       this.ruins = {};
       this.faltaram = [];
+      this.pontosAltos = [];
       // D-124: sem pergunta (ou sem rede para buscá-las), a tela é a recuperação livre de sempre.
       api(`/assuntos/${assuntoId}/perguntas`).then((ps) => { if (this.etapa <= 2) this.perguntas = ps; }).catch(() => {});
     },
@@ -788,12 +799,33 @@ document.addEventListener('alpine:init', () => {
 
     conferir() {
       this.etapa = 3;
+      // D-172: as marcações do assunto só agora, depois da tentativa; sem rede, a seção não aparece.
+      const assuntoDaVez = this.assuntoId;
+      api(`/assuntos/${assuntoDaVez}/pontos-altos`)
+        .then((ps) => { if (this.assuntoId === assuntoDaVez && this.etapa >= 3) this.pontosAltos = ps; })
+        .catch(() => { this.pontosAltos = []; });
       if (this.perguntas.length) {
         // D-125: o gabarito só existe a partir daqui.
         api(`/perguntas/gabarito?ids=${this.perguntas.map((p) => p.id).join(',')}`)
           .then((gs) => { this.gabarito = Object.fromEntries(gs.map((g) => [g.perguntaId, g.pontos])); })
           .catch(() => { this.gabarito = {}; });
       }
+    },
+
+    corDoPonto(m) {
+      if (m.tipo === 'NOTA_PAGINA') return 'rgb(var(--c-gray-500))';
+      // no escuro, a cor do leitor fica apagada no fundo; um tom mais claro da mesma cor
+      const escuro = getComputedStyle(document.documentElement).colorScheme === 'dark';
+      if (escuro) return { IMPORTANTE: '#f2c94c', DUVIDA: '#f2a59a', DECORAR: '#7fd18f' }[m.cor] || '#f2c94c';
+      return (CORES[m.cor] || CORES.IMPORTANTE).borda;
+    },
+
+    rotuloDoPonto(m) {
+      return m.tipo === 'NOTA_PAGINA' ? 'Nota da página' : { IMPORTANTE: 'Importante', DUVIDA: 'Dúvida', DECORAR: 'Decorar' }[m.cor] || 'Destaque';
+    },
+
+    get blocosDosPontos() {
+      return new Set(this.pontosAltos.map((m) => m.segmentoId)).size;
     },
 
     tipoDaPergunta(tipo) {

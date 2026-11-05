@@ -23,10 +23,12 @@ public class LeituraController {
 
     private final LeituraService leitura;
     private final MarcacaoService marcacoes;
+    private final PontosAltosService pontosAltos;
 
-    public LeituraController(LeituraService leitura, MarcacaoService marcacoes) {
+    public LeituraController(LeituraService leitura, MarcacaoService marcacoes, PontosAltosService pontosAltos) {
         this.leitura = leitura;
         this.marcacoes = marcacoes;
+        this.pontosAltos = pontosAltos;
     }
 
     @GetMapping("/api/segmentos/{id}/leitura")
@@ -53,5 +55,13 @@ public class LeituraController {
     @Operation(summary = "Marcações removidas e todas as versões, só para consulta (D-117)")
     public MarcacaoService.Historico historico(@PathVariable long id) {
         return marcacoes.historico(id);
+    }
+
+    @GetMapping("/api/assuntos/{id}/pontos-altos")
+    @Operation(summary = "As marcações vigentes do assunto, para a recuperação depois de conferir (D-172)",
+        description = "Destaques (com a nota de trecho) e notas de página, por bloco, página e altura. Bloco arquivado fica de fora. "
+            + "A tela só pede depois do toque em Conferir.")
+    public List<PontosAltosService.PontoAlto> pontosAltos(@PathVariable long id) {
+        return pontosAltos.doAssunto(id);
     }
 }

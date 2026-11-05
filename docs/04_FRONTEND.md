@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.25.0 |
+| Versão | 1.26.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -959,6 +959,21 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 
 ---
 
+## 8G. Ícones do bloco, pontos altos e o atalho do teste (Sprint 44)
+
+`01_DOMINIO` D-172; decidido numa rodada.
+
+- **Os botões do bloco** (Hoje: Agora, Depois e reestudo; detalhe do assunto) ganham ícone + palavra curta: **Ler** (`i-ler`, livro
+  aberto), **Foco** (`i-foco`, cronômetro do Pomodoro) e **Registrar** (`i-registrar`, lápis). O nome completo fica no `aria-label`.
+- **"sem rede ✓" sai.** Bloco guardado no aparelho (D-119) ganha, no botão Ler, uma bolinha verde com ✓ (`i-guardado`); nas linhas,
+  "baixado" com o ícone `i-baixado`. Leitor de tela: "baixado, abre sem internet". A lógica do guardar não muda.
+- **Recuperar, etapa do resultado:** a seção **Seus pontos altos · N** (`#pontos-altos`) depois do gabarito (ou, sem perguntas, logo
+  no começo da etapa), antes de "Conseguiu reconstruir?". Cada marcação é um cartão com a borda e o rótulo da cor (Importante, Dúvida,
+  Decorar; nota de página: "Nota"), o trecho entre aspas, a nota e "p. N →" para `#/ler/{bloco}?p=N`. A busca
+  (`GET /api/assuntos/{id}/pontos-altos`) só acontece no toque em Conferir. Sem marcação, a seção não aparece.
+- **Mais › Modo de teste** (e o mesmo item no menu lateral): leva a `#/ajustes/teste`, que abre Ajustes com o grupo "Modo de teste"
+  aberto e na tela. O item mostra "ligado" ou "desligado".
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -992,6 +1007,7 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.26.0 | 2026-11-05 | §8G: ícones do bloco (Ler, Foco, Registrar) e o sinal de baixado no lugar de "sem rede ✓"; os pontos altos na Recuperar depois de conferir (D-172); o atalho do modo de teste no Mais. Sprint 44 |
 | 1.25.0 | 2026-11-05 | §8F: a captura do QConcursos — a chave em Ajustes, o userscript, a previsão na saída do atalho, o lote preenchido e a caixa em Hoje (`01_DOMINIO` §3.28, ADR-063). Sprint 37 |
 | 1.24.0 | 2026-11-05 | §8B, "As demais telas (Sprint 40)": Assuntos com busca, filtro de fase e uma consulta só; Progresso com os quatro cartões; a lista geral de Erros; Ajustes em grupos; a porta no tema. Decidido numa rodada |
 | 1.23.0 | 2026-11-05 | §8E: reiniciar o progresso de um concurso ou de tudo, a confirmação digitada e a lista de reinícios com desfazer (`01_DOMINIO` §3.27). Sprint 43 |

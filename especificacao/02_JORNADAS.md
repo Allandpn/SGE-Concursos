@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.36.0 |
+| Versão | 1.37.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -842,6 +842,8 @@ ETAPA 1                                       ETAPA 2
 - **Depois de Faltou um pedaço**, a etapa 2 lista os pontos que faltaram com "ler p. N →", que abre o leitor só depois de gravar o
   resultado. **Depois de Não veio**, os mesmos pontos vão para o reestudo em Hoje (cada um abre o leitor na página).
 - Sem perguntas, a tela é exatamente a de cima.
+- **Seus pontos altos (D-172):** depois de conferir, com ou sem perguntas, a etapa do resultado lista as marcações vigentes do
+  assunto (cor, trecho, nota) com "p. N →" para o leitor. Nas etapas anteriores, nada do material. Sem marcação, a seção não aparece.
 
 Orçamento: marcar os pontos custa um toque por ponto; com a sugestão certa, confirmar continua sendo **1 toque**.
 
@@ -967,7 +969,7 @@ O documento de interface é quem amarra isso.
 | J-9 Entrar no app | A porta (fora das oito), Ajustes | D-106 a D-113 |
 | J-8 Cronometrar o foco | Barra do Pomodoro, Hoje, Assuntos, Registrar, Ajustes, Progresso | D-98 a D-105 |
 | J-10 Ler um bloco e marcar | Leitor, Hoje, Assuntos, Registrar | D-114 a D-121, D-100, D-54 |
-| J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-07, D-14 |
+| J-2 com perguntas (recuperar) | Recuperar, Hoje (reestudo), Leitor | D-122 a D-128, D-172, D-07, D-14 |
 | J-11 Adicionar meu PDF | Assuntos (detalhe), Hoje, Leitor | D-129 a D-132, D-54, D-55, D-122 |
 | J-2 lote rápido e J-12 | Hoje, Registrar, Concursos, Progresso, relatório da prova | D-133 a D-136 |
 | J-22 Captura do QConcursos | Ajustes (a chave), o lote, a caixa em Hoje, o userscript | `04_FRONTEND` §8F, `01_DOMINIO` §3.28, ADR-063 |
@@ -1002,6 +1004,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.37.0 | 2026-11-05 | J-2 com perguntas: os pontos altos depois de conferir (D-172), com `01_DOMINIO` v1.45.0 e `04_FRONTEND` v1.26.0 §8G |
 | 1.36.0 | 2026-11-05 | Nova **J-22** (a captura do QConcursos), com `01_DOMINIO` v1.44.0 §3.28, `04_FRONTEND` v1.25.0 §8F e ADR-063 |
 | 1.35.0 | 2026-11-05 | Nova **J-21** (reiniciar o progresso), com `01_DOMINIO` v1.43.0 §3.27 e `04_FRONTEND` v1.23.0 §8E |
 | 1.34.0 | 2026-11-05 | Nova **J-20** (tirar sessões da escada), com `01_DOMINIO` v1.42.0 §3.26 e `04_FRONTEND` v1.22.0 §8D |

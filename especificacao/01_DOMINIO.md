@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.44.0 |
+| Versão | 1.45.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -858,6 +858,12 @@ sugestão daquela recuperação. Nada se apaga: a pergunta fica marcada.
 cada um com o bloco e a página, e abre o leitor ali; o bloco inteiro continua a um toque. Depois de um **Faltou um pedaço**, os
 pontos que faltaram aparecem na hora do resultado, com o mesmo atalho, sem criar reestudo: D-07 não muda. A lista é derivada dos
 pontos guardados (D-16).
+
+**Os pontos altos depois de conferir (D-172).** Depois do toque em **Conferir** (com ou sem perguntas, e no ensaio), a tela mostra
+as marcações vigentes da pessoa nos blocos do assunto (§3.17): cada destaque com a cor, o trecho e a nota de trecho, e cada nota de
+página, na ordem do bloco e da página, com o atalho para o leitor ali. Antes de conferir, nada do material aparece (D-125): a
+recuperação continua medindo a memória, não a releitura. Marcação removida não aparece; bloco arquivado também não. A lista é derivada
+(D-16) e não muda o resultado nem a sugestão.
 
 **O que o sistema não garante.** Que a pergunta da IA esteja certa (por isso o gabarito diz a página e existe "pergunta ruim"); que a
 pessoa tenha produzido antes de conferir (o sistema não oferece o atalho, como sempre); que a sugestão acerte a régua da pessoa: ela
@@ -2070,6 +2076,7 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-169 | A caixa em Hoje junta as capturadas não registradas por assunto (e as sem assunto); registrar pede a previsão antes de mostrar o acerto e cria a sessão de questões com a data da resolução mais recente e o tempo por questão; descartar tira sem apagar | §3.28 |
 | D-170 | A chave de envio é uma por navegador, mostrada uma vez, guardada só como hash, revogável; só envia questões e diagnósticos, não lê nada | §3.28 |
 | D-171 | Questão que o userscript não entende vira um recorte de diagnóstico, enviado por gesto do usuário, visto e apagável em Ajustes | §3.28 |
+| D-172 | Depois de conferir, a recuperação mostra as marcações vigentes do assunto (destaques com nota e notas de página), com atalho para o leitor; antes, nada do material | §3.18 |
 
 ---
 
@@ -2161,6 +2168,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.45.0 | 2026-11-05 | Pedido do usuário (Sprint 44), decidido numa rodada, com `02_JORNADAS` v1.37.0 e a nota em ADR-053. **D-172** (§3.18): os pontos altos (as marcações do assunto) aparecem na recuperação depois de conferir, nunca antes. 172 regras |
 | 1.44.0 | 2026-11-05 | Pedido do usuário (Sprint 37), decidido em duas rodadas, com `02_JORNADAS` v1.36.0 e ADR-063. **§3.28** (a captura do QConcursos) e **D-166 a D-171**: a questão capturada, o assunto pelo par aprendido ou pela árvore, o lote preenchido com a previsão na saída, a caixa em Hoje, a chave de envio e o diagnóstico. 171 regras |
 | 1.43.0 | 2026-11-05 | Pedido do usuário (Sprint 43), decidido em duas rodadas, com `02_JORNADAS` v1.35.0. **§3.27** (reiniciar o progresso) e **D-163 a D-165**: reiniciar um concurso ou tudo pela mesma desativação de sessões (D-160, D-161), registrado e com desfazer, e a confirmação digitada. 165 regras |
 | 1.42.0 | 2026-11-05 | Pedido do usuário (Sprint 42), decidido numa rodada, com `02_JORNADAS` v1.34.0 e ADR-062. **§3.26** (tirar sessões da escada) e **D-160 a D-162**: a sessão desativada sai de tudo com o que está ligado a ela, a escada do assunto é refeita só com as ativas, e dá para pôr de volta. 162 regras |
