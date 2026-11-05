@@ -5,7 +5,7 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.43.0 |
+| Versão | 1.44.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
@@ -1107,6 +1107,38 @@ divididos com outros — e só reinicia depois de a pessoa **digitar REINICIAR**
 
 ---
 
+### 3.28 A captura do QConcursos
+
+A pedido do usuário (2026-11-04 e 2026-11-05), depois do atalho (§3.24): um **userscript** no navegador (Tampermonkey no computador;
+Firefox com Tampermonkey ou Violentmonkey no Android) percebe cada questão respondida no QConcursos e a envia ao SGE.
+
+**A questão capturada (D-166).** Chega com o número Q, se acertou, a disciplina e os assuntos como o QConcursos os mostra (nomes e,
+quando a página traz, os números), a banca, o ano, a alternativa marcada, o gabarito e quando foi respondida. Repetir o mesmo Q no
+mesmo dia não duplica. **Ela não é sessão:** só vira sessão de questões (§3.3) quando é registrada — pelo lote do atalho ou pela
+caixa em Hoje. Nada muda na escada até lá.
+
+**O assunto (D-167).** Primeiro, o par já aprendido para aquele nome de assunto do QConcursos; senão, o nó da árvore vigente (§3.11)
+com esse número ou nome, se ele estiver ligado pela conferência do edital a **um** assunto do SGE; senão a questão fica **sem
+assunto**, na caixa. Escolher o assunto ali grava o par, e as próximas questões daquele assunto do QC já chegam com ele.
+
+**O lote do atalho (D-168).** Saindo pelo atalho (§3.24), a **previsão é feita na saída**, antes de ver as questões (M-3). Na volta,
+o lote vem **preenchido** com as capturadas daquele assunto desde a saída (feitas e certas), e pode ser corrigido. Registrar o lote
+cria a sessão e marca as capturadas como registradas.
+
+**A caixa em Hoje (D-169).** As capturadas ainda não registradas aparecem num cartão em Hoje, por assunto ("Crase · 8 questões"),
+e as sem assunto à parte. **Registrar** pede a previsão **antes** de mostrar quantas foram certas — é a previsão possível depois do
+fato, e a tela diz isso —, e cria a sessão de questões com a data da resolução mais recente; o tempo é o número de questões vezes o
+parâmetro de minutos por questão, editável. **Descartar** tira da caixa sem apagar.
+
+**A chave de envio (D-170).** Uma por navegador, criada em Ajustes com o nome do aparelho, mostrada **uma vez** e guardada só como
+resumo (hash). Ela só **envia** questões e diagnósticos; não lê nada do SGE. Revogar corta na hora. Ajustes mostra quando cada uma
+enviou pela última vez.
+
+**O diagnóstico (D-171).** Quando o userscript não entende uma questão (o QConcursos mudou a página), ele guarda um **recorte** do
+trecho dela e oferece "Enviar diagnóstico". O recorte vai para Ajustes, para corrigir a leitura; pode ser apagado.
+
+---
+
 ## 4. O resultado da recuperação
 
 Três níveis, iguais para todo tipo (`00_PRODUTO` §6.3):
@@ -2032,6 +2064,12 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-163 | Reiniciar um concurso tira da escada (D-160) as sessões ativas dos assuntos da cobertura dele, divididos com outros inclusive; reiniciar tudo, todas as sessões ativas; a escada desses assuntos é refeita (D-161); o cadastro, simulados, provas, marcações, a última página, a reta final e os erros sem sessão ficam | §3.27 |
 | D-164 | O reinício fica registrado com as sessões que tirou; desfazê-lo põe de volta as que ainda estiverem tiradas e refaz a escada; um reinício desfeito não se desfaz de novo | §3.27 |
 | D-165 | Reiniciar mostra antes o que vai zerar (sessões, assuntos e, num concurso, os divididos) e só acontece depois de digitar REINICIAR | §3.27 |
+| D-166 | A questão capturada (número Q, acerto, disciplina e assuntos do QC, banca, ano, alternativa, gabarito, quando) chega pela chave de envio; o mesmo Q no mesmo dia não duplica; ela só vira sessão de questões quando registrada (lote ou caixa) | §3.28 |
+| D-167 | O assunto da capturada: o par aprendido pelo nome do assunto do QC; senão o nó da árvore vigente (número ou nome) ligado pela conferência a um único assunto do SGE; senão fica sem assunto na caixa; escolher ali grava o par | §3.28 |
+| D-168 | No atalho, a previsão é feita na saída; na volta, o lote vem preenchido com as capturadas do assunto desde a saída, corrigível; registrar marca-as como registradas | §3.28 |
+| D-169 | A caixa em Hoje junta as capturadas não registradas por assunto (e as sem assunto); registrar pede a previsão antes de mostrar o acerto e cria a sessão de questões com a data da resolução mais recente e o tempo por questão; descartar tira sem apagar | §3.28 |
+| D-170 | A chave de envio é uma por navegador, mostrada uma vez, guardada só como hash, revogável; só envia questões e diagnósticos, não lê nada | §3.28 |
+| D-171 | Questão que o userscript não entende vira um recorte de diagnóstico, enviado por gesto do usuário, visto e apagável em Ajustes | §3.28 |
 
 ---
 
@@ -2123,6 +2161,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.44.0 | 2026-11-05 | Pedido do usuário (Sprint 37), decidido em duas rodadas, com `02_JORNADAS` v1.36.0 e ADR-063. **§3.28** (a captura do QConcursos) e **D-166 a D-171**: a questão capturada, o assunto pelo par aprendido ou pela árvore, o lote preenchido com a previsão na saída, a caixa em Hoje, a chave de envio e o diagnóstico. 171 regras |
 | 1.43.0 | 2026-11-05 | Pedido do usuário (Sprint 43), decidido em duas rodadas, com `02_JORNADAS` v1.35.0. **§3.27** (reiniciar o progresso) e **D-163 a D-165**: reiniciar um concurso ou tudo pela mesma desativação de sessões (D-160, D-161), registrado e com desfazer, e a confirmação digitada. 165 regras |
 | 1.42.0 | 2026-11-05 | Pedido do usuário (Sprint 42), decidido numa rodada, com `02_JORNADAS` v1.34.0 e ADR-062. **§3.26** (tirar sessões da escada) e **D-160 a D-162**: a sessão desativada sai de tudo com o que está ligado a ela, a escada do assunto é refeita só com as ativas, e dá para pôr de volta. 162 regras |
 | 1.41.0 | 2026-11-04 | Pedido do usuário (Sprint 38), decidido em duas rodadas, com `02_JORNADAS` v1.31.0 e ADR-059. **§3.25** (os próximos 7 dias e o ensaio) e **D-157 a D-159**: a visão derivada dos próximos dias, a prévia do material só para ler e o ensaio que mostra o que aconteceria sem gravar nada. 159 regras |

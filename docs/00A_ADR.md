@@ -4,10 +4,10 @@ Catálogo único das decisões de arquitetura.
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | **2.29.0** |
+| Versão do documento | **2.30.0** |
 | Status | **Congelado** |
 | Data | 2026-11-05 |
-| Total | 62 ADRs — 47 vigentes, 14 substituídas, 1 revogada |
+| Total | 63 ADRs — 48 vigentes, 14 substituídas, 1 revogada |
 
 ---
 
@@ -90,6 +90,7 @@ que custa e o que foi descartado.
 | [ADR-060](#adr-060--tema-claro-e-escuro-por-variáveis-sob-as-classes-do-tailwind) | Tema claro e escuro por variáveis sob as classes do Tailwind | 2026-11-04 |
 | [ADR-061](#adr-061--o-modo-de-teste-num-schema-próprio-escolhido-a-cada-requisição) | O modo de teste num schema próprio, escolhido a cada requisição | 2026-11-05 |
 | [ADR-062](#adr-062--a-sessão-desativada-some-por-uma-visão-a-tabela-vira-sessao_registro) | A sessão desativada some por uma visão: a tabela vira `sessao_registro` | 2026-11-05 |
+| [ADR-063](#adr-063--a-captura-do-qconcursos-entra-por-uma-rota-própria-com-chave-de-envio) | A captura do QConcursos entra por uma rota própria, com chave de envio | 2026-11-05 |
 
 ### 1.2 Históricas
 
@@ -990,6 +991,7 @@ provável (já registrado como risco em ADR-031).
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 2.30.0 | 2026-11-05 | **ADR-063**, pedido do usuário: a captura do QConcursos por `/captura/qconcursos/*`, fora da sessão, com chave de envio por navegador (hash, revogável, só envio). Com `01_DOMINIO` v1.44.0 (§3.28). Total 63, 48 vigentes |
 | 2.29.0 | 2026-11-05 | **ADR-062**, pedido do usuário: tirar sessões da escada por uma visão `sessao` das ativas sobre a tabela `sessao_registro`; a escada do assunto refeita reativando as sessões em ordem. Com `01_DOMINIO` v1.42.0 (§3.26). Total 62, 47 vigentes |
 | 2.28.0 | 2026-11-05 | **ADR-061**, pedido do usuário: o modo de teste num schema `teste` do mesmo banco, escolhido por requisição (cookie do aparelho), com a data deslocada só nele; login, tarefas agendadas, avisos e arquivos sempre no real. Com `04_FRONTEND` v1.21.0 (§8C). Total 61, 46 vigentes |
 | 2.27.0 | 2026-11-04 | **ADR-060**, pedido do usuário: o tema claro e escuro troca o valor das cores do Tailwind por variáveis, sem variantes `dark:`; texto sobre a cor principal num token próprio. Com `04_FRONTEND` v1.20.0 (§8B). Total 60, 45 vigentes |
@@ -2458,6 +2460,43 @@ lê; filtrar à mão em cada consulta deixaria escapar alguma, hoje ou numa tela
 | `AND ativo` em cada consulta | Uns vinte lugares; esquecer um deixaria a sessão tirada contando |
 | Apagar a sessão | O usuário quis poder pôr de volta; nada se apaga |
 | Desfazer só o passo da sessão | Errado quando a tirada está no meio: as seguintes foram calculadas a partir dela |
+
+---
+
+## ADR-063 — A captura do QConcursos entra por uma rota própria, com chave de envio
+
+**Status:** Aceita · 2026-11-05 · pedido do usuário · **mexe em segurança** (uma porta nova no app)
+
+### Contexto
+
+O userscript roda dentro da página do QConcursos (outra origem). Ele não tem o cookie de sessão do SGE (`SameSite=Strict`, D-109) e
+não deve ter: com ele, qualquer script naquela página poderia ler e mudar tudo. O usuário escolheu uma chave por navegador
+(`01_DOMINIO` §3.28, D-170).
+
+### Decisão
+
+- **Uma rota fora da sessão:** `POST /captura/qconcursos/questoes` e `POST /captura/qconcursos/diagnosticos`, fora de `/api/`. O
+  filtro de sessão não as trata (como `/internal/`); um filtro próprio exige `Authorization: Bearer <chave>` e só aceita POST,
+  JSON e até 64 KB. Nenhuma outra rota aceita a chave.
+- **A chave:** 32 bytes aleatórios em base64url, mostrada uma vez; o banco guarda só o SHA-256. Revogada, responde 401.
+- **Só envio:** as duas rotas gravam e respondem `{ok, assunto}` — nunca dados do SGE. A leitura e a gestão das chaves, das
+  capturadas e dos diagnósticos são rotas `/api/` comuns, com a sessão.
+- **O userscript** é servido pelo próprio SGE (`/captura/eagora-qconcursos.user.js`, com sessão), com o endereço do SGE preenchido e
+  `@connect` para ele; envia por `GM_xmlhttpRequest`, que não depende de CORS. O SGE não libera CORS para o QConcursos.
+- **Sem rede nova:** o navegador que resolve as questões é o mesmo que já chega ao SGE (tailnet). Nada muda no Pi nem no compose.
+
+### Consequências
+
+- Uma chave vazada só permite enviar questões falsas, que entram na caixa e podem ser descartadas; revogar corta.
+- A leitura da página depende do HTML do QConcursos: por isso o diagnóstico (D-171).
+
+### Alternativas rejeitadas
+
+| Alternativa | Por que não |
+|---|---|
+| O cookie de sessão no userscript | Daria leitura e escrita totais a qualquer script da página do QConcursos |
+| CORS aberto para o QConcursos nas rotas `/api/` | A mesma exposição, pelo navegador |
+| Exportar JSON e importar à mão | O usuário quer zero toques na captura |
 
 ---
 
