@@ -1,6 +1,6 @@
 {
   "app": "eAgora (SGE-Concursos)",
-  "versao": "Sprint 46 (na branch) · casca-2026-11-05-10",
+  "versao": "Sprint 47 (na branch) · casca-2026-11-06-1",
   "geradoEm": "2026-11-05",
   "fonte": "src/main/resources/static/index.html, entrar.html, js/router.js, js/navegacao.js",
   "convencoes": {
@@ -671,7 +671,7 @@
     },
     {
       "id": "pagina-concursos",
-      "rota": "#/concursos",
+      "rota": "#/concursos · #/concursos/{visao|edital|banca|cuidado}",
       "nome": "Concursos",
       "abreDe": [
         "Mais › Concursos"
@@ -680,45 +680,76 @@
         {
           "nome": "Concurso-alvo",
           "itens": [
-            "material chegando (acompanhamento)",
-            "o que a conferência deixou por resolver → #/concursos/analise/{id}/conferencia",
-            "Banca no QConcursos (trocar: colar endereço)",
-            "Diagnóstico do edital → gaveta",
-            "Reta final (entrar / sair)",
-            "Peso pela banca → gaveta",
-            "Régua da prova e nota de corte",
-            "Provas: verificar com uma prova → #/provas/nova, #/provas/{id}",
-            "Preparar de novo o material do concurso",
-            "Material de cada assunto e motivo de quem ficou sem",
-            "Cuidado: reiniciar o progresso deste concurso → folha"
+            "nome, cargo, banca, data da prova, alvo desde"
           ]
         },
         {
-          "nome": "Editais de antes",
+          "nome": "Resumo",
+          "id": "concurso-resumo",
+          "itens": [
+            "dias até a prova",
+            "assuntos com material",
+            "itens da conferência para decidir → conferência",
+            "reta final ligada/desligada"
+          ]
+        },
+        {
+          "nome": "Abas",
+          "id": "concurso-abas",
+          "variantes": [
+            {
+              "nome": "Visão geral",
+              "itens": [
+                "material",
+                "conferência (Conferir)",
+                "reta final (entrar/sair)"
+              ]
+            },
+            {
+              "nome": "Edital",
+              "itens": [
+                "Diagnóstico do edital (dentro da aba)",
+                "material por assunto",
+                "preparar de novo"
+              ]
+            },
+            {
+              "nome": "Banca e prova",
+              "itens": [
+                "banca no QConcursos (trocar)",
+                "Peso pela banca (dentro da aba)",
+                "régua da prova",
+                "provas → #/provas/nova, #/provas/{id}"
+              ]
+            },
+            {
+              "nome": "Cuidado",
+              "itens": [
+                "reiniciar o progresso deste concurso → folha"
+              ]
+            }
+          ]
+        },
+        {
+          "nome": "Novo edital e análises em curso",
           "acoes": [
-            "tornar alvo",
             "Novo edital → #/concursos/novo"
+          ]
+        },
+        {
+          "nome": "Outros editais · N (recolhido)",
+          "id": "outros-editais",
+          "porItem": [
+            "Diagnóstico (gaveta)",
+            "Reativar",
+            "Reiniciar o progresso"
           ]
         }
       ],
       "gavetas": [
         {
-          "id": "peso-banca",
-          "nome": "Peso pela banca",
-          "itens": [
-            "propostas",
-            "ajustados",
-            "QConcursos ↗ por assunto",
-            "aceitar"
-          ]
-        },
-        {
-          "nome": "Diagnóstico do edital",
-          "itens": [
-            "cabe / fica de fora",
-            "data e ritmo simulados",
-            "QConcursos ↗ por assunto"
-          ]
+          "nome": "Diagnóstico de outro edital",
+          "nota": "o do alvo mora na aba Edital"
         }
       ]
     },

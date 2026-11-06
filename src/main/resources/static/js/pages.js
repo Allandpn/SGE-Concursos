@@ -2415,6 +2415,47 @@ document.addEventListener('alpine:init', () => {
       return this.concursos.find((c) => c.ativo) ?? null;
     },
 
+    // §8J (Sprint 47): a aba do concurso-alvo, escolhida pela rota.
+    aba: 'visao',
+
+    mudarAba(aba) {
+      this.aba = ['visao', 'edital', 'banca', 'cuidado'].includes(aba) ? aba : 'visao';
+      // O diagnóstico do alvo mora na aba Edital: carrega ao abrir a aba.
+      if (this.aba === 'edital' && this.ativo && !this.diagDoAlvo) this.abrirDiagnostico(this.ativo);
+    },
+
+    get diagDoAlvo() {
+      return !!(this.diag && this.ativo && this.diag.concurso.id === this.ativo.id);
+    },
+
+    get resumoProva() {
+      const c = this.ativo;
+      if (!c || !c.dataProva) return { valor: 'sem data', rotulo: 'de prova no edital' };
+      const dias = Math.round((new Date(c.dataProva + 'T12:00:00') - new Date(hojeISO() + 'T12:00:00')) / 86400000);
+      if (dias < 0) return { valor: 'já foi', rotulo: 'prova em ' + dataBR(c.dataProva) };
+      if (dias === 0) return { valor: 'hoje', rotulo: 'é o dia da prova' };
+      return { valor: dias + (dias === 1 ? ' dia' : ' dias'), rotulo: 'até a prova · ' + dataBR(c.dataProva) };
+    },
+
+    get resumoMaterial() {
+      const m = this.ativo && this.ativo.material;
+      if (!m) return { valor: '—', rotulo: 'material ainda não pedido' };
+      const total = m.prontos + m.semMaterial + m.aPreparar;
+      return { valor: m.prontos + ' de ' + total, rotulo: 'assuntos com material' };
+    },
+
+    get pendencias() {
+      const a = this.avisos;
+      if (!a || !a.analiseId) return 0;
+      return (a.partesSemNo || 0) + (a.vinculosAmplosOuParciais || 0) + (a.nosQueMudaram || 0);
+    },
+
+    get resumoReta() {
+      if (this.retaAtiva) return { valor: 'ligada', rotulo: 'reta final · ' + (this.retaAtiva.dias ?? '') + ' dias' };
+      if (this.podeEntrarReta) return { valor: 'desligada', rotulo: 'reta final · entra por gesto seu' };
+      return { valor: '—', rotulo: 'reta final sem data de prova' };
+    },
+
     // "12 partes sem filtro de questões" — não bloqueia nada, fica até a pessoa resolver.
     get textoAvisos() {
       const a = this.avisos;

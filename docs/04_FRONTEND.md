@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.28.0 |
+| Versão | 1.29.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -1003,6 +1003,21 @@ Decidido numa rodada, a partir da árvore de telas (`docs/ESTRUTURA-TELAS.json`)
 tela: muda o lugar. O cartão do progresso vira linha do cabeçalho; os quatro avisos do topo viram uma faixa recolhida abaixo do
 Agora; os cinco blocos do Depois viram uma lista; o secundário desce para "Também hoje". `CASCA_VERSAO` sobe.
 
+## 8J. Concursos em abas (Sprint 47)
+
+Decidido numa rodada, a partir da árvore de telas. Nada sai da tela: muda o lugar.
+
+- **O concurso-alvo:** nome, cargo, a linha de detalhes e um **resumo** de quatro números (`#concurso-resumo`): dias até a prova
+  (ou "sem data", "hoje", "já foi"), assuntos com material, itens da conferência para decidir (o toque abre a conferência) e a reta
+  final (ligada ou desligada). Cada número leva à aba certa.
+- **Quatro abas** (`#concurso-abas`), com a aba na rota: `#/concursos` e `#/concursos/visao` (Visão geral: material, conferência,
+  reta final), `#/concursos/edital` (o **diagnóstico** dentro da aba, carregado ao abrir; o material por assunto; preparar de novo),
+  `#/concursos/banca` (a banca no QConcursos, o **peso pela banca** dentro da aba, a régua da prova, as provas) e
+  `#/concursos/cuidado` (reiniciar o progresso deste concurso). Trocar de aba não recarrega a tela.
+- **Outros editais** (`#outros-editais`): recolhidos no fim, com a contagem. O diagnóstico de um deles continua abrindo como gaveta.
+  "Novo edital" e as análises em curso ficam sempre à vista, acima.
+- Sem concurso-alvo: "Nenhum concurso-alvo ainda", o novo edital e os outros editais. `CASCA_VERSAO` sobe.
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -1036,6 +1051,7 @@ Agora; os cinco blocos do Depois viram uma lista; o secundário desce para "Tamb
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.29.0 | 2026-11-06 | §8J: Concursos com o resumo do alvo e quatro abas na rota; o diagnóstico e o peso pela banca dentro das abas; os outros editais recolhidos. Sprint 47 |
 | 1.28.0 | 2026-11-05 | §8B › Hoje e §8I: Hoje reorganizado — progresso no cabeçalho, Agora logo depois, avisos numa faixa recolhida, Depois numa lista na ordem do plano, Também hoje no fim. Sprint 46 |
 | 1.27.0 | 2026-11-05 | §8H: ligar o assunto à árvore do QConcursos (a folha de busca, o vínculo no detalhe) e as questões por vez em Ajustes (D-173, D-174). Sprint 45 |
 | 1.26.0 | 2026-11-05 | §8G: ícones do bloco (Ler, Foco, Registrar) e o sinal de baixado no lugar de "sem rede ✓"; os pontos altos na Recuperar depois de conferir (D-172); o atalho do modo de teste no Mais. Sprint 44 |
