@@ -55,7 +55,7 @@ da volta com "feitas" = questões por vez. `index.html`: "Ligar ao QConcursos" n
 | 45.1 | `V35`, o vínculo, o atalho e a captura | feito |
 | 45.2 | A folha, os pontos de "Ligar", o detalhe, Ajustes, a volta; `CASCA_VERSAO` | feito |
 | 45.3 | Testes e Chromium | feito |
-| 45.4 | Deploy pelo Guardian | — |
+| 45.4 | Deploy pelo Guardian | `release/19` (`e998239`) |
 
 ## Changelog
 

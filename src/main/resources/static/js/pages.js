@@ -427,6 +427,30 @@ document.addEventListener('alpine:init', () => {
       return null;
     },
 
+    // §8I (Sprint 46): os avisos numa faixa só, na ordem de importância; o primeiro aparece com a faixa fechada.
+    avisosAbertos: false,
+
+    get avisoIa() {
+      return !!(Alpine.store('ia').assinaturaParou && this.concurso?.material?.aPreparar > 0);
+    },
+
+    get avisos() {
+      const l = [];
+      if (this.avisoIa) l.push('A assinatura do Claude parou');
+      if (this.alertaRepresamento && !this.mostrarRetorno) l.push('Revisões acumuladas');
+      if (this.mostrarRetorno) l.push(`Você esteve fora ${this.diasSemEstudar} dias`);
+      if (this.retaFinal) l.push(`Reta final · ${this.retaFinal.dias} ${this.retaFinal.dias === 1 ? 'dia' : 'dias'}`);
+      else if (this.sugestaoReta) l.push(`Faltam ${this.sugestaoReta.semanas} ${this.sugestaoReta.semanas === 1 ? 'semana' : 'semanas'} para a prova`);
+      return l;
+    },
+
+    // §8I: quantos itens o Depois tem (a nota da manutenção que espera a prova não conta).
+    get totalDepois() {
+      return this.reestudosDepois.length + this.filaDepois.length
+        + (this.blocoConteudo && this.proximaAcao?.tipo !== 'conteudo' ? 1 : 0)
+        + (this.simuladoDaSemana && this.proximaAcao?.tipo !== 'simulado' ? 1 : 0);
+    },
+
     get filaDepois() {
       return this.proximaAcao?.tipo === 'recuperacao' ? this.fila.slice(1) : this.fila;
     },

@@ -5,7 +5,7 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.38.0 |
+| Versão | 1.39.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
@@ -1009,6 +1009,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.39.0 | 2026-11-05 | Hoje (Sprint 46, `04_FRONTEND` v1.28.0 §8I): a mensagem da volta (J-4) e a reta final (J-14) passam a morar na faixa de avisos, abaixo do Agora; o resto da tela segue o plano numa lista só. Sem mudança de regra |
 | 1.38.0 | 2026-11-05 | J-17 ganha os passos 5 (ligar o assunto à árvore do QConcursos, D-173) e 6 (questões por vez, D-174), com `01_DOMINIO` v1.46.0 e `04_FRONTEND` v1.27.0 §8H |
 | 1.37.0 | 2026-11-05 | J-2 com perguntas: os pontos altos depois de conferir (D-172), com `01_DOMINIO` v1.45.0 e `04_FRONTEND` v1.26.0 §8G |
 | 1.36.0 | 2026-11-05 | Nova **J-22** (a captura do QConcursos), com `01_DOMINIO` v1.44.0 §3.28, `04_FRONTEND` v1.25.0 §8F e ADR-063 |

@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.27.0 |
+| Versão | 1.28.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -860,12 +860,20 @@ tokens de §8A e os neutros passam a ser variáveis (ADR-060): cada cor tem o pa
 
 ### Hoje
 
-1. **Cabeçalho:** o dia ("quarta, 04/11"), o alvo e os dias até a prova.
-2. **Progresso do dia:** "1 de 4 feitos" com barra, e o que falta ("3 recuperações · 1 bloco de 18 min").
-3. **A próxima ação**, um cartão em destaque com o único botão principal da tela, pela ordem do plano: reestudo, recuperação (a mais
-   atrasada), o bloco de conteúdo, o simulado da semana. Sem nada a fazer: "Nada para hoje" e os próximos dias.
-4. **O resto do turno** em lista compacta; cada item com as ações dentro dele ("Fiz questões", "Resolver no QConcursos").
-5. Avisos de processo (material preparando, IA parada) num cartão discreto abaixo; o alerta de revisões acumuladas, acima da próxima ação.
+Reorganizada na Sprint 46 (§8I); a ordem vale para celular e computador:
+
+1. **Cabeçalho** (`#hoje-cabecalho`): o dia ("quarta, 04/11"), o alvo e os dias até a prova e, numa linha com barra, o **progresso
+   do dia** (`#progresso-do-dia`): "1 de 4 feitos" e o que falta ("3 recuperações · 1 bloco de 18 min").
+2. **Agora** (`#proxima-acao`): o cartão com o único botão principal da tela, pela ordem do plano: reestudo, recuperação (a mais
+   atrasada), o bloco de conteúdo, o simulado da semana. Nada antes dele além do cabeçalho. Sem nada a fazer: "Nada para hoje".
+3. **Avisos** (`#avisos-hoje`): uma faixa só, fechada, com a contagem e o primeiro aviso; o toque abre todos. Ordem: a assinatura do
+   Claude parou (enquanto o material espera), revisões acumuladas, a volta depois de dias fora (J-4), a reta final ativa (com o que a
+   entrada antecipou) ou a sugestão de entrar (com Entrar / Agora não). Sem aviso, a faixa não aparece.
+4. **Depois · N** (`#depois-lista`): uma lista só, na ordem do plano, com o ícone do tipo: reestudos (com os pontos e Ler),
+   recuperações (Fiz questões, QConcursos, Ligar), a nota da manutenção que espera a prova, o bloco de conteúdo (Foco, Ler, o aviso
+   da conferência) e o simulado da semana (Registrar). Cada linha leva as ações que já tinha.
+5. **Também hoje** (`#tambem-hoje`): a caixa da captura (em destaque quando tem questões), o material preparando ou pronto, "Quer
+   adiantar?" e Foco sem assunto; cada um só quando há algo.
 6. Os próximos 7 dias como já são (§3.25), no fim (celular) ou à direita (computador).
 
 ### As telas de estudo (Recuperar, Registrar, leitor, ensaio)
@@ -989,6 +997,12 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 - **A volta** (D-153): com questões por vez fixo e sem captura, o lote abre com "feitas" preenchido.
 - `CASCA_VERSAO` sobe.
 
+## 8I. Hoje reorganizado (Sprint 46)
+
+Decidido numa rodada, a partir da árvore de telas (`docs/ESTRUTURA-TELAS.json`). A nova ordem está em §8B › Hoje. Nada sai da
+tela: muda o lugar. O cartão do progresso vira linha do cabeçalho; os quatro avisos do topo viram uma faixa recolhida abaixo do
+Agora; os cinco blocos do Depois viram uma lista; o secundário desce para "Também hoje". `CASCA_VERSAO` sobe.
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -1022,6 +1036,7 @@ Pedido do usuário (2026-11-05), `01_DOMINIO` §3.27.
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.28.0 | 2026-11-05 | §8B › Hoje e §8I: Hoje reorganizado — progresso no cabeçalho, Agora logo depois, avisos numa faixa recolhida, Depois numa lista na ordem do plano, Também hoje no fim. Sprint 46 |
 | 1.27.0 | 2026-11-05 | §8H: ligar o assunto à árvore do QConcursos (a folha de busca, o vínculo no detalhe) e as questões por vez em Ajustes (D-173, D-174). Sprint 45 |
 | 1.26.0 | 2026-11-05 | §8G: ícones do bloco (Ler, Foco, Registrar) e o sinal de baixado no lugar de "sem rede ✓"; os pontos altos na Recuperar depois de conferir (D-172); o atalho do modo de teste no Mais. Sprint 44 |
 | 1.25.0 | 2026-11-05 | §8F: a captura do QConcursos — a chave em Ajustes, o userscript, a previsão na saída do atalho, o lote preenchido e a caixa em Hoje (`01_DOMINIO` §3.28, ADR-063). Sprint 37 |
