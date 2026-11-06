@@ -4,6 +4,7 @@
 function renderizarRotaAtual() {
   const hash = window.location.hash || '#/hoje';
   const elHoje = document.getElementById('pagina-hoje');
+  const concursosJaAberto = !document.getElementById('pagina-concursos').hidden; // §8J: trocar de aba não recarrega
   const elRecuperar = document.getElementById('pagina-recuperar');
   const elRegistrar = document.getElementById('pagina-registrar');
   const elAssuntos = document.getElementById('pagina-assuntos');
@@ -30,7 +31,7 @@ function renderizarRotaAtual() {
   const matchAjustes = hash === '#/ajustes' || hash === '#/ajustes/teste'; // §8G: /teste abre o grupo do modo de teste
   const matchSessoes = hash === '#/sessoes'; // §8D
   const matchErrosGerais = hash === '#/erros'; // Sprint 40
-  const matchConcursos = hash === '#/concursos';
+  const matchConcursos = hash.match(/^#\/concursos(?:\/(visao|edital|banca|cuidado))?$/); // §8J: a aba na rota
   const matchEditalNovo = hash === '#/concursos/novo';
   const matchAnalise = hash.match(/^#\/concursos\/analise\/(\d+)$/);
   const matchConferencia = hash.match(/^#\/concursos\/analise\/(\d+)\/conferencia$/);
@@ -133,7 +134,9 @@ function renderizarRotaAtual() {
     }
   } else if (matchConcursos) {
     elConcursos.hidden = false;
-    Alpine.$data(elConcursos).init();
+    const tela = Alpine.$data(elConcursos);
+    if (concursosJaAberto) tela.mudarAba(matchConcursos[1]);
+    else tela.init().then(() => tela.mudarAba(matchConcursos[1]));
   } else if (matchEditalNovo) {
     elEdital.hidden = false;
     Alpine.$data(elEdital).abrirNovo();

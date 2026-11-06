@@ -2822,7 +2822,7 @@
     </template>
 
     <template x-if="!carregando && !erro">
-      <div class="space-y-6">
+      <div class="space-y-5">
 <!-- ADR-045: a assinatura do Claude parou; trocar para o OpenRouter é decisão do usuário -->
         <div x-show="$store.ia.assinaturaParou && ativo?.material?.aPreparar > 0" class="rounded border border-alerta-600 bg-alerta-50 p-3 text-sm text-gray-800">
           <p class="font-medium">A assinatura do Claude parou.</p>
@@ -2844,93 +2844,176 @@
           <div class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" x-text="erroAcao"></div>
         </template>
 
-        <div>
-          <h2 class="mb-2 text-sm font-medium text-gray-500">Concurso-alvo</h2>
-          <template x-if="ativo">
-            <div class="rounded border border-primary-100 bg-white p-3">
-              <p class="font-medium" x-text="ativo.nome"></p>
+        <!-- §8J (Sprint 47): o concurso-alvo — resumo no topo e quatro abas; a aba fica na rota (#/concursos/visao|edital|banca|cuidado) -->
+        <template x-if="ativo">
+          <div class="space-y-4">
+            <div>
+              <p class="text-xs font-semibold text-gray-500">Concurso-alvo</p>
+              <h2 class="text-xl font-bold leading-snug" x-text="ativo.nome"></h2>
               <p x-show="ativo.cargo" class="text-sm text-gray-700" x-text="ativo.cargo"></p>
-              <p class="mt-1 text-sm text-gray-500" x-text="detalhes(ativo)"></p>
-              <p class="mt-1 text-xs text-gray-500" x-text="'Alvo desde ' + dataInstante(ativo.ativadoEm) + ' · ' + ativo.totalAssuntos + (ativo.totalAssuntos === 1 ? ' assunto no edital' : ' assuntos no edital')"></p>
-              <!-- 01_DOMINIO §3.10: o material chega sozinho; aqui é só acompanhamento -->
-              <p x-show="ativo.material" class="mt-1 text-xs text-gray-600" x-text="textoMaterial(ativo.material)"></p>
-              <!-- 01_DOMINIO §3.12: o que a conferência deixou por resolver; não bloqueia nada -->
-              <p x-show="textoAvisos" class="mt-1 text-xs text-alerta-700">
-                <span x-text="textoAvisos"></span>
-                <a :href="'#/concursos/analise/' + avisos.analiseId + '/conferencia'" class="ml-1 underline">Conferir</a>
-              </p>
-              <!-- D-151: a banca no catálogo do QConcursos; fora dele, colar um endereço filtrado por ela -->
-              <div x-show="bancaQc" class="mt-2 text-xs text-gray-600" id="banca-qconcursos">
-                <span>Banca no QConcursos: </span>
-                <span x-show="bancaQc && bancaQc.numero" x-text="bancaQc && ((bancaQc.nomeNoCatalogo || bancaQc.banca) + ' · nº ' + bancaQc.numero + (bancaQc.origem === 'ENDERECO' ? ' (do endereço)' : ' (catálogo)'))"></span>
-                <span x-show="bancaQc && bancaQc.banca && !bancaQc.numero" class="text-alerta-700" x-text="bancaQc && (bancaQc.banca + ' · fora do catálogo, o atalho vai sem filtro de banca')"></span>
-                <span x-show="bancaQc && !bancaQc.banca" class="text-gray-500">sem banca no concurso</span>
-                <button type="button" x-show="bancaQc && bancaQc.banca && !bancaQcAberta" class="ml-1 underline text-primary-700" @click="bancaQcAberta = true; bancaQcEndereco = ''; bancaQcErro = null">trocar</button>
-                <div x-show="bancaQcAberta" class="mt-2 space-y-2 rounded border border-gray-200 p-2">
-                  <p>No QConcursos, filtre só por essa banca, copie o endereço da barra do navegador e cole aqui (ou digite o número).</p>
-                  <input type="text" id="banca-qconcursos-endereco" x-model="bancaQcEndereco" placeholder="https://www.qconcursos.com/questoes-de-concursos/questoes?examining_board_ids%5B%5D=…"
-                         class="w-full rounded border border-gray-200 p-2 text-sm text-gray-900">
-                  <p x-show="bancaQcErro" class="text-red-700" role="alert" x-text="bancaQcErro"></p>
-                  <div class="flex gap-2">
-                    <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre" @click="aprenderBancaQc()">Salvar</button>
-                    <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="bancaQcAberta = false">Cancelar</button>
-                  </div>
+              <p class="mt-1 text-xs text-gray-500" x-text="detalhes(ativo) + ' · alvo desde ' + dataInstante(ativo.ativadoEm) + ' · ' + ativo.totalAssuntos + (ativo.totalAssuntos === 1 ? ' assunto no edital' : ' assuntos no edital')"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-2" id="concurso-resumo">
+              <a href="#/concursos/visao" class="rounded-xl border border-gray-200 bg-white px-3 py-2" data-resumo="prova">
+                <b class="block text-base tabular-nums" x-text="resumoProva.valor"></b><span class="block text-xs text-gray-500" x-text="resumoProva.rotulo"></span></a>
+              <a href="#/concursos/edital" class="rounded-xl border border-gray-200 bg-white px-3 py-2" data-resumo="material">
+                <b class="block text-base tabular-nums" x-text="resumoMaterial.valor"></b><span class="block text-xs text-gray-500" x-text="resumoMaterial.rotulo"></span></a>
+              <a :href="avisos && avisos.analiseId ? '#/concursos/analise/' + avisos.analiseId + '/conferencia' : '#/concursos/visao'" class="rounded-xl border border-gray-200 bg-white px-3 py-2" data-resumo="conferencia">
+                <b class="block text-base tabular-nums" :class="pendencias > 0 ? 'text-alerta-700' : ''" x-text="pendencias > 0 ? pendencias : 'nada'"></b>
+                <span class="block text-xs text-gray-500" x-text="pendencias === 1 ? 'item da conferência para decidir' : (pendencias > 0 ? 'itens da conferência para decidir' : 'pendente na conferência')"></span></a>
+              <a href="#/concursos/visao" class="rounded-xl border border-gray-200 bg-white px-3 py-2" data-resumo="reta">
+                <b class="block text-base" x-text="resumoReta.valor"></b><span class="block text-xs text-gray-500" x-text="resumoReta.rotulo"></span></a>
+            </div>
+            <nav class="-mx-1 flex overflow-x-auto border-b border-gray-200" role="tablist" aria-label="Partes do concurso" id="concurso-abas">
+              <a :href="'#/concursos/visao'" role="tab" :aria-selected="aba === 'visao'" class="flex min-h-11 flex-none items-center border-b-2 px-3 text-sm font-semibold" :class="aba === 'visao' ? 'border-primary-600 text-primary-800' : 'border-transparent text-gray-500'">Visão geral</a>
+              <a :href="'#/concursos/edital'" role="tab" :aria-selected="aba === 'edital'" class="flex min-h-11 flex-none items-center border-b-2 px-3 text-sm font-semibold" :class="aba === 'edital' ? 'border-primary-600 text-primary-800' : 'border-transparent text-gray-500'">Edital</a>
+              <a :href="'#/concursos/banca'" role="tab" :aria-selected="aba === 'banca'" class="flex min-h-11 flex-none items-center border-b-2 px-3 text-sm font-semibold" :class="aba === 'banca' ? 'border-primary-600 text-primary-800' : 'border-transparent text-gray-500'">Banca e prova</a>
+              <a :href="'#/concursos/cuidado'" role="tab" :aria-selected="aba === 'cuidado'" class="flex min-h-11 flex-none items-center border-b-2 px-3 text-sm font-semibold" :class="aba === 'cuidado' ? 'border-primary-600 text-primary-800' : 'border-transparent text-gray-500'">Cuidado</a>
+            </nav>
+          </div>
+        </template>
+        <template x-if="!ativo">
+          <p class="text-sm text-gray-500">Nenhum concurso-alvo ainda.</p>
+        </template>
+
+        <!-- J-13: o diagnóstico do edital (D-137 a D-139). Só leitura; data e ritmo simulados ficam na tela -->
+        <template x-if="diag && (!diagDoAlvo || aba === 'edital')">
+          <div :class="diagDoAlvo ? '' : 'fixed inset-0 z-40 flex justify-end bg-black/20'" @click.self="if (!diagDoAlvo) diag = null" @keydown.escape.window="if (!diagDoAlvo) diag = null">
+            <div :class="diagDoAlvo ? 'rounded-xl border border-gray-200 bg-white p-3' : 'h-full w-full max-w-md overflow-y-auto bg-white p-4 shadow-xl'" :role="diagDoAlvo ? null : 'dialog'" aria-label="Diagnóstico do edital" id="diagnostico-painel">
+              <div class="mb-3 flex items-start justify-between gap-2">
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-gray-500">Diagnóstico</p>
+                  <p class="font-medium" x-text="diag.concurso.nome"></p>
                 </div>
+                <button type="button" x-show="!diagDoAlvo" class="min-h-11 min-w-11 text-gray-500" @click="diag = null" aria-label="Fechar">✕</button>
               </div>
-              <!-- D-137: o diagnóstico do edital -->
-              <div class="mt-3 flex flex-wrap items-center gap-2">
-                <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre hover:bg-primary-700"
-                        @click="abrirDiagnostico(ativo)">Diagnóstico</button>
-                <!-- D-140, D-141: a reta final só entra por gesto; sair a qualquer hora -->
-                <!-- J-15: o peso pela banca (D-145 a D-147) -->
-                <button type="button" x-show="banca" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-primary-700"
-                        @click="bancaAberta = true"
-                        x-text="'Peso pela banca' + (banca && banca.totalPropostas ? ' · ' + banca.totalPropostas + (banca.totalPropostas === 1 ? ' proposta' : ' propostas') : '')"></button>
-                <button type="button" x-show="podeEntrarReta" class="min-h-11 rounded border border-primary-600 px-3 text-sm font-medium text-primary-700"
-                        @click="entrarRetaFinal()">Entrar na reta final</button>
-                <span x-show="retaAtiva" class="rounded-full border border-primary-600 px-2 py-0.5 text-xs text-primary-700"
-                      x-text="'reta final · ' + (retaAtiva?.dias ?? '') + ' dias'"></span>
-                <button type="button" x-show="retaAtiva" class="min-h-11 rounded border border-red-300 px-3 text-sm text-red-700"
-                        @click="sairRetaFinal()">Sair da reta final</button>
-              </div>
-              <p x-show="retaAviso" class="mt-1 text-xs text-primary-700" x-text="retaAviso"></p>
-              <!-- D-135: a régua da prova e a nota de corte -->
-              <div class="mt-3 border-t border-gray-100 pt-3" x-show="regua">
-                <button type="button" class="text-sm font-medium text-primary-700 underline" @click="reguaAberta = !reguaAberta"
-                  x-text="reguaAberta ? 'Fechar a pontuação da prova' : 'Pontuação da prova' + (regua && regua.notaCorte !== null ? ' · corte ' + regua.notaCorte : '')"></button>
-                <template x-if="reguaAberta && regua">
-                  <div class="mt-2 space-y-2 text-sm">
-                    <template x-for="d in regua.disciplinas" :key="d.disciplinaId">
-                      <label class="flex items-center justify-between gap-2"><span x-text="d.nome"></span>
-                        <span class="flex items-center gap-1"><input type="number" min="0.1" step="0.1" x-model="d.pontos" class="w-20 rounded border border-gray-300 p-1 text-right"> pt</span></label>
+              <p x-show="diag.carregando && !diag.dados" class="text-sm text-gray-500">Carregando…</p>
+              <p x-show="diag.erro" class="mb-2 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700" x-text="diag.erro"></p>
+              <template x-if="diag.dados">
+                <div class="space-y-4 text-sm" id="diagnostico">
+                  <p x-show="diag.dados.total === 0" class="text-gray-600">Este concurso ainda não tem assuntos no edital.</p>
+                  <div class="space-y-2 rounded border border-gray-200 p-3" x-show="diag.dados.total > 0">
+                    <div class="flex justify-between gap-2"><span>Consolidado</span>
+                      <span class="font-mono text-xs" x-text="diag.dados.consolidado.assuntos + ' de ' + diag.dados.total + ' · ' + diag.dados.consolidado.pontosPct + '% dos pontos'"></span></div>
+                    <div class="h-2 overflow-hidden rounded bg-gray-100"><div class="h-full bg-primary-600" :style="'width:' + diag.dados.consolidado.pontosPct + '%'"></div></div>
+                    <div class="flex justify-between gap-2"><span>Encaminhado <span class="text-xs text-gray-500">(consolidado + em escada)</span></span>
+                      <span class="font-mono text-xs" x-text="diag.dados.encaminhado.assuntos + ' · ' + diag.dados.encaminhado.pontosPct + '%'"></span></div>
+                    <div class="h-2 overflow-hidden rounded bg-gray-100"><div class="h-full bg-primary-300" :style="'width:' + diag.dados.encaminhado.pontosPct + '%'"></div></div>
+                  </div>
+                  <div x-show="diag.dados.total > 0">
+                    <div class="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                      <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-primary-600 align-middle"></i>consolidado</span>
+                      <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-primary-300 align-middle"></i>em escada</span>
+                      <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-primary-100 align-middle"></i>em estudo</span>
+                      <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-gray-300 bg-gray-100 align-middle"></i>nunca visto</span>
+                    </div>
+                    <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Por disciplina</p>
+                    <ul class="space-y-2">
+                      <template x-for="d in diag.dados.disciplinas" :key="d.disciplinaId">
+                        <li>
+                          <div class="flex justify-between gap-2 text-xs"><span class="text-gray-800" x-text="d.nome"></span>
+                            <span class="whitespace-nowrap font-mono text-gray-500" x-text="(d.questoes ? d.questoes + ' q · ' : '') + (d.consolidado + d.escada) + ' de ' + d.total"></span></div>
+                          <div class="mt-1 flex h-2.5 overflow-hidden rounded bg-gray-100">
+                            <div class="h-full bg-primary-600" :style="'width:' + larguraFase(d, d.consolidado)"></div>
+                            <div class="h-full bg-primary-300" :style="'width:' + larguraFase(d, d.escada)"></div>
+                            <div class="h-full bg-primary-100" :style="'width:' + larguraFase(d, d.estudo)"></div>
+                          </div>
+                        </li>
+                      </template>
+                    </ul>
+                    <p class="mt-1 text-xs text-gray-500" x-show="diag.dados.disciplinas.some((d) => d.questoes)">"q" = questões do edital; os pontos usam a pontuação da prova.</p>
+                  </div>
+
+                  <div class="space-y-2 border-t border-gray-100 pt-3" x-show="diag.dados.total > 0">
+                    <p class="text-xs uppercase tracking-wide text-gray-500">O que cabe</p>
+                    <p x-show="!diag.dados.cabe" class="text-gray-600" x-text="diag.dados.dataProva ? 'A data da prova já passou: simule com outra data.' : 'Este edital não tem data de prova: simule com uma data.'"></p>
+                    <label class="flex items-center justify-between gap-2"><span class="text-xs text-gray-600">Simular com a data</span>
+                      <input type="date" class="rounded border border-gray-300 px-2 py-1 text-sm" x-model="diag.data" @change="carregarDiagnostico()"></label>
+                    <label class="flex items-center justify-between gap-2">
+                      <span class="text-xs text-gray-600" x-text="Number(diag.dados.ritmoMedido) > 0 ? 'Ritmo (medido: ' + numeroBr(diag.dados.ritmoMedido) + ' por semana)' : 'Ritmo (sem assunto novo nas últimas 4 semanas)'"></span>
+                      <input type="number" min="0.5" step="0.5" inputmode="decimal" placeholder="por semana" class="w-28 rounded border border-gray-300 px-2 py-1 text-sm"
+                             x-model="diag.ritmo" @change="carregarDiagnostico()"></label>
+                    <template x-if="diag.dados.cabe">
+                      <div class="space-y-2">
+                        <p x-show="Number(diag.dados.cabe.ritmo) === 0" class="text-gray-600">Sem ritmo medido: digite um ritmo para simular.</p>
+                        <template x-if="Number(diag.dados.cabe.ritmo) > 0">
+                          <div class="space-y-1">
+                            <p class="text-base" x-text="textoCabe(diag.dados.cabe)"></p>
+                            <p class="text-xs text-gray-600" x-text="textoTodosVistos(diag.dados.cabe)"></p>
+                          </div>
+                        </template>
+                        <template x-if="diag.dados.cabe.ficamDeFora.length > 0">
+                          <div>
+                            <p class="text-xs uppercase tracking-wide text-gray-500" x-text="'Ficam de fora (' + diag.dados.cabe.ficamDeFora.length + ')' + (diag.dados.cabe.minutosDeFora ? ' · ' + minutosBr(diag.dados.cabe.minutosDeFora) + ' de material' : '')"></p>
+                            <ul class="mt-1">
+                              <template x-for="f in diag.dados.cabe.ficamDeFora" :key="f.assuntoId">
+                                <li class="flex justify-between gap-2 border-b border-dashed border-gray-200 py-1 text-xs">
+                                  <span x-text="f.nome"></span>
+                                  <span class="flex items-baseline gap-2">
+                                    <span class="whitespace-nowrap font-mono text-gray-500" x-text="f.peso.toLowerCase().replace('medio', 'médio') + (f.minutos ? ' · ' + minutosBr(f.minutos) : '')"></span>
+                            <template x-if="$store.qc.de(f.assuntoId)">
+                              <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                                 :href="$store.qc.de(f.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(f.assuntoId), f.nome)">QConcursos ↗</a>
+                            </template>
+                                  </span>
+                                </li>
+                              </template>
+                            </ul>
+                            <p class="mt-1 text-xs text-gray-500">Pela ordem: peso, depois a ordem do edital.</p>
+                            <p class="mt-1 text-xs text-gray-500">Questões de assunto que você ainda não leu contam nas métricas; a escada só começa depois da leitura.</p>
+                          </div>
+                        </template>
+                      </div>
                     </template>
-                    <label class="flex min-h-11 items-center justify-between gap-2"><span>Errada anula certa <span class="block text-xs text-gray-500">uma errada desconta uma certa; branco não desconta</span></span>
-                      <input type="checkbox" x-model="regua.erradaAnulaCerta" class="h-5 w-5"></label>
-                    <label class="flex items-center justify-between gap-2"><span>Nota de corte (pontos)</span>
-                      <input type="number" min="0" step="0.5" x-model="regua.notaCorte" class="w-24 rounded border border-gray-300 p-1 text-right"></label>
-                    <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre" @click="salvarRegua()">Salvar</button>
-                    <p x-show="reguaSalva" class="text-xs text-green-800">Salvo. As notas em pontos usam a régua nova.</p>
-                    <p x-show="erroRegua" class="text-xs text-red-700" x-text="erroRegua"></p>
                   </div>
-                </template>
-              </div>
-              <!-- J-6/J-7: verificar o material com uma prova, e resolvê-la -->
-              <div class="mt-3 border-t border-gray-100 pt-3">
-                <div class="flex items-center justify-between gap-2">
-                  <p class="text-xs font-medium uppercase text-gray-500">Provas</p>
-                  <a href="#/provas/nova" class="text-sm font-medium text-primary-700 underline">Verificar com uma prova</a>
+
+                  <div class="space-y-1 border-t border-gray-100 pt-3 text-xs text-gray-600">
+                    <p x-show="diag.dados.arquivados > 0"><a href="#/assuntos" class="underline" @click="diag = null"
+                       x-text="diag.dados.arquivados + (diag.dados.arquivados === 1 ? ' assunto do edital está arquivado' : ' assuntos do edital estão arquivados')"></a></p>
+                    <p><a href="#/assuntos" class="underline" @click="diag = null"
+                       x-text="diag.dados.foraDoEdital + (diag.dados.foraDoEdital === 1 ? ' assunto ativo fora deste edital' : ' assuntos ativos fora deste edital')"></a></p>
+                    <p class="text-gray-500">Informação: nada muda. Peso, ordem e arquivar continuam nas telas de sempre.</p>
+                  </div>
                 </div>
-                <template x-for="pv in provas" :key="pv.id">
-                  <a :href="'#/provas/' + pv.id" class="mt-2 block rounded border border-gray-100 p-2 text-sm hover:bg-gray-50">
-                    <span class="font-medium" x-text="pv.nome || 'Prova'"></span>
-                    <span class="block text-xs text-gray-500" x-text="textoStatusProva(pv)"></span>
-                  </a>
-                </template>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <template x-if="ativo">
+          <div>
+            <!-- Visão geral: o material, a conferência e a reta final -->
+            <div x-show="aba === 'visao'" class="space-y-3" role="tabpanel" id="aba-visao">
+              <div class="rounded-xl border border-gray-200 bg-white p-3">
+                <h3 class="text-sm font-semibold">Material</h3>
+                <!-- 01_DOMINIO §3.10: o material chega sozinho; aqui é só acompanhamento -->
+                <p class="mt-1 text-sm text-gray-600" x-text="ativo.material ? textoMaterial(ativo.material) : 'Sem material ainda.'"></p>
+                <a href="#/concursos/edital" x-show="ativo.material" class="mt-1 inline-flex min-h-9 items-center text-sm font-semibold text-primary-700 underline">ver por assunto</a>
               </div>
-              <!-- D-66: preparar de novo o material do concurso inteiro -->
-              <button type="button" x-show="ativo.material && (ativo.material.prontos + ativo.material.semMaterial) > 0"
-                      class="mt-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50"
-                      :disabled="refazendo" @click="refazerMaterial(ativo)">Refazer o material do concurso</button>
+              <div class="rounded-xl border border-gray-200 bg-white p-3">
+                <h3 class="text-sm font-semibold">Conferência do edital</h3>
+                <!-- 01_DOMINIO §3.12: o que a conferência deixou por resolver; não bloqueia nada -->
+                <p x-show="textoAvisos" class="mt-1 text-sm text-alerta-700" x-text="textoAvisos"></p>
+                <p x-show="!textoAvisos" class="mt-1 text-sm text-gray-600">Nada pendente.</p>
+                <a x-show="avisos && avisos.analiseId" :href="'#/concursos/analise/' + (avisos ? avisos.analiseId : '') + '/conferencia'" class="mt-1 inline-flex min-h-9 items-center text-sm font-semibold text-primary-700 underline">Conferir</a>
+              </div>
+              <div class="rounded-xl border border-gray-200 bg-white p-3" id="concurso-reta">
+                <h3 class="text-sm font-semibold">Reta final</h3>
+                <!-- D-140, D-141: a reta final só entra por gesto; sair a qualquer hora -->
+                <p class="mt-1 text-sm text-gray-600" x-text="retaAtiva ? 'Ligada · ' + (retaAtiva.dias ?? '') + ' dias até a prova.' : (podeEntrarReta ? 'Desligada. Entra só por gesto seu.' : 'Sem data de prova futura: não dá para entrar.')"></p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <button type="button" x-show="podeEntrarReta" class="min-h-11 rounded-lg border border-primary-600 px-3 text-sm font-semibold text-primary-700" @click="entrarRetaFinal()">Entrar na reta final</button>
+                  <button type="button" x-show="retaAtiva" class="min-h-11 rounded-lg border border-red-300 px-3 text-sm text-red-700" @click="sairRetaFinal()">Sair da reta final</button>
+                </div>
+                <p x-show="retaAviso" class="mt-1 text-xs text-primary-700" x-text="retaAviso"></p>
+              </div>
+            </div>
+
+            <!-- Edital: o diagnóstico (acima), o material por assunto e preparar de novo -->
+            <div x-show="aba === 'edital'" class="mt-3 space-y-3" role="tabpanel" id="aba-edital">
+              <div class="rounded-xl border border-gray-200 bg-white p-3">
+                <h3 class="text-sm font-semibold">Material por assunto</h3>
+                <p class="mt-1 text-sm text-gray-600" x-text="ativo.material ? textoMaterial(ativo.material) : 'Sem material ainda.'"></p>
               <!-- SPRINT-19 §5A: o material de cada assunto, e o motivo de quem ficou sem -->
               <button type="button" x-show="ativo.material"
                       class="mt-2 ml-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50"
@@ -2982,17 +3065,158 @@
                   </template>
                 </div>
               </template>
+              </div>
+              <div class="rounded-xl border border-gray-200 bg-white p-3" x-show="ativo.material && (ativo.material.prontos + ativo.material.semMaterial) > 0">
+                <h3 class="text-sm font-semibold">Preparar de novo</h3>
+                <p class="mt-1 text-xs text-gray-500">Refaz o material do concurso inteiro, sem apagar nada.</p>
+              <!-- D-66: preparar de novo o material do concurso inteiro -->
+              <button type="button" x-show="ativo.material && (ativo.material.prontos + ativo.material.semMaterial) > 0"
+                      class="mt-2 inline-flex min-h-11 items-center rounded-lg border border-gray-300 px-3 text-sm text-primary-700 hover:bg-gray-50"
+                      :disabled="refazendo" @click="refazerMaterial(ativo)">Refazer o material do concurso</button>
+              </div>
+            </div>
+
+            <!-- Banca e prova: a banca no QConcursos, o peso pela banca, a régua e as provas -->
+            <div x-show="aba === 'banca'" class="space-y-3" role="tabpanel" id="aba-banca">
+              <div class="rounded-xl border border-gray-200 bg-white p-3">
+                <h3 class="text-sm font-semibold">Banca no QConcursos</h3>
+              <!-- D-151: a banca no catálogo do QConcursos; fora dele, colar um endereço filtrado por ela -->
+              <div x-show="bancaQc" class="mt-1 text-sm text-gray-600" id="banca-qconcursos">
+                <span x-show="bancaQc && bancaQc.numero" x-text="bancaQc && ((bancaQc.nomeNoCatalogo || bancaQc.banca) + ' · nº ' + bancaQc.numero + (bancaQc.origem === 'ENDERECO' ? ' (do endereço)' : ' (catálogo)'))"></span>
+                <span x-show="bancaQc && bancaQc.banca && !bancaQc.numero" class="text-alerta-700" x-text="bancaQc && (bancaQc.banca + ' · fora do catálogo, o atalho vai sem filtro de banca')"></span>
+                <span x-show="bancaQc && !bancaQc.banca" class="text-gray-500">sem banca no concurso</span>
+                <button type="button" x-show="bancaQc && bancaQc.banca && !bancaQcAberta" class="ml-1 underline text-primary-700" @click="bancaQcAberta = true; bancaQcEndereco = ''; bancaQcErro = null">trocar</button>
+                <div x-show="bancaQcAberta" class="mt-2 space-y-2 rounded border border-gray-200 p-2">
+                  <p>No QConcursos, filtre só por essa banca, copie o endereço da barra do navegador e cole aqui (ou digite o número).</p>
+                  <input type="text" id="banca-qconcursos-endereco" x-model="bancaQcEndereco" placeholder="https://www.qconcursos.com/questoes-de-concursos/questoes?examining_board_ids%5B%5D=…"
+                         class="w-full rounded border border-gray-200 p-2 text-sm text-gray-900">
+                  <p x-show="bancaQcErro" class="text-red-700" role="alert" x-text="bancaQcErro"></p>
+                  <div class="flex gap-2">
+                    <button type="button" class="min-h-11 rounded bg-primary-600 px-3 text-sm font-medium text-sobre" @click="aprenderBancaQc()">Salvar</button>
+                    <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="bancaQcAberta = false">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+              </div>
+          <!-- J-15: o peso pela banca. A proposta é derivada; só o aceite grava (D-146, D-147) -->
+          <template x-if="banca">
+            <div>
+              <div class="rounded-xl border border-gray-200 bg-white p-3" aria-label="Peso pela banca" id="peso-banca">
+                <div class="mb-3 flex items-start justify-between gap-2">
+                  <div>
+                    <h3 class="text-sm font-semibold">Peso pela banca</h3>
+                    <p class="text-sm text-gray-600" x-text="banca.banca || 'Banca não informada'"></p>
+                  </div>
+                </div>
+                <p x-show="!banca.banca" class="text-sm text-gray-600">O concurso não tem banca e nenhuma prova dele foi hospedada: não há como medir a incidência.</p>
+                <template x-if="banca.banca">
+                  <div class="space-y-4 text-sm">
+                    <p class="text-xs text-gray-600" x-text="banca.provas + (banca.provas === 1 ? ' prova' : ' provas') + ' da banca'
+                      + (banca.anoMinimo ? ' (' + banca.anoMinimo + (banca.anoMaximo !== banca.anoMinimo ? '–' + banca.anoMaximo : '') + ')' : '')
+                      + ' · ' + banca.questoes + ' questões com assunto'"></p>
+                    <p x-show="bancaErro" class="rounded border border-red-300 bg-red-50 p-2 text-red-700" x-text="bancaErro"></p>
+                    <div class="flex justify-end" x-show="banca.totalPropostas > 0">
+                      <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre"
+                              @click="aceitarBanca(todasPropostas())" x-text="'Aceitar todos (' + banca.totalPropostas + ')'"></button>
+                    </div>
+                    <template x-for="d in banca.disciplinas" :key="d.disciplinaId">
+                      <div class="space-y-2 rounded border border-gray-200 p-3">
+                        <div class="flex justify-between gap-2"><span class="font-medium" x-text="d.nome"></span>
+                          <span class="whitespace-nowrap font-mono text-xs text-gray-500" x-text="d.provas + (d.provas === 1 ? ' prova' : ' provas') + ' · ' + d.questoes + ' q'"></span></div>
+                        <p x-show="!d.suficiente" class="text-xs text-gray-500">Sem amostra suficiente da banca.</p>
+                        <p x-show="d.suficiente && d.propostas.length === 0" class="text-xs text-gray-500">Nada a mudar.</p>
+                        <template x-for="p in d.propostas" :key="p.assuntoId">
+                          <div class="flex items-center gap-2 border-t border-dashed border-gray-200 pt-2">
+                            <div class="min-w-0 flex-1">
+                              <p x-text="p.nome"></p>
+                              <p class="text-xs text-gray-500" x-text="p.questoes + ' de ' + d.questoes + ' questões' + (p.questoes === 0 ? ' · a banca nunca cobrou' : '')"></p>
+                              <p x-show="p.sobeParaAlto" class="text-xs text-alerta-700">pede mais degraus na escada antes de consolidar</p>
+                            </div>
+                            <span class="whitespace-nowrap font-mono text-xs" x-text="pesoBr(p.pesoAtual) + ' → ' + pesoBr(p.proposto)"></span>
+                            <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="aceitarBanca([p.assuntoId])">Aceitar</button>
+                            <template x-if="$store.qc.de(p.assuntoId)">
+                                <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                                   :href="$store.qc.de(p.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(p.assuntoId), p.nome)">QConcursos ↗</a>
+                              </template>
+                          </div>
+                        </template>
+                        <button type="button" x-show="d.propostas.length > 1" class="text-xs text-primary-700 underline"
+                                @click="aceitarBanca(d.propostas.map((p) => p.assuntoId))" x-text="'aceitar todos desta disciplina (' + d.propostas.length + ')'"></button>
+                      </div>
+                    </template>
+                    <div x-show="banca.ajustados.length > 0" class="space-y-2 border-t border-gray-100 pt-3">
+                      <p class="text-xs uppercase tracking-wide text-gray-500" x-text="'Ajustados pela banca (' + banca.ajustados.length + ')'"></p>
+                      <template x-for="a in banca.ajustados" :key="a.assuntoId">
+                        <div class="flex items-center gap-2">
+                          <div class="min-w-0 flex-1">
+                            <p x-text="a.nome"></p>
+                            <p class="text-xs text-gray-500" x-text="'aceito em ' + dataInstante(a.aceitoEm) + (a.propostaHoje && a.propostaHoje !== a.peso ? ' · hoje a proposta seria ' + pesoBr(a.propostaHoje) : '')"></p>
+                          </div>
+                          <span class="whitespace-nowrap font-mono text-xs" x-text="'edital ' + pesoBr(a.pesoEdital) + ' · ' + pesoBr(a.peso)"></span>
+                          <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-gray-600" @click="desfazerBanca(a.assuntoId)">Desfazer</button>
+                          <template x-if="$store.qc.de(a.assuntoId)">
+                                <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
+                                   :href="$store.qc.de(a.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(a.assuntoId), a.nome)">QConcursos ↗</a>
+                              </template>
+                        </div>
+                      </template>
+                      <p class="text-xs text-gray-500">Reimportar o edital ou concluir a conferência de novo mantém estes pesos. Desfazer volta ao do edital.</p>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+              <div class="rounded-xl border border-gray-200 bg-white p-3">
+                <h3 class="text-sm font-semibold">Régua da prova</h3>
+              <!-- D-135: a régua da prova e a nota de corte -->
+              <div class="mt-1" x-show="regua">
+                <button type="button" class="text-sm font-medium text-primary-700 underline" @click="reguaAberta = !reguaAberta"
+                  x-text="reguaAberta ? 'Fechar a pontuação da prova' : 'Pontuação da prova' + (regua && regua.notaCorte !== null ? ' · corte ' + regua.notaCorte : '')"></button>
+                <template x-if="reguaAberta && regua">
+                  <div class="mt-2 space-y-2 text-sm">
+                    <template x-for="d in regua.disciplinas" :key="d.disciplinaId">
+                      <label class="flex items-center justify-between gap-2"><span x-text="d.nome"></span>
+                        <span class="flex items-center gap-1"><input type="number" min="0.1" step="0.1" x-model="d.pontos" class="w-20 rounded border border-gray-300 p-1 text-right"> pt</span></label>
+                    </template>
+                    <label class="flex min-h-11 items-center justify-between gap-2"><span>Errada anula certa <span class="block text-xs text-gray-500">uma errada desconta uma certa; branco não desconta</span></span>
+                      <input type="checkbox" x-model="regua.erradaAnulaCerta" class="h-5 w-5"></label>
+                    <label class="flex items-center justify-between gap-2"><span>Nota de corte (pontos)</span>
+                      <input type="number" min="0" step="0.5" x-model="regua.notaCorte" class="w-24 rounded border border-gray-300 p-1 text-right"></label>
+                    <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre" @click="salvarRegua()">Salvar</button>
+                    <p x-show="reguaSalva" class="text-xs text-green-800">Salvo. As notas em pontos usam a régua nova.</p>
+                    <p x-show="erroRegua" class="text-xs text-red-700" x-text="erroRegua"></p>
+                  </div>
+                </template>
+              </div>
+              </div>
+              <div class="rounded-xl border border-gray-200 bg-white p-3">
+              <!-- J-6/J-7: verificar o material com uma prova, e resolvê-la -->
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-xs font-medium uppercase text-gray-500">Provas</p>
+                  <a href="#/provas/nova" class="text-sm font-medium text-primary-700 underline">Verificar com uma prova</a>
+                </div>
+                <template x-for="pv in provas" :key="pv.id">
+                  <a :href="'#/provas/' + pv.id" class="mt-2 block rounded border border-gray-100 p-2 text-sm hover:bg-gray-50">
+                    <span class="font-medium" x-text="pv.nome || 'Prova'"></span>
+                    <span class="block text-xs text-gray-500" x-text="textoStatusProva(pv)"></span>
+                  </a>
+                </template>
+              </div>
+              </div>
+            </div>
+
+            <!-- Cuidado: reiniciar o progresso deste concurso -->
+            <div x-show="aba === 'cuidado'" class="space-y-3" role="tabpanel" id="aba-cuidado">
               <!-- §8E: reiniciar o progresso deste concurso (D-163) -->
-              <div class="mt-4 space-y-2 rounded-xl border border-red-200 p-3" id="concurso-cuidado">
+              <div class="space-y-2 rounded-xl border border-red-200 bg-white p-3" id="concurso-cuidado">
                 <p class="text-xs font-bold uppercase tracking-wider text-red-700">Cuidado</p>
                 <button type="button" class="min-h-11 w-full rounded-lg border border-red-200 text-sm font-semibold text-red-700" @click="$store.reinicio.abrir(ativo.id)">Reiniciar o progresso deste concurso</button>
               </div>
             </div>
-          </template>
-          <template x-if="!ativo">
-            <p class="text-sm text-gray-500">Nenhum concurso-alvo ainda.</p>
-          </template>
-        </div>
+          </div>
+        </template>
 
         <div class="space-y-2">
           <a href="#/concursos/novo" x-show="ia && ia.disponivel"
@@ -3007,9 +3231,11 @@
           </template>
         </div>
 
-        <div x-show="anteriores.length > 0">
-          <h2 class="mb-2 text-sm font-medium text-gray-500">Editais de antes</h2>
-          <ul class="space-y-2">
+        <!-- §8J (Sprint 47): os outros editais no fim, recolhidos -->
+        <details x-show="anteriores.length > 0" class="group rounded-xl border border-gray-200 bg-white" id="outros-editais">
+          <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-semibold">
+            <span x-text="'Outros editais · ' + anteriores.length"></span><span class="text-gray-400 group-open:rotate-180" aria-hidden="true">▾</span></summary>
+          <ul class="space-y-2 border-t border-gray-100 p-3">
             <template x-for="c in anteriores" :key="c.id">
               <li class="rounded-xl border border-gray-200 bg-white p-3">
                 <p class="font-medium" x-text="c.nome"></p>
@@ -3027,182 +3253,7 @@
               </li>
             </template>
           </ul>
-        </div>
-      </div>
-    </template>
-
-    <!-- J-15: o peso pela banca. A proposta é derivada; só o aceite grava (D-146, D-147) -->
-    <template x-if="bancaAberta && banca">
-      <div class="fixed inset-0 z-40 flex justify-end bg-black/20" @click.self="bancaAberta = false" @keydown.escape.window="bancaAberta = false">
-        <div class="h-full w-full max-w-md overflow-y-auto bg-white p-4 shadow-xl" role="dialog" aria-label="Peso pela banca" id="peso-banca">
-          <div class="mb-3 flex items-start justify-between gap-2">
-            <div>
-              <p class="text-xs uppercase tracking-wide text-gray-500">Peso pela banca</p>
-              <p class="font-medium" x-text="banca.banca || 'Banca não informada'"></p>
-            </div>
-            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="bancaAberta = false" aria-label="Fechar">✕</button>
-          </div>
-          <p x-show="!banca.banca" class="text-sm text-gray-600">O concurso não tem banca e nenhuma prova dele foi hospedada: não há como medir a incidência.</p>
-          <template x-if="banca.banca">
-            <div class="space-y-4 text-sm">
-              <p class="text-xs text-gray-600" x-text="banca.provas + (banca.provas === 1 ? ' prova' : ' provas') + ' da banca'
-                + (banca.anoMinimo ? ' (' + banca.anoMinimo + (banca.anoMaximo !== banca.anoMinimo ? '–' + banca.anoMaximo : '') + ')' : '')
-                + ' · ' + banca.questoes + ' questões com assunto'"></p>
-              <p x-show="bancaErro" class="rounded border border-red-300 bg-red-50 p-2 text-red-700" x-text="bancaErro"></p>
-              <div class="flex justify-end" x-show="banca.totalPropostas > 0">
-                <button type="button" class="min-h-11 rounded bg-primary-600 px-4 font-semibold text-sobre"
-                        @click="aceitarBanca(todasPropostas())" x-text="'Aceitar todos (' + banca.totalPropostas + ')'"></button>
-              </div>
-              <template x-for="d in banca.disciplinas" :key="d.disciplinaId">
-                <div class="space-y-2 rounded border border-gray-200 p-3">
-                  <div class="flex justify-between gap-2"><span class="font-medium" x-text="d.nome"></span>
-                    <span class="whitespace-nowrap font-mono text-xs text-gray-500" x-text="d.provas + (d.provas === 1 ? ' prova' : ' provas') + ' · ' + d.questoes + ' q'"></span></div>
-                  <p x-show="!d.suficiente" class="text-xs text-gray-500">Sem amostra suficiente da banca.</p>
-                  <p x-show="d.suficiente && d.propostas.length === 0" class="text-xs text-gray-500">Nada a mudar.</p>
-                  <template x-for="p in d.propostas" :key="p.assuntoId">
-                    <div class="flex items-center gap-2 border-t border-dashed border-gray-200 pt-2">
-                      <div class="min-w-0 flex-1">
-                        <p x-text="p.nome"></p>
-                        <p class="text-xs text-gray-500" x-text="p.questoes + ' de ' + d.questoes + ' questões' + (p.questoes === 0 ? ' · a banca nunca cobrou' : '')"></p>
-                        <p x-show="p.sobeParaAlto" class="text-xs text-alerta-700">pede mais degraus na escada antes de consolidar</p>
-                      </div>
-                      <span class="whitespace-nowrap font-mono text-xs" x-text="pesoBr(p.pesoAtual) + ' → ' + pesoBr(p.proposto)"></span>
-                      <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="aceitarBanca([p.assuntoId])">Aceitar</button>
-                      <template x-if="$store.qc.de(p.assuntoId)">
-                          <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                             :href="$store.qc.de(p.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(p.assuntoId), p.nome)">QConcursos ↗</a>
-                        </template>
-                    </div>
-                  </template>
-                  <button type="button" x-show="d.propostas.length > 1" class="text-xs text-primary-700 underline"
-                          @click="aceitarBanca(d.propostas.map((p) => p.assuntoId))" x-text="'aceitar todos desta disciplina (' + d.propostas.length + ')'"></button>
-                </div>
-              </template>
-              <div x-show="banca.ajustados.length > 0" class="space-y-2 border-t border-gray-100 pt-3">
-                <p class="text-xs uppercase tracking-wide text-gray-500" x-text="'Ajustados pela banca (' + banca.ajustados.length + ')'"></p>
-                <template x-for="a in banca.ajustados" :key="a.assuntoId">
-                  <div class="flex items-center gap-2">
-                    <div class="min-w-0 flex-1">
-                      <p x-text="a.nome"></p>
-                      <p class="text-xs text-gray-500" x-text="'aceito em ' + dataInstante(a.aceitoEm) + (a.propostaHoje && a.propostaHoje !== a.peso ? ' · hoje a proposta seria ' + pesoBr(a.propostaHoje) : '')"></p>
-                    </div>
-                    <span class="whitespace-nowrap font-mono text-xs" x-text="'edital ' + pesoBr(a.pesoEdital) + ' · ' + pesoBr(a.peso)"></span>
-                    <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-gray-600" @click="desfazerBanca(a.assuntoId)">Desfazer</button>
-                    <template x-if="$store.qc.de(a.assuntoId)">
-                          <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                             :href="$store.qc.de(a.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(a.assuntoId), a.nome)">QConcursos ↗</a>
-                        </template>
-                  </div>
-                </template>
-                <p class="text-xs text-gray-500">Reimportar o edital ou concluir a conferência de novo mantém estes pesos. Desfazer volta ao do edital.</p>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </template>
-
-    <!-- J-13: o diagnóstico do edital (D-137 a D-139). Só leitura; data e ritmo simulados ficam na tela -->
-    <template x-if="diag">
-      <div class="fixed inset-0 z-40 flex justify-end bg-black/20" @click.self="diag = null" @keydown.escape.window="diag = null">
-        <div class="h-full w-full max-w-md overflow-y-auto bg-white p-4 shadow-xl" role="dialog" aria-label="Diagnóstico do edital">
-          <div class="mb-3 flex items-start justify-between gap-2">
-            <div>
-              <p class="text-xs uppercase tracking-wide text-gray-500">Diagnóstico</p>
-              <p class="font-medium" x-text="diag.concurso.nome"></p>
-            </div>
-            <button type="button" class="min-h-11 min-w-11 text-gray-500" @click="diag = null" aria-label="Fechar">✕</button>
-          </div>
-          <p x-show="diag.carregando && !diag.dados" class="text-sm text-gray-500">Carregando…</p>
-          <p x-show="diag.erro" class="mb-2 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700" x-text="diag.erro"></p>
-          <template x-if="diag.dados">
-            <div class="space-y-4 text-sm" id="diagnostico">
-              <p x-show="diag.dados.total === 0" class="text-gray-600">Este concurso ainda não tem assuntos no edital.</p>
-              <div class="space-y-2 rounded border border-gray-200 p-3" x-show="diag.dados.total > 0">
-                <div class="flex justify-between gap-2"><span>Consolidado</span>
-                  <span class="font-mono text-xs" x-text="diag.dados.consolidado.assuntos + ' de ' + diag.dados.total + ' · ' + diag.dados.consolidado.pontosPct + '% dos pontos'"></span></div>
-                <div class="h-2 overflow-hidden rounded bg-gray-100"><div class="h-full bg-primary-600" :style="'width:' + diag.dados.consolidado.pontosPct + '%'"></div></div>
-                <div class="flex justify-between gap-2"><span>Encaminhado <span class="text-xs text-gray-500">(consolidado + em escada)</span></span>
-                  <span class="font-mono text-xs" x-text="diag.dados.encaminhado.assuntos + ' · ' + diag.dados.encaminhado.pontosPct + '%'"></span></div>
-                <div class="h-2 overflow-hidden rounded bg-gray-100"><div class="h-full bg-primary-300" :style="'width:' + diag.dados.encaminhado.pontosPct + '%'"></div></div>
-              </div>
-              <div x-show="diag.dados.total > 0">
-                <div class="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
-                  <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-primary-600 align-middle"></i>consolidado</span>
-                  <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-primary-300 align-middle"></i>em escada</span>
-                  <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-primary-100 align-middle"></i>em estudo</span>
-                  <span><i class="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-gray-300 bg-gray-100 align-middle"></i>nunca visto</span>
-                </div>
-                <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Por disciplina</p>
-                <ul class="space-y-2">
-                  <template x-for="d in diag.dados.disciplinas" :key="d.disciplinaId">
-                    <li>
-                      <div class="flex justify-between gap-2 text-xs"><span class="text-gray-800" x-text="d.nome"></span>
-                        <span class="whitespace-nowrap font-mono text-gray-500" x-text="(d.questoes ? d.questoes + ' q · ' : '') + (d.consolidado + d.escada) + ' de ' + d.total"></span></div>
-                      <div class="mt-1 flex h-2.5 overflow-hidden rounded bg-gray-100">
-                        <div class="h-full bg-primary-600" :style="'width:' + larguraFase(d, d.consolidado)"></div>
-                        <div class="h-full bg-primary-300" :style="'width:' + larguraFase(d, d.escada)"></div>
-                        <div class="h-full bg-primary-100" :style="'width:' + larguraFase(d, d.estudo)"></div>
-                      </div>
-                    </li>
-                  </template>
-                </ul>
-                <p class="mt-1 text-xs text-gray-500" x-show="diag.dados.disciplinas.some((d) => d.questoes)">"q" = questões do edital; os pontos usam a pontuação da prova.</p>
-              </div>
-
-              <div class="space-y-2 border-t border-gray-100 pt-3" x-show="diag.dados.total > 0">
-                <p class="text-xs uppercase tracking-wide text-gray-500">O que cabe</p>
-                <p x-show="!diag.dados.cabe" class="text-gray-600" x-text="diag.dados.dataProva ? 'A data da prova já passou: simule com outra data.' : 'Este edital não tem data de prova: simule com uma data.'"></p>
-                <label class="flex items-center justify-between gap-2"><span class="text-xs text-gray-600">Simular com a data</span>
-                  <input type="date" class="rounded border border-gray-300 px-2 py-1 text-sm" x-model="diag.data" @change="carregarDiagnostico()"></label>
-                <label class="flex items-center justify-between gap-2">
-                  <span class="text-xs text-gray-600" x-text="Number(diag.dados.ritmoMedido) > 0 ? 'Ritmo (medido: ' + numeroBr(diag.dados.ritmoMedido) + ' por semana)' : 'Ritmo (sem assunto novo nas últimas 4 semanas)'"></span>
-                  <input type="number" min="0.5" step="0.5" inputmode="decimal" placeholder="por semana" class="w-28 rounded border border-gray-300 px-2 py-1 text-sm"
-                         x-model="diag.ritmo" @change="carregarDiagnostico()"></label>
-                <template x-if="diag.dados.cabe">
-                  <div class="space-y-2">
-                    <p x-show="Number(diag.dados.cabe.ritmo) === 0" class="text-gray-600">Sem ritmo medido: digite um ritmo para simular.</p>
-                    <template x-if="Number(diag.dados.cabe.ritmo) > 0">
-                      <div class="space-y-1">
-                        <p class="text-base" x-text="textoCabe(diag.dados.cabe)"></p>
-                        <p class="text-xs text-gray-600" x-text="textoTodosVistos(diag.dados.cabe)"></p>
-                      </div>
-                    </template>
-                    <template x-if="diag.dados.cabe.ficamDeFora.length > 0">
-                      <div>
-                        <p class="text-xs uppercase tracking-wide text-gray-500" x-text="'Ficam de fora (' + diag.dados.cabe.ficamDeFora.length + ')' + (diag.dados.cabe.minutosDeFora ? ' · ' + minutosBr(diag.dados.cabe.minutosDeFora) + ' de material' : '')"></p>
-                        <ul class="mt-1">
-                          <template x-for="f in diag.dados.cabe.ficamDeFora" :key="f.assuntoId">
-                            <li class="flex justify-between gap-2 border-b border-dashed border-gray-200 py-1 text-xs">
-                              <span x-text="f.nome"></span>
-                              <span class="flex items-baseline gap-2">
-                                <span class="whitespace-nowrap font-mono text-gray-500" x-text="f.peso.toLowerCase().replace('medio', 'médio') + (f.minutos ? ' · ' + minutosBr(f.minutos) : '')"></span>
-                        <template x-if="$store.qc.de(f.assuntoId)">
-                          <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                             :href="$store.qc.de(f.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(f.assuntoId), f.nome)">QConcursos ↗</a>
-                        </template>
-                              </span>
-                            </li>
-                          </template>
-                        </ul>
-                        <p class="mt-1 text-xs text-gray-500">Pela ordem: peso, depois a ordem do edital.</p>
-                        <p class="mt-1 text-xs text-gray-500">Questões de assunto que você ainda não leu contam nas métricas; a escada só começa depois da leitura.</p>
-                      </div>
-                    </template>
-                  </div>
-                </template>
-              </div>
-
-              <div class="space-y-1 border-t border-gray-100 pt-3 text-xs text-gray-600">
-                <p x-show="diag.dados.arquivados > 0"><a href="#/assuntos" class="underline" @click="diag = null"
-                   x-text="diag.dados.arquivados + (diag.dados.arquivados === 1 ? ' assunto do edital está arquivado' : ' assuntos do edital estão arquivados')"></a></p>
-                <p><a href="#/assuntos" class="underline" @click="diag = null"
-                   x-text="diag.dados.foraDoEdital + (diag.dados.foraDoEdital === 1 ? ' assunto ativo fora deste edital' : ' assuntos ativos fora deste edital')"></a></p>
-                <p class="text-gray-500">Informação: nada muda. Peso, ordem e arquivar continuam nas telas de sempre.</p>
-              </div>
-            </div>
-          </template>
-        </div>
+        </details>
       </div>
     </template>
   </section>

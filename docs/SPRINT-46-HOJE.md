@@ -44,11 +44,11 @@ Sem mudança no servidor: a suíte não muda.
 | 46.0 | Especificação e wireframe aprovados | feito |
 | 46.1 | A nova ordem de Hoje; `CASCA_VERSAO` | feito |
 | 46.2 | Chromium e regressão | feito |
-| 46.3 | Deploy pelo Guardian | — |
+| 46.3 | Deploy pelo Guardian | `release/20` (`1632220`) |
 
 ## Changelog
 
 | Versão | Data | Mudança |
 |---|---|---|
-| 1.1.0 | 2026-11-05 | Itens 46.1 e 46.2 feitos. Chromium: 17 passos e a regressão |
+| 1.1.0 | 2026-11-05 | Itens 46.1 e 46.2 feitos. Chromium: 16 passos e a regressão |
 | 1.0.0 | 2026-11-05 | Criado, com o wireframe aprovado pelo usuário |
