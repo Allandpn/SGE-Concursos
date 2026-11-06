@@ -44,7 +44,7 @@ Sem mudança no servidor: a suíte não muda.
 | 46.0 | Especificação e wireframe aprovados | feito |
 | 46.1 | A nova ordem de Hoje; `CASCA_VERSAO` | feito |
 | 46.2 | Chromium e regressão | feito |
-| 46.3 | Deploy pelo Guardian | — |
+| 46.3 | Deploy pelo Guardian | `release/20` (`1632220`) |
 
 ## Changelog
 
