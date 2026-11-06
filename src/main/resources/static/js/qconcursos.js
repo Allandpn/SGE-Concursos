@@ -198,16 +198,31 @@ document.addEventListener('alpine:init', () => {
     },
 
     // D-168: antes de ir, a previsão (M-3); o link da folha é o que abre o QConcursos (um gesto do usuário, sem bloqueio de janela).
-    antes: null,
-    antesDeIr(a, nome) {
-      if (!a) return;
-      this.antes = { a, nome, previsao: null };
+    // §8K (Sprint 48): a folha "Questões" — a porta única: o filtro, o vínculo, a previsão, abrir e "já fiz".
+    antes: null, // {assuntoId, nome, previsao}
+    abrirQuestoes(item) {
+      if (!item || item.assuntoId == null) return;
+      this.antes = { assuntoId: item.assuntoId, nome: item.nome, previsao: null };
+      this.carregar([item.assuntoId]);
+    },
+    antesDeIr(a, nome) { // compatível com os chamadores antigos
+      if (a) this.abrirQuestoes({ assuntoId: a.assuntoId, nome });
+    },
+    get atalhoDaFolha() {
+      return this.antes ? this.de(this.antes.assuntoId) : null;
     },
     ir() {
       const x = this.antes;
-      if (!x) return;
-      this.sair(x.a, x.nome, x.previsao);
+      const a = this.atalhoDaFolha;
+      if (!x || !a) return;
+      this.sair(a, x.nome, x.previsao);
       this.antes = null;
+    },
+    jaFiz() {
+      const x = this.antes;
+      if (!x) return;
+      this.antes = null;
+      Alpine.store('lote').abrir({ assuntoId: x.assuntoId, nome: x.nome });
     },
 
     encerrar() {

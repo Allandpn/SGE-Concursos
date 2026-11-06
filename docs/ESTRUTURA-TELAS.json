@@ -1,6 +1,6 @@
 {
   "app": "eAgora (SGE-Concursos)",
-  "versao": "Sprint 47 (na branch) · casca-2026-11-06-1",
+  "versao": "Sprint 48 (na branch) · casca-2026-11-06-2",
   "geradoEm": "2026-11-05",
   "fonte": "src/main/resources/static/index.html, entrar.html, js/router.js, js/navegacao.js",
   "convencoes": {
@@ -125,7 +125,7 @@
         "id": "lote-rapido",
         "nome": "Lote rápido (Fiz questões)",
         "abreDe": [
-          "Hoje › Fiz questões",
+          "Questões › Já fiz",
           "volta do QConcursos (até 6 h)",
           "Hoje › caixa da captura › Registrar"
         ],
@@ -169,16 +169,17 @@
         ]
       },
       {
-        "id": "qc-antes",
-        "nome": "Antes de ir ao QConcursos",
+        "id": "qc-questoes",
+        "nome": "Questões · assunto",
         "abreDe": [
-          "todo atalho 'Resolver no QConcursos ↗'"
+          "botão Questões em Hoje (Agora, Depois), Quer adiantar?, Detalhe do assunto, Diagnóstico, Peso pela banca"
         ],
-        "campos": [
-          "previsão 50–90%"
-        ],
-        "acoes": [
-          "Abrir o QConcursos ↗",
+        "itens": [
+          "No QConcursos: quantas e o filtro; ligado por você (trocar, tirar) ou ligar o assunto",
+          "sem atalho: Ligar ao QConcursos → folha vinculo-qc",
+          "previsão 50–90%",
+          "Abrir o QConcursos ↗ (preso até prever)",
+          "Já fiz: registrar questões → lote rápido",
           "Cancelar"
         ]
       },
@@ -186,8 +187,7 @@
         "id": "vinculo-qc",
         "nome": "Ligar ao QConcursos",
         "abreDe": [
-          "Hoje › Ligar ao QConcursos",
-          "Detalhe do assunto › ligar/trocar"
+          "folha Questões › ligar / trocar"
         ],
         "campos": [
           "busca na árvore do QConcursos",
@@ -242,9 +242,7 @@
               "botao": "Começar a recuperação",
               "abre": "#/recuperar/{id}",
               "links": [
-                "Fiz questões",
-                "Resolver no QConcursos ↗",
-                "Ligar ao QConcursos"
+                "Questões"
               ]
             },
             {
@@ -279,7 +277,7 @@
           "id": "depois-lista",
           "itens": [
             "Reestudar · pontos que não vieram → leitor, Ler",
-            "Recuperar · Fiz questões, QConcursos ↗, Ligar ao QConcursos",
+            "Recuperar · Questões",
             "manutenção que espera a prova (reta final)",
             "Ler/Continuar · bloco: Foco, Ler (baixado), aviso da conferência",
             "Simulado da semana (reta final) · Registrar"
@@ -535,14 +533,12 @@
           ]
         },
         {
-          "nome": "QConcursos",
+          "nome": "Questões",
           "id": "assunto-qc",
           "itens": [
-            "Resolver no QConcursos ↗",
-            "linha do filtro",
-            "Ligado por você / trocar / tirar o vínculo"
-          ],
-          "semAtalho": "assunto-qc-sem › Ligar ao QConcursos"
+            "botão Questões → folha",
+            "resumo: quantas · banca · ligado por você / disciplina inteira / sem assunto do QC"
+          ]
         },
         {
           "nome": "Ensaiar…",
