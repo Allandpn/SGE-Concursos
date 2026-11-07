@@ -57,7 +57,8 @@ mais — detalhá-la agora seria inventar precisão que ainda não existe.
 | 44 | Ícones do bloco, pontos altos e o atalho do teste | Retorno do usuário nos testes (2026-11-05), decidido numa rodada. Ler, Foco e Registrar com ícone; o sinal de "baixado" no lugar de "sem rede ✓"; as marcações do assunto na Recuperar depois de conferir (D-172); Modo de teste no Mais (`04_FRONTEND` §8G) — `docs/SPRINT-44-ICONES-E-PONTOS-ALTOS.md` | **feita** — na `main` (PR #18), `release/18` (`2e73bfd`) |
 | 45 | O assunto ligado ao QConcursos e as questões por vez | Retorno do usuário no modo de teste (2026-11-05), decidido numa rodada. Ligar o assunto a até 3 nós da árvore do QConcursos pela busca, antes do edital (atalho e captura); "Ligar ao QConcursos" onde não há atalho ou é pela disciplina inteira; "Questões por vez" em Ajustes (`01_DOMINIO` D-173, D-174, J-17, `04_FRONTEND` §8H) — `docs/SPRINT-45-VINCULO-QCONCURSOS.md` | **feita** — na `main` (PR #19), `release/19` (`e998239`) |
 | 46 | Hoje reorganizado | Pedido do usuário (2026-11-05), depois da árvore de telas (`docs/ESTRUTURA-TELAS.json`), decidido numa rodada. Progresso no cabeçalho, Agora logo depois, avisos numa faixa recolhida, Depois numa lista na ordem do plano, Também hoje no fim (`04_FRONTEND` §8B, §8I) — `docs/SPRINT-46-HOJE.md` | **feita** — na `main` (PR #20), `release/20` (`1632220`) |
-| 47 | Concursos em abas | Revisão da estrutura (2026-11-06), decidida numa rodada. O resumo do alvo e quatro abas na rota (Visão geral, Edital, Banca e prova, Cuidado); o diagnóstico e o peso pela banca dentro das abas; os outros editais recolhidos (`04_FRONTEND` §8J) — `docs/SPRINT-47-CONCURSOS.md` | **feita** — na branch, falta o PR |
+| 47 | Concursos em abas | Revisão da estrutura (2026-11-06), decidida numa rodada. O resumo do alvo e quatro abas na rota (Visão geral, Edital, Banca e prova, Cuidado); o diagnóstico e o peso pela banca dentro das abas; os outros editais recolhidos (`04_FRONTEND` §8J) — `docs/SPRINT-47-CONCURSOS.md` | **feita** — na `main` (PR #21), falta a `release/21` |
+| 48 | Um botão "Questões" | Revisão da estrutura (2026-11-06), decidida numa rodada. Um botão em Hoje, Quer adiantar?, detalhe, Diagnóstico e Peso pela banca; a folha única com o filtro, o vínculo, a previsão, Abrir e Já fiz (`04_FRONTEND` §8K) — `docs/SPRINT-48-QUESTOES.md` | **feita** — na branch, falta o PR |
 
 > **O sistema fica utilizável ao fim da Sprint 4.** Cadastrar, estudar,
 > registrar e revisar já fecham o ciclo. As sprints 5 a 8 melhoram o que já
@@ -1119,6 +1120,7 @@ Modo de trabalho: implementação direta (a mentoria está suspensa, `CLAUDE.md`
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.128.0 | 2026-11-06 | Sprint 47 na `main` (PR #21). **Sprint 48 (um botão "Questões") feita**, wireframe aprovado. Só tela: Chromium 15 passos e a regressão |
 | 1.127.0 | 2026-11-06 | **Sprint 47 (Concursos em abas) feita**, wireframe aprovado. Só tela: Chromium 17 passos e a regressão |
 | 1.126.0 | 2026-11-06 | **Sprint 46 na `main`** (PR #20) e `release/20` |
 | 1.125.0 | 2026-11-05 | **Sprint 46 (Hoje reorganizado) feita**, wireframe aprovado; e a árvore de telas em `docs/ESTRUTURA-TELAS.json`. Só tela: Chromium 16 passos e a regressão |

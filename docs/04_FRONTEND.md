@@ -15,7 +15,7 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.29.0 |
+| Versão | 1.30.0 |
 | Data | 2026-11-05 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
@@ -1018,6 +1018,21 @@ Decidido numa rodada, a partir da árvore de telas. Nada sai da tela: muda o lug
   "Novo edital" e as análises em curso ficam sempre à vista, acima.
 - Sem concurso-alvo: "Nenhum concurso-alvo ainda", o novo edital e os outros editais. `CASCA_VERSAO` sobe.
 
+## 8K. Um botão "Questões" (Sprint 48)
+
+Decidido numa rodada, a partir da árvore de telas: o QConcursos tinha sete portas, cada uma com "Fiz questões", "Resolver no
+QConcursos ↗", a linha do filtro e às vezes "Ligar ao QConcursos".
+
+- **Um botão "Questões"** (`.qc-questoes`, ícone de lápis) em Hoje (Agora e Depois), Quer adiantar?, no detalhe do assunto
+  (com o resumo ao lado: "10 · FGV · ligado por você", "disciplina inteira" ou "sem assunto do QC"), no Diagnóstico (ficam de fora) e
+  no Peso pela banca (propostas e ajustados). Nas listas, só o aviso curto "sem assunto do QC" quando falta o vínculo.
+- **A folha "Questões · assunto"** (`#qc-questoes`, `Alpine.store('qc').abrirQuestoes`), no lugar da folha "Antes de ir": o quadro
+  **No QConcursos** (quantas e o filtro; "ligado por você" com trocar e tirar, ou "ligar o assunto" quando é a disciplina inteira);
+  sem atalho, o convite a **Ligar ao QConcursos**; a **previsão** (50–90%) e **Abrir o QConcursos ↗**, preso até prever (D-168);
+  **Já fiz: registrar questões**, que abre o lote rápido (D-133); Cancelar.
+- Não muda: o endereço (D-150 a D-152, D-174), a saída e a volta (D-153), a captura e o vínculo pela árvore (D-173).
+  `CASCA_VERSAO` sobe.
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -1051,6 +1066,7 @@ Decidido numa rodada, a partir da árvore de telas. Nada sai da tela: muda o lug
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.30.0 | 2026-11-06 | §8K: um botão "Questões" em cada lugar e a folha única (filtro, vínculo, previsão, abrir, já fiz), no lugar de "Fiz questões", "Resolver no QConcursos", da linha do filtro e de "Ligar" nas listas. Sprint 48 |
 | 1.29.0 | 2026-11-06 | §8J: Concursos com o resumo do alvo e quatro abas na rota; o diagnóstico e o peso pela banca dentro das abas; os outros editais recolhidos. Sprint 47 |
 | 1.28.0 | 2026-11-05 | §8B › Hoje e §8I: Hoje reorganizado — progresso no cabeçalho, Agora logo depois, avisos numa faixa recolhida, Depois numa lista na ordem do plano, Também hoje no fim. Sprint 46 |
 | 1.27.0 | 2026-11-05 | §8H: ligar o assunto à árvore do QConcursos (a folha de busca, o vínculo no detalhe) e as questões por vez em Ajustes (D-173, D-174). Sprint 45 |

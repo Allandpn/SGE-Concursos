@@ -882,12 +882,10 @@
               <span x-show="blocoDaProximaAcao() && guardados.has(blocoDaProximaAcao())" class="selo-baixado absolute -right-1.5 -top-1.5" title="Baixado: abre sem internet" aria-hidden="true"><svg><use href="#i-guardado"/></svg></span>
             </button>
             <div class="flex flex-wrap gap-x-5 gap-y-1">
+              <!-- §8K (Sprint 48): a porta única do QConcursos e do lote -->
               <template x-if="proximaAcao.tipo === 'recuperacao'">
-                <button type="button" class="min-h-11 whitespace-nowrap text-sm font-semibold text-primary-700 underline" @click="$store.lote.abrir(proximaAcao.item)">Fiz questões</button>
-              </template>
-              <template x-if="proximaAcao.tipo === 'recuperacao' && $store.qc.de(proximaAcao.item?.assuntoId)">
-                <a class="qc-atalho flex min-h-11 items-center whitespace-nowrap text-sm font-semibold text-primary-700 underline" target="_blank" rel="noopener"
-                   :href="$store.qc.de(proximaAcao.item?.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(proximaAcao.item?.assuntoId), proximaAcao.item.nome)">Resolver no QConcursos ↗</a>
+                <span class="flex items-center gap-2"><button type="button" class="qc-questoes acao-icone" @click="$store.qc.abrirQuestoes({ assuntoId: proximaAcao.item.assuntoId, nome: proximaAcao.item.nome })"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Questões</button>
+                  <span x-show="$store.qc.semAtalho(proximaAcao.item?.assuntoId)" class="text-xs text-gray-500">sem assunto do QC</span></span>
               </template>
               <template x-if="proximaAcao.tipo === 'conteudo' && !$store.foco.emCurso">
                 <button type="button" class="acao-icone" aria-label="Foco neste bloco" :disabled="$store.foco.trabalhando"
@@ -897,14 +895,6 @@
                 <button type="button" class="acao-icone" aria-label="Registrar a leitura" @click="abrirBlocoConteudo()"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Registrar</button>
               </template>
             </div>
-            <!-- D-173: sem para onde ir no QConcursos, ligar o assunto ali mesmo -->
-            <template x-if="proximaAcao.tipo === 'recuperacao' && ($store.qc.semAtalho(proximaAcao.item?.assuntoId) || $store.qc.pedeVinculo($store.qc.de(proximaAcao.item?.assuntoId)))">
-              <p class="-mt-2 text-xs text-gray-500"><span x-text="$store.qc.semAtalho(proximaAcao.item?.assuntoId) ? 'Sem assunto do QConcursos ligado. ' : ''"></span><button type="button" class="qc-ligar min-h-9 font-semibold text-primary-700 underline"
-                @click="$store.vinculoQc.abrir(proximaAcao.item.assuntoId, proximaAcao.item.nome)">Ligar ao QConcursos</button></p>
-            </template>
-            <p x-show="proximaAcao.tipo === 'recuperacao' && $store.qc.de(proximaAcao.item?.assuntoId)" class="-mt-2 text-xs"
-               :class="$store.qc.largo($store.qc.de(proximaAcao.item?.assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
-               x-text="proximaAcao.tipo === 'recuperacao' ? $store.qc.detalhe($store.qc.de(proximaAcao.item?.assuntoId)) : ''"></p>
           </div>
         </template>
 
@@ -1010,19 +1000,9 @@
                     <span class="block text-xs text-gray-500" x-text="'Recuperar · nível ' + item.nivel + atrasoHumano(item.dataPrevista)"></span></span>
                   <span class="text-lg text-gray-400" aria-hidden="true">›</span>
                 </button>
-                <!-- D-133 e D-150 a D-154: as ações do item, dentro dele -->
-                <div class="flex flex-wrap items-baseline gap-x-4 pl-11">
-                  <button type="button" class="min-h-9 text-sm font-semibold text-primary-700 underline" @click="$store.lote.abrir(item)">Fiz questões</button>
-                  <template x-if="$store.qc.de(item.assuntoId)">
-                    <a class="qc-atalho min-h-9 text-sm font-semibold text-primary-700 underline" target="_blank" rel="noopener"
-                       :href="$store.qc.de(item.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
-                  </template>
-                </div>
-                <p x-show="$store.qc.de(item.assuntoId)" class="pb-1 pl-11 text-xs" :class="$store.qc.largo($store.qc.de(item.assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
-                   x-text="$store.qc.detalhe($store.qc.de(item.assuntoId))"></p>
-                <template x-if="$store.qc.semAtalho(item.assuntoId) || $store.qc.pedeVinculo($store.qc.de(item.assuntoId))">
-                  <p class="pb-1 pl-11"><button type="button" class="qc-ligar min-h-9 text-xs font-semibold text-primary-700 underline" @click="$store.vinculoQc.abrir(item.assuntoId, item.nome)">Ligar ao QConcursos</button></p>
-                </template>
+                <!-- §8K (Sprint 48): a porta única do QConcursos e do lote -->
+                <div class="flex items-center gap-2 pb-1 pl-11"><button type="button" class="qc-questoes acao-icone" @click="$store.qc.abrirQuestoes({ assuntoId: item.assuntoId, nome: item.nome })"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Questões</button>
+                  <span x-show="$store.qc.semAtalho(item.assuntoId)" class="text-xs text-gray-500">sem assunto do QC</span></div>
               </li>
             </template>
             <!-- D-143: a manutenção de médio e baixo espera a prova -->
@@ -1170,10 +1150,7 @@
                       <span class="block font-medium" x-text="item.nome"></span>
                       <span class="text-sm text-gray-500" x-text="'Prevista para ' + item.dataPrevista.split('-').reverse().join('/') + ' (' + (-item.diasAtraso) + (item.diasAtraso === -1 ? ' dia antes)' : ' dias antes)')"></span>
                     </button>
-                    <template x-if="$store.qc.de(item.assuntoId)">
-                      <a class="qc-atalho mt-1 inline-block min-h-9 px-1 text-sm font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                         :href="$store.qc.de(item.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(item.assuntoId), item.nome)">Resolver no QConcursos ↗</a>
-                    </template>
+                    <div class="mt-1"><button type="button" class="qc-questoes acao-icone" @click="$store.qc.abrirQuestoes({ assuntoId: item.assuntoId, nome: item.nome })"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Questões</button></div>
                   </li>
                 </template>
               </ul>
@@ -1739,27 +1716,11 @@
           <button type="button" @click="irErros()" class="flex-1 rounded border border-gray-200 bg-white p-2 text-center text-sm hover:bg-gray-50">Erros</button>
         </div>
 
-        <!-- D-150 a D-154: resolver no QConcursos, com o filtro à vista para conferir -->
-        <template x-if="$store.qc.de(assuntoId)">
-          <div class="space-y-1" id="assunto-qc">
-            <a class="qc-atalho inline-flex min-h-11 items-center rounded bg-primary-600 px-4 text-sm font-medium text-sobre hover:bg-primary-700" target="_blank" rel="noopener"
-               :href="$store.qc.de(assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(assuntoId), nome)">Resolver no QConcursos ↗</a>
-            <p class="text-xs" :class="$store.qc.largo($store.qc.de(assuntoId)) ? 'text-alerta-700' : 'text-gray-500'" x-text="$store.qc.detalhe($store.qc.de(assuntoId))"></p>
-            <!-- D-173: o vínculo escolhido vale antes do edital; trocar e tirar -->
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-              <span x-text="($store.qc.de(assuntoId).vinculado ? 'Ligado por você: ' : 'Filtro: ') + $store.qc.de(assuntoId).filtro.join(', ')"></span>
-              <button type="button" class="qc-ligar min-h-9 font-semibold text-primary-700 underline" @click="$store.vinculoQc.abrir(assuntoId, nome)"
-                      x-text="$store.qc.de(assuntoId).vinculado ? 'trocar' : ($store.qc.pedeVinculo($store.qc.de(assuntoId)) ? 'ligar o assunto' : 'ligar outro assunto')"></button>
-              <button type="button" x-show="$store.qc.de(assuntoId).vinculado" class="qc-tirar min-h-9 font-semibold text-gray-600 underline" @click="$store.vinculoQc.tirar(assuntoId)">tirar o vínculo</button>
-            </div>
-          </div>
-        </template>
-        <template x-if="$store.qc.semAtalho(assuntoId)">
-          <div class="space-y-1 rounded-xl border border-dashed border-gray-300 p-3" id="assunto-qc-sem">
-            <p class="text-sm text-gray-600">Sem assunto do QConcursos ligado: o atalho não aparece.</p>
-            <button type="button" class="qc-ligar min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-primary-700" @click="$store.vinculoQc.abrir(assuntoId, nome)">Ligar ao QConcursos</button>
-          </div>
-        </template>
+        <!-- §8K (Sprint 48): a porta única; o resumo do filtro ao lado, o resto (trocar, tirar, ligar) na folha -->
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1" id="assunto-qc"><button type="button" class="qc-questoes acao-icone" @click="$store.qc.abrirQuestoes({ assuntoId: assuntoId, nome: nome })"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Questões</button>
+          <span class="text-xs" :class="$store.qc.semAtalho(assuntoId) || $store.qc.pedeVinculo($store.qc.de(assuntoId)) ? 'text-alerta-700' : 'text-gray-500'"
+                x-text="$store.qc.semAtalho(assuntoId) ? 'sem assunto do QC' : ($store.qc.de(assuntoId) ? $store.qc.de(assuntoId).sugeridas + ' · ' + ($store.qc.de(assuntoId).banca || 'sem banca') + ($store.qc.de(assuntoId).vinculado ? ' · ligado por você' : ($store.qc.pedeVinculo($store.qc.de(assuntoId)) ? ' · disciplina inteira' : '')) : '')"></span>
+        </div>
 
         <!-- D-159: ensaiar qualquer assunto, sem gravar -->
         <button type="button" id="detalhe-ensaiar" class="min-h-11 w-full rounded border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50"
@@ -2231,24 +2192,49 @@
     </ul>
   </section>
 
-  <!-- D-168 (Sprint 37): a previsão antes de ir ao QConcursos -->
-  <div x-data x-show="$store.qc.antes" style="display: none" id="qc-antes" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center"
-       @click.self="$store.qc.antes = null" @keydown.escape.window="$store.qc.antes = null" role="dialog" aria-modal="true" aria-labelledby="qc-antes-titulo">
+  <!-- §8K (Sprint 48): a folha "Questões" — a porta única do QConcursos e do lote (D-150 a D-153, D-168, D-173) -->
+  <div x-data x-show="$store.qc.antes" style="display: none" id="qc-questoes" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center"
+       @click.self="$store.qc.antes = null" @keydown.escape.window="$store.qc.antes = null" role="dialog" aria-modal="true" aria-labelledby="qc-questoes-titulo">
     <template x-if="$store.qc.antes">
-      <div class="w-full max-w-md space-y-3 rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl">
-        <h2 id="qc-antes-titulo" class="text-lg font-bold">Antes de ir: quanto você acha que vai acertar?</h2>
-        <p class="text-sm text-gray-600" x-text="$store.qc.antes.nome + ' · ' + $store.qc.detalhe($store.qc.antes.a)"></p>
-        <div class="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Previsão">
-          <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
-            <button type="button" role="radio" :aria-checked="$store.qc.antes.previsao === f" class="min-h-12 rounded-lg border text-sm font-semibold"
-                    :class="$store.qc.antes.previsao === f ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-gray-300'" @click="$store.qc.antes.previsao = f" x-text="f + '%'"></button>
-          </template>
-        </div>
-        <a target="_blank" rel="noopener" :href="$store.qc.antes.a.url" @click="if ($store.qc.antes.previsao === null) { $event.preventDefault(); return; } $store.qc.ir()"
-           class="flex min-h-12 w-full items-center justify-center rounded-lg bg-primary-600 font-semibold text-sobre" :class="$store.qc.antes.previsao === null ? 'opacity-40' : ''"
-           :aria-disabled="$store.qc.antes.previsao === null">Abrir o QConcursos ↗</a>
-        <p class="text-xs text-gray-500">Com a captura ligada, as questões que você responder voltam sozinhas para o lote.</p>
-        <button type="button" class="min-h-11 w-full rounded-lg border border-gray-300 text-sm font-semibold" @click="$store.qc.antes = null">Cancelar</button>
+      <div class="w-full max-w-md space-y-3 rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom))">
+        <h2 id="qc-questoes-titulo" class="text-lg font-bold" x-text="'Questões · ' + $store.qc.antes?.nome"></h2>
+        <!-- O filtro do QConcursos e de onde ele vem; sem atalho, o convite a ligar o assunto -->
+        <template x-if="$store.qc.atalhoDaFolha">
+          <div class="space-y-1 rounded-xl border p-3 text-sm" id="qc-questoes-filtro" :class="$store.qc.pedeVinculo($store.qc.atalhoDaFolha) ? 'border-alerta-600' : 'border-gray-200'">
+            <p class="font-semibold">No QConcursos</p>
+            <p class="text-gray-600" x-text="$store.qc.detalhe($store.qc.atalhoDaFolha)"></p>
+            <p class="text-xs text-gray-500"><span x-text="($store.qc.atalhoDaFolha?.vinculado ? 'Ligado por você: ' : 'Filtro: ') + ($store.qc.atalhoDaFolha?.filtro || []).join(', ')"></span>
+              <button type="button" class="qc-ligar ml-1 min-h-9 font-semibold text-primary-700 underline" @click="$store.vinculoQc.abrir($store.qc.antes?.assuntoId, $store.qc.antes?.nome)"
+                      x-text="$store.qc.atalhoDaFolha?.vinculado ? 'trocar' : ($store.qc.pedeVinculo($store.qc.atalhoDaFolha) ? 'ligar o assunto' : 'ligar outro assunto')"></button>
+              <button type="button" x-show="$store.qc.atalhoDaFolha?.vinculado" class="qc-tirar ml-1 min-h-9 font-semibold text-gray-600 underline" @click="$store.vinculoQc.tirar($store.qc.antes?.assuntoId)">tirar</button></p>
+          </div>
+        </template>
+        <template x-if="!$store.qc.atalhoDaFolha">
+          <div class="space-y-1 rounded-xl border border-alerta-600 p-3 text-sm" id="qc-questoes-sem">
+            <p class="font-semibold text-alerta-700" x-text="$store.qc.semAtalho($store.qc.antes?.assuntoId) ? 'Sem assunto do QConcursos ligado' : 'Procurando o filtro…'"></p>
+            <p x-show="$store.qc.semAtalho($store.qc.antes?.assuntoId)" class="text-gray-600">Ligue o assunto para o atalho aparecer.</p>
+            <button type="button" x-show="$store.qc.semAtalho($store.qc.antes?.assuntoId)" class="qc-ligar min-h-11 font-semibold text-primary-700 underline"
+                    @click="$store.vinculoQc.abrir($store.qc.antes?.assuntoId, $store.qc.antes?.nome)">Ligar ao QConcursos</button>
+          </div>
+        </template>
+        <!-- D-168: antes de ir, a previsão (M-3); o link é o que abre o QConcursos (gesto do usuário, sem bloqueio de janela) -->
+        <template x-if="$store.qc.atalhoDaFolha">
+          <div class="space-y-3">
+            <p class="text-sm font-semibold">Antes de ir: quanto você acha que vai acertar?</p>
+            <div class="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Previsão">
+              <template x-for="f in [50, 60, 70, 80, 90]" :key="f">
+                <button type="button" role="radio" :aria-checked="$store.qc.antes?.previsao === f" class="min-h-12 rounded-lg border text-sm font-semibold"
+                        :class="$store.qc.antes?.previsao === f ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-gray-300'" @click="$store.qc.antes.previsao = f" x-text="f + '%'"></button>
+              </template>
+            </div>
+            <a target="_blank" rel="noopener" :href="$store.qc.atalhoDaFolha?.url" id="qc-questoes-abrir" @click="if ($store.qc.antes?.previsao === null) { $event.preventDefault(); return; } $store.qc.ir()"
+               class="flex min-h-12 w-full items-center justify-center rounded-lg bg-primary-600 font-semibold text-sobre" :class="$store.qc.antes?.previsao === null ? 'opacity-40' : ''"
+               :aria-disabled="$store.qc.antes?.previsao === null">Abrir o QConcursos ↗</a>
+            <p class="text-xs text-gray-500">Com a captura ligada, as questões que você responder voltam sozinhas para o lote.</p>
+          </div>
+        </template>
+        <button type="button" id="qc-questoes-ja-fiz" class="min-h-12 w-full rounded-lg border border-gray-300 font-semibold text-primary-700" @click="$store.qc.jaFiz()">Já fiz: registrar questões</button>
+        <button type="button" class="min-h-11 w-full text-sm font-semibold text-gray-500" @click="$store.qc.antes = null">Cancelar</button>
       </div>
     </template>
   </div>
@@ -2951,10 +2937,7 @@
                                   <span x-text="f.nome"></span>
                                   <span class="flex items-baseline gap-2">
                                     <span class="whitespace-nowrap font-mono text-gray-500" x-text="f.peso.toLowerCase().replace('medio', 'médio') + (f.minutos ? ' · ' + minutosBr(f.minutos) : '')"></span>
-                            <template x-if="$store.qc.de(f.assuntoId)">
-                              <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                                 :href="$store.qc.de(f.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(f.assuntoId), f.nome)">QConcursos ↗</a>
-                            </template>
+                            <button type="button" class="qc-questoes acao-icone text-xs" @click="$store.qc.abrirQuestoes({ assuntoId: f.assuntoId, nome: f.nome })"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Questões</button>
                                   </span>
                                 </li>
                               </template>
@@ -3134,10 +3117,7 @@
                             </div>
                             <span class="whitespace-nowrap font-mono text-xs" x-text="pesoBr(p.pesoAtual) + ' → ' + pesoBr(p.proposto)"></span>
                             <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm" @click="aceitarBanca([p.assuntoId])">Aceitar</button>
-                            <template x-if="$store.qc.de(p.assuntoId)">
-                                <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                                   :href="$store.qc.de(p.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(p.assuntoId), p.nome)">QConcursos ↗</a>
-                              </template>
+                            <button type="button" class="qc-questoes acao-icone text-xs" @click="$store.qc.abrirQuestoes({ assuntoId: p.assuntoId, nome: p.nome })"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Questões</button>
                           </div>
                         </template>
                         <button type="button" x-show="d.propostas.length > 1" class="text-xs text-primary-700 underline"
@@ -3154,10 +3134,7 @@
                           </div>
                           <span class="whitespace-nowrap font-mono text-xs" x-text="'edital ' + pesoBr(a.pesoEdital) + ' · ' + pesoBr(a.peso)"></span>
                           <button type="button" class="min-h-11 rounded border border-gray-300 px-3 text-sm text-gray-600" @click="desfazerBanca(a.assuntoId)">Desfazer</button>
-                          <template x-if="$store.qc.de(a.assuntoId)">
-                                <a class="qc-atalho whitespace-nowrap text-xs font-medium text-primary-700 underline" target="_blank" rel="noopener"
-                                   :href="$store.qc.de(a.assuntoId).url" @click.prevent="$store.qc.antesDeIr($store.qc.de(a.assuntoId), a.nome)">QConcursos ↗</a>
-                              </template>
+                          <button type="button" class="qc-questoes acao-icone text-xs" @click="$store.qc.abrirQuestoes({ assuntoId: a.assuntoId, nome: a.nome })"><svg aria-hidden="true"><use href="#i-registrar"/></svg>Questões</button>
                         </div>
                       </template>
                       <p class="text-xs text-gray-500">Reimportar o edital ou concluir a conferência de novo mantém estes pesos. Desfazer volta ao do edital.</p>
