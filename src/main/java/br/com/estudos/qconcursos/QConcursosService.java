@@ -35,8 +35,9 @@ public class QConcursosService {
     public static final String AVISO_NO_FORA_DA_ARVORE = "NO_FORA_DA_ARVORE";
 
     /** {@code vinculado}: o filtro veio do vínculo escolhido pela pessoa (D-173), não do edital. */
+    /** {@code marcas}: os recortes do filtro (D-175) que a folha deixa desligar só daquela vez (D-177). */
     public record Atalho(long assuntoId, String url, int sugeridas, String banca, String formato, List<String> filtro,
-        List<String> avisos, boolean vinculado) {}
+        List<String> avisos, boolean vinculado, List<LinkQConcursos.Marca> marcas) {}
 
     /** A banca como está no concurso; o número e o nome curto no catálogo, se houver. */
     public record BancaDoConcurso(String banca, Integer numero, String origem, String nomeNoCatalogo) {}
@@ -50,11 +51,13 @@ public class QConcursosService {
     private final JdbcTemplate jdbc;
     private final ReguaService regua;
     private final Clock clock;
+    private final FiltroQConcursosService filtros;
 
-    public QConcursosService(JdbcTemplate jdbc, ReguaService regua, Clock clock) {
+    public QConcursosService(JdbcTemplate jdbc, ReguaService regua, Clock clock, FiltroQConcursosService filtros) {
         this.jdbc = jdbc;
         this.regua = regua;
         this.clock = clock;
+        this.filtros = filtros;
     }
 
     /** D-150 a D-152: o atalho de cada assunto que tem para onde ir; os que não têm ficam de fora. */
@@ -108,7 +111,11 @@ public class QConcursosService {
             }, (Object) arrayIds);
 
         var raizes = raizesDaArvoreVigente();
-        var banca = bancaDoAlvo();
+        // D-175: o filtro do alvo (a exceção dele sobre o padrão).
+        var f = filtros.doAlvo();
+        var banca = "QUALQUER".equals(f.banca()) ? new BancaDoConcurso(null, null, null, null) : bancaDoAlvo();
+        var recortes = new LinkQConcursos.Recortes(f.niveis(), f.dificuldades(), f.ordem(), f.tirarResolvidas(), f.tirarAnuladas(),
+            f.tirarDesatualizadas(), f.soComentadas(), f.aprendidos());
         var foco = parametro("pomodoro_foco_min");
         var porQuestao = parametro("minutos_por_questao");
         var minimo = (int) parametro("lote_minimo_questoes");
@@ -116,7 +123,7 @@ public class QConcursosService {
         // D-174: com "questões por vez", a página abre com esse número; 0 é o automático de D-152.
         var sugeridas = porVez > 0 ? porVez : LinkQConcursos.sugeridas(foco, porQuestao, minimo);
         var ano = LocalDate.now(clock).getYear();
-        var anos = (int) parametro("banca_anos");
+        var anos = f.anos(); // 0 = todos
 
         var saida = new ArrayList<Atalho>();
         for (var assuntoId : ids) {
@@ -152,12 +159,16 @@ public class QConcursosService {
                 avisos.add(AVISO_DISCIPLINA);
                 filtro.add("disciplina " + (nomeSge == null ? "" : nomeSge));
             }
-            if (banca.numero() == null) avisos.add(AVISO_SEM_BANCA);
-            var formato = regua.formatoSugerido(assuntoId);
-            var url = LinkQConcursos.montar(new LinkQConcursos.Filtro(disciplinas, assuntos, banca.numero(), formato, ano - anos, ano,
-                LinkQConcursos.porPagina(sugeridas)));
-            saida.add(new Atalho(assuntoId, url, sugeridas, banca.numero() == null ? null : banca.nomeNoCatalogo(), formato, filtro, avisos,
-                vinculado));
+            if (banca.numero() == null && "CONCURSO".equals(f.banca())) avisos.add(AVISO_SEM_BANCA);
+            var formato = switch (f.formato()) {
+                case "BANCA" -> regua.formatoSugerido(assuntoId);
+                case "QUALQUER" -> null;
+                default -> f.formato();
+            };
+            var nomeBanca = banca.numero() == null ? null : banca.nomeNoCatalogo();
+            var montado = LinkQConcursos.montar(new LinkQConcursos.Filtro(disciplinas, assuntos, banca.numero(), formato,
+                anos > 0 ? ano - anos : null, anos > 0 ? ano : null, LinkQConcursos.porPagina(sugeridas)), recortes, nomeBanca);
+            saida.add(new Atalho(assuntoId, montado.url(), sugeridas, nomeBanca, formato, filtro, avisos, vinculado, montado.marcas()));
         }
         return saida;
     }

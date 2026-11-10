@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -132,7 +133,7 @@ class QConcursosApiTest extends IntegracaoTestBase {
             .andExpect(jsonPath("$[0].url").value(LinkQConcursos.BASE + "?discipline_ids%5B%5D=26&examining_board_ids%5B%5D=63"
                 + "&exclude_nullified=true&exclude_outdated=true&modality_ids%5B%5D=2&my_questions=not_resolved&per_page=10"
                 + "&publication_year%5B%5D=2021&publication_year%5B%5D=2022&publication_year%5B%5D=2023&publication_year%5B%5D=2024"
-                + "&publication_year%5B%5D=2025&publication_year%5B%5D=2026&subject_ids%5B%5D=28150"))
+                + "&publication_year%5B%5D=2025&publication_year%5B%5D=2026&scholarity_ids%5B%5D=3&subject_ids%5B%5D=28150"))
             .andExpect(jsonPath("$[0].sugeridas").value(8))
             .andExpect(jsonPath("$[0].banca").value("FGV"))
             .andExpect(jsonPath("$[0].formato").value("CERTO_ERRADO"))
@@ -280,5 +281,107 @@ class QConcursosApiTest extends IntegracaoTestBase {
         mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
             .andExpect(jsonPath("$[0].sugeridas").value(8))
             .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("per_page=10")));
+    }
+
+    static final String PADRAO_TROCADO = """
+        {"niveis": [2, 3], "banca": "QUALQUER", "anos": 0, "formato": "QUALQUER", "dificuldades": [5, 3, 4], "ordem": "RECENTES",
+         "tirarResolvidas": false, "tirarAnuladas": true, "tirarDesatualizadas": false, "soComentadas": true, "aprendidos": []}""";
+
+    @Test
+    void d175_oPadraoDeFabricaENivelSuperior_eAsMarcasTrazemOsParametros() throws Exception {
+        mockMvc.perform(get("/api/qconcursos/filtro"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.niveis[0]").value(3)).andExpect(jsonPath("$.niveis.length()").value(1))
+            .andExpect(jsonPath("$.banca").value("CONCURSO")).andExpect(jsonPath("$.anos").value(5))
+            .andExpect(jsonPath("$.formato").value("BANCA")).andExpect(jsonPath("$.dificuldades.length()").value(0))
+            .andExpect(jsonPath("$.ordem").value("QC")).andExpect(jsonPath("$.tirarResolvidas").value(true))
+            .andExpect(jsonPath("$.soComentadas").value(false)).andExpect(jsonPath("$.aprendidos.length()").value(0));
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'nivel')].rotulo").value("Superior"))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'nivel')].parametros[0]").value("scholarity_ids%5B%5D=3"))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'banca')].rotulo").value("FGV"))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'anos')].rotulo").value("2021–2026"))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'formato')].rotulo").value("Certo/errado"))
+            .andExpect(jsonPath("$[0].marcas.length()").value(4));
+    }
+
+    @Test
+    void d175_oPadraoTrocadoMudaOEndereco_eIncompletoOuInvalidoERecusado() throws Exception {
+        mockMvc.perform(put("/api/qconcursos/filtro").contentType(MediaType.APPLICATION_JSON).content(PADRAO_TROCADO))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.dificuldades[0]").value(3));
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].url").value(LinkQConcursos.BASE + "?difficulty%5B%5D=3&difficulty%5B%5D=4&difficulty%5B%5D=5"
+                + "&discipline_ids%5B%5D=26&exclude_nullified=true&has_professor_commentaries=true&per_page=10"
+                + "&scholarity_ids%5B%5D=2&scholarity_ids%5B%5D=3&sort=newest&subject_ids%5B%5D=28150"))
+            .andExpect(jsonPath("$[0].banca").doesNotExist())
+            .andExpect(jsonPath("$[0].avisos.length()").value(0))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'dificuldade')].rotulo").value("Médio a muito difícil"))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'nivel')].rotulo").value("Médio e Superior"))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'ordem')].rotulo").value("Mais recentes"))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'comentadas')].parametros[0]").value("has_professor_commentaries=true"));
+        mockMvc.perform(put("/api/qconcursos/filtro").contentType(MediaType.APPLICATION_JSON).content("{\"niveis\": [3]}"))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("FILTRO_INCOMPLETO"));
+        mockMvc.perform(put("/api/qconcursos/filtro").contentType(MediaType.APPLICATION_JSON).content(PADRAO_TROCADO.replace("[2, 3]", "[4]")))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("FILTRO_INVALIDO"));
+        mockMvc.perform(put("/api/qconcursos/filtro").contentType(MediaType.APPLICATION_JSON).content(PADRAO_TROCADO.replace("\"anos\": 0", "\"anos\": 7")))
+            .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void d175_aExcecaoDoConcursoGuardaSoOQueDifere_eSegueOPadraoNoResto() throws Exception {
+        mockMvc.perform(get("/api/concursos/" + concurso + "/qconcursos-filtro"))
+            .andExpect(jsonPath("$.excecao").doesNotExist()).andExpect(jsonPath("$.efetivo.niveis[0]").value(3));
+        mockMvc.perform(put("/api/concursos/" + concurso + "/qconcursos-filtro").contentType(MediaType.APPLICATION_JSON).content("{\"niveis\": [2]}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.excecao.niveis[0]").value(2)).andExpect(jsonPath("$.excecao.anos").doesNotExist())
+            .andExpect(jsonPath("$.efetivo.niveis[0]").value(2)).andExpect(jsonPath("$.efetivo.anos").value(5));
+        mockMvc.perform(put("/api/qconcursos/filtro").contentType(MediaType.APPLICATION_JSON).content(PADRAO_TROCADO))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/concursos/" + concurso + "/qconcursos-filtro"))
+            .andExpect(jsonPath("$.efetivo.niveis.length()").value(1)).andExpect(jsonPath("$.efetivo.anos").value(0))
+            .andExpect(jsonPath("$.efetivo.ordem").value("RECENTES"));
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("scholarity_ids%5B%5D=2&sort")))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("scholarity_ids%5B%5D=3"))));
+        mockMvc.perform(delete("/api/concursos/" + concurso + "/qconcursos-filtro")).andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/concursos/" + concurso + "/qconcursos-filtro"))
+            .andExpect(jsonPath("$.excecao").doesNotExist()).andExpect(jsonPath("$.efetivo.niveis.length()").value(2));
+        mockMvc.perform(put("/api/concursos/999999999/qconcursos-filtro").contentType(MediaType.APPLICATION_JSON).content("{\"niveis\": [2]}"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void d176_cargoEAreasPeloEndereco_oNomeFicaGuardado_eVaiSoONumero() throws Exception {
+        var endereco = "{\"endereco\": \"https://www.qconcursos.com/questoes-de-concursos/questoes?administrative_level_ids%5B%5D=9"
+            + "&knowledge_area_ids[]=13&scholarity_ids%5B%5D=3&job_ids%5B%5D=43&discipline_ids%5B%5D=1\"}";
+        mockMvc.perform(post("/api/qconcursos/filtro/endereco").contentType(MediaType.APPLICATION_JSON).content(endereco))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3))
+            .andExpect(jsonPath("$[0].tipo").value("ATUACAO")).andExpect(jsonPath("$[0].numero").value(9)).andExpect(jsonPath("$[0].nome").doesNotExist())
+            .andExpect(jsonPath("$[1].tipo").value("FORMACAO")).andExpect(jsonPath("$[1].numero").value(13))
+            .andExpect(jsonPath("$[2].tipo").value("CARGO")).andExpect(jsonPath("$[2].nome").value("Analista Judiciário - Área Judiciária"));
+        mockMvc.perform(post("/api/qconcursos/filtro/endereco").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"endereco\": \"https://www.qconcursos.com/questoes-de-concursos/questoes?scholarity_ids%5B%5D=3\"}"))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("ENDERECO_SEM_FILTRO"));
+        var semNome = PADRAO_TROCADO.replace("\"aprendidos\": []", "\"aprendidos\": [{\"tipo\": \"ATUACAO\", \"numero\": 9}]");
+        mockMvc.perform(put("/api/qconcursos/filtro").contentType(MediaType.APPLICATION_JSON).content(semNome))
+            .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.codigo").value("NOME_FALTANDO"));
+        var comNome = PADRAO_TROCADO.replace("\"aprendidos\": []",
+            "\"aprendidos\": [{\"tipo\": \"ATUACAO\", \"numero\": 9, \"nome\": \"Fiscal\"}, {\"tipo\": \"CARGO\", \"numero\": 43}]");
+        mockMvc.perform(put("/api/qconcursos/filtro").contentType(MediaType.APPLICATION_JSON).content(comNome))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.aprendidos[?(@.tipo == 'ATUACAO')].nome").value("Fiscal"));
+        mockMvc.perform(post("/api/qconcursos/filtro/endereco").contentType(MediaType.APPLICATION_JSON).content(endereco))
+            .andExpect(jsonPath("$[0].nome").value("Fiscal"));
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.startsWith(LinkQConcursos.BASE + "?administrative_level_ids%5B%5D=9&")))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.containsString("&job_ids%5B%5D=43&")))
+            .andExpect(jsonPath("$[0].marcas[?(@.chave == 'ATUACAO:9')].rotulo").value("Fiscal"));
+        // a exceção com lista vazia tira os aprendidos só deste concurso
+        mockMvc.perform(put("/api/concursos/" + concurso + "/qconcursos-filtro").contentType(MediaType.APPLICATION_JSON).content("{\"aprendidos\": []}"))
+            .andExpect(jsonPath("$.efetivo.aprendidos.length()").value(0));
+        mockMvc.perform(get("/api/qconcursos/atalhos").param("assuntoIds", String.valueOf(porNoDeAssunto)))
+            .andExpect(jsonPath("$[0].url", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("job_ids"))));
     }
 }

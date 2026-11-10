@@ -15,8 +15,8 @@ fonte, ainda sem tela suficiente pra justificar o investimento.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.30.0 |
-| Data | 2026-11-05 |
+| Versão | 1.31.0 |
+| Data | 2026-11-10 |
 | Status | Vigente |
 | Subordinado a | `especificacao/02_JORNADAS.md` (jornadas, telas, orçamentos de tempo, §5.1); `docs/00A_ADR.md` ADR-025 (API REST), ADR-026 (erros RFC 9457), ADR-038 (zero build, dependências locais, PWA — substitui ADR-028), ADR-030 (SPA estática); `docs/09_CODE_STYLE.md` §1/§8 (convenções já vigentes de Alpine/Tailwind) |
 
@@ -1033,6 +1033,25 @@ QConcursos ↗", a linha do filtro e às vezes "Ligar ao QConcursos".
 - Não muda: o endereço (D-150 a D-152, D-174), a saída e a volta (D-153), a captura e o vínculo pela árvore (D-173).
   `CASCA_VERSAO` sobe.
 
+## 8L. O filtro do QConcursos (Sprint 49)
+
+Pedido do usuário (2026-11-07), decidido numa rodada; wireframe aprovado. Regras em `01_DOMINIO` §3.24 (D-175 a D-177).
+
+- **Ajustes** (`#ajuste-filtro-qc`, logo abaixo de "Questões por vez"): o resumo do filtro padrão em marcas e **Mudar o filtro**.
+- **A folha do filtro** (`#filtro-qc`, `Alpine.store('filtroQc')`), a mesma para o padrão e para a exceção: nível e dificuldade
+  (vários), banca, anos, formato e ordem (um), "Tirar" (já resolvidas, anuladas, desatualizadas), "Só com gabarito comentado" e
+  **Cargo, área e instituição** (marcas com ×). Grava a cada toque. Na exceção, o subtítulo diz "Só para <concurso>" e cada campo
+  que difere do padrão leva a marca "deste concurso"; só esses vão ao servidor. **Colar um endereço do QConcursos** lê os números
+  (`POST /api/qconcursos/filtro/endereco`) e pede o nome de cada um, com as opções do QConcursos como sugestão (`datalist`).
+- **Concursos › Banca e prova** (`#filtro-qc-concurso`): o filtro que vale para o concurso em marcas, "Usa o padrão de Ajustes" ou
+  "Este concurso tem exceção", **Mudar** (a folha, na exceção) e **Voltar ao padrão**.
+- **A folha "Questões"** (`#qc-questoes-marcas`): os recortes do atalho como marcas; tocar tira os parâmetros dela do endereço de
+  "Abrir" (`qc.urlDaFolha`) só daquela vez; "Voltar ao padrão" religa; fechar a folha esquece. O resumo do detalhe do assunto
+  passa a listar as marcas.
+- Mudar o filtro esquece os atalhos carregados (`qc.esquecer`). `CASCA_VERSAO` sobe.
+- Desvio do wireframe: os controles ficam numa folha (a mesma para padrão e exceção) e não abertos dentro de Ajustes; Ajustes mostra
+  o resumo. Uma marcação só, sem duplicar os controles em duas telas.
+
 ## 9. Fora de escopo, registrado
 
 - Fila offline com reconciliação automática (§5, decisão de
@@ -1066,6 +1085,7 @@ QConcursos ↗", a linha do filtro e às vezes "Ligar ao QConcursos".
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.31.0 | 2026-11-10 | §8L: o filtro do QConcursos — o padrão em Ajustes, a exceção na aba Banca, a folha do filtro com os aprendidos pelo endereço e as marcas que se desligam na folha "Questões" (D-175 a D-177). Sprint 49 |
 | 1.30.0 | 2026-11-06 | §8K: um botão "Questões" em cada lugar e a folha única (filtro, vínculo, previsão, abrir, já fiz), no lugar de "Fiz questões", "Resolver no QConcursos", da linha do filtro e de "Ligar" nas listas. Sprint 48 |
 | 1.29.0 | 2026-11-06 | §8J: Concursos com o resumo do alvo e quatro abas na rota; o diagnóstico e o peso pela banca dentro das abas; os outros editais recolhidos. Sprint 47 |
 | 1.28.0 | 2026-11-05 | §8B › Hoje e §8I: Hoje reorganizado — progresso no cabeçalho, Agora logo depois, avisos numa faixa recolhida, Depois numa lista na ordem do plano, Também hoje no fim. Sprint 46 |

@@ -2237,6 +2237,7 @@ document.addEventListener('alpine:init', () => {
       this.banca = await api(`/concursos/${this.ativo.id}/peso-banca`).catch(() => null);
       this.bancaQc = await api(`/concursos/${this.ativo.id}/banca-qconcursos`).catch(() => null);
       this.carregarAtalhosDaBanca();
+      Alpine.store('filtroQc').carregarConcurso(this.ativo.id).catch(() => {}); // D-175: a exceção do concurso
     },
 
     // D-154: os atalhos das propostas e dos ajustados (auxiliar).
