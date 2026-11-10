@@ -5,8 +5,8 @@ Os conceitos, os eventos e as regras do sistema. **Sem tecnologia.**
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.46.0 |
-| Data | 2026-11-05 |
+| Versão | 1.47.0 |
+| Data | 2026-11-10 |
 | Status | Vigente |
 | Documento anterior | `00_PRODUTO.md` |
 | Documento seguinte | `02_JORNADAS.md` |
@@ -1009,9 +1009,10 @@ certo com um toque e, **na volta**, abre o registro já preenchido. O que se fez
 conferência do edital ligou ao assunto (§3.12): os vigentes das partes aceitas ou decididas, na análise mais recente que tem o assunto.
 Nó de disciplina filtra a disciplina; nó de assunto filtra o assunto e a disciplina dele. Sem nó, o atalho filtra **a disciplina** — a
 da análise, senão a disciplina da árvore com o mesmo nome (sem acento e sem caixa) — e avisa "filtro pela disciplina". Sem nenhuma das
-duas, não há atalho. O filtro sempre tira as anuladas e as desatualizadas, fica nas **não resolvidas** pela pessoa, nos anos de
-*ano atual − N* até o atual (N é o parâmetro da banca, D-145) e na **modalidade do alvo**: o formato que o lote rápido usaria
-(D-133) — múltipla escolha ou certo/errado —, para que o percentual digitado na volta seja medido contra os limiares certos (D-36).
+duas, não há atalho. O resto do filtro (nível, banca, anos, formato e o que se tira) vem do **filtro padrão** (D-175). Com o padrão
+de fábrica, ele tira as anuladas, as desatualizadas e as já resolvidas pela pessoa, fica nos anos de *ano atual − 5* até o atual, no
+**nível superior** e na **modalidade do alvo**: o formato que o lote rápido usaria (D-133) — múltipla escolha ou certo/errado —, para
+que o percentual digitado na volta seja medido contra os limiares certos (D-36).
 A página abre com o menor tamanho que o QConcursos aceita (5, 10, 15 ou 20) que caiba a sugestão de D-152.
 
 **O assunto ligado pela pessoa (D-173).** A pessoa pode ligar o assunto a **até 3 nós da árvore vigente** do QConcursos (assunto ou
@@ -1032,6 +1033,28 @@ sem banca e avisa "sem filtro de banca".
 **Questões por vez (D-174).** O parâmetro "questões por vez" fixa o número: 5, 10, 15 ou 20 (os tamanhos de página do QConcursos), ou
 automático (D-152). Fixo, a página do atalho abre com esse número e, na volta, o lote já vem com ele em "feitas" (a captura, quando
 houver, manda). O QConcursos não aceita limite no total do filtro: o total que ele mostra é o do filtro; o teto é por vez.
+
+**O filtro padrão e a exceção do concurso (D-175).** A pedido do usuário (2026-11-07), os recortes do atalho são escolhidos pela pessoa
+num **filtro padrão**, em Ajustes: **nível** (fundamental, médio, superior; um ou mais; nenhum = qualquer), **banca** (a do concurso,
+D-151, ou qualquer), **anos** (3, 5, 10 ou todos), **formato** (o da banca pela régua, D-133, múltipla escolha, certo/errado ou
+qualquer), **dificuldade** (de muito fácil a muito difícil; nenhuma = todas), **ordem** (a do QConcursos, as mais recentes ou as mais
+difíceis), **o que se tira** (já resolvidas, anuladas, desatualizadas), **só com gabarito comentado** pelo professor, e **cargo, área de
+formação, área de atuação e instituição** (D-176). O padrão de fábrica é o filtro de antes mais o nível superior: banca do concurso,
+5 anos, formato da banca, sem dificuldade, ordem do QConcursos, tira as três, sem exigir comentário. Cada **concurso** pode ter uma
+**exceção** que guarda só o que difere (um concurso de nível médio troca só o nível); o que a exceção não diz segue o padrão, mesmo
+depois que o padrão mudar. Vale a exceção do **concurso-alvo**. "Voltar ao padrão" apaga a exceção. "Anos" do filtro é só do atalho:
+a incidência da banca continua com o parâmetro dela (D-145).
+
+**Filtros aprendidos pelo endereço (D-176).** O QConcursos não publica os números de cargo, área de formação, área de atuação e
+instituição, e o site não deixa ser lido por programa. Esses filtros entram como a banca (D-151): a pessoa filtra no QConcursos, copia o
+endereço e cola no SGE; o SGE lê os números desses quatro filtros (ignora o resto do endereço) e pede um **nome** para cada número que
+ainda não conhece, sugerindo as opções que o QConcursos mostra. O nome fica guardado para o tipo e o número e vale nos próximos
+endereços. Só o número vai ao endereço; o nome é para a pessoa reconhecer.
+
+**Desligar na hora (D-177).** Na folha das questões, os recortes do atalho aparecem como marcas (o nível, a banca, os anos, o formato,
+a dificuldade, a ordem, o gabarito comentado e cada filtro aprendido); tocar numa tira o recorte **só daquele endereço, naquela vez**,
+e tocar de novo põe de volta. Nada muda no padrão nem na exceção; ao fechar a folha, tudo volta. A limpeza (já resolvidas, anuladas,
+desatualizadas) e o assunto não viram marca: o assunto se troca pelo vínculo (D-173).
 
 **A volta (D-153).** Tocar no atalho guarda **no aparelho** o assunto e a hora. Quando o SGE volta a ficar à vista, até 6 h depois,
 o lote rápido do assunto (D-133) abre na tela em que a pessoa está, com o tempo igual aos minutos desde a saída (os focos livres
@@ -2089,6 +2112,9 @@ Numeradas para serem citadas. Cada uma aponta para sua origem.
 | D-172 | Depois de conferir, a recuperação mostra as marcações vigentes do assunto (destaques com nota e notas de página), com atalho para o leitor; antes, nada do material | §3.18 |
 | D-173 | O assunto pode ser ligado pela pessoa a até 3 nós da árvore vigente do QConcursos; o vínculo vale antes dos nós do edital no atalho e na captura; nó que saiu da árvore avisa e não entra; sem atalho, o app oferece ligar | §3.24 |
 | D-174 | "Questões por vez" (5, 10, 15, 20 ou automático) fixa o tamanho da página do atalho e o número de feitas na volta; o total do filtro não tem teto | §3.24 |
+| D-175 | O atalho do QConcursos segue o filtro padrão de Ajustes (nível, banca, anos, formato, dificuldade, ordem, limpeza, gabarito comentado, filtros aprendidos), de fábrica com nível superior; o concurso-alvo pode ter uma exceção que guarda só o que difere | §3.24 |
+| D-176 | Cargo, área de formação, área de atuação e instituição entram por um endereço do QConcursos colado pela pessoa; o número vai ao endereço, o nome dado pela pessoa fica guardado por tipo e número | §3.24 |
+| D-177 | Na folha das questões, cada recorte do atalho é uma marca que se desliga só naquele endereço, naquela vez; padrão e exceção não mudam | §3.24 |
 
 ---
 
@@ -2180,6 +2206,7 @@ Para `02_JORNADAS.md` e para o documento de regras:
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.47.0 | 2026-11-10 | Pedido do usuário (Sprint 49), decidido numa rodada, com `02_JORNADAS` v1.41.0. **D-175** (o filtro padrão do QConcursos, de fábrica com nível superior, e a exceção do concurso), **D-176** (cargo e áreas aprendidos pelo endereço) e **D-177** (desligar um recorte na hora), em §3.24. O filtro de D-150 passa a vir do padrão. 177 regras |
 | 1.46.0 | 2026-11-05 | Retorno do usuário no modo de teste (Sprint 45), decidido numa rodada, com `02_JORNADAS` v1.38.0. **D-173** (o assunto ligado à árvore do QConcursos pela pessoa, antes do edital) e **D-174** (questões por vez), em §3.24. 174 regras |
 | 1.45.0 | 2026-11-05 | Pedido do usuário (Sprint 44), decidido numa rodada, com `02_JORNADAS` v1.37.0 e a nota em ADR-053. **D-172** (§3.18): os pontos altos (as marcações do assunto) aparecem na recuperação depois de conferir, nunca antes. 172 regras |
 | 1.44.0 | 2026-11-05 | Pedido do usuário (Sprint 37), decidido em duas rodadas, com `02_JORNADAS` v1.36.0 e ADR-063. **§3.28** (a captura do QConcursos) e **D-166 a D-171**: a questão capturada, o assunto pelo par aprendido ou pela árvore, o lote preenchido com a previsão na saída, a caixa em Hoje, a chave de envio e o diagnóstico. 171 regras |

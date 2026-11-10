@@ -53,4 +53,29 @@ class LinkQConcursosTest {
         assertThat(LinkQConcursos.numeroDaBanca("FGV")).isEmpty();
         assertThat(LinkQConcursos.numeroDaBanca(null)).isEmpty();
     }
+
+    @Test
+    void d177_cadaMarcaTrazOsParametrosQueSaemDoEndereco() {
+        var r = new LinkQConcursos.Recortes(List.of(3, 1), List.of(2, 4), "DIFICEIS", true, true, true, true,
+            List.of(new LinkQConcursos.Aprendido("INSTITUICAO", 29, "CGU")));
+        var m = LinkQConcursos.montar(new LinkQConcursos.Filtro(List.of(1L), List.of(), 2, "CERTO_ERRADO", 2025, 2026, 5), r, "CESPE");
+        for (var marca : m.marcas()) {
+            for (var p : marca.parametros()) assertThat(m.url()).contains(p);
+        }
+        assertThat(m.marcas()).extracting(LinkQConcursos.Marca::chave)
+            .containsExactly("banca", "formato", "anos", "nivel", "dificuldade", "ordem", "comentadas", "INSTITUICAO:29");
+        assertThat(m.marcas()).extracting(LinkQConcursos.Marca::rotulo)
+            .containsExactly("CESPE", "Certo/errado", "2025–2026", "Fundamental e Superior", "Fácil, Difícil", "Mais difíceis",
+                "Com gabarito comentado", "CGU");
+        assertThat(m.url()).contains("sort=hardest").contains("institute_ids%5B%5D=29").contains("scholarity_ids%5B%5D=1&scholarity_ids%5B%5D=3");
+    }
+
+    @Test
+    void d176_osAprendidosDoEndereco_semRepetir_eIgnorandoOResto() {
+        assertThat(LinkQConcursos.aprendidos("https://www.qconcursos.com/questoes-de-concursos/questoes?job_ids[]=43&job_ids%5B%5D=43"
+            + "&institute_ids%5B%5D=29&examining_board_ids%5B%5D=2&knowledge_area_ids%5B%5D=x"))
+            .containsExactly(new LinkQConcursos.Aprendido("CARGO", 43, null), new LinkQConcursos.Aprendido("INSTITUICAO", 29, null));
+        assertThat(LinkQConcursos.aprendidos("não é endereço")).isEmpty();
+        assertThat(LinkQConcursos.aprendidos(null)).isEmpty();
+    }
 }

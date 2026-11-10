@@ -2202,7 +2202,18 @@
         <template x-if="$store.qc.atalhoDaFolha">
           <div class="space-y-1 rounded-xl border p-3 text-sm" id="qc-questoes-filtro" :class="$store.qc.pedeVinculo($store.qc.atalhoDaFolha) ? 'border-alerta-600' : 'border-gray-200'">
             <p class="font-semibold">No QConcursos</p>
-            <p class="text-gray-600" x-text="$store.qc.detalhe($store.qc.atalhoDaFolha)"></p>
+            <p class="text-gray-600" x-text="$store.qc.detalhe($store.qc.atalhoDaFolha, true)"></p>
+            <!-- D-177: as marcas do filtro; tocar tira o recorte só deste endereço, nesta vez -->
+            <div class="flex flex-wrap gap-1.5 py-1" id="qc-questoes-marcas" x-show="($store.qc.atalhoDaFolha?.marcas || []).length">
+              <template x-for="m in ($store.qc.atalhoDaFolha?.marcas || [])" :key="m.chave">
+                <button type="button" class="qc-marca min-h-9 rounded-full border px-3 text-xs font-semibold" :data-chave="m.chave"
+                        :aria-pressed="!$store.qc.desligada(m)" @click="$store.qc.alternarMarca(m)"
+                        :class="$store.qc.desligada(m) ? 'border-gray-300 text-gray-400 line-through' : 'border-primary-600 bg-primary-50 text-primary-800'"
+                        x-text="m.rotulo + ($store.qc.desligada(m) ? '' : ' ×')"></button>
+              </template>
+            </div>
+            <p class="text-xs text-gray-500" x-show="($store.qc.antes?.desligadas || []).length">Desligado só agora.
+              <button type="button" class="min-h-9 font-semibold text-primary-700 underline" @click="$store.qc.antes.desligadas = []">Voltar ao padrão</button></p>
             <p class="text-xs text-gray-500"><span x-text="($store.qc.atalhoDaFolha?.vinculado ? 'Ligado por você: ' : 'Filtro: ') + ($store.qc.atalhoDaFolha?.filtro || []).join(', ')"></span>
               <button type="button" class="qc-ligar ml-1 min-h-9 font-semibold text-primary-700 underline" @click="$store.vinculoQc.abrir($store.qc.antes?.assuntoId, $store.qc.antes?.nome)"
                       x-text="$store.qc.atalhoDaFolha?.vinculado ? 'trocar' : ($store.qc.pedeVinculo($store.qc.atalhoDaFolha) ? 'ligar o assunto' : 'ligar outro assunto')"></button>
@@ -2227,7 +2238,7 @@
                         :class="$store.qc.antes?.previsao === f ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-gray-300'" @click="$store.qc.antes.previsao = f" x-text="f + '%'"></button>
               </template>
             </div>
-            <a target="_blank" rel="noopener" :href="$store.qc.atalhoDaFolha?.url" id="qc-questoes-abrir" @click="if ($store.qc.antes?.previsao === null) { $event.preventDefault(); return; } $store.qc.ir()"
+            <a target="_blank" rel="noopener" :href="$store.qc.urlDaFolha" id="qc-questoes-abrir" @click="if ($store.qc.antes?.previsao === null) { $event.preventDefault(); return; } $store.qc.ir()"
                class="flex min-h-12 w-full items-center justify-center rounded-lg bg-primary-600 font-semibold text-sobre" :class="$store.qc.antes?.previsao === null ? 'opacity-40' : ''"
                :aria-disabled="$store.qc.antes?.previsao === null">Abrir o QConcursos ↗</a>
             <p class="text-xs text-gray-500">Com a captura ligada, as questões que você responder voltam sozinhas para o lote.</p>
@@ -2235,6 +2246,87 @@
         </template>
         <button type="button" id="qc-questoes-ja-fiz" class="min-h-12 w-full rounded-lg border border-gray-300 font-semibold text-primary-700" @click="$store.qc.jaFiz()">Já fiz: registrar questões</button>
         <button type="button" class="min-h-11 w-full text-sm font-semibold text-gray-500" @click="$store.qc.antes = null">Cancelar</button>
+      </div>
+    </template>
+  </div>
+
+  <!-- D-175 e D-176 (Sprint 49): o filtro do QConcursos — o padrão ou a exceção do concurso -->
+  <div x-data x-show="$store.filtroQc.aberto" style="display: none" id="filtro-qc" class="fixed inset-0 z-50 flex items-end justify-center bg-black/30 sm:items-center"
+       @click.self="$store.filtroQc.fechar()" @keydown.escape.window="$store.filtroQc.fechar()" role="dialog" aria-modal="true" aria-labelledby="filtro-qc-titulo">
+    <template x-if="$store.filtroQc.aberto && $store.filtroQc.f">
+      <div class="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom))">
+        <div>
+          <h2 id="filtro-qc-titulo" class="text-lg font-bold">Filtro do QConcursos</h2>
+          <p class="text-sm text-gray-600" x-text="$store.filtroQc.concursoId ? 'Só para ' + $store.filtroQc.nomeConcurso + '. O que você não mudar segue o padrão de Ajustes.' : 'O padrão de todos os concursos. Grava a cada toque.'"></p>
+        </div>
+        <template x-for="g in [['niveis', 'Nível', $store.filtroQc.NIVEIS, true], ['banca', 'Banca', $store.filtroQc.BANCAS, false], ['anos', 'Anos', $store.filtroQc.ANOS, false], ['formato', 'Formato', $store.filtroQc.FORMATOS, false], ['dificuldades', 'Dificuldade', $store.filtroQc.DIFICULDADES, true], ['ordem', 'Ordenar por', $store.filtroQc.ORDENS, false]]" :key="g[0]">
+          <div class="space-y-1.5" :id="'filtro-qc-' + g[0]">
+            <p class="text-sm font-semibold"><span x-text="g[1]"></span>
+              <span x-show="$store.filtroQc.doConcurso(g[0])" class="ml-1 rounded-full bg-alerta-50 px-2 py-0.5 text-xs font-bold text-alerta-700">deste concurso</span></p>
+            <div class="flex flex-wrap gap-1.5" :role="g[3] ? 'group' : 'radiogroup'" :aria-label="g[1]">
+              <template x-for="o in g[2]" :key="o[0]">
+                <button type="button" :role="g[3] ? null : 'radio'" :aria-checked="g[3] ? null : String($store.filtroQc.f[g[0]] === o[0])" :aria-pressed="g[3] ? String($store.filtroQc.tem(g[0], o[0])) : null"
+                        :disabled="!!$store.filtroQc.salvando" :data-valor="o[0]"
+                        class="min-h-10 rounded-lg border px-3 text-sm font-semibold"
+                        :class="(g[3] ? $store.filtroQc.tem(g[0], o[0]) : $store.filtroQc.f[g[0]] === o[0]) ? 'border-primary-600 bg-primary-50 text-primary-800' : 'border-gray-300 bg-white text-gray-700'"
+                        @click="g[3] ? $store.filtroQc.alternar(g[0], o[0]) : $store.filtroQc.escolher(g[0], o[0])" x-text="o[1]"></button>
+              </template>
+            </div>
+            <p x-show="g[3]" class="text-xs text-gray-500">Pode marcar mais de um; nenhum = todos.</p>
+          </div>
+        </template>
+        <div class="space-y-1.5" id="filtro-qc-limpeza">
+          <p class="text-sm font-semibold">Tirar</p>
+          <template x-for="o in [['tirarResolvidas', 'Já resolvidas por mim'], ['tirarAnuladas', 'Anuladas'], ['tirarDesatualizadas', 'Desatualizadas']]" :key="o[0]">
+            <label class="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" :checked="$store.filtroQc.f[o[0]]" :disabled="!!$store.filtroQc.salvando"
+                   @change="$store.filtroQc.marcar(o[0])" :data-campo="o[0]"><span x-text="o[1]"></span>
+              <span x-show="$store.filtroQc.doConcurso(o[0])" class="rounded-full bg-alerta-50 px-2 py-0.5 text-xs font-bold text-alerta-700">deste concurso</span></label>
+          </template>
+          <p class="pt-1 text-sm font-semibold">Só com</p>
+          <label class="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" id="filtro-qc-comentadas" :checked="$store.filtroQc.f.soComentadas" :disabled="!!$store.filtroQc.salvando"
+                 @change="$store.filtroQc.marcar('soComentadas')">Gabarito comentado pelo professor</label>
+        </div>
+        <div class="space-y-1.5" id="filtro-qc-aprendidos">
+          <p class="text-sm font-semibold">Cargo, área e instituição
+            <span x-show="$store.filtroQc.doConcurso('aprendidos')" class="ml-1 rounded-full bg-alerta-50 px-2 py-0.5 text-xs font-bold text-alerta-700">deste concurso</span></p>
+          <div class="flex flex-wrap gap-1.5" x-show="($store.filtroQc.f.aprendidos || []).length">
+            <template x-for="a in ($store.filtroQc.f.aprendidos || [])" :key="a.tipo + a.numero">
+              <button type="button" class="filtro-qc-aprendido min-h-9 rounded-full border border-primary-600 bg-primary-50 px-3 text-xs font-semibold text-primary-800"
+                      :aria-label="'Tirar ' + a.nome" @click="$store.filtroQc.tirarAprendido(a)" x-text="$store.filtroQc.TIPOS[a.tipo] + ': ' + (a.nome || 'nº ' + a.numero) + ' ×'"></button>
+            </template>
+          </div>
+          <button type="button" x-show="!$store.filtroQc.colar" id="filtro-qc-colar" class="min-h-11 rounded-lg border border-gray-300 px-3 text-sm font-semibold text-primary-700" @click="$store.filtroQc.abrirColar()">+ Colar um endereço do QConcursos</button>
+          <p x-show="!$store.filtroQc.colar" class="text-xs text-gray-500">O QConcursos não publica os números desses filtros: filtre lá, copie o endereço da barra do navegador e cole aqui.</p>
+          <template x-if="$store.filtroQc.colar">
+            <div class="space-y-2 rounded-xl border border-gray-200 p-3" id="filtro-qc-colar-caixa">
+              <input type="text" id="filtro-qc-endereco" x-model="$store.filtroQc.colar.texto" placeholder="https://www.qconcursos.com/questoes-de-concursos/questoes?…"
+                     class="w-full rounded border border-gray-200 p-2 text-sm">
+              <button type="button" x-show="!$store.filtroQc.colar.achados.length" id="filtro-qc-ler" class="min-h-11 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-sobre"
+                      :disabled="!!$store.filtroQc.colar.lendo" @click="$store.filtroQc.lerEndereco()">Ler o endereço</button>
+              <template x-for="a in $store.filtroQc.colar.achados" :key="a.tipo + a.numero">
+                <label class="block space-y-1 text-sm"><span class="font-semibold" x-text="$store.filtroQc.TIPOS[a.tipo] + ' nº ' + a.numero + ' · como chamar?'"></span>
+                  <input type="text" class="filtro-qc-nome w-full rounded border border-gray-200 p-2 text-sm" x-model="a.nome" maxlength="120" :list="'filtro-qc-sugestoes-' + a.tipo"></label>
+              </template>
+              <p class="text-xs text-gray-500" x-show="$store.filtroQc.colar.achados.length">Nível, banca, anos e assunto do endereço ficam de fora: eles têm o próprio controle.</p>
+              <p x-show="$store.filtroQc.colar.erro" class="text-sm text-red-700" role="alert" x-text="$store.filtroQc.colar.erro"></p>
+              <div class="flex gap-2">
+                <button type="button" x-show="$store.filtroQc.colar.achados.length" id="filtro-qc-usar" class="min-h-11 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-sobre" @click="$store.filtroQc.usarAchados()"
+                        x-text="$store.filtroQc.concursoId ? 'Usar neste concurso' : 'Usar no padrão'"></button>
+                <button type="button" class="min-h-11 rounded-lg border border-gray-300 px-3 text-sm" @click="$store.filtroQc.colar = null">Cancelar</button>
+              </div>
+            </div>
+          </template>
+          <template x-for="t in Object.keys($store.filtroQc.SUGESTOES)" :key="t">
+            <datalist :id="'filtro-qc-sugestoes-' + t"><template x-for="n in $store.filtroQc.SUGESTOES[t]" :key="n"><option :value="n"></option></template></datalist>
+          </template>
+        </div>
+        <p x-show="$store.filtroQc.erro" class="text-sm text-red-700" role="alert" x-text="$store.filtroQc.erro"></p>
+        <p x-show="$store.filtroQc.salvando" class="text-xs text-gray-500">Gravando…</p>
+        <div class="flex gap-2">
+          <button type="button" x-show="$store.filtroQc.concursoId && $store.filtroQc.concursos[$store.filtroQc.concursoId]?.excecao" class="min-h-12 flex-1 rounded-lg border border-gray-300 font-semibold text-primary-700"
+                  @click="$store.filtroQc.voltarAoPadrao($store.filtroQc.concursoId)">Voltar ao padrão</button>
+          <button type="button" id="filtro-qc-pronto" class="min-h-12 flex-1 rounded-lg bg-primary-600 font-semibold text-sobre" @click="$store.filtroQc.fechar()">Pronto</button>
+        </div>
       </div>
     </template>
   </div>
@@ -2743,6 +2835,20 @@
                       <p x-show="erroPorChave[p.chave]" class="text-xs text-red-600" x-text="erroPorChave[p.chave]"></p>
                     </div>
                   </template>
+                  <!-- D-175 (Sprint 49): o filtro padrão do QConcursos, logo abaixo das questões por vez -->
+                  <template x-if="p.chave === 'questoes_por_vez'">
+                    <div class="space-y-2 border-b border-gray-100 py-2" id="ajuste-filtro-qc" x-init="$store.filtroQc.carregarPadrao().catch(() => {})">
+                      <span class="text-sm">Filtro do QConcursos</span>
+                      <div class="flex flex-wrap gap-1.5">
+                        <template x-for="r in $store.filtroQc.resumo($store.filtroQc.padrao)" :key="r">
+                          <span class="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700" x-text="r"></span>
+                        </template>
+                      </div>
+                      <button type="button" id="ajuste-filtro-qc-mudar" class="min-h-11 rounded-lg border border-gray-300 px-3 text-sm font-semibold text-primary-700"
+                              @click="$store.filtroQc.abrir()">Mudar o filtro</button>
+                      <p class="text-xs text-gray-500">Vale para todos os concursos; cada concurso pode ter uma exceção na aba Banca.</p>
+                    </div>
+                  </template>
                   <div x-show="p.chave !== 'questoes_por_vez'" class="flex items-center justify-between border-b border-gray-100 py-2">
                     <div>
                       <span class="text-sm" x-text="rotulo(p.chave)"></span>
@@ -3080,6 +3186,26 @@
                   </div>
                 </div>
               </div>
+              </div>
+              <!-- D-175 (Sprint 49): o filtro do QConcursos deste concurso — a exceção guarda só o que difere do padrão -->
+              <div class="rounded-xl border border-gray-200 bg-white p-3" id="filtro-qc-concurso" x-show="ativo">
+                <h3 class="text-sm font-semibold">Filtro do QConcursos</h3>
+                <template x-if="ativo && $store.filtroQc.concursos[ativo.id]">
+                  <div class="mt-1 space-y-2 text-sm">
+                    <p x-show="!$store.filtroQc.concursos[ativo.id].excecao" class="text-gray-600">Usa o padrão de Ajustes.</p>
+                    <div class="flex flex-wrap gap-1.5">
+                      <template x-for="r in $store.filtroQc.resumo($store.filtroQc.concursos[ativo.id].efetivo)" :key="r">
+                        <span class="rounded-full border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700" x-text="r"></span>
+                      </template>
+                    </div>
+                    <p x-show="$store.filtroQc.concursos[ativo.id].excecao" class="text-xs font-semibold text-alerta-700">Este concurso tem exceção; o que ela não diz segue o padrão.</p>
+                    <div class="flex gap-4">
+                      <button type="button" id="filtro-qc-concurso-mudar" class="min-h-11 font-semibold text-primary-700 underline" @click="$store.filtroQc.abrir(ativo.id, ativo.nome)">Mudar</button>
+                      <button type="button" id="filtro-qc-concurso-padrao" x-show="$store.filtroQc.concursos[ativo.id].excecao" class="min-h-11 font-semibold text-primary-700 underline"
+                              @click="$store.filtroQc.voltarAoPadrao(ativo.id)">Voltar ao padrão</button>
+                    </div>
+                  </div>
+                </template>
               </div>
           <!-- J-15: o peso pela banca. A proposta é derivada; só o aceite grava (D-146, D-147) -->
           <template x-if="banca">

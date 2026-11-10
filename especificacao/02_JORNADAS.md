@@ -5,8 +5,8 @@ Subordinado a `00_PRODUTO.md` e `01_DOMINIO.md`.
 
 | Campo | Valor |
 |---|---|
-| Versão | 1.40.0 |
-| Data | 2026-11-05 |
+| Versão | 1.41.0 |
+| Data | 2026-11-10 |
 | Status | Vigente |
 | Documento anterior | `01_DOMINIO.md` |
 
@@ -643,6 +643,10 @@ Frequente: em boa parte dos turnos. Ida em **1 toque**; a volta no orçamento do
    do assunto: "Ligado por você", **trocar** e **tirar o vínculo**.
 6. **Questões por vez (D-174):** em Ajustes › Questões, Auto, 5, 10, 15 ou 20. Fixo, a página abre com esse número e a volta traz o
    lote com ele em "feitas".
+7. **O filtro (D-175 a D-177):** em Ajustes › Questões › Filtro do QConcursos, o padrão (nível, de fábrica superior; banca, anos,
+   formato, dificuldade, ordem, o que tirar, gabarito comentado). Cargo e áreas: "Colar um endereço do QConcursos", dar nome a cada
+   número novo e **Usar no padrão**. Em Concursos › Banca, o cartão do filtro mostra a exceção do concurso; **Mudar** e **Voltar ao
+   padrão**. Na folha "Questões", as marcas do filtro: tocar numa tira o recorte só daquela vez.
 5. Depois de Registrar, **Anotar erros** (opcional): para cada errada, o número Q, uma frase de por que errou, a causa e a confiança
    (D-156). Fora do orçamento do lote; pular não perde nada.
 6. Banca do alvo fora do catálogo: em Concursos, colar uma vez um endereço do QConcursos filtrado por ela (D-151).
@@ -982,7 +986,7 @@ O documento de interface é quem amarra isso.
 | J-20 Tirar sessões da escada | Ajustes › Sessões registradas | `04_FRONTEND` §8D, `01_DOMINIO` §3.26, D-160 a D-162 |
 | J-19 Modo de teste | Ajustes e a faixa em todas as telas | `04_FRONTEND` §8C, ADR-061 |
 | J-18 Próximos dias e ensaio | Hoje, Leitor, Recuperar, Registrar, Assuntos (detalhe) | D-157 a D-159, D-121, D-143, D-144 |
-| J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-173, D-174, D-133 |
+| J-17 Resolver no QConcursos | Hoje, Assuntos (detalhe), Concursos (Diagnóstico, Peso pela banca, banca no QConcursos), Ajustes | D-150 a D-156, D-173 a D-177, D-133 |
 
 ---
 
@@ -1009,6 +1013,7 @@ balanço semanal (J-3), lugar do "puxar mais" (§4.3) e latência × orçamento
 
 | Versão | Data | Mudança |
 |---|---|---|
+| 1.41.0 | 2026-11-10 | J-17 ganha o passo 7 (Sprint 49, com `01_DOMINIO` v1.47.0 e `04_FRONTEND` v1.31.0 §8L): o filtro padrão do QConcursos em Ajustes, a exceção do concurso, os filtros aprendidos pelo endereço e as marcas que se desligam na folha (D-175 a D-177) |
 | 1.40.0 | 2026-11-06 | J-17 (Sprint 48, `04_FRONTEND` v1.30.0 §8K): a ida ao QConcursos e o "Fiz questões" passam por um botão só, "Questões", que abre a folha com o filtro, o vínculo, a previsão, Abrir e Já fiz. Sem mudança de regra |
 | 1.39.0 | 2026-11-05 | Hoje (Sprint 46, `04_FRONTEND` v1.28.0 §8I): a mensagem da volta (J-4) e a reta final (J-14) passam a morar na faixa de avisos, abaixo do Agora; o resto da tela segue o plano numa lista só. Sem mudança de regra |
 | 1.38.0 | 2026-11-05 | J-17 ganha os passos 5 (ligar o assunto à árvore do QConcursos, D-173) e 6 (questões por vez, D-174), com `01_DOMINIO` v1.46.0 e `04_FRONTEND` v1.27.0 §8H |

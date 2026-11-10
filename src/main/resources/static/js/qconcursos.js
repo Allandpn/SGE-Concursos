@@ -126,6 +126,183 @@ document.addEventListener('alpine:init', () => {
     },
   });
 
+  // D-175 e D-176 (Sprint 49, 04_FRONTEND §8L): o filtro do QConcursos — o padrão de Ajustes e a exceção do concurso, editados
+  // na mesma folha. Na exceção, só o que difere do padrão é enviado (nulo segue o padrão).
+  Alpine.store('filtroQc', {
+    padrao: null,
+    concursos: {}, // id → {concursoId, excecao, efetivo}
+    aberto: false,
+    concursoId: null,
+    nomeConcurso: '',
+    f: null, // o que a folha mostra e edita
+    salvando: false,
+    erro: null,
+    colar: null, // {texto, lendo, erro, achados: [{tipo, numero, nome}]}
+
+    NIVEIS: [[1, 'Fundamental'], [2, 'Médio'], [3, 'Superior']],
+    DIFICULDADES: [[1, 'Muito fácil'], [2, 'Fácil'], [3, 'Médio'], [4, 'Difícil'], [5, 'Muito difícil']],
+    ANOS: [[3, '3'], [5, '5'], [10, '10'], [0, 'Todos']],
+    BANCAS: [['CONCURSO', 'Do concurso'], ['QUALQUER', 'Qualquer']],
+    FORMATOS: [['BANCA', 'Da banca'], ['MULTIPLA_ESCOLHA', 'Múltipla'], ['CERTO_ERRADO', 'C/E'], ['QUALQUER', 'Qualquer']],
+    ORDENS: [['QC', 'Padrão do QC'], ['RECENTES', 'Recentes'], ['DIFICEIS', 'Difíceis']],
+    TIPOS: { CARGO: 'Cargo', FORMACAO: 'Formação', ATUACAO: 'Atuação', INSTITUICAO: 'Instituição' },
+    CAMPOS: ['niveis', 'banca', 'anos', 'formato', 'dificuldades', 'ordem', 'tirarResolvidas', 'tirarAnuladas', 'tirarDesatualizadas', 'soComentadas', 'aprendidos'],
+    // As opções que o QConcursos mostra (catálogo de 2026-11-03 do planejamento); sugestão de nome, o número é o que vale (D-176).
+    SUGESTOES: {
+      ATUACAO: ['Administrativa', 'Advocacia Pública', 'Aeronáutica', 'Agência Reguladora', 'Bancária', 'Conselho Profissional', 'Controle e Gestão',
+        'Defensoria Pública', 'Educação', 'ENEM', 'Exército', 'Fiscal', 'Forças Armadas', 'Jurídica', 'Legislativa', 'Marinha', 'Ministério Público',
+        'OAB', 'Outras', 'Policial', 'Prefeitura', 'Saúde', 'Segurança Pública', 'Tribunal', 'Tribunal de Contas e Controladoria', 'Vestibular'],
+      FORMACAO: ['Administração', 'Arquitetura e Urbanismo', 'Arquivologia', 'Biblioteconomia', 'Biologia', 'Ciências Atuariais', 'Ciências Contábeis',
+        'Comunicação Social', 'Direito', 'Economia', 'Educação Física', 'Enfermagem', 'Engenharia', 'Engenharia Civil', 'Engenharia Elétrica',
+        'Engenharia Mecânica', 'Estatística', 'Farmácia', 'Física', 'Geografia', 'História', 'Letras', 'Matemática', 'Medicina', 'Nutrição',
+        'Odontologia', 'Pedagogia', 'Psicologia', 'Química', 'Saúde Pública', 'Serviço Social', 'Tecnologia da Informação'],
+    },
+
+    async carregarPadrao() {
+      this.padrao = await api('/qconcursos/filtro');
+      return this.padrao;
+    },
+
+    async carregarConcurso(id) {
+      const d = await api(`/concursos/${id}/qconcursos-filtro`);
+      this.concursos = { ...this.concursos, [id]: d };
+      return d;
+    },
+
+    async abrir(concursoId = null, nome = '') {
+      this.erro = null;
+      this.colar = null;
+      try {
+        await this.carregarPadrao();
+        const base = concursoId ? (await this.carregarConcurso(concursoId)).efetivo : this.padrao;
+        this.f = JSON.parse(JSON.stringify(base));
+        Object.assign(this, { concursoId, nomeConcurso: nome || '', aberto: true });
+      } catch (e) {
+        this.erro = e.message;
+      }
+    },
+
+    fechar() {
+      this.aberto = false;
+      this.colar = null;
+    },
+
+    tem(campo, v) {
+      return !!this.f && (this.f[campo] || []).includes(v);
+    },
+    alternar(campo, v) {
+      const l = this.f[campo] || [];
+      this.f[campo] = l.includes(v) ? l.filter((x) => x !== v) : [...l, v].sort((a, b) => a - b);
+      this.salvar();
+    },
+    escolher(campo, v) {
+      if (this.f[campo] === v) return;
+      this.f[campo] = v;
+      this.salvar();
+    },
+    marcar(campo) {
+      this.f[campo] = !this.f[campo];
+      this.salvar();
+    },
+    tirarAprendido(a) {
+      this.f.aprendidos = this.f.aprendidos.filter((x) => !(x.tipo === a.tipo && x.numero === a.numero));
+      this.salvar();
+    },
+
+    chave(campo, v) {
+      if (campo === 'aprendidos') return (v || []).map((a) => a.tipo + ':' + a.numero).sort().join(',');
+      return JSON.stringify(v);
+    },
+    // Na exceção: o campo difere do padrão ("deste concurso").
+    doConcurso(campo) {
+      return !!this.concursoId && !!this.padrao && !!this.f && this.chave(campo, this.f[campo]) !== this.chave(campo, this.padrao[campo]);
+    },
+
+    async salvar() {
+      this.salvando = true;
+      this.erro = null;
+      try {
+        if (!this.concursoId) {
+          this.padrao = await api('/qconcursos/filtro', { method: 'PUT', body: JSON.stringify(this.f) });
+        } else {
+          const excecao = {};
+          this.CAMPOS.forEach((c) => { if (this.doConcurso(c)) excecao[c] = this.f[c]; });
+          const d = await api(`/concursos/${this.concursoId}/qconcursos-filtro`, { method: 'PUT', body: JSON.stringify(excecao) });
+          this.concursos = { ...this.concursos, [this.concursoId]: d };
+        }
+        Alpine.store('qc').esquecer(); // os atalhos já carregados levavam o filtro antigo
+      } catch (e) {
+        this.erro = e.message;
+      } finally {
+        this.salvando = false;
+      }
+    },
+
+    async voltarAoPadrao(id) {
+      this.erro = null;
+      try {
+        await api(`/concursos/${id}/qconcursos-filtro`, { method: 'DELETE' });
+        await this.carregarConcurso(id);
+        Alpine.store('qc').esquecer();
+        if (this.aberto && this.concursoId === id) this.f = JSON.parse(JSON.stringify(this.concursos[id].efetivo));
+      } catch (e) {
+        this.erro = e.message;
+      }
+    },
+
+    // D-176: lê os números do endereço; o nome já guardado vem preenchido, o resto a pessoa dá.
+    abrirColar() {
+      this.colar = { texto: '', lendo: false, erro: null, achados: [] };
+    },
+    async lerEndereco() {
+      const c = this.colar;
+      if (!c) return;
+      c.erro = null;
+      c.lendo = true;
+      try {
+        const achados = await api('/qconcursos/filtro/endereco', { method: 'POST', body: JSON.stringify({ endereco: c.texto }) });
+        c.achados = achados.map((a) => ({ ...a, nome: a.nome || '' }));
+      } catch (e) {
+        c.erro = e.message;
+      } finally {
+        c.lendo = false;
+      }
+    },
+    usarAchados() {
+      const c = this.colar;
+      if (!c || !c.achados.length) return;
+      if (c.achados.some((a) => !a.nome.trim())) {
+        c.erro = 'Dê um nome a cada número.';
+        return;
+      }
+      const lista = [...(this.f.aprendidos || [])];
+      c.achados.forEach((a) => {
+        const i = lista.findIndex((x) => x.tipo === a.tipo && x.numero === a.numero);
+        const item = { tipo: a.tipo, numero: a.numero, nome: a.nome.trim() };
+        if (i >= 0) lista[i] = item; else lista.push(item);
+      });
+      this.f.aprendidos = lista;
+      this.colar = null;
+      this.salvar();
+    },
+
+    // O resumo de um filtro, em marcas curtas (Ajustes e o cartão do concurso).
+    resumo(f) {
+      if (!f) return [];
+      const nome = (lista, v) => (lista.find((x) => x[0] === v) || [, v])[1];
+      const r = [];
+      r.push(f.niveis.length ? f.niveis.map((n) => nome(this.NIVEIS, n)).join(' e ') : 'Qualquer nível');
+      r.push(f.banca === 'CONCURSO' ? 'Banca do concurso' : 'Qualquer banca');
+      r.push(f.anos ? `Últimos ${f.anos} anos` : 'Todos os anos');
+      r.push(f.formato === 'BANCA' ? 'Formato da banca' : f.formato === 'QUALQUER' ? 'Qualquer formato' : nome(this.FORMATOS, f.formato));
+      if (f.dificuldades.length) r.push(f.dificuldades.map((n) => nome(this.DIFICULDADES, n)).join(', '));
+      if (f.ordem !== 'QC') r.push(f.ordem === 'RECENTES' ? 'Mais recentes' : 'Mais difíceis');
+      if (f.soComentadas) r.push('Com gabarito comentado');
+      (f.aprendidos || []).forEach((a) => r.push(`${this.TIPOS[a.tipo]}: ${a.nome || 'nº ' + a.numero}`));
+      return r;
+    },
+  });
+
   // D-150 a D-152: os atalhos vêm do servidor, em lote, e ficam guardados por assunto até a próxima carga da tela.
   Alpine.store('qc', {
     atalhos: {},
@@ -169,15 +346,12 @@ document.addEventListener('alpine:init', () => {
       return anos.length ? `${Math.min(...anos)}–${Math.max(...anos)}` : '';
     },
 
-    // "8 questões · FGV · múltipla escolha · 2021–2026 · não resolvidas", com o aviso quando o filtro é mais largo.
-    detalhe(a) {
+    // "8 questões · FGV · Certo/errado · 2021–2026 · Superior", com o aviso quando o filtro é mais largo (D-175: as marcas do filtro).
+    detalhe(a, semMarcas = false) {
       if (!a) return '';
       const partes = [`${a.sugeridas} questões`];
-      partes.push(a.banca || 'sem filtro de banca');
-      if (a.formato) partes.push(a.formato === 'CERTO_ERRADO' ? 'certo/errado' : 'múltipla escolha');
-      const anos = this.anos(a);
-      if (anos) partes.push(anos);
-      partes.push('não resolvidas');
+      if (a.avisos.includes('SEM_BANCA')) partes.push('sem filtro de banca');
+      if (!semMarcas) (a.marcas || []).forEach((m) => partes.push(m.rotulo));
       if (a.avisos.includes('DISCIPLINA')) partes.push('filtro pela disciplina inteira');
       if (a.avisos.includes('NO_FORA_DA_ARVORE')) partes.push('o assunto ligado saiu da árvore do QConcursos: ligue de novo');
       return partes.join(' · ');
@@ -202,7 +376,7 @@ document.addEventListener('alpine:init', () => {
     antes: null, // {assuntoId, nome, previsao}
     abrirQuestoes(item) {
       if (!item || item.assuntoId == null) return;
-      this.antes = { assuntoId: item.assuntoId, nome: item.nome, previsao: null };
+      this.antes = { assuntoId: item.assuntoId, nome: item.nome, previsao: null, desligadas: [] };
       this.carregar([item.assuntoId]);
     },
     antesDeIr(a, nome) { // compatível com os chamadores antigos
@@ -210,6 +384,23 @@ document.addEventListener('alpine:init', () => {
     },
     get atalhoDaFolha() {
       return this.antes ? this.de(this.antes.assuntoId) : null;
+    },
+    // D-177: uma marca desligada tira os parâmetros dela só deste endereço, nesta vez; fechar a folha volta tudo.
+    desligada(m) {
+      return !!this.antes && (this.antes.desligadas || []).includes(m.chave);
+    },
+    alternarMarca(m) {
+      if (!this.antes) return;
+      const d = this.antes.desligadas || [];
+      this.antes.desligadas = d.includes(m.chave) ? d.filter((c) => c !== m.chave) : [...d, m.chave];
+    },
+    get urlDaFolha() {
+      const a = this.atalhoDaFolha;
+      if (!a) return '';
+      const fora = new Set((a.marcas || []).filter((m) => this.desligada(m)).flatMap((m) => m.parametros));
+      if (!fora.size) return a.url;
+      const [base, query] = a.url.split('?');
+      return base + '?' + (query || '').split('&').filter((p) => !fora.has(p)).join('&');
     },
     ir() {
       const x = this.antes;

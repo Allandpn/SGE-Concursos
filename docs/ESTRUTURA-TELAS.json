@@ -1,6 +1,6 @@
 {
   "app": "eAgora (SGE-Concursos)",
-  "versao": "Sprint 48 (na branch) · casca-2026-11-06-2",
+  "versao": "Sprint 49 (na branch) · casca-2026-11-10-1",
   "geradoEm": "2026-11-05",
   "fonte": "src/main/resources/static/index.html, entrar.html, js/router.js, js/navegacao.js",
   "convencoes": {
@@ -181,7 +181,9 @@
           "Abrir o QConcursos ↗ (preso até prever)",
           "Já fiz: registrar questões → lote rápido",
           "Cancelar"
-        ]
+        ],
+        "acoes": [],
+        "marcas": "os recortes do filtro (nível, banca, anos, formato, dificuldade, ordem, gabarito comentado, aprendidos); tocar desliga só desta vez (D-177)"
       },
       {
         "id": "vinculo-qc",
@@ -209,6 +211,30 @@
           "digitar REINICIAR"
         ],
         "depois": "aviso com Desfazer (reinicio-aviso)"
+      },
+      {
+        "id": "filtro-qc",
+        "nome": "Filtro do QConcursos",
+        "abreDe": [
+          "Ajustes › Questões › Mudar o filtro (o padrão)",
+          "Concursos › Banca e prova › Filtro do QConcursos › Mudar (a exceção)"
+        ],
+        "campos": [
+          "nível",
+          "banca",
+          "anos",
+          "formato",
+          "dificuldade",
+          "ordem",
+          "tirar (resolvidas, anuladas, desatualizadas)",
+          "só com gabarito comentado",
+          "cargo, área e instituição"
+        ],
+        "acoes": [
+          "Colar um endereço do QConcursos → dar nome → Usar",
+          "Voltar ao padrão (na exceção)",
+          "Pronto"
+        ]
       }
     ]
   },

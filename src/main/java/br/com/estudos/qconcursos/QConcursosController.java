@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,10 +27,50 @@ public class QConcursosController {
 
     private final QConcursosService qconcursos;
     private final VinculoQConcursosService vinculos;
+    private final FiltroQConcursosService filtros;
 
-    public QConcursosController(QConcursosService qconcursos, VinculoQConcursosService vinculos) {
+    public QConcursosController(QConcursosService qconcursos, VinculoQConcursosService vinculos, FiltroQConcursosService filtros) {
         this.qconcursos = qconcursos;
         this.vinculos = vinculos;
+        this.filtros = filtros;
+    }
+
+    @GetMapping("/api/qconcursos/filtro")
+    @Operation(summary = "O filtro padrão do atalho do QConcursos (D-175)")
+    public FiltroQConcursosService.Filtro filtroPadrao() {
+        return filtros.padrao();
+    }
+
+    @PutMapping("/api/qconcursos/filtro")
+    @Operation(summary = "Troca o filtro padrão inteiro (D-175, D-176)", description = "FILTRO_INCOMPLETO, FILTRO_INVALIDO, NOME_FALTANDO (422).")
+    public FiltroQConcursosService.Filtro salvarFiltroPadrao(@RequestBody FiltroQConcursosService.Filtro corpo) {
+        return filtros.salvarPadrao(corpo);
+    }
+
+    @PostMapping("/api/qconcursos/filtro/endereco")
+    @Operation(summary = "Lê cargo, áreas e instituição de um endereço do QConcursos, com o nome já guardado (D-176)",
+        description = "Nada é gravado. ENDERECO_SEM_FILTRO (422).")
+    public List<LinkQConcursos.Aprendido> lerEndereco(@RequestBody Endereco corpo) {
+        return filtros.lerEndereco(corpo.endereco());
+    }
+
+    @GetMapping("/api/concursos/{id}/qconcursos-filtro")
+    @Operation(summary = "A exceção do concurso (nula se não há) e o filtro que vale para ele (D-175)")
+    public FiltroQConcursosService.DoConcurso filtroDoConcurso(@PathVariable long id) {
+        return filtros.doConcurso(id);
+    }
+
+    @PutMapping("/api/concursos/{id}/qconcursos-filtro")
+    @Operation(summary = "Grava a exceção do concurso: só o que difere; nulo segue o padrão (D-175)")
+    public FiltroQConcursosService.DoConcurso salvarFiltroDoConcurso(@PathVariable long id, @RequestBody FiltroQConcursosService.Filtro corpo) {
+        return filtros.salvarExcecao(id, corpo);
+    }
+
+    @DeleteMapping("/api/concursos/{id}/qconcursos-filtro")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Volta o concurso ao filtro padrão (D-175)")
+    public void voltarAoPadrao(@PathVariable long id) {
+        filtros.voltarAoPadrao(id);
     }
 
     @GetMapping("/api/assuntos/{id}/qconcursos-vinculo")
